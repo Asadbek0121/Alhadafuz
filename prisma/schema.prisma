@@ -1,0 +1,303 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String        @id @default(cuid())
+  name           String?
+  email          String?       @unique
+  phone          String?       @unique
+  password       String?
+  hashedPassword String?
+  image          String?
+  role           String        @default("USER")
+  provider       String?       @default("credentials")
+  uniqueId       String?       @unique // Readable ID e.g. ID-12345
+  notificationsEnabled Boolean @default(true)
+  isDarkMode     Boolean       @default(false)
+  isDeleted      Boolean       @default(false)
+  emailVerified  DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  accounts       Account[]
+  logs           ActivityLog[]
+  addresses      Address[]
+  cart           Cart?
+  orders         Order[]
+  sessions       Session[]
+  reviews        Review[]
+  wishlist       Wishlist?
+
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
+  notifications    Notification[]
+  dateOfBirth    DateTime?
+  gender         String?
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Address {
+  id        String  @id @default(cuid())
+  userId    String
+  title     String
+  city      String
+  district  String?
+  street    String
+  house     String?
+  apartment String?
+  isDefault Boolean @default(false)
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  userId           String
+  status           String      @default("PENDING")
+  total            Float
+  paymentMethod    String      @default("CASH")
+  deliveryMethod   String      @default("COURIER")
+  shippingCity     String?
+  shippingDistrict String?
+  shippingAddress  String?
+  shippingPhone    String?
+  shippingName     String?
+  comment          String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            OrderItem[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  title     String
+  price     Float
+  quantity  Int
+  image     String
+  product   Product @relation(fields: [productId], references: [id]) // No Cascade here, keeps record
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  oldPrice    Float?
+  discount    Float?
+  image       String
+  images      String? // We simulate list with string split
+  stock       Int         @default(0)
+  // Store dynamic attributes as JSON string if needed, or relation
+  // For this restoration, we use a simple specs structure or separate logic
+  attributes  String? // Store simplified specs
+  specs       String? // JSON string for key-value
+  
+  rating      Float       @default(0)
+  reviewsCount Int        @default(0)
+  
+  category    String // Keeping string for now like before
+  isDeleted   Boolean     @default(false)
+  status      String      @default("ACTIVE")
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  
+  // Relations
+  categoryId  String?
+  categoryRel Category?   @relation(fields: [categoryId], references: [id])
+  reviews     Review[]
+  wishlistItems WishlistItem[]
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String
+  slug      String     @unique
+  image     String?
+  order     Int        @default(0)
+  parentId  String?
+  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children  Category[] @relation("CategoryHierarchy")
+  products  Product[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  comment   String?
+  status    String   @default("PENDING")
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model StoreSettings {
+  id           String   @id @default("default")
+  siteName     String   @default("UzMarket")
+  phone        String?
+  email        String?
+  address      String?
+  socialLinks  String?
+  updatedAt    DateTime @updatedAt
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  adminId   String
+  action    String
+  details   String?
+  createdAt DateTime @default(now())
+  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+}
+
+model CartItem {
+  id        String  @id @default(cuid())
+  cartId    String
+  productId String
+  quantity  Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId])
+}
+
+model Wishlist {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+}
+
+model WishlistItem {
+  id         String   @id @default(cuid())
+  wishlistId String
+  productId  String
+  createdAt  DateTime @default(now())
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([wishlistId, productId])
+}
+
+model Banner {
+  id          String   @id @default(cuid())
+  type        String   @default("MAIN") // MAIN, SIDE
+  title       String?
+  description String?
+  imageUrl    String? 
+  link        String?
+  price       Float?
+  oldPrice    Float?
+  discount    String?
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Message {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  isRead    Boolean  @default(false)
+  senderId  String
+  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@index([senderId])
+  @@index([receiverId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String? // Null implies broadcast to all
+  title     String
+  message   String
+  type      String   @default("SYSTEM") // SYSTEM, ORDER, PROMO
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Store {
+  id           String   @id @default(cuid())
+  name         String
+  address      String
+  phone        String?
+  workingHours String?
+  lat          Float?
+  lng          Float?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

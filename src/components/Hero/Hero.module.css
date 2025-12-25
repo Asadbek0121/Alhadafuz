@@ -1,0 +1,165 @@
+.heroWrapper {
+    margin-bottom: 40px;
+    background-color: var(--bg-body);
+    margin-top: 32px;
+}
+
+.linksBar {
+    background: white;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-light);
+    margin-bottom: 24px;
+}
+
+.linksList {
+    display: flex;
+    gap: 32px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+}
+
+.linksList::-webkit-scrollbar {
+    display: none;
+}
+
+.linkItem {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.linkItem:hover {
+    color: var(--primary);
+}
+
+.heroContent {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 24px;
+    height: 380px;
+}
+
+.slider {
+    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    border-radius: var(--radius-lg);
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+}
+
+.sliderContent {
+    z-index: 2;
+    max-width: 50%;
+}
+
+.sliderTitle {
+    font-size: 42px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    line-height: 1.1;
+}
+
+.sliderDesc {
+    font-size: 16px;
+    opacity: 0.8;
+    margin-bottom: 24px;
+}
+
+.sliderBtn {
+    background-color: var(--secondary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+
+
+.promoCard {
+    background: white;
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+}
+
+.promoBadge {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    background-color: var(--secondary);
+    color: white;
+    padding: 4px 12px;
+    border-radius: var(--radius-sm);
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.promoImage {
+    margin: 20px auto;
+    max-width: 80%;
+    height: auto;
+    object-fit: contain;
+}
+
+.promoTitle {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.promoPrice {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: auto;
+}
+
+.currentPrice {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--secondary);
+}
+
+@media (max-width: 992px) {
+    .heroContent {
+        grid-template-columns: 1fr;
+        height: auto;
+        gap: 16px;
+    }
+
+    .slider {
+        height: 300px;
+    }
+
+    .sliderContent {
+        max-width: 100%;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .sliderTitle {
+        font-size: 32px;
+    }
+
+    .linksBar {
+        display: none;
+    }
+}

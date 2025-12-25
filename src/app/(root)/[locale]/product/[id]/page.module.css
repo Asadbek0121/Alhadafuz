@@ -1,0 +1,420 @@
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 15px;
+}
+
+.productGrid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+@media (min-width: 992px) {
+    .productGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+/* Gallery */
+.gallerySection {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 15px;
+}
+
+@media (min-width: 768px) {
+    .gallerySection {
+        flex-direction: row;
+    }
+}
+
+.thumbnails {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+}
+
+@media (min-width: 768px) {
+    .thumbnails {
+        flex-direction: column;
+        width: 80px;
+        overflow-y: auto;
+        max-height: 500px;
+    }
+}
+
+.thumbItem {
+    width: 70px;
+    height: 70px;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    cursor: pointer;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.thumbItem img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.thumbActive {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+.mainImageArea {
+    flex: 1;
+    background: #f8f9fa;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 400px;
+    /* Force height */
+    position: relative;
+    overflow: hidden;
+}
+
+.mainImg {
+    max-width: 100%;
+    max-height: 500px;
+    object-fit: contain;
+    transition: transform 0.3s ease;
+}
+
+.mainImg:hover {
+    transform: scale(1.05);
+}
+
+.discountBadge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #ef4444;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+/* Info */
+.infoSection {
+    display: flex;
+    flex-direction: column;
+}
+
+.headerRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.ratingRow {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.shareBtn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.shareBtn:hover {
+    color: #000;
+}
+
+.productTitle {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+    line-height: 1.3;
+    color: #1a1a1a;
+}
+
+.priceSection {
+    margin-bottom: 25px;
+}
+
+.oldPriceSect {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
+.oldPriceVal {
+    text-decoration: line-through;
+    color: #888;
+    font-size: 16px;
+}
+
+.saveBadge {
+    background: #e0f2fe;
+    color: #0284c7;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.mainPrice {
+    font-size: 32px;
+    font-weight: bold;
+    color: #1a1a1a;
+}
+
+/* Selections */
+.selectionRow {
+    margin-bottom: 20px;
+}
+
+.selectLabel {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 8px;
+}
+
+.toggleGroup {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.toggleBtn {
+    padding: 8px 16px;
+    border: 1px solid #ddd;
+    background: #fff;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.toggleBtn:hover {
+    border-color: #999;
+}
+
+.toggleBtnActive {
+    border-color: #0066cc;
+    background: #eff6ff;
+    color: #0066cc;
+    font-weight: 500;
+}
+
+/* Meta */
+.metaInfo {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.metaRow {
+    font-size: 14px;
+    display: flex;
+    gap: 5px;
+}
+
+.metaLabel {
+    color: #666;
+}
+
+.stockStatus {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #16a34a;
+    font-weight: 500;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.greenDot {
+    width: 8px;
+    height: 8px;
+    background: #16a34a;
+    border-radius: 50%;
+}
+
+/* Desktop Actions */
+.desktopActions {
+    display: none;
+    gap: 15px;
+    margin-top: 30px;
+}
+
+@media (min-width: 992px) {
+    .desktopActions {
+        display: flex;
+    }
+}
+
+.btnOutline {
+    flex: 1;
+    padding: 14px;
+    border: 2px solid #0066cc;
+    color: #0066cc;
+    background: #fff;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: background 0.2s;
+}
+
+.btnOutline:hover {
+    background: #f0f9ff;
+}
+
+.btnPrimary {
+    flex: 1;
+    padding: 14px;
+    background: #0066cc;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.btnPrimary:hover {
+    background: #00baa8;
+    /* Use UzMarket brand color or keep blue? User said Apple/Uzum. Uzum uses purple/pink. Apple uses Blue. */
+    /* Let's stick to theme blue */
+    background: #005bb5;
+}
+
+/* Tabs */
+.tabsNav {
+    display: flex;
+    gap: 30px;
+    border-bottom: 1px solid #eee;
+    margin-top: 50px;
+    margin-bottom: 30px;
+}
+
+.tabLink {
+    padding-bottom: 15px;
+    text-decoration: none;
+    color: #666;
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all 0.2s;
+}
+
+.tabLink:hover {
+    color: #000;
+}
+
+/* Section Blocks */
+.sectionBlock {
+    margin-bottom: 50px;
+    scroll-margin-top: 100px;
+    /* Offset for sticky header */
+}
+
+.sectionBlock h2 {
+    margin-bottom: 20px;
+    font-size: 20px;
+}
+
+.specsGrid {
+    display: grid;
+    gap: 0;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.specRowDiv {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding: 12px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.specRowDiv:last-child {
+    border-bottom: none;
+}
+
+.specRowDiv:nth-child(odd) {
+    background: #f9f9f9;
+}
+
+.specKey {
+    color: #666;
+}
+
+.specVal {
+    font-weight: 500;
+}
+
+/* Sticky Bottom Bar */
+/* Sticky Bottom Bar */
+.stickyBar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background: #fff;
+    padding: 12px 16px;
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.05);
+    z-index: 1001;
+    border-top: 1px solid #eee;
+}
+
+@media (min-width: 992px) {
+    .stickyBar {
+        display: none;
+    }
+}
+
+.stickyBtnOutline {
+    flex: 1;
+    height: 48px;
+    border: 1px solid #0066cc;
+    background: #f0f9ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0066cc;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.stickyBtnPrimary {
+    flex: 1;
+    height: 48px;
+    background: #0066cc;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0;
+    max-width: none;
+}

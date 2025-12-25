@@ -1,0 +1,246 @@
+/* ... previous css ... */
+.footer {
+    background-color: #ffffff;
+    border-top: 1px solid #f1f2f4;
+    padding: 60px 0 40px;
+    font-family: 'Inter', sans-serif;
+}
+
+.mainFooter {
+    margin-bottom: 40px;
+}
+
+.columns {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 30px;
+}
+
+.col h3 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 20px;
+}
+
+.col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.col ul li {
+    margin-bottom: 12px;
+}
+
+.col ul li a {
+    text-decoration: none;
+    color: #4b5563;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.col ul li a:hover {
+    color: #3b82f6;
+}
+
+.contactItem {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    color: #4b5563;
+    font-size: 14px;
+}
+
+.socials {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.socialIcon {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f3f4f6;
+    border-radius: 8px;
+    color: #6b7280;
+    transition: all 0.2s;
+}
+
+.socialIcon:hover {
+    background: #e5e7eb;
+    color: #000;
+}
+
+.appLinks {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.storeLink img {
+    height: 36px;
+}
+
+.copy {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 15px;
+}
+
+/* Payment Section specific to User Request */
+.paymentSection {
+    margin-top: 40px;
+    border-top: 1px solid #f3f4f6;
+    padding-top: 30px;
+}
+
+.paymentTitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: #000;
+    margin-bottom: 20px;
+}
+
+.paymentGrid {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.paymentCard {
+    background-color: #f6f6f8;
+    border-radius: 12px;
+    height: 64px;
+    min-width: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
+    gap: 10px;
+    flex: 1;
+}
+
+/* Specific styling for internal logos to match image */
+.paymentCard img {
+    height: 24px;
+    width: auto;
+    object-fit: contain;
+}
+
+/* For composite cards (Uzcard + Humo) */
+.dualCard {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.dualCard .separator {
+    width: 1px;
+    height: 20px;
+    background: #d1d5db;
+}
+
+/* Custom SVG styling */
+.customLogo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-weight: 700;
+    font-size: 18px;
+    color: #000;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .columns {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .columns {
+        grid-template-columns: 1fr 1fr;
+        gap: 24px 16px;
+    }
+
+    /* Info and Customers stay side-by-side (col 1 & 2) */
+
+    /* Contact (col 3) and Apps (col 4) take full width */
+    .col:nth-child(3),
+    .col:nth-child(4) {
+        grid-column: span 2;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    /* Style improvements for centered contact info */
+    .contactItem {
+        justify-content: center;
+        width: 100%;
+        background: #f9f9f9;
+        padding: 10px;
+        border-radius: 8px;
+    }
+
+    .socials {
+        justify-content: center;
+    }
+
+    .appLinks {
+        justify-content: center;
+    }
+
+    .paymentSection {
+        text-align: center;
+        margin-top: 20px;
+        padding-top: 20px;
+    }
+
+    .paymentGrid {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        flex-wrap: nowrap;
+    }
+
+    .paymentCard {
+        height: 44px;
+        padding: 0 10px;
+        min-width: 0;
+        flex: 1;
+        width: auto;
+    }
+
+    .paymentCard img {
+        height: 18px;
+    }
+
+    .dualCard img {
+        height: 16px !important;
+    }
+
+    .customLogo {
+        font-size: 14px;
+        gap: 4px;
+    }
+
+    .customLogo svg {
+        width: 18px;
+        height: 18px;
+    }
+
+    .mobileHidden {
+        display: none !important;
+    }
+}
+
+@media (max-width: 480px) {
+    /* No additional overrides needed */
+}

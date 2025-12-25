@@ -1,0 +1,210 @@
+.card {
+    background: white;
+    border: none;
+    border-radius: 16px;
+    padding: 10px;
+    position: relative;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: translateY(-4px);
+}
+
+.actionsHover {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    opacity: 0;
+    transform: translateX(10px);
+    transition: all 0.2s;
+    z-index: 5;
+}
+
+.card:hover .actionsHover {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.actionBtn {
+    width: 32px;
+    height: 32px;
+    background: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-sm);
+    color: var(--text-muted);
+    transition: 0.2s;
+}
+
+.actionBtn:hover {
+    color: var(--primary);
+    background: white;
+}
+
+.badges {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    z-index: 2;
+}
+
+.badge {
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    color: white;
+}
+
+.badgeSale {
+    background: var(--secondary);
+}
+
+.badgeGreen {
+    background-color: #00c853;
+}
+
+.imageWrapper {
+    position: relative;
+    width: 100%;
+    padding-bottom: 100%;
+    /* 1:1 Aspect Ratio */
+    margin-bottom: 16px;
+    background: #fff;
+}
+
+.image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 10px;
+}
+
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 8px;
+    color: var(--text-main);
+    /* Truncate to 2 lines */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    height: 40px;
+}
+
+.rating {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.star {
+    color: #ffc107;
+    width: 14px;
+    height: 14px;
+}
+
+.reviews {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-left: 6px;
+}
+
+.priceBlock {
+    margin-top: auto;
+}
+
+.oldPrice {
+    font-size: 13px;
+    text-decoration: line-through;
+    color: var(--text-muted);
+    height: 18px;
+}
+
+.price {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+.installment {
+    font-size: 11px;
+    background-color: var(--accent-yellow);
+    padding: 4px 8px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+    color: #333;
+    margin-bottom: 16px;
+}
+
+.bottomActions {
+    display: flex;
+    gap: 8px;
+}
+
+.btnBuy {
+    flex: 1;
+    background-color: var(--primary);
+    color: white;
+    border-radius: 12px;
+    height: 40px;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    transition: background 0.2s;
+    border: none;
+}
+
+.btnBuy:hover {
+    background-color: var(--primary-hover);
+}
+
+.btnCart {
+    width: 40px;
+    height: 40px;
+    border: 1px solid var(--primary);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--primary);
+    transition: all 0.2s;
+    background: white;
+}
+
+.btnCart:hover {
+    background-color: var(--primary);
+    color: white;
+}

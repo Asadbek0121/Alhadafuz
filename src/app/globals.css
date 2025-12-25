@@ -1,42 +1,225 @@
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-foreground: #ffffff;
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: #ffffff;
+  --color-text-main: var(--text-main);
+  --color-text-muted: var(--text-muted);
+
+  --color-background: var(--bg-body);
+  --color-foreground: var(--text-main);
+
+  --color-card: var(--bg-white);
+  --color-card-foreground: var(--text-main);
+
+  --color-popover: var(--bg-white);
+  --color-popover-foreground: var(--text-main);
+
+  --color-muted: #f5f5f7;
+  --color-muted-foreground: var(--text-muted);
+
+  --color-accent: #f5f5f7;
+  --color-accent-foreground: var(--text-main);
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+
+  --color-border: var(--border-input);
+  --color-input: var(--border-input);
+  --color-ring: var(--primary);
+
+  --radius-lg: var(--radius-lg);
+  --radius-md: var(--radius-md);
+  --radius-sm: var(--radius-sm);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --primary: #4361ee;
+  --primary-hover: #3a56d4;
+  --secondary: #000000;
+  --bg-body: #f2f4f7;
+  /* Apple-like off-white */
+  --bg-white: #ffffff;
+  --text-main: #1d1d1f;
+  /* Apple gray */
+  --text-muted: #86868b;
+  /* Apple muted gray */
+  --border-light: #d2d2d7;
+  --border-input: #d2d2d7;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.12);
+  --container: 1200px;
+}
+
+:root.dark {
+  --bg-body: #0a0a0a;
+  --bg-white: #171717;
+  /* Darker than gray-900 but lighter than black */
+  --text-main: #ededed;
+  --text-muted: #a3a3a3;
+  --border-light: #262626;
+  --border-input: #262626;
+
+  --primary: #5271ff;
+  /* Slightly lighter for dark mode visibility */
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.6);
+}
+
+/* Smooth Theme Transitions */
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video,
+input,
+textarea,
+select,
+button {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+@layer base {
+  * {
+    @apply m-0 p-0 box-border;
+  }
+
+  body {
+    @apply font-sans antialiased text-text-main;
+    background-color: var(--bg-body);
+    font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-semibold;
+    letter-spacing: -0.022em;
   }
 }
 
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
+.container {
+  @apply max-w-[var(--container)] mx-auto px-5 w-full;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Custom Scrollbar for Apple-feel */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+::-webkit-scrollbar-thumb {
+  background: #d2d2d7;
+  border-radius: 10px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+/* Compatibility for line-clamp */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 992px) {
+  body {
+    padding-bottom: 70px;
+    /* Space for BottomNav */
   }
 }
