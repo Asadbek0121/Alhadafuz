@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
     const session = await auth();
     // Re-verify admin role for security

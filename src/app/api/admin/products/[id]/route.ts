@@ -3,8 +3,10 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath, revalidateTag } from 'next/cache';
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params;
+export const dynamic = 'force-dynamic';
+
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params;
     try {
         const product = await (prisma as any).product.findUnique({
             where: { id },

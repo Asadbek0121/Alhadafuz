@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
     if (session?.user?.role !== 'ADMIN') return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
