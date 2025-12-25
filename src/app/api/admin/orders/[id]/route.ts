@@ -4,7 +4,9 @@ import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export const dynamic = 'force-dynamic';
+
+export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
     console.log('Admin Order Update Debug:', {
         userId: session?.user?.id,
@@ -17,7 +19,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         return NextResponse.json({ error: 'Unauthorized', debug: session?.user }, { status: 401 });
     }
 
-    const { id } = await params;
+    const { id } = await context.params;
 
     try {
         const body = await req.json();
