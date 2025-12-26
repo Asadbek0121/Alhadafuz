@@ -1,6 +1,11 @@
 
 import { prisma } from "@/lib/prisma";
 
+interface StoreSettings {
+    telegramBotToken?: string | null;
+    telegramAdminIds?: string | null;
+}
+
 export async function notifyAdmins(title: string, message: string, type: 'ORDER' | 'USER' | 'MESSAGE' | 'SYSTEM' = 'SYSTEM') {
     try {
         // 1. Find all admins
@@ -26,10 +31,10 @@ export async function notifyAdmins(title: string, message: string, type: 'ORDER'
 
         // 3. Send Telegram Notification
         try {
-            const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
-            if (settings && (settings as any).telegramBotToken && (settings as any).telegramAdminIds) {
-                const token = (settings as any).telegramBotToken;
-                const chatIds = ((settings as any).telegramAdminIds as string).split(',').map(id => id.trim());
+            const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } }) as StoreSettings | null;
+            if (settings && settings.telegramBotToken && settings.telegramAdminIds) {
+                const token = settings.telegramBotToken;
+                const chatIds = (settings.telegramAdminIds as string).split(',').map(id => id.trim());
 
                 // Format message
                 const tgMessage = `<b>${title}</b>\n\n${message}\n\n<i>Tur: ${type}</i>`;

@@ -3,6 +3,11 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
+interface StoreSettings {
+    telegramBotToken?: string | null;
+    telegramAdminIds?: string | null;
+}
+
 export async function POST(req: Request) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -14,7 +19,7 @@ export async function POST(req: Request) {
 
         // If target is WEB or BOTH, save to DB
         if (target === 'WEB' || target === 'BOTH' || !target) {
-            message = await (prisma as any).message.create({
+            message = await prisma.message.create({
                 data: {
                     content,
                     senderId: session.user.id,
@@ -31,15 +36,15 @@ export async function POST(req: Request) {
         }
 
         // Forward to Telegram if target is TELEGRAM or BOTH
-        if ((target === 'TELEGRAM' || target === 'BOTH') && (receiver as any)?.telegramId) {
-            const settings = await (prisma as any).storeSettings.findUnique({ where: { id: 'default' } });
+        if ((target === 'TELEGRAM' || target === 'BOTH') && receiver?.telegramId) {
+            const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } }) as StoreSettings | null;
             const token = settings?.telegramBotToken;
 
             if (token) {
                 // If it was ONLY for telegram, we still create a record in DB but marked as TELEGRAM source 
                 // to show it was a Telegram-specific reply in the admin panel
                 if (target === 'TELEGRAM') {
-                    message = await (prisma as any).message.create({
+                    message = await prisma.message.create({
                         data: {
                             content,
                             senderId: session.user.id,
@@ -53,7 +58,7 @@ export async function POST(req: Request) {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        chat_id: (receiver as any).telegramId,
+                        chat_id: receiver.telegramId,
                         text: `👨‍💻 Admin: ${content}`
                     })
                 }).catch(e => console.error("TG Forward Error", e));

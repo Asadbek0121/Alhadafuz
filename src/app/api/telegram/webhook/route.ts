@@ -4,10 +4,15 @@ import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 
+interface StoreSettings {
+    telegramBotToken?: string | null;
+    telegramAdminIds?: string | null;
+}
+
 // Use DB token instead of hardcoded
 async function getBotToken() {
-    const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
-    return (settings as any)?.telegramBotToken;
+    const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } }) as StoreSettings | null;
+    return settings?.telegramBotToken;
 }
 
 export async function GET(req: Request) {
@@ -26,8 +31,9 @@ export async function GET(req: Request) {
                 message: "To set webhook, add ?url=https://your-domain.com/api/telegram/webhook",
                 current_status: data
             });
-        } catch (e: any) {
-            return NextResponse.json({ error: e.message });
+        } catch (e) {
+            const message = e instanceof Error ? e.message : String(e);
+            return NextResponse.json({ error: message });
         }
     }
 
@@ -35,9 +41,24 @@ export async function GET(req: Request) {
         const res = await fetch(`https://api.telegram.org/bot${token}/setWebhook?url=${url}`);
         const data = await res.json();
         return NextResponse.json(data);
-    } catch (e: any) {
-        return NextResponse.json({ error: e.message });
+    } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        return NextResponse.json({ error: message });
     }
+}
+
+interface TelegramMessage {
+    chat: { id: number };
+    text?: string;
+    contact?: {
+        phone_number: string;
+        first_name?: string;
+        last_name?: string;
+    };
+}
+
+interface TelegramUpdate {
+    message?: TelegramMessage;
 }
 
 export async function POST(req: Request) {
@@ -45,7 +66,7 @@ export async function POST(req: Request) {
         const token = await getBotToken();
         if (!token) return NextResponse.json({ ok: true });
 
-        const update = await req.json();
+        const update = await req.json() as TelegramUpdate;
         const message = update.message;
 
         if (!message) return NextResponse.json({ ok: true });
@@ -73,7 +94,7 @@ export async function POST(req: Request) {
                 });
 
                 if (potentialUser) {
-                    await (prisma.user as any).update({
+                    await prisma.user.update({
                         where: { id: potentialUser.id },
                         data: { telegramId: chatId }
                     });
@@ -89,8 +110,9 @@ export async function POST(req: Request) {
                     });
                     await sendTelegram(token, chatId, `✅ Yangi akkaunt yaratildi va ulandi! Ismingiz: ${potentialUser.name}.`);
                 }
-            } catch (dbError: any) {
-                await sendTelegram(token, chatId, `⚠️ Xatolik: ${dbError.message}`);
+            } catch (dbError) {
+                const msg = dbError instanceof Error ? dbError.message : String(dbError);
+                await sendTelegram(token, chatId, `⚠️ Xatolik: ${msg}`);
             }
             return NextResponse.json({ ok: true });
         }
@@ -106,7 +128,7 @@ export async function POST(req: Request) {
         }
 
         // --- FIND USER BY TELEGRAM ID ---
-        const user = await (prisma.user as any).findFirst({ where: { telegramId: chatId } });
+        const user = await prisma.user.findFirst({ where: { telegramId: chatId } });
 
         if (!user) {
             await sendTelegram(token, chatId, "⚠️ Iltimos, oldin '/start' buyrug'ini bosing va raqamingizni yuboring.");
@@ -131,7 +153,7 @@ export async function POST(req: Request) {
             }
 
             try {
-                await (prisma as any).message.create({
+                await prisma.message.create({
                     data: {
                         content: text,
                         senderId: user.id,
@@ -145,7 +167,7 @@ export async function POST(req: Request) {
                     data: { updatedAt: new Date() }
                 });
 
-                await (prisma as any).notification.create({
+                await prisma.notification.create({
                     data: {
                         userId: admin.id,
                         title: "Yangi Xabar (Telegram)",
@@ -155,13 +177,14 @@ export async function POST(req: Request) {
                     }
                 });
 
-            } catch (saveError: any) {
-                await sendTelegram(token, chatId, `❌ Xatolik tafsiloti: ${saveError.message || JSON.stringify(saveError)}`);
+            } catch (saveError) {
+                const msg = saveError instanceof Error ? saveError.message : JSON.stringify(saveError);
+                await sendTelegram(token, chatId, `❌ Xatolik tafsiloti: ${msg}`);
             }
         }
 
         return NextResponse.json({ ok: true });
-    } catch (e: any) {
+    } catch (e) {
         console.error("CRITICAL ERROR:", e);
         return NextResponse.json({ ok: true });
     }
