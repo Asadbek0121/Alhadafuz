@@ -3,24 +3,26 @@
 import { useState } from 'react';
 import styles from './AuthModal.module.css';
 import { useUserStore } from '@/store/useUserStore';
-import { X, Mail, Lock, User, Loader2 } from 'lucide-react';
+import { X, Mail, Lock, User, Loader2, ArrowRight, Eye, EyeOff, Phone } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 
 export default function AuthModal() {
-    const { isModalOpen, closeAuthModal, setUser } = useUserStore();
+    const { isModalOpen, closeAuthModal } = useUserStore();
     const tAuth = useTranslations('Auth');
     const tHeader = useTranslations('Header');
     const router = useRouter();
 
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [isLoading, setIsLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
 
     // Form states
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
+    const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
 
     if (!isModalOpen) return null;
@@ -37,16 +39,15 @@ export default function AuthModal() {
             });
 
             if (result?.error) {
-                toast.error(tAuth('login_error'));
+                toast.error("Email yoki parol noto'g'ri");
             } else {
-                toast.success(tAuth('welcome'));
-                // Optionally verify session here or just trust functionality
+                toast.success("Xush kelibsiz!");
                 closeAuthModal();
                 router.refresh();
                 resetForm();
             }
         } catch (error) {
-            toast.error("Tizim xatosi"); // System error (maybe add to JSON later)
+            toast.error("Tizim xatosi");
         } finally {
             setIsLoading(false);
         }
@@ -60,7 +61,7 @@ export default function AuthModal() {
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({ name, email, phone, password }),
             });
 
             const data = await res.json();
@@ -78,7 +79,7 @@ export default function AuthModal() {
             });
 
             if (result?.ok) {
-                toast.success("Muvaffaqiyatli ro'yxatdan o'tildi");
+                toast.success(`Xush kelibsiz, ${name}!`);
                 closeAuthModal();
                 router.refresh();
                 resetForm();
@@ -90,11 +91,17 @@ export default function AuthModal() {
         }
     };
 
+    const handleSocialLogin = (provider: string) => {
+        toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
+    };
+
     const resetForm = () => {
         setEmail('');
         setPassword('');
         setName('');
+        setPhone('');
         setMode('login');
+        setShowPassword(false);
     };
 
     return (
@@ -105,88 +112,157 @@ export default function AuthModal() {
                     <X size={24} />
                 </button>
 
-                <div className={styles.content}>
-                    <div className={styles.header}>
-                        <h3>{mode === 'login' ? tHeader('kirish') : tAuth('register')}</h3>
-                        <p>{tAuth('subtitle')}</p>
-                    </div>
+                <div className={styles.header}>
+                    <h3>{mode === 'login' ? 'Tizimga kirish' : 'Ro\'yxatdan o\'tish'}</h3>
+                    <p>{mode === 'login' ? 'Email va parolingizni kiriting' : 'Yangi hisob yaratish uchun ma\'lumotlarni kiriting'}</p>
+                </div>
 
-                    <div className={styles.tabs}>
-                        <button
-                            className={`${styles.tab} ${mode === 'login' ? styles.activeTab : ''}`}
-                            onClick={() => setMode('login')}
-                        >
-                            {tHeader('kirish')}
-                        </button>
-                        <button
-                            className={`${styles.tab} ${mode === 'register' ? styles.activeTab : ''}`}
-                            onClick={() => setMode('register')}
-                        >
-                            {tAuth('register')}
-                        </button>
-                    </div>
+                <div className={styles.tabs}>
+                    <button
+                        className={`${styles.tab} ${mode === 'login' ? styles.activeTab : ''}`}
+                        onClick={() => setMode('login')}
+                    >
+                        Kirish
+                    </button>
+                    <button
+                        className={`${styles.tab} ${mode === 'register' ? styles.activeTab : ''}`}
+                        onClick={() => setMode('register')}
+                    >
+                        Ro'yxatdan o'tish
+                    </button>
+                </div>
 
-                    <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
-                        {mode === 'register' && (
-                            <div className={styles.inputGroup}>
-                                <label>{tAuth('name')}</label>
-                                <div className={styles.inputWrapper}>
-                                    <User size={20} className={styles.inputIcon} />
-                                    <input
-                                        type="text"
-                                        placeholder="Ism Familiya"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        required
-                                        className={styles.input}
-                                    />
-                                </div>
-                            </div>
-                        )}
-
+                <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
+                    {mode === 'register' && (
                         <div className={styles.inputGroup}>
-                            <label>{tAuth('email')}</label> {/* Use translated Label if possible, but 'Email' is international mostly. uz.json has 'email': 'Elektron pochta' under Profile. I can use Profile.email? Or just Email. */}
+                            <label>Ismingiz</label>
                             <div className={styles.inputWrapper}>
-                                <Mail size={20} className={styles.inputIcon} />
+                                <User size={20} className={styles.inputIcon} />
                                 <input
-                                    type="email"
-                                    placeholder="email@example.com"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    type="text"
+                                    placeholder="Ism Familiya"
+                                    value={name}
+                                    onChange={(e) => setName(e.target.value)}
                                     required
                                     className={styles.input}
                                 />
                             </div>
                         </div>
+                    )}
 
+                    <div className={styles.inputGroup}>
+                        <label>Elektron pochta</label>
+                        <div className={styles.inputWrapper}>
+                            <Mail size={20} className={styles.inputIcon} />
+                            <input
+                                type="email"
+                                placeholder="nom@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                                className={styles.input}
+                            />
+                        </div>
+                    </div>
+
+                    {mode === 'register' && (
                         <div className={styles.inputGroup}>
-                            <label>{tAuth('password')}</label>
+                            <label>Telefon raqamingiz</label>
                             <div className={styles.inputWrapper}>
-                                <Lock size={20} className={styles.inputIcon} />
+                                <Phone size={20} className={styles.inputIcon} />
                                 <input
-                                    type="password"
-                                    placeholder="********"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
+                                    type="tel"
+                                    placeholder="+998 90 123 45 67"
+                                    value={phone}
+                                    onChange={(e) => setPhone(e.target.value)}
                                     required
-                                    minLength={6}
                                     className={styles.input}
+                                    minLength={9}
                                 />
                             </div>
                         </div>
+                    )}
 
-                        <button
-                            type="submit"
-                            className={styles.submitBtn}
-                            disabled={isLoading}
-                        >
-                            {isLoading ? (
-                                <Loader2 className="animate-spin" />
-                            ) : (
-                                mode === 'login' ? tHeader('kirish') : tAuth('register')
+                    <div className={styles.inputGroup}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <label style={{ marginBottom: 0 }}>Parol</label>
+                            {mode === 'login' && (
+                                <a href="/auth/forgot-password" className={styles.forgotLink}>Parolni unutdingizmi?</a>
                             )}
-                        </button>
-                    </form>
+                        </div>
+                        <div className={styles.inputWrapper}>
+                            <Lock size={20} className={styles.inputIcon} />
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                placeholder="********"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                                required
+                                minLength={6}
+                                className={styles.input}
+                                style={{ paddingRight: '40px' }}
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className={styles.eyeBtn}
+                                tabIndex={-1}
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                    </div>
+
+                    <button
+                        type="submit"
+                        className={styles.submitBtn}
+                        disabled={isLoading}
+                    >
+                        {isLoading ? (
+                            <Loader2 className="animate-spin" />
+                        ) : (
+                            <>
+                                {mode === 'login' ? 'Kirish' : "Ro'yxatdan o'tish"}
+                                <ArrowRight size={18} />
+                            </>
+                        )}
+                    </button>
+                </form>
+
+                <div className={styles.divider}>
+                    <span>Yoki davom eting</span>
+                </div>
+
+                <div className={styles.socialButtons}>
+                    <button className={styles.socialBtn} onClick={() => handleSocialLogin("Google")}>
+                        <svg className="h-5 w-5" viewBox="0 0 24 24">
+                            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                        </svg>
+                        Google
+                    </button>
+                    <button className={styles.socialBtn} onClick={() => handleSocialLogin("Telegram")}>
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M21.1 4.3l-2.4 12.6c-.3 1.3-1.1 1.7-2.1 1.2l-5.6-4.2-2.7 2.6c-.3.3-.5.5-1 .5l.4-5.6 10.2-9.2c.4-.4-.1-.6-.7-.2l-12.6 7.9-5.4-1.7c-1.2-.4-1.2-1.1.2-1.7l21-8.1c1-.4 1.9 0 1.6.9z" fill="#0088cc" stroke="none" />
+                        </svg>
+                        Telegram
+                    </button>
+                </div>
+
+                <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#666' }}>
+                    {mode === 'login' ? (
+                        <>
+                            Hisobingiz yo'qmi?{' '}
+                            <button onClick={() => setMode('register')} className={styles.linkBtn}>Ro'yxatdan o'tish</button>
+                        </>
+                    ) : (
+                        <>
+                            Allaqachon hisobingiz bormi?{' '}
+                            <button onClick={() => setMode('login')} className={styles.linkBtn}>Tizimga kirish</button>
+                        </>
+                    )}
                 </div>
             </div>
         </>
