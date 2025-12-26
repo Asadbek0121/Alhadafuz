@@ -11,20 +11,42 @@ import NextLink from "next/link";
 import { useTranslations } from "next-intl";
 import { useSession, signOut } from "next-auth/react";
 
+import { useEffect, useState } from "react";
+
 export default function ProfileOverviewPage() {
     const { user } = useUserStore();
     const tProfile = useTranslations('Profile');
     const { data: session } = useSession();
+    const [statsData, setStatsData] = useState({
+        ordersCount: 0,
+        wishlistCount: 0,
+        balance: 0,
+        ordersByStatus: {
+            pending: 0,
+            processing: 0,
+            delivered: 0,
+            cancelled: 0
+        }
+    });
+
+    useEffect(() => {
+        if (session?.user) {
+            fetch('/api/user/stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.error) setStatsData(data);
+                })
+                .catch(err => console.error(err));
+        }
+    }, [session]);
 
     // Check for admin role
     const isAdmin = (user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'ADMIN';
 
-    // In a real app, these would come from an API
-    // For now, we utilize empty states or simple 0s to avoid showing "fake" data
     const stats = [
-        { label: tProfile('active_orders'), value: "0", icon: Package, color: "text-blue-600", bg: "bg-blue-50", href: "/profile/orders" },
-        { label: tProfile('my_bonuses'), value: "0", icon: Wallet, color: "text-green-600", bg: "bg-green-50", href: "/profile/balance" },
-        { label: tProfile('wishlist'), value: "0", icon: Heart, color: "text-pink-600", bg: "bg-pink-50", href: "/favorites" },
+        { label: tProfile('active_orders'), value: statsData.ordersCount.toString(), icon: Package, color: "text-blue-600", bg: "bg-blue-50", href: "/profile/orders" },
+        { label: tProfile('my_bonuses'), value: statsData.balance.toLocaleString(), icon: Wallet, color: "text-green-600", bg: "bg-green-50", href: "/profile/balance" },
+        { label: tProfile('wishlist'), value: statsData.wishlistCount.toString(), icon: Heart, color: "text-pink-600", bg: "bg-pink-50", href: "/favorites" },
     ];
 
     const mobileMenu = [
@@ -67,7 +89,7 @@ export default function ProfileOverviewPage() {
                             <Package size={20} />
                         </div>
                         <div className="z-10">
-                            <p className="text-2xl font-bold text-gray-900">0</p>
+                            <p className="text-2xl font-bold text-gray-900">{statsData.ordersCount}</p>
                             <p className="text-xs font-medium text-gray-500">{tProfile('my_orders')}</p>
                         </div>
                     </Link>
@@ -77,7 +99,7 @@ export default function ProfileOverviewPage() {
                             <Heart size={20} />
                         </div>
                         <div className="z-10">
-                            <p className="text-2xl font-bold text-gray-900">0</p>
+                            <p className="text-2xl font-bold text-gray-900">{statsData.wishlistCount}</p>
                             <p className="text-xs font-medium text-gray-500">{tProfile('wishlist')}</p>
                         </div>
                     </Link>
@@ -181,10 +203,10 @@ export default function ProfileOverviewPage() {
 
                         <div className="grid grid-cols-4 gap-4 relative z-10">
                             {[
-                                { label: tProfile('pending'), count: 0, icon: Clock, color: "text-orange-500", bg: "bg-orange-50" },
-                                { label: tProfile('processing'), count: 0, icon: Package, color: "text-blue-500", bg: "bg-blue-50" },
-                                { label: tProfile('delivered'), count: 0, icon: CheckCircle2, color: "text-green-500", bg: "bg-green-50" },
-                                { label: tProfile('cancelled'), count: 0, icon: LogOut, color: "text-red-500", bg: "bg-red-50" }
+                                { label: tProfile('pending'), count: statsData.ordersByStatus.pending, icon: Clock, color: "text-orange-500", bg: "bg-orange-50" },
+                                { label: tProfile('processing'), count: statsData.ordersByStatus.processing, icon: Package, color: "text-blue-500", bg: "bg-blue-50" },
+                                { label: tProfile('delivered'), count: statsData.ordersByStatus.delivered, icon: CheckCircle2, color: "text-green-500", bg: "bg-green-50" },
+                                { label: tProfile('cancelled'), count: statsData.ordersByStatus.cancelled, icon: LogOut, color: "text-red-500", bg: "bg-red-50" }
                             ].map((item, idx) => (
                                 <div key={idx} className="bg-gray-50 hover:bg-gray-100 transition-colors rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 cursor-pointer border border-transparent hover:border-gray-200">
                                     <div className={`w-10 h-10 rounded-full ${item.bg} ${item.color} flex items-center justify-center mb-1`}>

@@ -9,8 +9,20 @@ import { toast } from 'sonner';
 import { useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 
+import { useSession } from 'next-auth/react';
+import { useEffect } from 'react';
+import TelegramLoginButton from './TelegramLoginButton';
+
 export default function AuthModal() {
     const { isModalOpen, closeAuthModal } = useUserStore();
+    const { data: session } = useSession();
+
+    useEffect(() => {
+        if (session?.user && isModalOpen) {
+            closeAuthModal();
+        }
+    }, [session, isModalOpen, closeAuthModal]);
+
     const tAuth = useTranslations('Auth');
     const tHeader = useTranslations('Header');
     const router = useRouter();
@@ -32,6 +44,9 @@ export default function AuthModal() {
         setIsLoading(true);
 
         try {
+            // Signal to merge cart on next session sync
+            localStorage.setItem('mergeCartOnLogin', 'true');
+
             const result = await signIn('credentials', {
                 email,
                 password,
@@ -40,14 +55,17 @@ export default function AuthModal() {
 
             if (result?.error) {
                 toast.error("Email yoki parol noto'g'ri");
+                // Remove flag if failed
+                localStorage.removeItem('mergeCartOnLogin');
             } else {
                 toast.success("Xush kelibsiz!");
                 closeAuthModal();
-                router.refresh();
-                resetForm();
+                // Force reload to ensure session is active in all components
+                window.location.reload();
             }
         } catch (error) {
             toast.error("Tizim xatosi");
+            localStorage.removeItem('mergeCartOnLogin');
         } finally {
             setIsLoading(false);
         }
@@ -58,6 +76,9 @@ export default function AuthModal() {
         setIsLoading(true);
 
         try {
+            // Signal to merge cart
+            localStorage.setItem('mergeCartOnLogin', 'true');
+
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -68,6 +89,7 @@ export default function AuthModal() {
 
             if (!res.ok) {
                 toast.error(data.message || "Ro'yxatdan o'tishda xatolik");
+                localStorage.removeItem('mergeCartOnLogin');
                 return;
             }
 
@@ -81,18 +103,31 @@ export default function AuthModal() {
             if (result?.ok) {
                 toast.success(`Xush kelibsiz, ${name}!`);
                 closeAuthModal();
-                router.refresh();
-                resetForm();
+                window.location.reload();
             }
         } catch (error) {
             toast.error("Server xatosi");
+            localStorage.removeItem('mergeCartOnLogin');
         } finally {
             setIsLoading(false);
         }
     };
 
-    const handleSocialLogin = (provider: string) => {
-        toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
+    const handleSocialLogin = async (provider: string) => {
+        if (provider === 'Google') {
+            setIsLoading(true);
+            try {
+                // Signal to merge cart
+                localStorage.setItem('mergeCartOnLogin', 'true');
+                await signIn('google', { callbackUrl: window.location.href });
+            } catch (error) {
+                toast.error("Google orqali kirishda xatolik");
+                localStorage.removeItem('mergeCartOnLogin');
+                setIsLoading(false);
+            }
+        } else {
+            toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
+        }
     };
 
     const resetForm = () => {
@@ -112,32 +147,15 @@ export default function AuthModal() {
                     <X size={24} />
                 </button>
 
-                <div className={styles.header}>
-                    <h3>{mode === 'login' ? 'Tizimga kirish' : 'Ro\'yxatdan o\'tish'}</h3>
-                    <p>{mode === 'login' ? 'Email va parolingizni kiriting' : 'Yangi hisob yaratish uchun ma\'lumotlarni kiriting'}</p>
+                <div className={styles.headerRow}>
+                    <h3>{mode === 'login' ? 'Tizimga kirish' : "Ro'yxatdan o'tish"}</h3>
+                    <a href="/help" className={styles.helpLink}>Yordam kerakmi?</a>
                 </div>
 
-                <div className={styles.tabs}>
-                    <button
-                        className={`${styles.tab} ${mode === 'login' ? styles.activeTab : ''}`}
-                        onClick={() => setMode('login')}
-                    >
-                        Kirish
-                    </button>
-                    <button
-                        className={`${styles.tab} ${mode === 'register' ? styles.activeTab : ''}`}
-                        onClick={() => setMode('register')}
-                    >
-                        Ro'yxatdan o'tish
-                    </button>
-                </div>
-
-                <form onSubmit={mode === 'login' ? handleLogin : handleRegister}>
+                <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className={styles.formContainer}>
                     {mode === 'register' && (
                         <div className={styles.inputGroup}>
-                            <label>Ismingiz</label>
                             <div className={styles.inputWrapper}>
-                                <User size={20} className={styles.inputIcon} />
                                 <input
                                     type="text"
                                     placeholder="Ism Familiya"
@@ -151,12 +169,10 @@ export default function AuthModal() {
                     )}
 
                     <div className={styles.inputGroup}>
-                        <label>Elektron pochta</label>
                         <div className={styles.inputWrapper}>
-                            <Mail size={20} className={styles.inputIcon} />
                             <input
                                 type="email"
-                                placeholder="nom@example.com"
+                                placeholder="Elektron pochta"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -167,12 +183,10 @@ export default function AuthModal() {
 
                     {mode === 'register' && (
                         <div className={styles.inputGroup}>
-                            <label>Telefon raqamingiz</label>
                             <div className={styles.inputWrapper}>
-                                <Phone size={20} className={styles.inputIcon} />
                                 <input
                                     type="tel"
-                                    placeholder="+998 90 123 45 67"
+                                    placeholder="Telefon raqam"
                                     value={phone}
                                     onChange={(e) => setPhone(e.target.value)}
                                     required
@@ -184,17 +198,10 @@ export default function AuthModal() {
                     )}
 
                     <div className={styles.inputGroup}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                            <label style={{ marginBottom: 0 }}>Parol</label>
-                            {mode === 'login' && (
-                                <a href="/auth/forgot-password" className={styles.forgotLink}>Parolni unutdingizmi?</a>
-                            )}
-                        </div>
                         <div className={styles.inputWrapper}>
-                            <Lock size={20} className={styles.inputIcon} />
                             <input
                                 type={showPassword ? "text" : "password"}
-                                placeholder="********"
+                                placeholder="Parol"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
@@ -213,6 +220,12 @@ export default function AuthModal() {
                         </div>
                     </div>
 
+                    {mode === 'login' && (
+                        <div className="flex justify-end mb-4">
+                            <a href="/auth/forgot-password" className={styles.forgotLink}>Parolni unutdingizmi?</a>
+                        </div>
+                    )}
+
                     <button
                         type="submit"
                         className={styles.submitBtn}
@@ -221,16 +234,13 @@ export default function AuthModal() {
                         {isLoading ? (
                             <Loader2 className="animate-spin" />
                         ) : (
-                            <>
-                                {mode === 'login' ? 'Kirish' : "Ro'yxatdan o'tish"}
-                                <ArrowRight size={18} />
-                            </>
+                            mode === 'login' ? 'KIRISH' : "RO'YXATDAN O'TISH"
                         )}
                     </button>
                 </form>
 
                 <div className={styles.divider}>
-                    <span>Yoki davom eting</span>
+                    <span>Ijtimoiy tarmoqlar orqali</span>
                 </div>
 
                 <div className={styles.socialButtons}>
@@ -243,15 +253,10 @@ export default function AuthModal() {
                         </svg>
                         Google
                     </button>
-                    <button className={styles.socialBtn} onClick={() => handleSocialLogin("Telegram")}>
-                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M21.1 4.3l-2.4 12.6c-.3 1.3-1.1 1.7-2.1 1.2l-5.6-4.2-2.7 2.6c-.3.3-.5.5-1 .5l.4-5.6 10.2-9.2c.4-.4-.1-.6-.7-.2l-12.6 7.9-5.4-1.7c-1.2-.4-1.2-1.1.2-1.7l21-8.1c1-.4 1.9 0 1.6.9z" fill="#0088cc" stroke="none" />
-                        </svg>
-                        Telegram
-                    </button>
+                    <TelegramLoginButton botName="HadafMarketBot" />
                 </div>
 
-                <div style={{ textAlign: 'center', marginTop: '24px', fontSize: '14px', color: '#666' }}>
+                <div className={styles.footer}>
                     {mode === 'login' ? (
                         <>
                             Hisobingiz yo'qmi?{' '}

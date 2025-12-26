@@ -20,7 +20,9 @@
         "saqlash": "Saqlash",
         "sotib_olish": "Sotib olish",
         "barchasini_korish": "Barchasini ko'rish",
-        "bildirishnomalarni_boshqarish": "Bildirishnomalarni boshqarish"
+        "bildirishnomalarni_boshqarish": "Bildirishnomalarni boshqarish",
+        "loading": "Yuklanmoqda...",
+        "not_found": "Topilmadi"
     },
     "Hero": {
         "slider_title": "Katta chegirmalar boshlandi!",

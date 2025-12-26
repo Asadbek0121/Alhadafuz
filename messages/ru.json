@@ -20,7 +20,9 @@
         "saqlash": "Сохранить",
         "sotib_olish": "Купить",
         "barchasini_korish": "Посмотреть все",
-        "bildirishnomalarni_boshqarish": "Управление уведомлениями"
+        "bildirishnomalarni_boshqarish": "Управление уведомлениями",
+        "loading": "Загрузка...",
+        "not_found": "Не найдено"
     },
     "Hero": {
         "slider_title": "Начались большие скидки!",

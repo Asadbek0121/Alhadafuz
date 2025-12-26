@@ -2,6 +2,7 @@
 
 import { Link, usePathname } from "@/navigation";
 import { signOut } from "next-auth/react";
+import { useUserStore } from "@/store/useUserStore";
 import {
     User,
     Package,
@@ -20,6 +21,7 @@ import { useTranslations } from "next-intl";
 export default function ProfileSidebar() {
     const pathname = usePathname();
     const tProfile = useTranslations('Profile');
+    const { logout } = useUserStore();
 
     const menuItems = [
         { title: tProfile('overview'), href: "/profile", icon: LayoutGrid },
@@ -31,6 +33,11 @@ export default function ProfileSidebar() {
         { title: tProfile('settings'), href: "/profile/settings", icon: Settings },
         { title: tProfile('support'), href: "/support", icon: HelpCircle },
     ];
+
+    const handleLogout = async () => {
+        logout(); // Clear local store
+        await signOut({ callbackUrl: "/" });
+    };
 
     return (
         <aside className="hidden md:flex flex-col w-[280px] shrink-0">
@@ -65,7 +72,7 @@ export default function ProfileSidebar() {
 
                 <div className="p-4 border-t border-gray-50 mt-2">
                     <button
-                        onClick={() => signOut({ callbackUrl: "/" })}
+                        onClick={handleLogout}
                         className="flex items-center gap-3.5 px-4 py-3.5 w-full text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium text-[15px] group"
                     >
                         <div className="w-5 h-5 flex items-center justify-center">

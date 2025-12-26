@@ -1,55 +1,57 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
-export const dynamic = 'force-dynamic';
+export async function GET(req: Request) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-export async function POST(req: Request) {
     try {
-        const body = await req.json();
-        const { title, message, type, userId } = body;
+        const notifications = await prisma.notification.findMany({
+            where: { userId: session.user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 20
+        });
 
-        let notification;
-        // Cast to 'any' if types are strictly checked in IDE but runtime matches
-        const prismaAny = prisma as any;
+        // Also count unread
+        const unreadCount = await prisma.notification.count({
+            where: { userId: session.user.id, isRead: false }
+        });
 
-        if (type === 'broadcast') {
-            notification = await prismaAny.notification.create({
-                data: {
-                    title,
-                    message,
-                    userId: null
-                }
-            });
-        } else if (type === 'personal' && userId) {
-            notification = await prismaAny.notification.create({
-                data: {
-                    title,
-                    message,
-                    userId
-                }
-            });
-        } else {
-            return NextResponse.json({ error: 'Invalid type or missing userId' }, { status: 400 });
-        }
-
-        return NextResponse.json(notification);
-
-    } catch (error: any) {
-        console.error("Error creating notification:", error);
-        return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+        return NextResponse.json({ notifications, unreadCount });
+    } catch (error) {
+        return NextResponse.json({ error: 'Error fetching notifications' }, { status: 500 });
     }
 }
 
-export async function GET() {
+export async function POST(req: Request) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
-        const prismaAny = prisma as any;
-        const notifications = await prismaAny.notification.findMany({
-            orderBy: { createdAt: 'desc' },
-            include: { user: { select: { name: true, email: true } } }
-        });
-        return NextResponse.json(notifications);
-    } catch (error: any) {
-        return NextResponse.json({ error: error.message || 'Error fetching notifications' }, { status: 500 });
+        const { id, action } = await req.json();
+
+        if (action === 'mark_read') {
+            await prisma.notification.update({
+                where: { id },
+                data: { isRead: true }
+            });
+        }
+
+        if (action === 'mark_all_read') {
+            await prisma.notification.updateMany({
+                where: { userId: session.user.id, isRead: false },
+                data: { isRead: true }
+            });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        return NextResponse.json({ error: 'Action failed' }, { status: 500 });
     }
 }

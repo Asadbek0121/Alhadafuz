@@ -352,6 +352,14 @@
     display: none;
 }
 
+.mobileSearchContainer {
+    display: contents;
+}
+
+.langWrapperMobile {
+    display: none;
+}
+
 .desktopOnly {
     display: flex;
 }
@@ -361,8 +369,10 @@
         display: flex;
         align-items: center;
         width: 100%;
-        justify-content: space-between;
-        margin-bottom: 12px;
+        justify-content: center;
+        /* Centered Logo */
+        margin-bottom: 4px;
+        position: relative;
     }
 
     .mobileMenuBtn {
@@ -372,6 +382,9 @@
         display: flex;
         align-items: center;
         cursor: pointer;
+        position: absolute;
+        /* Keep menu button positioned if we had it, but it is removed now */
+        left: 0;
     }
 
     .logoMobile {
@@ -382,10 +395,12 @@
         text-transform: uppercase;
     }
 
-    .mobileRightActions {
+    .mobileSearchContainer {
         display: flex;
         align-items: center;
-        gap: 16px;
+        width: 100%;
+        gap: 12px;
+        margin-bottom: 8px;
     }
 
     .langWrapperMobile {
@@ -396,6 +411,10 @@
         font-weight: 600;
         cursor: pointer;
         color: var(--text-main);
+        background: #f5f5f7;
+        height: 48px;
+        padding: 0 12px;
+        border-radius: 12px;
     }
 
     .scaleBtnMobile {
@@ -422,7 +441,10 @@
     }
 
     .searchBox {
-        width: 100%;
+        flex: 1;
+        /* Take remaining space */
+        width: auto;
+        /* Reset fixed width */
         max-width: 100%;
         margin: 0;
     }
@@ -446,4 +468,12 @@
 
 @media (max-width: 480px) {
     /* Additional tweaks if needed */
+}
+
+.userAvatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 1px solid var(--border-light);
 }

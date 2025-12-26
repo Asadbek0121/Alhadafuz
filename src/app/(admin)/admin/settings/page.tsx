@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { Save, Loader2 } from 'lucide-react';
+import TelegramSettings from '@/components/admin/TelegramSettings';
 
 export default function AdminSettingsPage() {
     const [loading, setLoading] = useState(true);
@@ -211,6 +212,8 @@ export default function AdminSettingsPage() {
                     </button>
                 </div>
             </form>
+
+            <TelegramSettings />
         </div>
     );
 }

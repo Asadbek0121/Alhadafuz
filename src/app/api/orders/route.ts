@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { notifyAdmins } from '@/lib/notifications';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,8 +44,6 @@ export async function POST(req: Request) {
 
             calculatedTotal += price * item.quantity;
 
-            // Limit calculated total to client total if valid? No, trust server calculation logic even if mixed.
-
             finalOrderItems.push({
                 productId: item.id,
                 title,
@@ -69,8 +68,8 @@ export async function POST(req: Request) {
                     userId: session.user.id,
                     total: calculatedTotal,
                     status: initialStatus, // Set status based on payment method
-                    paymentMethod: paymentMethod || 'CASH', // Uncommented and set
-                    // deliveryMethod: deliveryMethod || 'COURIER', // Keeping commented as per original code
+                    paymentMethod: paymentMethod || 'CASH',
+                    // deliveryMethod: deliveryMethod || 'COURIER', 
 
                     // Shipping details
                     shippingCity: deliveryAddress?.city || 'Toshkent',
@@ -98,6 +97,17 @@ export async function POST(req: Request) {
             return newOrder;
         });
 
+        // Notify Admins
+        try {
+            await notifyAdmins(
+                "Yangi Buyurtma",
+                `Buyurtma #${order.id.slice(-6)} qabul qilindi. Summa: ${order.total.toLocaleString()} so'm`,
+                "ORDER"
+            );
+        } catch (e) {
+            console.error("Notification error", e);
+        }
+
         let paymentUrl = null;
         if (paymentMethod === 'click') {
             // Mock Click URL - replace with actual service_id and merchant_id
@@ -113,16 +123,15 @@ export async function POST(req: Request) {
 }
 
 export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
-    const userId = searchParams.get('userId');
+    const session = await auth();
 
-    if (!userId) {
-        return NextResponse.json({ error: 'User ID required' }, { status: 400 });
+    if (!session?.user?.id) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
         const orders = await prisma.order.findMany({
-            where: { userId },
+            where: { userId: session.user.id },
             include: { items: true },
             orderBy: { createdAt: 'desc' }
         });

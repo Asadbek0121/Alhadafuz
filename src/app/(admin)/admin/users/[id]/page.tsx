@@ -150,6 +150,10 @@ export default async function UserDetailPage(props: { params: Promise<{ id: stri
                         </h2>
                         <div style={{ display: 'grid', gap: '12px' }}>
                             <div>
+                                <label style={{ fontSize: '12px', color: '#888' }}>User ID</label>
+                                <div style={{ fontWeight: '500', color: '#0066cc' }}>{user.uniqueId || "Mavjud emas"}</div>
+                            </div>
+                            <div>
                                 <label style={{ fontSize: '12px', color: '#888' }}>Email</label>
                                 <div>{user.email}</div>
                             </div>

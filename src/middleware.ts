@@ -15,17 +15,13 @@ export default authMiddleware((req) => {
     // Matches: /auth/login, /uz/auth/login, /ru/auth/register, etc.
     const isAuthPage = /\/auth\/(login|register)$/.test(nextUrl.pathname);
 
-    // Regex to match admin pages
-    const isAdminPage = /\/admin/.test(nextUrl.pathname);
+    // Regex to match admin pages (Starting with /admin and NOT /api/admin)
+    const isAdminPage = nextUrl.pathname.startsWith('/admin');
 
     // 1. Redirect authenticated users away from auth pages
     if (isAuthPage && isAuthenticated) {
-        // If user is ADMIN, send to admin panel, otherwise home
-        if (req.auth?.user?.role === 'ADMIN') {
-            return Response.redirect(new URL('/admin', nextUrl));
-        } else {
-            return Response.redirect(new URL('/', nextUrl));
-        }
+        // Redirect all authenticated users to home, regardless of role
+        return Response.redirect(new URL('/', nextUrl));
     }
 
     // 2. Protect Admin Routes

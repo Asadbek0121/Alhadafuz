@@ -71,7 +71,7 @@ export const useCartStore = create<CartState>()(
             })),
 
             clearCart: () => set({ items: [] }),
-            setItems: (items) => set({ items, isOpen: true }),
+            setItems: (items) => set({ items }),
 
             openCart: () => set({ isOpen: true }),
             closeCart: () => set({ isOpen: false }),

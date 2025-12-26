@@ -10,28 +10,49 @@ export async function GET(req: Request) {
     }
 
     try {
-        // Fetch users who have messages with admin or are potential contacts
-        // For simplicity, we fetch all users, or you can perform a complex join to get last message
-        // This is a simplified version: fetching users
+        // Fetch users and their last messages
         const users = await prisma.user.findMany({
-            where: {
-                role: 'USER', // Example: fetch all normal users
-            },
-            take: 20
+            where: { role: 'USER' },
+            orderBy: { updatedAt: 'desc' },
+            take: 50,
+            include: {
+                receivedMessages: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
+                },
+                sentMessages: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1
+                }
+            }
         });
 
         // Map to chat UI format
-        const conversations = users.map(u => ({
-            id: u.id,
-            name: u.name || 'User',
-            image: u.image || `https://ui-avatars.com/api/?name=${u.name || 'User'}`,
-            status: 'offline', // would need real-time status logic
-            lastMessage: 'Tap to chat',
-            time: ''
-        }));
+        const conversations = users.map(u => {
+            const lastReceived = u.receivedMessages?.[0];
+            const lastSent = u.sentMessages?.[0];
+
+            let lastMsg = null;
+            if (lastReceived && lastSent) {
+                lastMsg = lastReceived.createdAt > lastSent.createdAt ? lastReceived : lastSent;
+            } else {
+                lastMsg = lastReceived || lastSent;
+            }
+
+            return {
+                id: u.id,
+                name: u.name || 'Foydalanuvchi',
+                image: u.image || `https://ui-avatars.com/api/?name=${u.name || 'User'}&background=random`,
+                status: 'offline',
+                lastMessage: lastMsg ? lastMsg.content : "Xabar yo'q",
+                time: lastMsg ? new Date(lastMsg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                unread: 0 // Placeholder
+            };
+        });
 
         return NextResponse.json(conversations);
     } catch (error) {
+        console.error("Conversations fetch error:", error);
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }

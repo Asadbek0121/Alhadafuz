@@ -5,18 +5,33 @@ import { unstable_cache } from "next/cache";
 import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Search, SlidersHorizontal, Eye } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
+import OrderScanner from "@/components/admin/OrderScanner";
 
 const getOrders = unstable_cache(
-    async (where: any, skip: number, take: number) => {
+    async (where: any, skip: number, take: number, search: string) => {
+        const finalWhere = {
+            ...where,
+            ...(search ? {
+                OR: [
+                    // { deliveryToken: search }, // Temporarily disabled
+                    { id: search },
+                    ...(search.length < 20 ? [{ id: { endsWith: search } }] : []),
+                    { user: { name: { contains: search } } },
+                    { user: { phone: { contains: search } } },
+                ]
+            } : {})
+        };
+
         return await Promise.all([
             prisma.order.findMany({
-                where,
+                where: finalWhere,
                 include: { user: true, items: true },
                 orderBy: { createdAt: "desc" },
                 skip,
                 take,
             }),
-            prisma.order.count({ where }),
+            prisma.order.count({ where: finalWhere }),
         ]);
     },
     ['admin-orders-list'],
@@ -26,17 +41,18 @@ const getOrders = unstable_cache(
 export default async function AdminOrdersPage({
     searchParams,
 }: {
-    searchParams: Promise<{ status?: string; page?: string }>;
+    searchParams: Promise<{ status?: string; page?: string; search?: string }>;
 }) {
     const params = await searchParams;
     const statusFilter = params.status;
+    const search = params.search || "";
     const page = parseInt(params.page || "1");
     const limit = 20;
     const skip = (page - 1) * limit;
 
     const where = statusFilter && statusFilter !== 'ALL' ? { status: statusFilter } : {};
 
-    const [orders, total] = await getOrders(where, skip, limit);
+    const [orders, total] = await getOrders(where, skip, limit, search);
     const totalPages = Math.ceil(total / limit);
 
     const stats = [
@@ -53,19 +69,24 @@ export default async function AdminOrdersPage({
                     <p className="text-muted-foreground mt-1">Jami {total} ta buyurtma</p>
                 </div>
 
-                <div className="flex gap-2 bg-white p-1 rounded-lg border shadow-sm">
-                    {stats.map((stat) => (
-                        <Link
-                            key={stat.value}
-                            href={`/admin/orders${stat.value !== 'ALL' ? `?status=${stat.value}` : ''}`}
-                            className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${(!statusFilter && stat.value === 'ALL') || statusFilter === stat.value
+                <div className="flex gap-2 items-center">
+                    <OrderScanner />
+                    <BulkLabelPrinter orders={orders} />
+
+                    <div className="flex gap-2 bg-white p-1 rounded-lg border shadow-sm">
+                        {stats.map((stat) => (
+                            <Link
+                                key={stat.value}
+                                href={`/admin/orders${stat.value !== 'ALL' ? `?status=${stat.value}` : ''}`}
+                                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${(!statusFilter && stat.value === 'ALL') || statusFilter === stat.value
                                     ? 'bg-blue-600 text-white shadow-md'
                                     : 'hover:bg-gray-100 text-gray-600'
-                                }`}
-                        >
-                            {stat.label} <span className="ml-1 opacity-70 text-xs">({stat.count})</span>
-                        </Link>
-                    ))}
+                                    }`}
+                            >
+                                {stat.label} <span className="ml-1 opacity-70 text-xs">({stat.count})</span>
+                            </Link>
+                        ))}
+                    </div>
                 </div>
             </div>
 
@@ -116,11 +137,21 @@ export default async function AdminOrdersPage({
                                         <div className="flex flex-col gap-1.5">
                                             <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit">
                                                 <CreditCard size={12} />
-                                                {order.paymentMethod}
+                                                {/* Translation Map inline for simplicity */}
+                                                {{
+                                                    'CASH': 'Naqd',
+                                                    'CARD': 'Karta',
+                                                    'CLICK': 'Click',
+                                                    'PAYME': 'Payme',
+                                                    'UZUM': 'Uzum'
+                                                }[order.paymentMethod.toUpperCase()] || order.paymentMethod}
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit">
                                                 <Truck size={12} />
-                                                {order.deliveryMethod}
+                                                {{
+                                                    'COURIER': 'Kuryer',
+                                                    'PICKUP': 'Olib ketish'
+                                                }[order.deliveryMethod.toUpperCase()] || order.deliveryMethod}
                                             </div>
                                         </div>
                                     </td>

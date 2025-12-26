@@ -4,22 +4,18 @@ import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { unstable_cache } from "next/cache";
 
-const getUsers = unstable_cache(
-    async (where: any, skip: number, take: number) => {
-        return await Promise.all([
-            prisma.user.findMany({
-                where,
-                skip,
-                take,
-                orderBy: { createdAt: "desc" },
-                select: { id: true, name: true, email: true, role: true, createdAt: true },
-            }),
-            prisma.user.count({ where }),
-        ]);
-    },
-    ['admin-users-list'],
-    { tags: ['users'] }
-);
+async function getUsers(where: any, skip: number, take: number) {
+    return await Promise.all([
+        prisma.user.findMany({
+            where,
+            skip,
+            take,
+            orderBy: { createdAt: "desc" },
+            select: { id: true, name: true, email: true, role: true, createdAt: true },
+        }),
+        prisma.user.count({ where }),
+    ]);
+}
 
 export default async function TopshiriqUsersPage({
     searchParams,
@@ -35,12 +31,13 @@ export default async function TopshiriqUsersPage({
     const where = query
         ? {
             OR: [
-                { email: { contains: query } },
-                { name: { contains: query } },
+                { email: { contains: query, mode: 'insensitive' as const } },
+                { name: { contains: query, mode: 'insensitive' as const } },
             ],
         }
         : {};
 
+    // No cache wrapper, fetch fresh data
     const [users, total] = await getUsers(where, skip, limit);
 
     const totalPages = Math.ceil(total / limit);

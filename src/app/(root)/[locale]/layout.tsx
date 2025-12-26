@@ -8,7 +8,7 @@ import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import BottomNav from "@/components/BottomNav/BottomNav";
 import { Toaster } from "@/components/ui/sonner";
-import { CartProvider } from "@/context/CartContext";
+
 import { WishlistProvider } from "@/context/WishlistContext";
 import Providers from "@/providers/QueryProvider";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
@@ -38,6 +38,9 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   const session = await auth();
 
+  console.log('LocaleLayout running, locale:', locale);
+  console.log('Messages keys:', Object.keys(messages || {}));
+
   if (!messages) {
     console.error("NextIntl Messages are missing for locale:", locale);
   }
@@ -48,18 +51,18 @@ export default async function LocaleLayout({
         <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Tashkent">
           <Providers>
             <WishlistProvider>
-              <CartProvider>
-                <SessionProviderWrapper session={session}>
-                  <Header />
-                  <main className="min-h-screen">
-                    {children}
-                  </main>
-                  <Footer />
-                  <BottomNav />
-                  <Toaster />
-                  <SupportChat />
-                </SessionProviderWrapper>
-              </CartProvider>
+
+              <SessionProviderWrapper session={session}>
+                <Header />
+                <main className="min-h-screen">
+                  {children}
+                </main>
+                <Footer />
+                <BottomNav />
+                <Toaster />
+                <SupportChat />
+              </SessionProviderWrapper>
+
             </WishlistProvider>
           </Providers>
         </NextIntlClientProvider>

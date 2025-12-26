@@ -15,13 +15,13 @@ const addressSchema = z.object({
 export async function GET(req: Request) {
     try {
         const session = await auth();
-        if (!session?.user?.email) {
+        if (!session?.user?.id) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
         const addresses = await prisma.address.findMany({
             where: {
-                user: { email: session.user.email },
+                userId: session.user.id,
             },
             orderBy: { isDefault: 'desc' }, // Defaults first
         });
@@ -36,7 +36,7 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const session = await auth();
-        if (!session?.user?.email) {
+        if (!session?.user?.id) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
@@ -49,13 +49,13 @@ export async function POST(req: Request) {
         if (validatedData.isDefault) {
             await prisma.$transaction([
                 prisma.address.updateMany({
-                    where: { user: { email: session.user.email } },
+                    where: { userId: session.user.id },
                     data: { isDefault: false },
                 }),
                 prisma.address.create({
                     data: {
                         ...validatedData,
-                        user: { connect: { email: session.user.email } },
+                        userId: session.user.id,
                     },
                 }),
             ]);
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
             await prisma.address.create({
                 data: {
                     ...validatedData,
-                    user: { connect: { email: session.user.email } },
+                    userId: session.user.id,
                 },
             });
         }

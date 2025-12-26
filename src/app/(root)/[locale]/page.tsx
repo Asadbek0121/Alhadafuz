@@ -11,6 +11,7 @@ export default function Home() {
 
   useEffect(() => {
     fetch('/api/products')
+      // ... (keep fetch logic, just skipped in replacement for brevity if tools allow, but standard tool replaces block)
       .then(res => res.json())
       .then(data => {
         if (Array.isArray(data)) {

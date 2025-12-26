@@ -40,9 +40,9 @@ export default function AdminSidebar() {
             {/* Logo */}
             <div style={{ padding: '0 10px 30px 10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <div style={{ width: '40px', height: '40px', background: '#0085db', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', fontWeight: 'bold' }}>
-                    M
+                    H
                 </div>
-                <span style={{ fontSize: '24px', fontWeight: '700', color: '#2A3547' }}>MaterialM</span>
+                <span style={{ fontSize: '24px', fontWeight: '700', color: '#2A3547' }}>Hadaf Admin</span>
             </div>
 
             {/* Menu */}

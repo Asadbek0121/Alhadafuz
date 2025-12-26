@@ -52,8 +52,7 @@ export default function OrderHistoryPage() {
             }
 
             try {
-                const userId = user.id || user.phone;
-                const res = await fetch(`/api/orders?userId=${userId}`);
+                const res = await fetch(`/api/orders`);
                 const data = await res.json();
 
                 if (data.orders) {

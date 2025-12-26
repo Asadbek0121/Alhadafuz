@@ -7,18 +7,62 @@ export async function POST(req: Request) {
     const session = await auth();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const { receiverId, content } = await req.json();
+    const { receiverId, content, target } = await req.json();
 
     try {
-        const message = await (prisma as any).message.create({
-            data: {
-                content,
-                senderId: session.user.id,
-                receiverId
+        let message = null;
+
+        // If target is WEB or BOTH, save to DB
+        if (target === 'WEB' || target === 'BOTH' || !target) {
+            message = await (prisma as any).message.create({
+                data: {
+                    content,
+                    senderId: session.user.id,
+                    receiverId,
+                    source: 'WEB'
+                }
+            });
+        }
+
+        // Update updatedAt for the user involved
+        const receiver = await prisma.user.findUnique({ where: { id: receiverId } });
+        if (receiver?.role === 'USER') {
+            await prisma.user.update({ where: { id: receiver.id }, data: { updatedAt: new Date() } });
+        }
+
+        // Forward to Telegram if target is TELEGRAM or BOTH
+        if ((target === 'TELEGRAM' || target === 'BOTH') && (receiver as any)?.telegramId) {
+            const settings = await (prisma as any).storeSettings.findUnique({ where: { id: 'default' } });
+            const token = settings?.telegramBotToken;
+
+            if (token) {
+                // If it was ONLY for telegram, we still create a record in DB but marked as TELEGRAM source 
+                // to show it was a Telegram-specific reply in the admin panel
+                if (target === 'TELEGRAM') {
+                    message = await (prisma as any).message.create({
+                        data: {
+                            content,
+                            senderId: session.user.id,
+                            receiverId,
+                            source: 'TELEGRAM'
+                        }
+                    });
+                }
+
+                fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: (receiver as any).telegramId,
+                        text: `👨‍💻 Admin: ${content}`
+                    })
+                }).catch(e => console.error("TG Forward Error", e));
             }
-        });
+        }
+
         return NextResponse.json(message);
     } catch (error) {
+        console.error("Chat send error:", error);
         return NextResponse.json({ error: 'Failed to send' }, { status: 500 });
     }
 }

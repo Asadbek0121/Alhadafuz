@@ -26,6 +26,7 @@ const GRADIENTS = [
 export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen: boolean; close: () => void; menuMode?: 'full' | 'catalog' }) {
     const t = useTranslations('MegaMenu');
     const th = useTranslations('Header');
+    const tAuth = useTranslations('Auth');
     const router = useRouter();
     const [activeIdx, setActiveIdx] = useState(0);
     const [categories, setCategories] = useState<any[]>([]);
@@ -107,7 +108,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         {user ? (user.name || user.email) : th('kirish')}
                                     </div>
                                     {user && <div className={styles.userDesc}>{th('bosh_sahifa')}</div>}
-                                    {!user && <div className={styles.userDesc}>{th('kirish')} / {t('Ro\'yxatdan o\'tish')}</div>}
+                                    {!user && <div className={styles.userDesc}>{th('kirish')} / {tAuth('register')}</div>}
                                 </div>
                                 <ChevronRight size={20} className={styles.arrowIcon} />
                             </div>

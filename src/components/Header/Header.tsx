@@ -45,6 +45,8 @@ export default function Header() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
+
+
     // Fetch notifications function
     const fetchNotifications = () => {
         const isEnabled = (user as any)?.notificationsEnabled !== false;
@@ -118,25 +120,16 @@ export default function Header() {
 
                     {/* Mobile Top Row */}
                     <div className={styles.mobileTopRow}>
-                        <button className={styles.mobileMenuBtn} onClick={() => { setMenuMode('full'); setMenuOpen(true); }}>
-                            <Menu size={28} color="var(--primary)" strokeWidth={2.5} />
-                        </button>
+                        {/* Mobile Menu Button Removed */}
 
                         <Link href="/" className={styles.logoMobile}>
-                            <span style={{ color: 'var(--primary)' }}>UZ</span>Market
+                            <span style={{ color: 'var(--primary)' }}>Hadaf</span>Market
                         </Link>
-
-                        <div className={styles.mobileRightActions}>
-                            <div className={styles.langWrapperMobile}>
-                                <LanguageSwitcher minimal={true} />
-                            </div>
-
-                        </div>
                     </div>
 
                     {/* Desktop specific elements */}
                     <Link href="/" className={`${styles.logo} ${styles.desktopOnly}`}>
-                        <span style={{ color: 'var(--primary)' }}>UZ</span>Market
+                        <span style={{ color: 'var(--primary)' }}>Hadaf</span>Market
                     </Link>
 
                     <button
@@ -148,45 +141,51 @@ export default function Header() {
                         {t('katalog')}
                     </button>
 
-                    <div className={styles.searchBox} ref={searchRef}>
-                        <input
-                            type="text"
-                            placeholder={t('search_placeholder')}
-                            className={styles.searchInput}
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
-                        />
-                        <button className={styles.searchBtn}>
-                            <Search size={20} />
-                        </button>
+                    <div className={styles.mobileSearchContainer}>
+                        <div className={styles.searchBox} ref={searchRef}>
+                            <input
+                                type="text"
+                                placeholder={t('search_placeholder')}
+                                className={styles.searchInput}
+                                value={searchQuery}
+                                onChange={(e) => handleSearch(e.target.value)}
+                            />
+                            <button className={styles.searchBtn}>
+                                <Search size={20} />
+                            </button>
 
-                        {searchQuery.length > 0 && (
-                            <div className={styles.searchResults}>
-                                {searchResults.length > 0 ? (
-                                    searchResults.map((product) => (
-                                        <Link
-                                            key={product.id}
-                                            href={`/product/${product.id}`}
-                                            className={styles.searchItem}
-                                            onClick={() => {
-                                                setSearchResults([]);
-                                                setSearchQuery('');
-                                            }}
-                                        >
-                                            <img src={product.image} alt={product.title} className={styles.searchItemImg} />
-                                            <div className={styles.searchItemInfo}>
-                                                <div className={styles.searchItemTitle}>{product.title}</div>
-                                                <div className={styles.searchItemPrice}>{product.price.toLocaleString()} {t('som')}</div>
-                                            </div>
-                                        </Link>
-                                    ))
-                                ) : (
-                                    <div className={styles.searchEmpty}>
-                                        {isSearching ? t('loading') : t('not_found')}
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                            {searchQuery.length > 0 && (
+                                <div className={styles.searchResults}>
+                                    {searchResults.length > 0 ? (
+                                        searchResults.map((product) => (
+                                            <Link
+                                                key={product.id}
+                                                href={`/product/${product.id}`}
+                                                className={styles.searchItem}
+                                                onClick={() => {
+                                                    setSearchResults([]);
+                                                    setSearchQuery('');
+                                                }}
+                                            >
+                                                <img src={product.image} alt={product.title} className={styles.searchItemImg} />
+                                                <div className={styles.searchItemInfo}>
+                                                    <div className={styles.searchItemTitle}>{product.title}</div>
+                                                    <div className={styles.searchItemPrice}>{product.price.toLocaleString()} {t('som')}</div>
+                                                </div>
+                                            </Link>
+                                        ))
+                                    ) : (
+                                        <div className={styles.searchEmpty}>
+                                            {isSearching ? t('loading') : t('not_found')}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className={styles.langWrapperMobile}>
+                            <LanguageSwitcher minimal={true} />
+                        </div>
                     </div>
 
                     <nav className={`${styles.actions} ${styles.desktopOnly}`} ref={dropdownRef}>
@@ -276,9 +275,13 @@ export default function Header() {
                             className={styles.actionItem}
                             onClick={handleProfileClick}
                         >
-                            <UserCircle size={22} strokeWidth={2.5} />
+                            {user?.image ? (
+                                <img src={user.image} alt={user.name || "User"} className={styles.userAvatar} />
+                            ) : (
+                                <UserCircle size={28} strokeWidth={2.0} />
+                            )}
                             <span className={styles.actionLabel}>
-                                {status === "loading" ? "..." : (isAuthenticated ? (user?.name || user?.email) : t('kirish'))}
+                                {status === "loading" ? "..." : (isAuthenticated ? (user?.name?.split(' ')[0] || user?.email) : t('kirish'))}
                             </span>
                         </Link>
                     </nav>

@@ -20,7 +20,9 @@
         "saqlash": "Save",
         "sotib_olish": "Buy Now",
         "barchasini_korish": "View All",
-        "bildirishnomalarni_boshqarish": "Manage notifications"
+        "bildirishnomalarni_boshqarish": "Manage notifications",
+        "loading": "Loading...",
+        "not_found": "Not found"
     },
     "Hero": {
         "slider_title": "Huge discounts started!",

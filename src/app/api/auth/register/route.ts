@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { generateNextUniqueId } from "@/lib/id-generator";
+import { notifyAdmins } from "@/lib/notifications";
 
 export async function POST(req: Request) {
     try {
@@ -41,17 +43,8 @@ export async function POST(req: Request) {
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 12);
 
-        // Generate unique numeric ID
-        let uniqueId = '';
-        let isUnique = false;
-        while (!isUnique) {
-            const randomNum = Math.floor(100000 + Math.random() * 900000); // 6 digits
-            uniqueId = `ID-${randomNum}`;
-            const existingIdUser = await (prisma as any).user.findUnique({
-                where: { uniqueId }
-            });
-            if (!existingIdUser) isUnique = true;
-        }
+        // Generate sequential ID
+        const uniqueId = await generateNextUniqueId();
 
         // Create user
         const newUser = await (prisma as any).user.create({
@@ -65,6 +58,17 @@ export async function POST(req: Request) {
                 provider: "credentials",
             },
         });
+
+        // Notify Admins
+        try {
+            await notifyAdmins(
+                "Yangi Foydalanuvchi",
+                `${name || email} ro'yxatdan o'tdi.`,
+                "USER"
+            );
+        } catch (e) {
+            console.error("Notification error", e);
+        }
 
         return NextResponse.json(
             {

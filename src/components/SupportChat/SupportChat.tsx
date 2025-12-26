@@ -30,9 +30,15 @@ export default function SupportChat() {
     // Fetch Admin Contact on Mount
     useEffect(() => {
         fetch('/api/chat/support-contact')
-            .then(res => res.json())
+            .then(res => {
+                const contentType = res.headers.get("content-type");
+                if (res.ok && contentType && contentType.includes("application/json")) {
+                    return res.json();
+                }
+                return null;
+            })
             .then(data => {
-                if (!data.error) setAdmin(data);
+                if (data && !data.error) setAdmin(data);
             });
     }, []);
 
@@ -56,9 +62,15 @@ export default function SupportChat() {
     const fetchMessages = () => {
         if (!admin) return;
         fetch(`/api/chat/messages?userId=${admin.id}`)
-            .then(res => res.json())
+            .then(res => {
+                const contentType = res.headers.get("content-type");
+                if (res.ok && contentType && contentType.includes("application/json")) {
+                    return res.json();
+                }
+                return null;
+            })
             .then(data => {
-                if (Array.isArray(data)) {
+                if (data && Array.isArray(data)) {
                     setMessages(data);
                     setLoading(false);
                 }
@@ -123,8 +135,22 @@ export default function SupportChat() {
                 }
 
                 .support-fab {
+                    position: fixed !important;
                     bottom: 30px !important;
-                    transition: bottom 0.3s ease;
+                    right: 30px !important;
+                    width: 64px;
+                    height: 64px;
+                    border-radius: 50%;
+                    background: linear-gradient(135deg, #0085db 0%, #0060a0 100%);
+                    color: #fff;
+                    border: none;
+                    box-shadow: 0 8px 25px rgba(0, 133, 219, 0.4);
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 }
 
                 .support-fab::before {
@@ -155,7 +181,7 @@ export default function SupportChat() {
             <button
                 onClick={toggleOpen}
                 className="support-fab"
-                style={{ ...styles.fab, transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
+                style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
             >
                 <Headset size={30} strokeWidth={2} />
             </button>
@@ -163,132 +189,142 @@ export default function SupportChat() {
             {/* Window */}
             {isOpen && (
                 <div style={styles.container}>
-                    {/* Header */}
+                    {/* Header - Styled like Image 1 */}
                     <div style={styles.header}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            {view === 'chat' && (
-                                <button onClick={() => setView('menu')} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', color: '#fff', cursor: 'pointer', padding: '6px', borderRadius: '50%', display: 'flex' }}>
-                                    <ChevronLeft size={20} />
-                                </button>
-                            )}
-                            <div>
-                                <h4 style={{ margin: 0, fontSize: '17px', fontWeight: 700, letterSpacing: '0.3px' }}>
-                                    {view === 'menu' ? "Yordam Markazi" : (admin?.name || "Operator")}
-                                </h4>
-                                <span style={{ fontSize: '12px', opacity: 0.9, fontWeight: 500 }}>
-                                    {view === 'menu' ? "Biz har doim aloqadamiz" : "Online"}
-                                </span>
-                            </div>
+                        <button onClick={view === 'chat' ? () => setView('menu') : () => setIsOpen(false)}
+                            style={styles.headerCircleBtn}>
+                            <ChevronLeft size={20} />
+                        </button>
+
+                        <div style={{ flex: 1, textAlign: 'center' }}>
+                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#fff' }}>
+                                {view === 'menu' ? "Yordam Markazi" : (admin?.name || "Asadbek Davronov")}
+                            </h4>
+                            <span style={{ fontSize: '12px', opacity: 0.9, color: '#fff' }}>
+                                Online
+                            </span>
                         </div>
-                        <button onClick={() => setIsOpen(false)} style={styles.closeBtn}>
+
+                        <button onClick={() => setIsOpen(false)} style={styles.headerCircleBtn}>
                             <X size={20} />
                         </button>
                     </div>
 
                     {/* Content */}
-                    {view === 'menu' ? (
-                        <div style={styles.menuContent}>
-                            <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
-                                <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Assalomu alaykum! 👋</h3>
-                                <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>
-                                    Savollaringiz bormi? <br /> Quyidagi bo'limlardan birini tanlang
-                                </p>
-                            </div>
+                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+                        {view === 'menu' ? (
+                            <div style={styles.menuContent}>
+                                <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Assalomu alaykum! 👋</h3>
+                                    <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>
+                                        Savollaringiz bormi? <br /> Quyidagi bo'limlardan birini tanlang
+                                    </p>
+                                </div>
 
-                            <div style={styles.menuOptions}>
-                                <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover">
-                                    <div style={{ ...styles.iconBox, background: '#e0f2fe', color: '#0284c7' }}>
-                                        <MessageSquareText size={24} />
-                                    </div>
-                                    <div style={{ flex: 1, textAlign: 'left' }}>
-                                        <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Jonli chat</div>
-                                        <div style={{ fontSize: '13px', color: '#94a3b8' }}>Operator bilan suhbat</div>
-                                    </div>
-                                    <ChevronRight size={18} color="#cbd5e1" />
-                                </button>
-
-                                <a href="https://t.me/uzmarket_bot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover">
-                                    <div style={{ ...styles.iconBox, background: '#dcfce7', color: '#16a34a' }}>
-                                        <Send size={24} />
-                                    </div>
-                                    <div style={{ flex: 1, textAlign: 'left' }}>
-                                        <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Telegram bot</div>
-                                        <div style={{ fontSize: '13px', color: '#94a3b8' }}>Bot orqali murojaat</div>
-                                    </div>
-                                    <ChevronRight size={18} color="#cbd5e1" />
-                                </a>
-
-                                <Link href="/faq" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover">
-                                    <div style={{ ...styles.iconBox, background: '#fef9c3', color: '#ca8a04' }}>
-                                        <HelpCircle size={24} />
-                                    </div>
-                                    <div style={{ flex: 1, textAlign: 'left' }}>
-                                        <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Savol-javoblar</div>
-                                        <div style={{ fontSize: '13px', color: '#94a3b8' }}>Ko'p so'raladigan savollar</div>
-                                    </div>
-                                    <ChevronRight size={18} color="#cbd5e1" />
-                                </Link>
-                            </div>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Chat Area */}
-                            <div ref={scrollRef} style={styles.messagesArea}>
-                                {loading && messages.length === 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
-                                        <Loader2 className="animate-spin" size={32} style={{ marginBottom: '10px', color: '#0085db' }} />
-                                        <span style={{ fontSize: '14px', fontWeight: 500 }}>Yuklanmoqda...</span>
-                                    </div>
-                                ) : messages.length === 0 ? (
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center' }}>
-                                        <div style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
-                                            <MessageSquare size={36} color="#cbd5e1" />
+                                <div style={styles.menuOptions}>
+                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover">
+                                        <div style={{ ...styles.iconBox, background: '#e0f2fe', color: '#0284c7' }}>
+                                            <MessageSquareText size={24} />
                                         </div>
-                                        <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>Hozircha xabarlar yo'q</h4>
-                                        <p style={{ fontSize: '13px' }}>Savollaringizni yozib qoldiring, tez orada javob beramiz.</p>
-                                    </div>
-                                ) : (
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                        {messages.map(msg => {
-                                            const isMe = msg.senderId === session?.user?.id;
-                                            return (
-                                                <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
-                                                    <div style={{
-                                                        maxWidth: '85%',
-                                                        padding: '12px 16px',
-                                                        borderRadius: '16px',
-                                                        background: isMe ? 'linear-gradient(135deg, #0085db 0%, #00a4e4 100%)' : '#f1f5f9',
-                                                        color: isMe ? '#fff' : '#1e293b',
-                                                        borderBottomRightRadius: isMe ? '4px' : '16px',
-                                                        borderBottomLeftRadius: isMe ? '16px' : '4px',
-                                                        fontSize: '14.5px',
-                                                        lineHeight: '1.5',
-                                                        boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
-                                                        wordBreak: 'break-word'
-                                                    }}>
-                                                        {msg.content}
-                                                    </div>
-                                                </div>
-                                            )
-                                        })}
-                                    </div>
-                                )}
-                            </div>
+                                        <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Jonli chat</div>
+                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Operator bilan suhbat</div>
+                                        </div>
+                                        <ChevronRight size={18} color="#cbd5e1" />
+                                    </button>
 
-                            {/* Input */}
-                            <form onSubmit={handleSend} style={styles.inputArea}>
-                                <input
-                                    placeholder="Xabaringizni yozing..."
-                                    value={inputValue}
-                                    onChange={e => setInputValue(e.target.value)}
-                                    style={styles.input}
-                                />
-                                <button type="submit" disabled={!inputValue.trim()} style={{ ...styles.sendBtn, opacity: !inputValue.trim() ? 0.5 : 1 }}>
-                                    <Send size={18} />
-                                </button>
-                            </form>
-                        </>
-                    )}
+                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover">
+                                        <div style={{ ...styles.iconBox, background: '#dcfce7', color: '#16a34a' }}>
+                                            <Send size={24} />
+                                        </div>
+                                        <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Telegram bot</div>
+                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Bot orqali murojaat</div>
+                                        </div>
+                                        <ChevronRight size={18} color="#cbd5e1" />
+                                    </a>
+
+                                    <Link href="/faq" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover">
+                                        <div style={{ ...styles.iconBox, background: '#fef9c3', color: '#ca8a04' }}>
+                                            <HelpCircle size={24} />
+                                        </div>
+                                        <div style={{ flex: 1, textAlign: 'left' }}>
+                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Savol-javoblar</div>
+                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Ko'p so'raladigan savollar</div>
+                                        </div>
+                                        <ChevronRight size={18} color="#cbd5e1" />
+                                    </Link>
+                                </div>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Chat Area - Styled like Image 1 */}
+                                <div ref={scrollRef} style={styles.messagesArea}>
+                                    {loading && messages.length === 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
+                                            <Loader2 className="animate-spin" size={32} style={{ marginBottom: '10px', color: '#0085db' }} />
+                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>Yuklanmoqda...</span>
+                                        </div>
+                                    ) : messages.length === 0 ? (
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center' }}>
+                                            <div style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
+                                                <MessageSquare size={36} color="#cbd5e1" />
+                                            </div>
+                                            <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>Hozircha xabarlar yo'q</h4>
+                                            <p style={{ fontSize: '13px' }}>Savollaringizni yozib qoldiring, tez orada javob beramiz.</p>
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                            {messages.map(msg => {
+                                                const isMe = msg.senderId === session?.user?.id;
+                                                return (
+                                                    <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                                                        <div style={{
+                                                            maxWidth: '75%',
+                                                            padding: '12px 18px',
+                                                            borderRadius: '20px',
+                                                            background: isMe ? '#00A4E4' : '#F4F7FB',
+                                                            color: isMe ? '#fff' : '#2A3547',
+                                                            fontSize: '14px',
+                                                            lineHeight: '1.4',
+                                                            wordBreak: 'break-word',
+                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                        }}>
+                                                            {msg.content}
+                                                        </div>
+                                                    </div>
+                                                )
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Input - Styled like Image 1 */}
+                                <form onSubmit={handleSend} style={styles.inputArea}>
+                                    <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                        <input
+                                            placeholder="Xabaringizni yozing..."
+                                            value={inputValue}
+                                            onChange={e => setInputValue(e.target.value)}
+                                            style={styles.input}
+                                        />
+                                        <button
+                                            type="submit"
+                                            disabled={!inputValue.trim()}
+                                            style={{
+                                                ...styles.sendBtn,
+                                                opacity: !inputValue.trim() ? 0.5 : 1,
+                                                position: 'absolute',
+                                                right: '6px'
+                                            }}
+                                        >
+                                            <Send size={18} />
+                                        </button>
+                                    </div>
+                                </form>
+                            </>
+                        )}
+                    </div>
                 </div>
             )}
         </>
@@ -296,24 +332,6 @@ export default function SupportChat() {
 }
 
 const styles: Record<string, React.CSSProperties> = {
-    fab: {
-        position: 'fixed' as 'fixed',
-        bottom: '30px',
-        right: '30px',
-        width: '64px',
-        height: '64px',
-        borderRadius: '50%',
-        background: 'linear-gradient(135deg, #0085db 0%, #0060a0 100%)',
-        color: '#fff',
-        border: 'none',
-        boxShadow: '0 8px 25px rgba(0, 133, 219, 0.4)',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        transition: 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-    },
     container: {
         position: 'fixed' as 'fixed',
         bottom: '110px',
@@ -322,7 +340,7 @@ const styles: Record<string, React.CSSProperties> = {
         height: '550px',
         maxHeight: 'calc(100vh - 140px)',
         background: '#fff',
-        borderRadius: '20px',
+        borderRadius: '24px',
         boxShadow: '0 15px 50px rgba(0,0,0,0.15)',
         display: 'flex',
         flexDirection: 'column',
@@ -333,20 +351,20 @@ const styles: Record<string, React.CSSProperties> = {
         animation: 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
     },
     header: {
-        padding: '18px 24px',
-        background: 'linear-gradient(135deg, #0085db 0%, #00a4e4 100%)',
+        padding: '12px 18px',
+        background: '#00A4E4',
         color: '#fff',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
         height: '70px'
     },
-    closeBtn: {
+    headerCircleBtn: {
         background: 'rgba(255,255,255,0.2)',
         border: 'none',
         borderRadius: '50%',
-        width: '32px',
-        height: '32px',
+        width: '38px',
+        height: '38px',
         color: '#fff',
         cursor: 'pointer',
         display: 'flex',
@@ -358,8 +376,7 @@ const styles: Record<string, React.CSSProperties> = {
         padding: '24px',
         flex: 1,
         display: 'flex',
-        flexDirection: 'column',
-        background: '#fff'
+        flexDirection: 'column'
     },
     menuOptions: {
         display: 'flex',
@@ -388,41 +405,38 @@ const styles: Record<string, React.CSSProperties> = {
     },
     messagesArea: {
         flex: 1,
-        background: '#f8fafc',
-        padding: '20px',
+        background: '#fff',
+        padding: '24px 20px',
         overflowY: 'auto'
     },
     inputArea: {
         padding: '16px',
         background: '#fff',
-        borderTop: '1px solid #f1f5f9',
-        display: 'flex',
-        gap: '12px',
-        alignItems: 'center'
+        borderTop: '1px solid #f1f5f9'
     },
     input: {
-        flex: 1,
-        padding: '12px 18px',
-        borderRadius: '24px',
-        border: '1px solid #e2e8f0',
+        width: '100%',
+        padding: '14px 50px 14px 20px',
+        borderRadius: '30px',
+        border: '1px solid #E2E8F0',
         outline: 'none',
-        fontSize: '14.5px',
-        background: '#f8fafc',
-        color: '#334155',
-        transition: 'border-color 0.2s'
+        fontSize: '14px',
+        background: '#F8FAF9',
+        color: '#334155'
     },
     sendBtn: {
-        background: 'linear-gradient(135deg, #0085db 0%, #00a4e4 100%)',
+        background: '#00A4E4',
         color: '#fff',
         border: 'none',
-        width: '42px',
-        height: '42px',
+        width: '38px',
+        height: '38px',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        boxShadow: '0 4px 12px rgba(0, 133, 219, 0.3)'
+        boxShadow: '0 4px 10px rgba(0, 164, 228, 0.3)'
     }
 };
+
