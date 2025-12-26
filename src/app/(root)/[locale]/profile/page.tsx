@@ -37,7 +37,7 @@ export default function ProfileOverviewPage() {
     ];
 
     return (
-        <div className="pb-24 md:pb-0">
+        <div>
             {/* MOBILE VIEW */}
             <div className="md:hidden flex flex-col gap-4">
                 {/* User Header Card */}
