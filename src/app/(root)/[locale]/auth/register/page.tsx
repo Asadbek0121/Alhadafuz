@@ -25,10 +25,10 @@ import {
 } from "@/components/ui/card";
 
 const formSchema = z.object({
-    name: z.string().min(2),
-    email: z.string().email(),
-    phone: z.string().min(9),
-    password: z.string().min(6),
+    name: z.string().min(2, { message: "Ism kamida 2 ta harf bo'lishi kerak" }),
+    email: z.string().email({ message: "Email formati noto'g'ri" }),
+    phone: z.string().min(9, { message: "Telefon raqam noto'g'ri" }),
+    password: z.string().min(6, { message: "Parol kamida 6 ta belgi bo'lishi kerak" }),
 });
 
 export default function RegisterPage() {
@@ -59,11 +59,11 @@ export default function RegisterPage() {
             const data = await res.json();
 
             if (!res.ok) {
-                toast.error(data.message || tAuth('system_error'));
+                toast.error(data.message || "Xatolik yuz berdi");
                 return;
             }
 
-            toast.success(tAuth('welcome') + ` ${values.name}!`);
+            toast.success(`Xush kelibsiz, ${values.name}!`);
 
             // Auto login
             const result = await signIn("credentials", {
@@ -79,7 +79,7 @@ export default function RegisterPage() {
                 router.push("/auth/login");
             }
         } catch (error) {
-            toast.error(tAuth('system_error'));
+            toast.error("Tizim xatosi yuz berdi");
         } finally {
             setIsLoading(false);
         }
@@ -90,98 +90,125 @@ export default function RegisterPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-md"
+            className="w-full max-w-[440px]"
         >
-            <Card className="border-0 shadow-lg sm:border sm:shadow-sm">
-                <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold tracking-tight">{tAuth('register')}</CardTitle>
-                    <CardDescription>
-                        {tAuth('register_desc')}
+            <Card className="border shadow-xl rounded-2xl overflow-hidden bg-white">
+                <CardHeader className="text-center pt-8 pb-6">
+                    <CardTitle className="text-3xl font-extrabold tracking-tight text-gray-900 mb-2">
+                        Ro'yxatdan o'tish
+                    </CardTitle>
+                    <CardDescription className="text-gray-500 text-base">
+                        Yangi hisob yaratish uchun ma'lumotlarni kiriting
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <CardContent className="space-y-6 px-8">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="name">{tAuth('name')}</Label>
+                            <Label htmlFor="name" className="text-sm font-semibold text-gray-700 ml-1">
+                                Ismingiz
+                            </Label>
                             <Input
                                 id="name"
                                 placeholder="Ism Familiya"
                                 type="text"
-                                icon={<User size={18} />}
+                                icon={<User size={20} className="text-gray-400" />}
                                 disabled={isLoading}
                                 {...form.register("name")}
-                                className={form.formState.errors.name ? "border-destructive focus-visible:ring-destructive" : ""}
+                                className={`h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-base rounded-xl ${form.formState.errors.name ? "border-red-500 focus:border-red-500 bg-red-50" : ""
+                                    }`}
                             />
+                            {form.formState.errors.name && (
+                                <p className="text-xs text-red-500 ml-1 font-medium">{form.formState.errors.name.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="email">{tAuth('email')}</Label>
+                            <Label htmlFor="email" className="text-sm font-semibold text-gray-700 ml-1">
+                                Elektron pochta
+                            </Label>
                             <Input
                                 id="email"
                                 placeholder="nom@example.com"
                                 type="email"
-                                icon={<Mail size={18} />}
+                                icon={<Mail size={20} className="text-gray-400" />}
                                 disabled={isLoading}
                                 {...form.register("email")}
-                                className={form.formState.errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
+                                className={`h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-base rounded-xl ${form.formState.errors.email ? "border-red-500 focus:border-red-500 bg-red-50" : ""
+                                    }`}
                             />
+                            {form.formState.errors.email && (
+                                <p className="text-xs text-red-500 ml-1 font-medium">{form.formState.errors.email.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="phone">{tAuth('phone_label')}</Label>
+                            <Label htmlFor="phone" className="text-sm font-semibold text-gray-700 ml-1">
+                                Telefon raqamingiz
+                            </Label>
                             <Input
                                 id="phone"
                                 placeholder="+998 90 123 45 67"
                                 type="tel"
-                                icon={<Phone size={18} />}
+                                icon={<Phone size={20} className="text-gray-400" />}
                                 disabled={isLoading}
                                 {...form.register("phone")}
-                                className={form.formState.errors.phone ? "border-destructive focus-visible:ring-destructive" : ""}
+                                className={`h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-base rounded-xl ${form.formState.errors.phone ? "border-red-500 focus:border-red-500 bg-red-50" : ""
+                                    }`}
                             />
+                            {form.formState.errors.phone && (
+                                <p className="text-xs text-red-500 ml-1 font-medium">{form.formState.errors.phone.message}</p>
+                            )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="password">{tAuth('password')}</Label>
+                            <Label htmlFor="password" className="text-sm font-semibold text-gray-700 ml-1">
+                                Parol
+                            </Label>
                             <div className="relative">
                                 <Input
                                     id="password"
                                     placeholder="********"
                                     type={showPassword ? "text" : "password"}
-                                    icon={<Lock size={18} />}
+                                    icon={<Lock size={20} className="text-gray-400" />}
                                     disabled={isLoading}
                                     {...form.register("password")}
-                                    className={form.formState.errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                                    className={`h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-base rounded-xl pr-12 ${form.formState.errors.password ? "border-red-500 focus:border-red-500 bg-red-50" : ""
+                                        }`}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                     tabIndex={-1}
                                 >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
+                            {form.formState.errors.password && (
+                                <p className="text-xs text-red-500 ml-1 font-medium">{form.formState.errors.password.message}</p>
+                            )}
                         </div>
 
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button
+                            type="submit"
+                            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-base shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            disabled={isLoading}
+                        >
                             {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    {tAuth('register_loading')}
-                                </>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
                                 <>
-                                    {tAuth('register_btn')} <ArrowRight className="ml-2 h-4 w-4" />
+                                    Ro'yxatdan o'tish <ArrowRight className="ml-2 h-5 w-5" />
                                 </>
                             )}
                         </Button>
                     </form>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-2 border-t p-6 bg-muted/20">
-                    <div className="text-center text-sm text-muted-foreground">
-                        {tAuth('have_account')}{" "}
-                        <Link href="/auth/login" className="font-semibold text-primary hover:underline">
-                            {tAuth('login_title')}
+                <CardFooter className="py-6 bg-white border-t border-gray-100">
+                    <div className="w-full text-center">
+                        <span className="text-gray-500 font-medium">Allaqachon hisobingiz bormi? </span>
+                        <Link href="/auth/login" className="font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all">
+                            Tizimga kirish
                         </Link>
                     </div>
                 </CardFooter>
