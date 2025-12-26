@@ -3,7 +3,7 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin } from 'lucide-react';
-import { signOut } from 'next-auth/react';
+import { signOut, useSession } from 'next-auth/react';
 
 const menuItems = [
     { name: "Boshqaruv Paneli", icon: <Layers size={20} />, path: "/admin" },
@@ -22,6 +22,8 @@ const menuItems = [
 
 export default function AdminSidebar() {
     const pathname = usePathname();
+    const { data: session } = useSession();
+    const user = session?.user;
 
     return (
         <aside style={{
@@ -81,12 +83,16 @@ export default function AdminSidebar() {
 
             {/* User Profile Mini */}
             <div style={{ marginTop: 'auto', background: '#f2f6fa', borderRadius: '12px', padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden' }}>
-                    <img src="https://ui-avatars.com/api/?name=Admin+User&background=0085db&color=fff" alt="Admin" style={{ width: '100%' }} />
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {user?.image ? (
+                        <img src={user.image} alt={user.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                        <Users size={20} color="#0085db" />
+                    )}
                 </div>
                 <div style={{ flex: 1 }}>
-                    <h6 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#2A3547' }}>Admin</h6>
-                    <span style={{ fontSize: '12px', color: '#5A6A85' }}>Boshqaruvchi</span>
+                    <h6 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#2A3547' }}>{user?.name || 'Admin'}</h6>
+                    <span style={{ fontSize: '12px', color: '#5A6A85' }}>{user?.role || 'Boshqaruvchi'}</span>
                 </div>
                 <button onClick={() => signOut()} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#0085db' }}>
                     <LogOut size={20} />

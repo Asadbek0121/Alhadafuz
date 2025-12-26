@@ -11,21 +11,7 @@ export async function GET(req: Request) {
     if (!session || !userId) return NextResponse.json([], { status: 400 });
 
     try {
-        // We assume 'Message' model exists in schema
-        /*
-         model Message {
-           id        String   @id @default(cuid())
-           content   String
-           senderId  String
-           receiverId String
-           createdAt DateTime @default(now())
-           ...
-         }
-        */
-        // Since we don't have the schema handy to confirm names, using 'any' cast for safety in this fast restoration.
-        // Assuming user added Message model earlier.
-
-        const messages = await (prisma as any).message.findMany({
+        const messages = await prisma.message.findMany({
             where: {
                 OR: [
                     { senderId: session.user.id, receiverId: userId },

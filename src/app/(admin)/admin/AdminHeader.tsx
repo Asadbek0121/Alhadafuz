@@ -2,8 +2,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import { Search, Bell, X, Check } from 'lucide-react';
+import { Search, Bell, X, Check, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
 interface Notification {
     id: string;
@@ -15,6 +16,9 @@ interface Notification {
 }
 
 export default function AdminHeader() {
+    const { data: session } = useSession();
+    const user = session?.user;
+
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isOpen, setIsOpen] = useState(false);
@@ -134,8 +138,18 @@ export default function AdminHeader() {
                 </div>
 
                 {/* Profile */}
-                <div className="w-[35px] h-[35px] rounded-full overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow">
-                    <img src="https://ui-avatars.com/api/?name=Admin&background=0085db&color=fff" className="w-full h-full object-cover" />
+                <div className="flex items-center gap-3">
+                    <div className="text-right hidden sm:block">
+                        <p className="text-sm font-semibold text-gray-700 leading-none">{user?.name || 'Admin'}</p>
+                        <p className="text-[10px] text-gray-500 mt-1 uppercase tracking-wider">{user?.role || 'Boshqaruvchi'}</p>
+                    </div>
+                    <div className="w-[40px] h-[40px] rounded-full overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow bg-gray-100 flex items-center justify-center border-2 border-white ring-1 ring-gray-100">
+                        {user?.image ? (
+                            <img src={user.image} className="w-full h-full object-cover" alt={user.name || ''} />
+                        ) : (
+                            <UserIcon size={20} className="text-gray-400" />
+                        )}
+                    </div>
                 </div>
             </div>
         </header>

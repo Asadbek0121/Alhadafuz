@@ -1,9 +1,8 @@
-
 import { prisma } from "@/lib/prisma";
 import AdminCharts from "./AdminCharts";
 import RecentOrdersTable from "./RecentOrdersTable";
 import Link from "next/link";
-import { Circle, UserCircle } from 'lucide-react';
+import { Circle, UserCircle, ShoppingCart, Users, DollarSign, Package } from 'lucide-react';
 
 async function getData() {
     // Global prisma instance from lib/prisma
@@ -47,7 +46,50 @@ export default async function AdminDashboard() {
 
     return (
         <div>
-            {/* Top Grid: Charts Area */}
+            {/* Top Stat Cards */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '30px' }}>
+                <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#ecf2ff', color: '#0085db', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <DollarSign size={24} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#5A6A85', fontWeight: '500' }}>Jami Tushum</p>
+                        <h4 style={{ margin: '5px 0 0', fontSize: '20px', fontWeight: '700', color: '#2A3547' }}>{stats.totalRevenue.toLocaleString()} <span style={{ fontSize: '12px' }}>uzs</span></h4>
+                    </div>
+                </div>
+
+                <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#fef5e5', color: '#ffae1f', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <ShoppingCart size={24} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#5A6A85', fontWeight: '500' }}>Buyurtmalar</p>
+                        <h4 style={{ margin: '5px 0 0', fontSize: '20px', fontWeight: '700', color: '#2A3547' }}>{stats.orderCount} <span style={{ fontSize: '12px' }}>ta</span></h4>
+                    </div>
+                </div>
+
+                <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#e6fffa', color: '#00ceb6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Users size={24} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#5A6A85', fontWeight: '500' }}>Mijozlar</p>
+                        <h4 style={{ margin: '5px 0 0', fontSize: '20px', fontWeight: '700', color: '#2A3547' }}>{stats.userCount} <span style={{ fontSize: '12px' }}>ta</span></h4>
+                    </div>
+                </div>
+
+                <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ width: '48px', height: '48px', borderRadius: '10px', background: '#fdede8', color: '#fa896b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Package size={24} />
+                    </div>
+                    <div>
+                        <p style={{ margin: 0, fontSize: '13px', color: '#5A6A85', fontWeight: '500' }}>Mahsulotlar</p>
+                        <h4 style={{ margin: '5px 0 0', fontSize: '20px', fontWeight: '700', color: '#2A3547' }}>{stats.productCount} <span style={{ fontSize: '12px' }}>ta</span></h4>
+                    </div>
+                </div>
+            </div>
+
+            {/* Charts Area */}
             <AdminCharts stats={stats} chartData={allOrders} />
 
             {/* Bottom Grid: Recent Chats & Product Performance */}

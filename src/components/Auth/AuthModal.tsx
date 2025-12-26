@@ -6,7 +6,7 @@ import { useUserStore } from '@/store/useUserStore';
 import { X, Mail, Lock, User, Loader2, ArrowRight, Eye, EyeOff, Phone } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { toast } from 'sonner';
-import { useRouter } from '@/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 
 import { useSession } from 'next-auth/react';
@@ -60,8 +60,17 @@ export default function AuthModal() {
             } else {
                 toast.success("Xush kelibsiz!");
                 closeAuthModal();
-                // Force reload to ensure session is active in all components
-                window.location.reload();
+
+                // Check for callbackUrl in search params
+                const params = new URLSearchParams(window.location.search);
+                const callbackUrl = params.get('callbackUrl');
+
+                if (callbackUrl) {
+                    window.location.href = callbackUrl;
+                } else {
+                    // Force reload to ensure session is active
+                    window.location.reload();
+                }
             }
         } catch (error) {
             toast.error("Tizim xatosi");

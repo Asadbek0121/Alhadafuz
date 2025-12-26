@@ -7,7 +7,7 @@ const intlMiddleware = createMiddleware(routing);
 
 const authMiddleware = NextAuth(authConfig).auth;
 
-export default authMiddleware((req) => {
+export const proxy = authMiddleware((req) => {
     const { nextUrl } = req;
     const isAuthenticated = !!req.auth;
 
