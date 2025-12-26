@@ -236,4 +236,23 @@
     .container {
         grid-template-columns: 1fr;
     }
+
+    .summaryCard {
+        position: static;
+        margin-top: 20px;
+    }
+}
+
+@media (max-width: 600px) {
+    .grid2 {
+        grid-template-columns: 1fr;
+    }
+
+    .paymentMethods {
+        grid-template-columns: 1fr;
+    }
+
+    .tabs {
+        flex-direction: column;
+    }
 }
