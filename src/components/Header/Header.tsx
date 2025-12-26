@@ -125,6 +125,20 @@ export default function Header() {
                         <Link href="/" className={styles.logoMobile}>
                             <span style={{ color: 'var(--primary)' }}>Hadaf</span>Market
                         </Link>
+
+                        <div className={styles.mobileActions}>
+                            <Link
+                                href="/profile"
+                                className={styles.actionItem}
+                                onClick={handleProfileClick}
+                            >
+                                {user?.image ? (
+                                    <img src={user.image} alt={user.name || "User"} className={styles.userAvatar} />
+                                ) : (
+                                    <UserCircle size={26} strokeWidth={2.0} />
+                                )}
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Desktop specific elements */}

@@ -387,6 +387,14 @@
         left: 0;
     }
 
+    .mobileActions {
+        position: absolute;
+        right: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
     .logoMobile {
         font-size: 24px;
         font-weight: 800;

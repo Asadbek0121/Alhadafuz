@@ -6,16 +6,28 @@ import { House, LayoutGrid, ShoppingBag, Heart, UserCircle } from 'lucide-react'
 import styles from './BottomNav.module.css';
 import { useTranslations } from 'next-intl';
 import { useCartStore } from '@/store/useCartStore';
+import { useUserStore } from '@/store/useUserStore';
+import { useSession } from 'next-auth/react';
 
 export default function BottomNav() {
     const pathname = usePathname();
     const t = useTranslations('Header');
-    const { items, openCart } = useCartStore();
+    const { items } = useCartStore();
+    const { openAuthModal } = useUserStore();
+    const { status } = useSession();
+    const isAuthenticated = status === "authenticated";
 
     // Helper to check active state
     const isActive = (path: string) => {
         if (path === '/') return pathname === '/' || pathname === '/uz' || pathname === '/ru';
         return pathname.includes(path);
+    };
+
+    const handleProfileClick = (e: React.MouseEvent) => {
+        if (!isAuthenticated) {
+            e.preventDefault();
+            openAuthModal();
+        }
     };
 
     // Hide on product detail pages to make room for sticky action bar
@@ -61,7 +73,11 @@ export default function BottomNav() {
             </Link>
 
             {/* Profile */}
-            <Link href="/profile" className={`${styles.navItem} ${isActive('/profile') ? styles.active : ''}`}>
+            <Link
+                href="/profile"
+                className={`${styles.navItem} ${isActive('/profile') ? styles.active : ''}`}
+                onClick={handleProfileClick}
+            >
                 <UserCircle size={24} strokeWidth={2.5} />
                 <span>Kabinet</span>
             </Link>

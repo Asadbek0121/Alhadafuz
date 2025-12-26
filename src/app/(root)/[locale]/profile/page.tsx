@@ -14,9 +14,9 @@ import { useSession, signOut } from "next-auth/react";
 import { useEffect, useState } from "react";
 
 export default function ProfileOverviewPage() {
-    const { user } = useUserStore();
+    const { user, openAuthModal } = useUserStore();
     const tProfile = useTranslations('Profile');
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [statsData, setStatsData] = useState({
         ordersCount: 0,
         wishlistCount: 0,
@@ -28,6 +28,12 @@ export default function ProfileOverviewPage() {
             cancelled: 0
         }
     });
+
+    useEffect(() => {
+        if (status === 'unauthenticated') {
+            openAuthModal();
+        }
+    }, [status, openAuthModal]);
 
     useEffect(() => {
         if (session?.user) {
