@@ -55,4 +55,3 @@ export async function notifyAdmins(title: string, message: string, type: 'ORDER'
         console.error("Failed to notify admins:", error);
     }
 }
-```
