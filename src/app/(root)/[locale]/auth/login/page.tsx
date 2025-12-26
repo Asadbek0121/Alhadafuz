@@ -18,21 +18,20 @@ import { useCartStore } from "@/store/useCartStore";
 import {
     Card,
     CardContent,
-    CardDescription,
     CardFooter,
     CardHeader,
     CardTitle,
+    CardDescription
 } from "@/components/ui/card";
 
 const formSchema = z.object({
-    email: z.string().email({ message: "Email format incorrect" }),
-    password: z.string().min(6, { message: "Min 6 chars" }),
+    email: z.string().email({ message: "Email formati noto'g'ri" }),
+    password: z.string().min(6, { message: "Kamida 6 ta belgi" }),
 });
 
 export default function LoginPage() {
     const router = useRouter();
     const tAuth = useTranslations('Auth');
-    const tHeader = useTranslations('Header');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
     const { items, setItems } = useCartStore();
@@ -55,9 +54,9 @@ export default function LoginPage() {
             });
 
             if (result?.error) {
-                toast.error(tAuth('login_error'));
+                toast.error("Email yoki parol noto'g'ri");
             } else {
-                toast.success(tAuth('welcome'));
+                toast.success("Xush kelibsiz!");
 
                 // Sync Cart
                 if (items.length > 0) {
@@ -86,15 +85,14 @@ export default function LoginPage() {
                 router.refresh();
             }
         } catch (error) {
-            toast.error(tAuth('system_error'));
+            toast.error("Tizim xatosi yuz berdi");
         } finally {
             setIsLoading(false);
         }
     }
 
     const handleSocialLogin = (provider: string) => {
-        // Mock social login for now or implement real provider
-        toast.info(`${provider} login coming soon`);
+        toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
     };
 
     return (
@@ -102,43 +100,48 @@ export default function LoginPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, ease: "easeOut" }}
-            className="w-full max-w-md"
+            className="w-full max-w-[440px]"
         >
-            <Card className="border-0 shadow-lg sm:border sm:shadow-sm">
-                <CardHeader className="space-y-1 text-center">
-                    <CardTitle className="text-2xl font-bold tracking-tight">{tAuth('login_title')}</CardTitle>
-                    <CardDescription>
-                        {tAuth('login_desc')}
+            <Card className="border shadow-xl rounded-2xl overflow-hidden bg-white">
+                <CardHeader className="text-center pt-8 pb-6">
+                    <CardTitle className="text-3xl font-extrabold tracking-tight text-gray-900 mb-2">
+                        Tizimga kirish
+                    </CardTitle>
+                    <CardDescription className="text-gray-500 text-base">
+                        Email va parolingizni kiriting
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <CardContent className="space-y-6 px-8">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                         <div className="space-y-2">
-                            <Label htmlFor="email">{tAuth('email')}</Label>
-                            <div className="relative">
-                                <Input
-                                    id="email"
-                                    placeholder="nom@example.com"
-                                    type="email"
-                                    icon={<Mail size={18} />}
-                                    disabled={isLoading}
-                                    {...form.register("email")}
-                                    className={form.formState.errors.email ? "border-destructive focus-visible:ring-destructive" : ""}
-                                />
-                            </div>
+                            <Label htmlFor="email" className="text-sm font-semibold text-gray-700 ml-1">
+                                Elektron pochta
+                            </Label>
+                            <Input
+                                id="email"
+                                placeholder="nom@example.com"
+                                type="email"
+                                icon={<Mail size={20} className="text-gray-400" />}
+                                disabled={isLoading}
+                                {...form.register("email")}
+                                className={`h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-base rounded-xl ${form.formState.errors.email ? "border-red-500 focus:border-red-500 bg-red-50" : ""
+                                    }`}
+                            />
                             {form.formState.errors.email && (
-                                <p className="text-xs text-destructive mt-1 ml-1">{form.formState.errors.email.message}</p>
+                                <p className="text-xs text-red-500 ml-1 font-medium">{form.formState.errors.email.message}</p>
                             )}
                         </div>
 
                         <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password">{tAuth('password')}</Label>
+                            <div className="flex items-center justify-between ml-1">
+                                <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
+                                    Parol
+                                </Label>
                                 <Link
                                     href="/auth/forgot-password"
-                                    className="text-xs text-muted-foreground hover:text-primary transition-colors"
+                                    className="text-xs font-medium text-gray-500 hover:text-blue-600 transition-colors"
                                 >
-                                    {tAuth('forgot_password')}
+                                    Parolni unutdingizmi?
                                 </Link>
                             </div>
                             <div className="relative">
@@ -146,54 +149,60 @@ export default function LoginPage() {
                                     id="password"
                                     placeholder="********"
                                     type={showPassword ? "text" : "password"}
-                                    icon={<Lock size={18} />}
+                                    icon={<Lock size={20} className="text-gray-400" />}
                                     disabled={isLoading}
                                     {...form.register("password")}
-                                    className={form.formState.errors.password ? "border-destructive focus-visible:ring-destructive" : ""}
+                                    className={`h-12 bg-gray-50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-base rounded-xl pr-12 ${form.formState.errors.password ? "border-red-500 focus:border-red-500 bg-red-50" : ""
+                                        }`}
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                                     tabIndex={-1}
                                 >
-                                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
                             {form.formState.errors.password && (
-                                <p className="text-xs text-destructive mt-1 ml-1">{form.formState.errors.password.message}</p>
+                                <p className="text-xs text-red-500 ml-1 font-medium">{form.formState.errors.password.message}</p>
                             )}
                         </div>
 
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        <Button
+                            type="submit"
+                            className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-base shadow-lg shadow-blue-600/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                            disabled={isLoading}
+                        >
                             {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    {tAuth('logging_in')}
-                                </>
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                             ) : (
                                 <>
-                                    {tHeader('kirish')} <ArrowRight className="ml-2 h-4 w-4" />
+                                    Kirish <ArrowRight className="ml-2 h-5 w-5" />
                                 </>
                             )}
                         </Button>
                     </form>
 
-                    <div className="relative">
+                    <div className="relative py-2">
                         <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
+                            <span className="w-full border-t border-gray-200" />
                         </div>
                         <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
-                                {tAuth('or_continue')}
+                            <span className="bg-white px-4 text-gray-400 font-medium tracking-wider">
+                                Yoki davom eting
                             </span>
                         </div>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        <Button variant="outline" onClick={() => handleSocialLogin("Google")} disabled={isLoading}>
-                            {/* SVG Content */}
-                            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+                        <Button
+                            variant="outline"
+                            onClick={() => handleSocialLogin("Google")}
+                            disabled={isLoading}
+                            className="h-12 bg-gray-50 border-gray-200 hover:bg-white hover:border-gray-300 text-gray-700 font-medium rounded-xl flex items-center justify-center gap-2"
+                        >
+                            <svg className="h-5 w-5" viewBox="0 0 24 24">
                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                                 <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                                 <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
@@ -201,20 +210,24 @@ export default function LoginPage() {
                             </svg>
                             Google
                         </Button>
-                        <Button variant="outline" onClick={() => handleSocialLogin("Telegram")} disabled={isLoading}>
-                            {/* SVG Content */}
-                            <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <Button
+                            variant="outline"
+                            onClick={() => handleSocialLogin("Telegram")}
+                            disabled={isLoading}
+                            className="h-12 bg-gray-50 border-gray-200 hover:bg-white hover:border-gray-300 text-gray-700 font-medium rounded-xl flex items-center justify-center gap-2"
+                        >
+                            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M21.1 4.3l-2.4 12.6c-.3 1.3-1.1 1.7-2.1 1.2l-5.6-4.2-2.7 2.6c-.3.3-.5.5-1 .5l.4-5.6 10.2-9.2c.4-.4-.1-.6-.7-.2l-12.6 7.9-5.4-1.7c-1.2-.4-1.2-1.1.2-1.7l21-8.1c1-.4 1.9 0 1.6.9z" fill="#0088cc" stroke="none" />
                             </svg>
                             Telegram
                         </Button>
                     </div>
                 </CardContent>
-                <CardFooter className="flex flex-col gap-2 border-t p-6 bg-muted/20">
-                    <div className="text-center text-sm text-muted-foreground">
-                        {tAuth('no_account')}{" "}
-                        <Link href="/auth/register" className="font-semibold text-primary hover:underline">
-                            {tAuth('register')}
+                <CardFooter className="py-6 bg-white border-t border-gray-100">
+                    <div className="w-full text-center">
+                        <span className="text-gray-500 font-medium">Hisobingiz yo'qmi? </span>
+                        <Link href="/auth/register" className="font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all">
+                            Ro'yxatdan o'tish
                         </Link>
                     </div>
                 </CardFooter>
