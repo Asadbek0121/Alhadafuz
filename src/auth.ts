@@ -143,7 +143,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             return session;
         },
         async jwt({ token, user, account, profile }) {
-            if (user) {
+            if (user && user.id) {
                 token.id = user.id;
                 token.role = user.role;
                 token.uniqueId = user.uniqueId || undefined;
