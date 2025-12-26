@@ -4,6 +4,7 @@ import "../../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from "next/navigation";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import BottomNav from "@/components/BottomNav/BottomNav";
@@ -66,6 +67,7 @@ export default async function LocaleLayout({
             </WishlistProvider>
           </Providers>
         </NextIntlClientProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
