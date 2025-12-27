@@ -6,9 +6,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Link } from "@/navigation";
 import { toast } from "sonner";
-import { motion } from "framer-motion";
-import { Mail, Loader2, ArrowRight, ArrowLeft } from "lucide-react";
-import { useTranslations } from 'next-intl';
+import { motion, AnimatePresence } from "framer-motion";
+import { Mail, Loader2, ArrowRight, ArrowLeft, KeyRound, Lock, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,23 +22,39 @@ import {
     CardDescription
 } from "@/components/ui/card";
 
-const formSchema = z.object({
+// Schemas
+const emailSchema = z.object({
     email: z.string().email({ message: "Email formati noto'g'ri" }),
 });
 
+const otpSchema = z.object({
+    otp: z.string().length(6, { message: "Kod 6 ta raqamdan iborat bo'lishi kerak" }),
+});
+
+const passwordSchema = z.object({
+    password: z.string().min(6, { message: "Parol kamida 6 ta belgi bo'lishi kerak" }),
+    confirmPassword: z.string().min(6),
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Parollar mos kelmadi",
+    path: ["confirmPassword"],
+});
+
+type Step = "EMAIL" | "OTP" | "PASSWORD" | "SUCCESS";
+
 export default function ForgotPasswordPage() {
-    const tAuth = useTranslations('Auth');
+    const router = useRouter();
+    const [step, setStep] = useState<Step>("EMAIL");
     const [isLoading, setIsLoading] = useState(false);
-    const [isSubmitted, setIsSubmitted] = useState(false);
+    const [email, setEmail] = useState("");
+    const [otp, setOtp] = useState("");
 
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            email: "",
-        },
-    });
+    // Forms
+    const emailForm = useForm<z.infer<typeof emailSchema>>({ resolver: zodResolver(emailSchema) });
+    const otpForm = useForm<z.infer<typeof otpSchema>>({ resolver: zodResolver(otpSchema) });
+    const passwordForm = useForm<z.infer<typeof passwordSchema>>({ resolver: zodResolver(passwordSchema) });
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    // Step 1: Send OTP
+    async function onEmailSubmit(values: z.infer<typeof emailSchema>) {
         setIsLoading(true);
         try {
             const res = await fetch("/api/auth/forgot-password", {
@@ -48,14 +64,68 @@ export default function ForgotPasswordPage() {
             });
 
             if (res.ok) {
-                setIsSubmitted(true);
-                toast.success("Parolni tiklash havolasi yuborildi!");
+                setEmail(values.email);
+                setStep("OTP");
+                toast.success("Tasdiqlash kodi emailingizga yuborildi");
             } else {
-                const data = await res.json();
-                toast.error(data.message || "Xatolik yuz berdi");
+                toast.error("Xatolik yuz berdi");
             }
         } catch (error) {
-            toast.error("Tizim xatosi yuz berdi");
+            toast.error("Tizim xatosi");
+        } finally {
+            setIsLoading(false);
+        }
+    }
+
+    // Step 2: Verify OTP (Client side validation mostly, but server checks ultimately)
+    // Actually we will carry the token to the next step or just verify it here 
+    // Wait, verificationToken table needs to be checked.
+    // Let's make a verify endpoint or just move to next step and send OTP with password?
+    // User experience is better if we verify OTP before asking for password.
+    // We will assume OTP is correct if user proceeds? No, better to verify.
+    // Let's add a verify-otp generic endpoint or just use logic. 
+    // For now, let's just move to password step and send everything together? 
+    // Or we can add a check. Let's send everything at the end to `reset-password`.
+    // BUT `reset-password` API expects token (OTP), email, and password. 
+    // So we can technically collect them.
+
+    async function onOtpSubmit(values: z.infer<typeof otpSchema>) {
+        // Optional: Verify OTP existence via dry-run if we wanted, but let's just move to next step
+        // to keep it simple. If OTP is wrong, final step will fail.
+        setOtp(values.otp);
+        setStep("PASSWORD");
+    }
+
+    // Step 3: Reset Password
+    async function onPasswordSubmit(values: z.infer<typeof passwordSchema>) {
+        setIsLoading(true);
+        try {
+            const res = await fetch("/api/auth/reset-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    email,
+                    token: otp, // Sending OTP as token
+                    password: values.password
+                }),
+            });
+
+            if (res.ok) {
+                setStep("SUCCESS");
+                toast.success("Parol muvaffaqiyatli o'zgartirildi!");
+                setTimeout(() => {
+                    // Force refresh/redirect to login
+                    window.location.href = "/auth/login";
+                }, 2000);
+            } else {
+                const data = await res.json();
+                toast.error(data.message || "Kod noto'g'ri yoki muddati tugagan");
+                if (data.message?.includes("Kod")) {
+                    setStep("OTP"); // Go back to OTP if wrong
+                }
+            }
+        } catch (error) {
+            toast.error("Tizim xatosi");
         } finally {
             setIsLoading(false);
         }
@@ -65,82 +135,156 @@ export default function ForgotPasswordPage() {
         <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
             className="w-full max-w-[440px] px-4"
         >
             <Card className="border shadow-2xl rounded-3xl overflow-hidden bg-white/80 backdrop-blur-lg">
                 <CardHeader className="text-center pt-10 pb-6">
                     <div className="mx-auto w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-6 text-blue-600">
-                        <Mail size={32} />
+                        {step === "EMAIL" && <Mail size={32} />}
+                        {step === "OTP" && <KeyRound size={32} />}
+                        {step === "PASSWORD" && <Lock size={32} />}
+                        {step === "SUCCESS" && <CheckCircle2 size={32} className="text-green-600" />}
                     </div>
-                    <CardTitle className="text-3xl font-black tracking-tight text-gray-900 mb-2">
-                        Parolni tiklash
+
+                    <CardTitle className="text-2xl font-black tracking-tight text-gray-900 mb-2">
+                        {step === "EMAIL" && "Parolni tiklash"}
+                        {step === "OTP" && "Tasdiqlash kodi"}
+                        {step === "PASSWORD" && "Yangi parol"}
+                        {step === "SUCCESS" && "Muvaffaqiyatli!"}
                     </CardTitle>
+
                     <CardDescription className="text-gray-500 text-base px-6">
-                        {isSubmitted
-                            ? "Biz sizning emailingizga ko'rsatmalar yubordik. Iltimos, pochtangizni tekshiring."
-                            : "Ro'yxatdan o'tgan emailingizni kiriting va biz sizga parolni tiklash havolasini yuboramiz."}
+                        {step === "EMAIL" && "Ro'yxatdan o'tgan emailingizni kiriting"}
+                        {step === "OTP" && `Biz ${email} manziliga kod yubordik`}
+                        {step === "PASSWORD" && "Yangi xavfsiz parol o'rnating"}
+                        {step === "SUCCESS" && "Sizning parolingiz yangilandi"}
                     </CardDescription>
                 </CardHeader>
 
-                <CardContent className="space-y-6 px-8">
-                    {!isSubmitted ? (
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                            <div className="space-y-2">
-                                <Label htmlFor="email" className="text-sm font-bold text-gray-700 ml-1">
-                                    Elektron pochta
-                                </Label>
-                                <Input
-                                    id="email"
-                                    placeholder="nom@example.com"
-                                    type="email"
-                                    icon={<Mail size={20} className="text-gray-400" />}
-                                    disabled={isLoading}
-                                    {...form.register("email")}
-                                    className={`h-14 bg-gray-50/50 border-gray-200 focus:bg-white focus:border-blue-500 transition-all text-lg rounded-2xl ${form.formState.errors.email ? "border-red-500 focus:border-red-500 bg-red-50" : ""}`}
-                                />
-                                {form.formState.errors.email && (
-                                    <p className="text-xs text-red-500 ml-1 font-medium italic">{form.formState.errors.email.message}</p>
-                                )}
-                            </div>
+                <CardContent className="space-y-6 px-8 pb-8">
+                    <AnimatePresence mode="wait">
+                        {step === "EMAIL" && (
+                            <motion.form
+                                key="email-form"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                onSubmit={emailForm.handleSubmit(onEmailSubmit)}
+                                className="space-y-5"
+                            >
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-700 ml-1">Email</Label>
+                                    <Input
+                                        placeholder="nom@example.com"
+                                        type="email"
+                                        {...emailForm.register("email")}
+                                        className="h-14 bg-gray-50/50 border-gray-200 rounded-2xl text-lg"
+                                    />
+                                    {emailForm.formState.errors.email && (
+                                        <p className="text-red-500 text-xs ml-1">{emailForm.formState.errors.email.message}</p>
+                                    )}
+                                </div>
+                                <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 font-bold text-lg">
+                                    {isLoading ? <Loader2 className="animate-spin" /> : "Kod olish"}
+                                </Button>
+                            </motion.form>
+                        )}
 
-                            <Button
-                                type="submit"
-                                className="w-full h-14 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-black rounded-2xl text-lg shadow-xl shadow-blue-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] group"
-                                disabled={isLoading}
+                        {step === "OTP" && (
+                            <motion.form
+                                key="otp-form"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                onSubmit={otpForm.handleSubmit(onOtpSubmit)}
+                                className="space-y-5"
                             >
-                                {isLoading ? (
-                                    <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-                                ) : (
-                                    <>
-                                        Yuborish <ArrowRight className="ml-2 h-6 w-6 group-hover:translate-x-1 transition-transform" />
-                                    </>
-                                )}
-                            </Button>
-                        </form>
-                    ) : (
-                        <div className="text-center py-4">
-                            <p className="text-gray-600 mb-6">Email kelmadimi? Spam papkasini tekshirib ko'ring yoki qaytadan urinib ko'ring.</p>
-                            <Button
-                                variant="outline"
-                                className="w-full h-12 rounded-xl"
-                                onClick={() => setIsSubmitted(false)}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-700 ml-1">6 xonali kod</Label>
+                                    <Input
+                                        placeholder="123456"
+                                        maxLength={6}
+                                        {...otpForm.register("otp")}
+                                        className="h-14 bg-gray-50/50 border-gray-200 rounded-2xl text-lg text-center tracking-[8px] font-mono"
+                                    />
+                                    {otpForm.formState.errors.otp && (
+                                        <p className="text-red-500 text-xs ml-1">{otpForm.formState.errors.otp.message}</p>
+                                    )}
+                                </div>
+                                <div className="text-center text-sm text-gray-500">
+                                    <button type="button" onClick={() => setStep("EMAIL")} className="text-blue-600 hover:underline">
+                                        Emailni o'zgartirish
+                                    </button>
+                                </div>
+                                <Button type="submit" className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 font-bold text-lg">
+                                    Davom etish
+                                </Button>
+                            </motion.form>
+                        )}
+
+                        {step === "PASSWORD" && (
+                            <motion.form
+                                key="password-form"
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 20 }}
+                                onSubmit={passwordForm.handleSubmit(onPasswordSubmit)}
+                                className="space-y-5"
                             >
-                                Qaytadan urinish
-                            </Button>
-                        </div>
-                    )}
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-700 ml-1">Yangi parol</Label>
+                                    <Input
+                                        type="password"
+                                        placeholder="******"
+                                        {...passwordForm.register("password")}
+                                        className="h-14 bg-gray-50/50 border-gray-200 rounded-2xl text-lg"
+                                    />
+                                    {passwordForm.formState.errors.password && (
+                                        <p className="text-red-500 text-xs ml-1">{passwordForm.formState.errors.password.message}</p>
+                                    )}
+                                </div>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-bold text-gray-700 ml-1">Parolni tasdiqlang</Label>
+                                    <Input
+                                        type="password"
+                                        placeholder="******"
+                                        {...passwordForm.register("confirmPassword")}
+                                        className="h-14 bg-gray-50/50 border-gray-200 rounded-2xl text-lg"
+                                    />
+                                    {passwordForm.formState.errors.confirmPassword && (
+                                        <p className="text-red-500 text-xs ml-1">{passwordForm.formState.errors.confirmPassword.message}</p>
+                                    )}
+                                </div>
+                                <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 font-bold text-lg">
+                                    {isLoading ? <Loader2 className="animate-spin" /> : "Saqlash"}
+                                </Button>
+                            </motion.form>
+                        )}
+
+                        {step === "SUCCESS" && (
+                            <motion.div
+                                key="success"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="text-center py-4"
+                            >
+                                <p className="text-gray-600 mb-6">Parol muvaffaqiyatli o'zgartirildi. Siz kirish sahifasiga yo'naltirilasiz.</p>
+                                <Button onClick={() => window.location.href = "/auth/login"} variant="outline" className="w-full h-12 rounded-xl">
+                                    Kirish
+                                </Button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </CardContent>
 
-                <CardFooter className="py-8 bg-gray-50/50 border-t border-gray-100 flex flex-col items-center gap-4">
-                    <Link
-                        href="/auth/login"
-                        className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-bold transition-all group"
-                    >
-                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                        Kirish sahifasiga qaytish
-                    </Link>
-                </CardFooter>
+                {step === "EMAIL" && (
+                    <CardFooter className="py-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                        <Link href="/auth/login" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-bold transition-all group">
+                            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                            Kirishga qaytish
+                        </Link>
+                    </CardFooter>
+                )}
             </Card>
         </motion.div>
     );
