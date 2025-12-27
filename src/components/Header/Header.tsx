@@ -84,8 +84,16 @@ export default function Header() {
                 setNotifOpen(false);
             }
         };
+
+        const handleCloseMenu = () => setMenuOpen(false);
+
         document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
+        window.addEventListener("close-catalog-menu", handleCloseMenu);
+
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            window.removeEventListener("close-catalog-menu", handleCloseMenu);
+        };
     }, []);
 
     const handleSearch = async (query: string) => {

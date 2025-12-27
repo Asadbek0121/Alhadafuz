@@ -29,7 +29,11 @@ export default function BottomNav() {
 
     return (
         <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 flex items-center justify-around h-16 px-4 z-50">
-            <Link href="/" className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/" ? "text-primary scale-110" : "text-text-muted")}>
+            <Link
+                href="/"
+                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/" ? "text-primary scale-110" : "text-text-muted")}
+                onClick={() => window.dispatchEvent(new CustomEvent("close-catalog-menu"))}
+            >
                 <LayoutDashboard size={22} className={pathname === "/" ? "stroke-[2.5px]" : "stroke-2"} />
                 <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Bosh sahifa</span>
             </Link>
@@ -39,18 +43,27 @@ export default function BottomNav() {
                 <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Katalog</span>
             </div>
 
-            <Link href="/cart" className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/cart" ? "text-primary scale-110" : "text-text-muted")}>
+            <Link
+                href="/cart"
+                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/cart" ? "text-primary scale-110" : "text-text-muted")}
+                onClick={() => window.dispatchEvent(new CustomEvent("close-catalog-menu"))}
+            >
                 <ShoppingBag size={22} className={pathname === "/cart" ? "stroke-[2.5px]" : "stroke-2"} />
                 <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Savatcha</span>
             </Link>
 
-            <Link href="/favorites" className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/favorites" ? "text-primary scale-110" : "text-text-muted")}>
+            <Link
+                href="/favorites"
+                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/favorites" ? "text-primary scale-110" : "text-text-muted")}
+                onClick={() => window.dispatchEvent(new CustomEvent("close-catalog-menu"))}
+            >
                 <Heart size={22} className={pathname === "/favorites" ? "stroke-[2.5px]" : "stroke-2"} />
                 <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Sevimlilar</span>
             </Link>
 
             <div
                 onClick={(e) => {
+                    window.dispatchEvent(new CustomEvent("close-catalog-menu"));
                     if (!isAuthenticated) {
                         e.preventDefault();
                         openAuthModal();
