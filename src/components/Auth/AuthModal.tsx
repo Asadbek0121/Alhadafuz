@@ -231,7 +231,13 @@ export default function AuthModal() {
 
                     {mode === 'login' && (
                         <div className="flex justify-end mb-4">
-                            <Link href="/auth/forgot-password" className={styles.forgotLink}>Parolni unutdingizmi?</Link>
+                            <Link
+                                href="/auth/forgot-password"
+                                className={styles.forgotLink}
+                                onClick={closeAuthModal}
+                            >
+                                Parolni unutdingizmi?
+                            </Link>
                         </div>
                     )}
 
