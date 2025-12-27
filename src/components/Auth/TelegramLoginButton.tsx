@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { signIn } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
 
 interface TelegramUser {
     id: number;
@@ -15,92 +16,83 @@ interface TelegramUser {
 }
 
 export default function TelegramLoginButton({ botName }: { botName: string }) {
-    const scriptRef = useRef<HTMLDivElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isHovered, setIsHovered] = useState(false);
+    // const [isWidgetLoaded, setIsWidgetLoaded] = useState(false);
 
     useEffect(() => {
-        if (!scriptRef.current) return;
-        // Avoid duplication
-        if (scriptRef.current.querySelector('script')) return;
+        if (!containerRef.current) return;
+        // Agar allaqachon script bo'lsa, qayta yuklamaymiz
+        if (containerRef.current.querySelector('script')) return;
 
         const script = document.createElement('script');
         script.src = "https://telegram.org/js/telegram-widget.js?22";
         script.setAttribute("data-telegram-login", botName);
         script.setAttribute("data-size", "large");
-        script.setAttribute("data-userpic", "false");
+        script.setAttribute("data-radius", "10");
         script.setAttribute("data-request-access", "write");
+        script.setAttribute("data-userpic", "false");
         script.setAttribute("data-onauth", "onTelegramAuth(user)");
         script.async = true;
 
-        script.onload = () => console.log("Telegram widget script loaded successfully.");
-        script.onerror = (e) => console.error("Telegram widget script failed to load:", e);
+        script.onload = () => {
+            // setIsWidgetLoaded(true);
+            console.log("Telegram widget loaded");
+        };
 
-        scriptRef.current.appendChild(script);
+        script.onerror = () => {
+            toast.error("Telegram vidjeti yuklanmadi. Internetni tekshiring.");
+        };
 
+        containerRef.current.appendChild(script);
+
+        // Global callback funksiyasini e'lon qilamiz
         (window as any).onTelegramAuth = async (user: TelegramUser) => {
-            console.log("Telegram Auth Callback triggered:", user);
+            console.log("Telegram Auth User:", user);
             setIsLoading(true);
             try {
                 localStorage.setItem('mergeCartOnLogin', 'true');
+
+                // NextAuth ga signal yuboramiz
                 const result = await signIn('telegram-login', {
                     ...user,
-                    redirect: false
+                    redirect: false,
+                    callbackUrl: window.location.href
                 });
 
                 if (result?.error) {
-                    toast.error("Telegram orqali kirishda xatolik");
+                    console.error("Login Result Error:", result.error);
+                    toast.error("Telegram orqali kirishda xatolik yuz berdi");
                     localStorage.removeItem('mergeCartOnLogin');
                 } else {
                     toast.success("Muvaffaqiyatli kirildi!");
                     window.location.reload();
                 }
             } catch (error) {
-                console.error(error);
+                console.error("Login Catch Error:", error);
                 toast.error("Tizim xatosi");
                 localStorage.removeItem('mergeCartOnLogin');
             } finally {
                 setIsLoading(false);
             }
         };
+
+        return () => {
+            // Cleanup cleanups if needed, but usually removing script implies reload
+            // delete (window as any).onTelegramAuth;
+        };
     }, [botName]);
 
-    const handleFallbackClick = () => {
-        // Did the widget fail to cover this button?
-        toast.error("Telegram Bot sozlanmagan! (BotFather domen sozlamalarini tekshiring)");
-    };
-
     return (
-        <div className="relative w-full h-full z-10">
-            {/* Custom Visual Button */}
-            <button
-                className={`flex items-center justify-center w-full h-12 border border-gray-200 rounded-xl transition-colors gap-3 ${isHovered ? 'bg-gray-50 border-gray-300' : 'bg-white'
-                    }`}
-                type="button"
-            >
-                {isLoading ? (
-                    <span className="text-sm text-gray-500">Kirish...</span>
-                ) : (
-                    <>
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M21.1 4.30005L18.7 16.9C18.4 18.2 17.6 18.6 16.6 18.1L11 13.9L8.3 16.5C8 16.8 7.8 17 7.2 17L7.6 11.4L17.8 2.20005C18.2 1.80005 17.7 1.60005 17.1 2.00005L4.5 9.90005L-0.9 8.20005C-1.3 8.10005 -1.3 7.40005 -0.8 7.20005L20.2 -0.899951C21.2 -1.29995 22 0.300049 21.1 4.30005Z" fill="#229ED9" />
-                        </svg>
-                        <span className="text-sm font-medium text-gray-700">Telegram</span>
-                    </>
-                )}
-            </button>
-
-            {/* Invisible Overlay Widget Container */}
-            <div
-                ref={scriptRef}
-                className="absolute inset-0 w-full h-full opacity-0 z-20 overflow-hidden cursor-pointer"
-                style={{ transform: 'scale(1.5)', transformOrigin: 'center' }}
-                onClick={handleFallbackClick}
-                onMouseEnter={() => setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-            >
-                {/* Script will inject iframe here. */}
-            </div>
+        <div className="w-full flex justify-center h-12">
+            {isLoading ? (
+                <div className="flex items-center gap-2 text-blue-500">
+                    <Loader2 className="animate-spin" size={20} />
+                    <span className="text-sm font-medium">Kirish...</span>
+                </div>
+            ) : (
+                <div ref={containerRef} className="telegram-widget-container flex justify-center items-center w-full" />
+            )}
         </div>
     );
 }
