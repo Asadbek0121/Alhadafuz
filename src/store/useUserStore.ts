@@ -11,6 +11,7 @@ interface User {
     uniqueId?: string;
     notificationsEnabled?: boolean;
     isDarkMode?: boolean;
+    role?: string;
 }
 
 interface UserState {
