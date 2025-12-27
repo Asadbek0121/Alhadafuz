@@ -12,13 +12,14 @@ import { verifyTelegramLogin } from "@/lib/telegram-auth";
 export const { auth, signIn, signOut, handlers } = NextAuth({
     ...authConfig,
     adapter: PrismaAdapter(prisma) as any,
-    session: { strategy: "jwt" },
+    trustHost: true,
+    secret: process.env.AUTH_SECRET,
     providers: [
-        Google({
+        ...(process.env.GOOGLE_CLIENT_SECRET ? [Google({
             clientId: process.env.GOOGLE_CLIENT_ID || "575519548512-9cmofokav83sd3mv9j5v0ma5tdpd77q9.apps.googleusercontent.com",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
             allowDangerousEmailAccountLinking: true,
-        }),
+        })] : []),
         Credentials({
             id: 'telegram-login',
             name: 'Telegram',
