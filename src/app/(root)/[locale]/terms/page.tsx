@@ -1,41 +1,77 @@
+"use client";
+
 export default function TermsPage() {
     return (
-        <div className="container py-8">
-            <h1 className="text-3xl font-bold mb-6">Ommaviy Oferta</h1>
+        <div className="bg-slate-50 min-h-screen pb-20">
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 py-16 text-center text-white shadow-lg relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <h1 className="text-3xl md:text-5xl font-bold relative z-10">Ommaviy oferta</h1>
+                <p className="text-blue-100 mt-3 text-lg font-light relative z-10">Foydalanish shartlari va qoidalari</p>
+            </div>
 
-            <div className="prose max-w-none text-gray-700 space-y-4 text-sm">
-                <p>
-                    Ushbu Ommaviy oferta (keyingi o'rinlarda "Oferta") <strong>HADAF</strong> internet do'koni (keyingi o'rinlarda "Sotuvchi")
-                    va tovarlarni xarid qiluvchi har qanday jismoniy yoki yuridik shaxs (keyingi o'rinlarda "Xaridor") o'rtasidagi shartnoma hisoblanadi.
-                </p>
+            <div className="container max-w-4xl -mt-10 relative z-10 px-4">
+                <div className="bg-white rounded-3xl shadow-xl p-8 md:p-12 border border-blue-50">
+                    <div className="prose prose-lg text-gray-700 max-w-none prose-headings:text-slate-900 prose-a:text-blue-600">
+                        <section className="mb-8">
+                            <h3>1. Umumiy qoidalar</h3>
+                            <p>
+                                Ushbu Ommaviy oferta (keyingi o'rinlarda "Oferta") <strong>HADAF</strong> internet do'koni va xaridor o'rtasidagi munosabatlarni tartibga soladi.
+                                Saytdan foydalanish va buyurtma berish ushbu shartlarga rozilik bildirishni anglatadi.
+                            </p>
+                        </section>
 
-                <h3 className="font-bold text-lg">1. Umumiy qoidalar</h3>
-                <p>
-                    1.1. Mazkur Oferta O'zbekiston Respublikasi Fuqarolik kodeksiga muvofiq rasmiy taklif hisoblanadi. <br />
-                    1.2. Xaridor tomonidan buyurtma rasmiylashtirilishi ushbu Oferta shartlarini to'liq va so'zsiz qabul qilish (aksept) deb hisoblanadi.
-                </p>
+                        <section className="mb-8">
+                            <h3>2. Shartnoma predmeti</h3>
+                            <p>
+                                Sotuvchi Mahsulotni Xaridorga mulk huquqi asosida o'tkazish, Xaridor esa Mahsulotni qabul qilish va uning uchun belgilangan narxni to'lash majburiyatini oladi.
+                            </p>
+                        </section>
 
-                <h3 className="font-bold text-lg">2. Tovarlar va narxlar</h3>
-                <p>
-                    2.1. Sotuvchi saytida ko'rsatilgan tovarlarning narxlari va mavjudligi o'zgarishi mumkin. <br />
-                    2.2. Tovar narxi xarid amalga oshirilayotgan vaqtda qat'iy hisoblanadi (agar texnik xatolik yuz bermagan bo'lsa).
-                </p>
+                        <section className="mb-8">
+                            <h3>3. Narxlar va To'lov tartibi</h3>
+                            <ul className="list-disc pl-5 space-y-2">
+                                <li>Saytdagi mahsulot narxlari O'zbekiston so'mida ko'rsatilgan.</li>
+                                <li>To'lov quyidagi usullarda amalga oshirilishi mumkin:
+                                    <strong> Naqd pul</strong>, <strong> Payme</strong>, <strong> Click</strong>, <strong> Uzcard/Humo</strong>.
+                                </li>
+                                <li>Sotuvchi narxlarni ogohlantirmasdan o'zgartirish huquqiga ega (buyurtma tasdiqlangandan so'ng narx o'zgarmaydi).</li>
+                            </ul>
+                        </section>
 
-                <h3 className="font-bold text-lg">3. Yetkazib berish va to'lov</h3>
-                <p>
-                    3.1. Yetkazib berish xizmati Sotuvchi yoki uchinchi tomon kuryerlik xizmatlari orqali amalga oshiriladi. <br />
-                    3.2. To'lov turlari: Naqd pul, plastik karta (Uzcard, Humo), to'lov tizimlari (Payme, Click) orqali amalga oshirilishi mumkin.
-                </p>
+                        <section className="mb-8">
+                            <h3>4. Yetkazib berish</h3>
+                            <p>
+                                Yetkazib berish xizmati <strong>Termiz shahri va Surxondaryo viloyati</strong> bo'ylab amalga oshiriladi.
+                                Yetkazib berish narxi va muddati buyurtma rasmiylashtirish vaqtida hisoblanadi.
+                            </p>
+                        </section>
 
-                <h3 className="font-bold text-lg">4. Tomonlarning javobgarligi</h3>
-                <p>
-                    4.1. Sotuvchi mahsulot sifati va butunligi uchun yetkazib berish paytigacha javobgardir. <br />
-                    4.2. Xaridor buyurtma berishda taqdim etgan ma'lumotlarining to'g'riligi uchun javobgardir.
-                </p>
+                        <section className="mb-8">
+                            <h3>5. Kafolat va Qaytarish</h3>
+                            <p>
+                                Xaridor 10 kun ichida sifatli mahsulotni qaytarish huquqiga ega (agar tovar ko'rinishi saqlangan bo'lsa).
+                                Kafolat muddatidagi nosozliklar servis markazi xulosasi asosida tuzatiladi yoki almashtiriladi.
+                            </p>
+                        </section>
 
-                <p className="mt-4">
-                    Ushbu shartlar Xaridor va Sotuvchi o'rtasidagi munosabatlarni tartibga soladi. Savollar tug'ilganda bizning qo'llab-quvvatlash xizmatimizga murojaat qilishingiz mumkin.
-                </p>
+                        <section className="mb-8">
+                            <h3>6. Nizolarni hal qilish</h3>
+                            <p>
+                                Tomonlar o'rtasidagi kelishmovchiliklar muzokaralar yo'li bilan hal qilinadi. Kelishuvga erishilmaganda, nizo O'zbekiston Respublikasi qonunchiligiga muvofiq sudda ko'rib chiqiladi.
+                            </p>
+                        </section>
+                    </div>
+
+                    <div className="mt-12 p-6 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between">
+                        <div>
+                            <p className="text-sm text-gray-500 font-medium uppercase tracking-wide">Oxirgi yangilanish</p>
+                            <p className="text-slate-900 font-bold">25 Dekabr, 2025</p>
+                        </div>
+                        <div className="text-right">
+                            <p className="text-sm text-gray-500 font-medium bg-slate-200 px-3 py-1 rounded-full">v2.1</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

@@ -29,14 +29,10 @@ export default function Home() {
       <Hero />
 
       <section className="container">
-        <h2 style={{ fontSize: '24px', fontWeight: '700', marginBottom: '24px', marginTop: '40px' }}>
+        <h2 className="text-2xl font-bold mb-6 mt-10 text-slate-900">
           {t('ommabop_mahsulotlar')}
         </h2>
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
-          gap: '20px'
-        }}>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
           {products.map((p) => (
             <ProductCard
               key={p.id}

@@ -141,10 +141,10 @@ export default function SupportChat() {
                     width: 64px;
                     height: 64px;
                     border-radius: 50%;
-                    background: linear-gradient(135deg, #0085db 0%, #0060a0 100%);
+                    background: linear-gradient(135deg, #0052FF 0%, #0033CC 100%);
                     color: #fff;
                     border: none;
-                    box-shadow: 0 8px 25px rgba(0, 133, 219, 0.4);
+                    box-shadow: 0 8px 25px rgba(0, 82, 255, 0.4);
                     cursor: pointer;
                     display: flex;
                     align-items: center;
@@ -183,30 +183,44 @@ export default function SupportChat() {
                 className="support-fab"
                 style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
             >
-                <Headset size={30} strokeWidth={2} />
+                <Headset size={32} strokeWidth={2} />
             </button>
 
             {/* Window */}
             {isOpen && (
                 <div style={styles.container}>
-                    {/* Header - Styled like Image 1 */}
+                    {/* Header - Premium Redesign */}
                     <div style={styles.header}>
-                        <button onClick={view === 'chat' ? () => setView('menu') : () => setIsOpen(false)}
-                            style={styles.headerCircleBtn}>
-                            <ChevronLeft size={20} />
-                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                            {view === 'chat' && (
+                                <button onClick={() => setView('menu')} style={styles.headerBackBtn}>
+                                    <ChevronLeft size={24} />
+                                </button>
+                            )}
 
-                        <div style={{ flex: 1, textAlign: 'center' }}>
-                            <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 600, color: '#fff' }}>
-                                {view === 'menu' ? "Yordam Markazi" : (admin?.name || "Asadbek Davronov")}
-                            </h4>
-                            <span style={{ fontSize: '12px', opacity: 0.9, color: '#fff' }}>
-                                Online
-                            </span>
+                            <div style={styles.avatarContainer}>
+                                {view === 'menu' ? (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)' }}>
+                                        <Headset size={22} color="#fff" />
+                                    </div>
+                                ) : (
+                                    <img src="/team/asadbek.jpg" alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                )}
+                            </div>
+
+                            <div>
+                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#fff', letterSpacing: '0.3px', lineHeight: '1.2' }}>
+                                    {view === 'menu' ? "Hadaf Yordam" : "Asadbek Davronov"}
+                                </h4>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }}></span>
+                                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.95)', fontWeight: 500 }}>Online</span>
+                                </div>
+                            </div>
                         </div>
 
-                        <button onClick={() => setIsOpen(false)} style={styles.headerCircleBtn}>
-                            <X size={20} />
+                        <button onClick={() => setIsOpen(false)} style={styles.headerCloseBtn}>
+                            <X size={18} strokeWidth={2.5} />
                         </button>
                     </div>
 
@@ -262,13 +276,13 @@ export default function SupportChat() {
                                 <div ref={scrollRef} style={styles.messagesArea}>
                                     {loading && messages.length === 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
-                                            <Loader2 className="animate-spin" size={32} style={{ marginBottom: '10px', color: '#0085db' }} />
+                                            <Loader2 className="animate-spin" size={32} style={{ marginBottom: '10px', color: '#0052FF' }} />
                                             <span style={{ fontSize: '14px', fontWeight: 500 }}>Yuklanmoqda...</span>
                                         </div>
                                     ) : messages.length === 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center' }}>
-                                            <div style={{ width: '80px', height: '80px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
-                                                <MessageSquare size={36} color="#cbd5e1" />
+                                            <div style={{ width: '80px', height: '80px', background: '#e0f2fe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
+                                                <MessageSquare size={36} color="#0052FF" />
                                             </div>
                                             <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>Hozircha xabarlar yo'q</h4>
                                             <p style={{ fontSize: '13px' }}>Savollaringizni yozib qoldiring, tez orada javob beramiz.</p>
@@ -282,16 +296,22 @@ export default function SupportChat() {
                                                         <div style={{
                                                             maxWidth: '75%',
                                                             padding: '12px 18px',
-                                                            borderRadius: '20px',
-                                                            background: isMe ? '#00A4E4' : '#F4F7FB',
-                                                            color: isMe ? '#fff' : '#2A3547',
+                                                            borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                                                            background: isMe ? 'linear-gradient(135deg, #0052FF 0%, #0040DD 100%)' : '#fff',
+                                                            color: isMe ? '#fff' : '#1e293b',
                                                             fontSize: '14px',
-                                                            lineHeight: '1.4',
+                                                            lineHeight: '1.5',
                                                             wordBreak: 'break-word',
-                                                            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+                                                            boxShadow: isMe ? '0 4px 15px rgba(0, 82, 255, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
+                                                            border: isMe ? 'none' : '1px solid #e2e8f0'
                                                         }}>
                                                             {msg.content}
                                                         </div>
+                                                        {!isMe && (
+                                                            <span style={{ fontSize: '10px', color: '#94a3b8', alignSelf: 'flex-end', marginLeft: '8px', marginBottom: '4px' }}>
+                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
+                                                        )}
                                                     </div>
                                                 )
                                             })}
@@ -334,49 +354,76 @@ export default function SupportChat() {
 const styles: Record<string, React.CSSProperties> = {
     container: {
         position: 'fixed' as 'fixed',
-        bottom: '110px',
-        right: '30px',
-        width: '360px',
-        height: '550px',
-        maxHeight: 'calc(100vh - 140px)',
+        bottom: '100px',
+        right: '25px',
+        width: '380px',
+        height: '600px',
+        maxHeight: 'calc(100vh - 120px)',
         background: '#fff',
         borderRadius: '24px',
-        boxShadow: '0 15px 50px rgba(0,0,0,0.15)',
+        boxShadow: '0 20px 60px rgba(0,40,100,0.25)',
         display: 'flex',
         flexDirection: 'column',
         zIndex: 9999,
         overflow: 'hidden',
-        border: '1px solid rgba(0,0,0,0.06)',
+        border: '1px solid rgba(255,255,255,0.5)',
         transformOrigin: 'bottom right',
-        animation: 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
+        animation: 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        fontFamily: 'inherit'
     },
     header: {
-        padding: '12px 18px',
-        background: '#00A4E4',
+        padding: '16px 20px',
+        background: 'linear-gradient(135deg, #0052FF 0%, #0033CC 100%)',
         color: '#fff',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        height: '70px'
+        height: 'auto',
+        minHeight: '80px',
+        boxShadow: '0 4px 15px rgba(0, 82, 255, 0.25)',
+        zIndex: 10
     },
-    headerCircleBtn: {
-        background: 'rgba(255,255,255,0.2)',
+    headerBackBtn: {
+        background: 'transparent',
+        border: 'none',
+        color: '#fff',
+        cursor: 'pointer',
+        padding: '8px',
+        marginRight: '0px',
+        marginLeft: '-8px',
+        display: 'flex',
+        borderRadius: '50%',
+        transition: 'background 0.2s',
+    },
+    headerCloseBtn: {
+        background: 'rgba(255,255,255,0.15)',
         border: 'none',
         borderRadius: '50%',
-        width: '38px',
-        height: '38px',
+        width: '32px',
+        height: '32px',
         color: '#fff',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'background 0.2s'
+        transition: 'all 0.2s',
+        backdropFilter: 'blur(4px)'
+    },
+    avatarContainer: {
+        width: '44px',
+        height: '44px',
+        borderRadius: '50%',
+        overflow: 'hidden',
+        border: '2px solid rgba(255,255,255,0.3)',
+        boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+        background: '#fff'
     },
     menuContent: {
         padding: '24px',
         flex: 1,
         display: 'flex',
-        flexDirection: 'column'
+        flexDirection: 'column',
+        background: '#fcfcfc'
     },
     menuOptions: {
         display: 'flex',
@@ -390,53 +437,60 @@ const styles: Record<string, React.CSSProperties> = {
         padding: '16px',
         borderRadius: '16px',
         background: '#fff',
-        border: '1px solid #f1f5f9',
+        border: '1px solid #e2e8f0',
         cursor: 'pointer',
         transition: 'all 0.2s ease',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
+        position: 'relative',
+        overflow: 'hidden'
     },
     iconBox: {
-        width: '48px',
-        height: '48px',
-        borderRadius: '12px',
+        width: '50px',
+        height: '50px',
+        borderRadius: '14px',
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        fontSize: '24px'
     },
     messagesArea: {
         flex: 1,
-        background: '#fff',
-        padding: '24px 20px',
-        overflowY: 'auto'
+        background: '#f8fafc',
+        padding: '20px',
+        overflowY: 'auto',
+        backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
+        backgroundSize: '24px 24px'
     },
     inputArea: {
         padding: '16px',
         background: '#fff',
-        borderTop: '1px solid #f1f5f9'
+        borderTop: '1px solid #f1f5f9',
+        boxShadow: '0 -4px 20px rgba(0,0,0,0.02)'
     },
     input: {
         width: '100%',
-        padding: '14px 50px 14px 20px',
-        borderRadius: '30px',
+        padding: '14px 55px 14px 20px',
+        borderRadius: '25px',
         border: '1px solid #E2E8F0',
         outline: 'none',
-        fontSize: '14px',
-        background: '#F8FAF9',
-        color: '#334155'
+        fontSize: '15px',
+        background: '#fff',
+        color: '#334155',
+        boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
+        transition: 'border 0.2s'
     },
     sendBtn: {
-        background: '#00A4E4',
+        background: 'linear-gradient(135deg, #0052FF 0%, #0033CC 100%)',
         color: '#fff',
         border: 'none',
-        width: '38px',
-        height: '38px',
+        width: '40px',
+        height: '40px',
         borderRadius: '50%',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
         transition: 'all 0.2s',
-        boxShadow: '0 4px 10px rgba(0, 164, 228, 0.3)'
+        boxShadow: '0 4px 12px rgba(0, 82, 255, 0.3)'
     }
 };
-

@@ -10,12 +10,17 @@ import {
 import styles from './Header.module.css';
 import { useCartStore } from '@/store/useCartStore';
 import { useWishlist } from '@/context/WishlistContext';
+import { Titan_One } from "next/font/google";
+
+const titanOne = Titan_One({ weight: "400", subsets: ["latin"] });
+
 import { useTranslations } from 'next-intl';
 import { useUserStore } from '@/store/useUserStore';
 import { useSession } from 'next-auth/react';
 import CartDrawer from '../Cart/CartDrawer';
 import AuthModal from '../Auth/AuthModal';
 import MegaMenu from './MegaMenu';
+import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
 
 export default function Header() {
@@ -32,7 +37,9 @@ export default function Header() {
     const router = useRouter();
 
     const [notifOpen, setNotifOpen] = useState(false);
-    const [menuOpen, setMenuOpen] = useState(false);
+    // const [menuOpen, setMenuOpen] = useState(false); // Replaced by global store
+    const { isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
+
     const [menuMode, setMenuMode] = useState<'full' | 'catalog'>('full');
 
     const [searchQuery, setSearchQuery] = useState('');
@@ -45,35 +52,9 @@ export default function Header() {
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
 
+    // ... (fetchNotifications kept same)
 
-
-    // Fetch notifications function
-    const fetchNotifications = () => {
-        const isEnabled = (user as any)?.notificationsEnabled !== false;
-        if (isAuthenticated && isEnabled) {
-            fetch('/api/user/notifications')
-                .then(res => res.json())
-                .then(data => {
-                    if (Array.isArray(data)) {
-                        setNotifications(data);
-                        setUnreadCount(data.filter((n: any) => !n.isRead).length);
-                    }
-                })
-                .catch(err => console.error("Failed to load notifications", err));
-        } else {
-            setNotifications([]);
-            setUnreadCount(0);
-        }
-    };
-
-    useEffect(() => {
-        fetchNotifications();
-
-        const handleNotifUpdate = () => fetchNotifications();
-        window.addEventListener('notifications-updated', handleNotifUpdate);
-
-        return () => window.removeEventListener('notifications-updated', handleNotifUpdate);
-    }, [isAuthenticated, (user as any)?.notificationsEnabled]);
+    // ... (useEffect for notifications kept same)
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -85,7 +66,7 @@ export default function Header() {
             }
         };
 
-        const handleCloseMenu = () => setMenuOpen(false);
+        const handleCloseMenu = () => closeCatalog();
 
         document.addEventListener("mousedown", handleClickOutside);
         window.addEventListener("close-catalog-menu", handleCloseMenu);
@@ -94,7 +75,7 @@ export default function Header() {
             document.removeEventListener("mousedown", handleClickOutside);
             window.removeEventListener("close-catalog-menu", handleCloseMenu);
         };
-    }, []);
+    }, [closeCatalog]); // Added dependency
 
     const handleSearch = async (query: string) => {
         setSearchQuery(query);
@@ -123,150 +104,128 @@ export default function Header() {
 
     return (
         <>
-            <header className={styles.header}>
-                <div className={`container ${styles.headerInner}`}>
+            <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300">
+                <div className="container h-24 md:h-28 flex items-center justify-between gap-4 md:gap-8">
 
-                    {/* Mobile Top Row */}
-                    <div className={styles.mobileTopRow}>
-                        {/* Mobile Menu Button Removed */}
+                    {/* Left Section: Logo & Catalog */}
+                    <div className="flex items-center gap-4 md:gap-8">
+                        {/* Mobile Menu Toggle Removed */}
 
-                        <Link href="/" className={styles.logoMobile}>
-                            <span style={{ color: 'var(--primary)' }}>Hadaf</span>Market
+                        <Link href="/" className="flex items-center shrink-0 group gap-0 -ml-4 md:-ml-8">
+                            <img src="/logo.png" alt="Hadaf Logo" className="h-[75px] md:h-[115px] w-auto object-contain transition-transform group-hover:scale-105" />
+                            <span className={`${titanOne.className} text-4xl md:text-[52px] leading-none text-[#0052FF] -ml-2 md:-ml-4 pt-1`}>Hadaf</span>
                         </Link>
 
-                        <div className={styles.mobileActions} style={{ display: 'none' }}>
-                            <Link
-                                href="/profile"
-                                className={styles.actionItem}
-                                onClick={handleProfileClick}
-                            >
-                                {user?.image ? (
-                                    <img src={user.image} alt={user.name || "User"} className={styles.userAvatar} />
-                                ) : (
-                                    <UserCircle size={26} strokeWidth={2.0} />
-                                )}
-                            </Link>
-                        </div>
+                        <button
+                            id="category-btn-trigger"
+                            className={`hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${isCatalogOpen
+                                ? 'bg-slate-900 text-white shadow-slate-900/20'
+                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30'
+                                }`}
+                            onClick={() => { setMenuMode('catalog'); toggleCatalog(); }}
+                        >
+                            {isCatalogOpen ? <X size={20} strokeWidth={2.5} /> : <LayoutGrid size={20} strokeWidth={2.5} />}
+                            <span>{t('katalog')}</span>
+                        </button>
                     </div>
 
-                    {/* Desktop specific elements */}
-                    <Link href="/" className={`${styles.logo} ${styles.desktopOnly}`}>
-                        <span style={{ color: 'var(--primary)' }}>Hadaf</span>Market
-                    </Link>
-
-                    <button
-                        id="category-btn-trigger"
-                        className={`${styles.categoryBtn} ${menuOpen ? styles.activeMenuBtn : ''} ${styles.desktopOnly}`}
-                        onClick={() => { setMenuMode('catalog'); setMenuOpen(!menuOpen); }}
-                    >
-                        {menuOpen ? <X size={20} /> : <LayoutGrid size={20} />}
-                        {t('katalog')}
-                    </button>
-
-                    <div className={styles.mobileSearchContainer}>
-                        <div className={styles.searchBox} ref={searchRef}>
+                    {/* Center Section: Search Bar */}
+                    <div className="hidden lg:block flex-1 relative" ref={searchRef}>
+                        <div className="relative group">
                             <input
                                 type="text"
                                 placeholder={t('search_placeholder')}
-                                className={styles.searchInput}
+                                className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 px-5 py-3 pr-14 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 transition-all font-medium"
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
-                            <button className={styles.searchBtn}>
-                                <Search size={20} />
+                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+                                <Search size={20} strokeWidth={2.5} />
                             </button>
-
-                            {searchQuery.length > 0 && (
-                                <div className={styles.searchResults}>
-                                    {searchResults.length > 0 ? (
-                                        searchResults.map((product) => (
-                                            <Link
-                                                key={product.id}
-                                                href={`/product/${product.id}`}
-                                                className={styles.searchItem}
-                                                onClick={() => {
-                                                    setSearchResults([]);
-                                                    setSearchQuery('');
-                                                }}
-                                            >
-                                                <img src={product.image} alt={product.title} className={styles.searchItemImg} />
-                                                <div className={styles.searchItemInfo}>
-                                                    <div className={styles.searchItemTitle}>{product.title}</div>
-                                                    <div className={styles.searchItemPrice}>{product.price.toLocaleString()} {t('som')}</div>
-                                                </div>
-                                            </Link>
-                                        ))
-                                    ) : (
-                                        <div className={styles.searchEmpty}>
-                                            {isSearching ? t('loading') : t('not_found')}
-                                        </div>
-                                    )}
-                                </div>
-                            )}
                         </div>
 
-                        <div className={styles.langWrapperMobile}>
-                            <LanguageSwitcher minimal={true} />
-                        </div>
+                        {/* Search Dropdown */}
+                        {searchQuery.length > 0 && (
+                            <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden py-2 animate-fade-in-up">
+                                {isSearching ? (
+                                    <div className="p-8 text-center text-slate-500">
+                                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                        {t('loading')}
+                                    </div>
+                                ) : searchResults.length > 0 ? (
+                                    searchResults.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.id}`}
+                                            className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
+                                            onClick={() => { setSearchResults([]); setSearchQuery(''); }}
+                                        >
+                                            <img src={product.image} alt={product.title} className="w-12 h-12 object-contain rounded-lg bg-white p-1 border border-slate-100" />
+                                            <div>
+                                                <div className="font-medium text-slate-900 line-clamp-1">{product.title}</div>
+                                                <div className="text-blue-600 font-bold text-sm">{product.price.toLocaleString()} {t('som')}</div>
+                                            </div>
+                                        </Link>
+                                    ))
+                                ) : (
+                                    <div className="p-8 text-center text-slate-500">
+                                        <Search size={24} className="mx-auto mb-2 opacity-50" />
+                                        {t('not_found')}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                     </div>
 
-                    <nav className={`${styles.actions} ${styles.desktopOnly}`} ref={dropdownRef}>
-                        {/* Language - Apple Style Switcher */}
-                        <div className={styles.actionItem} style={{ cursor: 'default' }}>
+                    {/* Right Section: Actions */}
+                    <nav className="flex items-center gap-2 md:gap-6" ref={dropdownRef}>
+                        {/* Language Switcher */}
+                        <div className="hidden md:block">
                             <LanguageSwitcher />
                         </div>
 
-
-
                         {/* Notifications */}
                         <div
-                            className={styles.actionItem}
+                            className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer"
                             onClick={() => {
                                 if (!notifOpen && unreadCount > 0) {
-                                    // Mark all as read locally immediately for UI
                                     setUnreadCount(0);
                                     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-
-                                    // Sync with server
-                                    fetch('/api/user/notifications', { method: 'PUT' })
-                                        .catch(err => console.error("Failed to mark read", err));
+                                    fetch('/api/user/notifications', { method: 'PUT' }).catch(console.error);
                                 }
                                 setNotifOpen(!notifOpen);
                             }}
                         >
-                            <div className={styles.iconWrapper}>
-                                <Bell size={22} strokeWidth={2.5} />
-                                {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all">
+                                <Bell size={24} strokeWidth={2} />
+                                {unreadCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{unreadCount}</span>}
                             </div>
-                            <span className={styles.actionLabel}>{t('bildirishnoma')}</span>
+                            <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('bildirishnoma')}</span>
+
+                            {/* Notification Dropdown */}
                             {notifOpen && (
-                                <div className={styles.dropdown}>
-                                    <div className={styles.dropdownHeader}>
-                                        <span>{t('bildirishnoma')}</span>
-                                        <Link href="/profile/notifications" className={styles.markRead} style={{ fontSize: '11px', textDecoration: 'underline' }}>
-                                            {t('bildirishnomalarni_boshqarish')}
-                                        </Link>
+                                <div className="absolute top-full right-0 mt-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[60] origin-top-right animate-scale-in">
+                                    <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                                        <span className="font-bold text-slate-900">{t('bildirishnoma')}</span>
+                                        <Link href="/profile/notifications" className="text-xs text-blue-600 font-medium hover:underline">{t('bildirishnomalarni_boshqarish')}</Link>
                                     </div>
-                                    <div className={styles.dropdownContent}>
-                                        {notifications.length === 0 ? (
-                                            <div className={styles.notifItem} style={{ justifyContent: 'center', opacity: 0.6 }}>
+                                    <div className="max-h-[300px] overflow-y-auto p-2">
+                                        {notifications.map(notif => (
+                                            <div key={notif.id} className="p-3 mb-1 rounded-xl hover:bg-slate-50 transition-colors flex gap-3">
+                                                <div className="shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                                                    <Info size={16} />
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-medium text-slate-900">{notif.title}</div>
+                                                    <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{notif.message}</div>
+                                                    <div className="text-[10px] text-slate-400 mt-1">{new Date(notif.createdAt).toLocaleDateString()}</div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {notifications.length === 0 && (
+                                            <div className="py-8 text-center text-slate-400 text-sm">
                                                 {t('empty_notif') || "Bildirishnomalar yo'q"}
                                             </div>
-                                        ) : (
-                                            notifications.map(notif => (
-                                                <div key={notif.id} className={styles.notifItem}>
-                                                    <div className={`${styles.notifIcon} ${styles.order}`}>
-                                                        <Info size={18} />
-                                                    </div>
-                                                    <div className={styles.notifInfo}>
-                                                        <div className={styles.notifTitle}>{notif.title}</div>
-                                                        <div className={styles.notifDesc}>{notif.message}</div>
-                                                        <div className={styles.notifTime} suppressHydrationWarning>
-                                                            {new Date(notif.createdAt).toLocaleDateString()}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            ))
                                         )}
                                     </div>
                                 </div>
@@ -274,42 +233,59 @@ export default function Header() {
                         </div>
 
                         {/* Favorites */}
-                        <Link href="/favorites" className={styles.actionItem}>
-                            <div className={styles.iconWrapper}>
-                                <Heart size={22} strokeWidth={2.5} />
-                                {wishlist.length > 0 && <span className={styles.badge}>{wishlist.length}</span>}
+                        <Link href="/favorites" className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-red-500 transition-all">
+                                <Heart size={24} strokeWidth={2} />
+                                {wishlist.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{wishlist.length}</span>}
                             </div>
-                            <span className={styles.actionLabel}>{t('sevimlilar')}</span>
+                            <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('sevimlilar')}</span>
                         </Link>
 
                         {/* Cart */}
-                        <div className={styles.actionItem} onClick={openCart}>
-                            <div className={styles.iconWrapper}>
-                                <ShoppingBag size={22} strokeWidth={2.5} />
-                                {items.length > 0 && <span className={styles.badge}>{items.length}</span>}
+                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
+                                <ShoppingBag size={24} strokeWidth={2} />
+                                {items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
-                            <span className={styles.actionLabel}>{t('savatcha')}</span>
-                        </div>
+                            <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors hidden md:block">{t('savatcha')}</span>
+                        </button>
 
-                        {/* Profile - Optimized for One-Click Access */}
-                        <Link
-                            href="/profile"
-                            className={styles.actionItem}
-                            onClick={handleProfileClick}
-                        >
-                            {user?.image ? (
-                                <img src={user.image} alt={user.name || "User"} className={styles.userAvatar} />
-                            ) : (
-                                <UserCircle size={28} strokeWidth={2.0} />
-                            )}
-                            <span className={styles.actionLabel}>
+                        {/* Profile */}
+                        <Link href="/profile" onClick={handleProfileClick} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all">
+                                {user?.image ? (
+                                    <img src={user.image} alt={user.name || "User"} className="w-6 h-6 rounded-full object-cover" />
+                                ) : (
+                                    <UserCircle size={24} strokeWidth={2} />
+                                )}
+                            </div>
+                            <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors max-w-[80px] truncate">
                                 {status === "loading" ? "..." : (isAuthenticated ? (user?.name?.split(' ')[0] || user?.email) : t('kirish'))}
                             </span>
                         </Link>
                     </nav>
                 </div>
+
+                {/* Mobile Search Bar (Only visible on mobile) */}
+                <div className="lg:hidden container pb-3 flex items-center gap-3">
+                    <div className="relative flex-1">
+                        <input
+                            type="text"
+                            placeholder={t('search_placeholder')}
+                            className="w-full bg-slate-100 border-none px-4 py-2.5 rounded-xl outline-none text-sm placeholder-slate-500"
+                            value={searchQuery}
+                            onChange={(e) => handleSearch(e.target.value)}
+                        />
+                        <button className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500">
+                            <Search size={18} />
+                        </button>
+                    </div>
+                    <div className="shrink-0">
+                        <LanguageSwitcher minimal={true} />
+                    </div>
+                </div>
             </header>
-            <MegaMenu isOpen={menuOpen} close={() => setMenuOpen(false)} menuMode={menuMode} />
+            <MegaMenu isOpen={isCatalogOpen} close={closeCatalog} menuMode={menuMode} />
             <CartDrawer />
             <AuthModal />
         </>

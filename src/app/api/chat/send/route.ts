@@ -30,7 +30,13 @@ export async function POST(req: Request) {
         }
 
         // Update updatedAt for the user involved
+        // Update updatedAt for the user involved (Sender or Receiver) to bubble them up in conversations
+        const sender = await prisma.user.findUnique({ where: { id: session.user.id } });
         const receiver = await prisma.user.findUnique({ where: { id: receiverId } });
+
+        if (sender?.role === 'USER') {
+            await prisma.user.update({ where: { id: sender.id }, data: { updatedAt: new Date() } });
+        }
         if (receiver?.role === 'USER') {
             await prisma.user.update({ where: { id: receiver.id }, data: { updatedAt: new Date() } });
         }

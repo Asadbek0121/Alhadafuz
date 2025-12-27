@@ -188,7 +188,7 @@ button {
   @apply max-w-[var(--container)] mx-auto px-5 w-full;
 }
 
-/* Custom Scrollbar for Apple-feel */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -222,4 +222,23 @@ button {
     padding-bottom: 70px;
     /* Space for BottomNav */
   }
+}
+
+/* Custom Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 40px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.animate-fade-in-up {
+  animation-name: fadeInUp;
+  animation-duration: 0.8s;
+  animation-fill-mode: both;
 }

@@ -1,6 +1,10 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
+import { Titan_One } from "next/font/google";
+
+const titanOne = Titan_One({ weight: "400", subsets: ["latin"] });
+
 import Link from 'next/link';
 import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
@@ -40,11 +44,10 @@ export default function AdminSidebar() {
             padding: '20px'
         }}>
             {/* Logo */}
-            <div style={{ padding: '0 10px 30px 10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '40px', height: '40px', background: '#0085db', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '20px', fontWeight: 'bold' }}>
-                    H
-                </div>
-                <span style={{ fontSize: '24px', fontWeight: '700', color: '#2A3547' }}>Hadaf Admin</span>
+            <div style={{ padding: '0 10px 30px 10px', display: 'flex', alignItems: 'center', gap: '0' }}>
+                <img src="/logo.png" alt="Hadaf Logo" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
+                <span className={`${titanOne.className} text-3xl leading-none text-[#0052FF] ml-0 pt-1`}>Hadaf</span>
+                <span className="text-sm font-semibold text-slate-500 ml-2 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">Admin</span>
             </div>
 
             {/* Menu */}

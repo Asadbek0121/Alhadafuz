@@ -83,9 +83,49 @@ export async function POST(req: Request) {
 
                     await bot.sendMessage(chatId, `Muvaffaqiyatli kirdingiz, ${telegramUser.first_name}! Saytga qaytishingiz mumkin.`);
                 }
-            } else {
+            } else if (text === '/start') {
                 // simple /start without token
-                await bot.sendMessage(chatId, "Assalomu alaykum! Hadaf Market botiga xush kelibsiz. Saytga kirish uchun saytdagi 'Telegram orqali kirish' tugmasini bosing.");
+                await bot.sendMessage(chatId, "Assalomu alaykum! Hadaf Market botiga xush kelibsiz. Savol yoki takliflaringizni shu yerda yozib qoldiring.");
+            } else {
+                // CHAT MESSAGE: Find/Create User and Save Message
+                const telegramIdStr = String(telegramUser.id);
+
+                let user = await prisma.user.findUnique({ where: { telegramId: telegramIdStr } });
+
+                // If user doesn't exist, create partial user
+                if (!user) {
+                    const uniqueId = await generateNextUniqueId();
+                    user = await prisma.user.create({
+                        data: {
+                            name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : '') + " (TG)",
+                            telegramId: telegramIdStr,
+                            uniqueId: uniqueId,
+                            role: "USER",
+                            provider: "telegram",
+                            image: `https://ui-avatars.com/api/?name=${telegramUser.first_name}&background=random`
+                        }
+                    });
+                }
+
+                // Find Admin
+                const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+
+                if (admin) {
+                    await prisma.message.create({
+                        data: {
+                            content: text,
+                            senderId: user.id,
+                            receiverId: admin.id,
+                            source: 'TELEGRAM'
+                        }
+                    });
+
+                    // Update User Timestamp for sorting in Admin Panel
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { updatedAt: new Date() }
+                    });
+                }
             }
         }
 

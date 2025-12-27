@@ -3,9 +3,8 @@
 import { Link, usePathname } from "@/navigation";
 import {
     User,
-    Package,
-    MapPin,
-    LayoutDashboard,
+    Home,
+    LayoutGrid,
     ShoppingBag,
     Heart
 } from "lucide-react";
@@ -19,6 +18,7 @@ function cn(...inputs: any[]) {
 
 import { useUserStore } from "@/store/useUserStore";
 import { useSession } from "next-auth/react";
+import { useUIStore } from "@/store/useUIStore";
 
 export default function BottomNav() {
     const pathname = usePathname();
@@ -26,56 +26,108 @@ export default function BottomNav() {
     const { openAuthModal } = useUserStore();
     const { data: session } = useSession();
     const isAuthenticated = !!session?.user;
+    const { isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
+
+    const navItems = [
+        {
+            label: "Bosh sahifa",
+            icon: Home,
+            href: "/",
+            isActive: pathname === "/" && !isCatalogOpen,
+            action: () => closeCatalog()
+        },
+        {
+            label: "Katalog",
+            icon: LayoutGrid,
+            href: null, // Custom action
+            isActive: isCatalogOpen,
+            action: () => toggleCatalog()
+        },
+        {
+            label: "Savatcha",
+            icon: ShoppingBag,
+            href: "/cart",
+            isActive: pathname === "/cart" && !isCatalogOpen,
+            action: () => closeCatalog()
+        },
+        {
+            label: "Sevimlilar",
+            icon: Heart,
+            href: "/favorites",
+            isActive: pathname === "/favorites" && !isCatalogOpen,
+            action: () => closeCatalog()
+        },
+        {
+            label: "Kabinet",
+            icon: User,
+            href: isAuthenticated ? "/profile" : null,
+            isActive: pathname.includes("/profile") && !isCatalogOpen,
+            action: (e: any) => {
+                closeCatalog();
+                if (!isAuthenticated) {
+                    e?.preventDefault();
+                    openAuthModal();
+                }
+            }
+        }
+    ];
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-gray-100 flex items-center justify-around h-16 px-4 z-50">
-            <Link
-                href="/"
-                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/" ? "text-primary scale-110" : "text-text-muted")}
-                onClick={() => window.dispatchEvent(new CustomEvent("close-catalog-menu"))}
-            >
-                <LayoutDashboard size={22} className={pathname === "/" ? "stroke-[2.5px]" : "stroke-2"} />
-                <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Bosh sahifa</span>
-            </Link>
+        <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-2xl border border-white/40 shadow-2xl shadow-blue-900/10 flex items-center justify-between px-2 h-[72px] z-[100] rounded-3xl transition-all duration-300">
+            {navItems.map((item, idx) => {
+                const Icon = item.icon;
+                const active = item.isActive;
 
-            <div onClick={() => document.getElementById('category-btn-trigger')?.click()} className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all text-text-muted cursor-pointer")}>
-                <Package size={22} className="stroke-2" />
-                <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Katalog</span>
-            </div>
+                const content = (
+                    <div className={cn("flex flex-col items-center justify-center w-full h-full py-1 relative group")}>
+                        {/* Active Glow Background */}
+                        {active && (
+                            <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-indigo-50 rounded-2xl -z-10 animate-fade-in opacity-70" />
+                        )}
 
-            <Link
-                href="/cart"
-                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/cart" ? "text-primary scale-110" : "text-text-muted")}
-                onClick={() => window.dispatchEvent(new CustomEvent("close-catalog-menu"))}
-            >
-                <ShoppingBag size={22} className={pathname === "/cart" ? "stroke-[2.5px]" : "stroke-2"} />
-                <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Savatcha</span>
-            </Link>
+                        <div className={cn("p-1.5 rounded-2xl transition-all duration-300 mb-0.5 relative", active ? "text-blue-600 -translate-y-1" : "text-slate-400 group-hover:text-slate-600")}>
+                            {active && <div className="absolute inset-0 bg-blue-100/50 rounded-xl blur-sm animate-pulse"></div>}
+                            <Icon
+                                size={active ? 26 : 24}
+                                className={cn("relative z-10 transition-all", active ? "stroke-[2.5px]" : "stroke-[1.5px]")}
+                                fill={active ? "currentColor" : "none"}
+                            />
+                        </div>
 
-            <Link
-                href="/favorites"
-                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all", pathname === "/favorites" ? "text-primary scale-110" : "text-text-muted")}
-                onClick={() => window.dispatchEvent(new CustomEvent("close-catalog-menu"))}
-            >
-                <Heart size={22} className={pathname === "/favorites" ? "stroke-[2.5px]" : "stroke-2"} />
-                <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Sevimlilar</span>
-            </Link>
+                        <span className={cn("text-[10px] tracking-wide transition-all duration-300", active ? "font-bold text-blue-600" : "font-medium text-slate-400 scale-90 opacity-80")}>
+                            {item.label}
+                        </span>
 
-            <div
-                onClick={(e) => {
-                    window.dispatchEvent(new CustomEvent("close-catalog-menu"));
-                    if (!isAuthenticated) {
-                        e.preventDefault();
-                        openAuthModal();
-                    } else {
-                        window.location.href = "/profile";
-                    }
-                }}
-                className={cn("flex flex-col items-center justify-center flex-1 h-full transition-all cursor-pointer", pathname.includes("/profile") ? "text-primary scale-110" : "text-text-muted")}
-            >
-                <User size={22} className={pathname.includes("/profile") ? "stroke-[2.5px]" : "stroke-2"} />
-                <span className="text-[10px] font-semibold mt-1 uppercase tracking-tight">Kabinet</span>
-            </div>
+                        {/* Active Dot indicator at bottom */}
+                        {active && (
+                            <div className="absolute -bottom-1 w-1 h-1 bg-blue-600 rounded-full"></div>
+                        )}
+                    </div>
+                );
+
+                if (item.href) {
+                    return (
+                        <Link
+                            key={idx}
+                            href={item.href}
+                            className="flex-1 h-full"
+                            onClick={item.action}
+                        >
+                            {content}
+                        </Link>
+                    );
+                }
+
+                return (
+                    <div
+                        key={idx}
+                        className="flex-1 h-full cursor-pointer"
+                        onClick={item.action}
+                    >
+                        {content}
+                    </div>
+                );
+            })}
         </nav>
     );
 }
