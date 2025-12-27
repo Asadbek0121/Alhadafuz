@@ -268,7 +268,7 @@ export default function AuthModal() {
                         </svg>
                         Google
                     </button>
-                    <TelegramLoginButton botName="HadafMarketBot" />
+                    <TelegramLoginButton botName="Hadaf_supportbot" />
                 </div>
 
                 <div className={styles.footer}>
