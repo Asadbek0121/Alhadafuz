@@ -126,7 +126,7 @@ export default function Header() {
                             <span style={{ color: 'var(--primary)' }}>Hadaf</span>Market
                         </Link>
 
-                        <div className={styles.mobileActions}>
+                        <div className={styles.mobileActions} style={{ display: 'none' }}>
                             <Link
                                 href="/profile"
                                 className={styles.actionItem}
