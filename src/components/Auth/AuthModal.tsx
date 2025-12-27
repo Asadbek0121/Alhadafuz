@@ -268,7 +268,6 @@ export default function AuthModal() {
                         </svg>
                         Google
                     </button>
-                    <TelegramLoginButton botName="Hadaf_supportbot" />
 
                     <button
                         onClick={async () => {
@@ -318,13 +317,13 @@ export default function AuthModal() {
                                 setIsLoading(false);
                             }
                         }}
-                        className="flex items-center justify-center w-full h-12 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors gap-3 bg-white"
+                        className={styles.socialBtn}
                         type="button"
                     >
-                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M21.1 4.30005L18.7 16.9C18.4 18.2 17.6 18.6 16.6 18.1L11 13.9L8.3 16.5C8 16.8 7.8 17 7.2 17L7.6 11.4L17.8 2.20005C18.2 1.80005 17.7 1.60005 17.1 2.00005L4.5 9.90005L-0.9 8.20005C-1.3 8.10005 -1.3 7.40005 -0.8 7.20005L20.2 -0.899951C21.2 -1.29995 22 0.300049 21.1 4.30005Z" fill="#229ED9" />
                         </svg>
-                        <span className="text-sm font-medium text-gray-700">Bot orqali kirish</span>
+                        Telegram
                     </button>
                 </div>
 
