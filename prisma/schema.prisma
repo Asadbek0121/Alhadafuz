@@ -38,6 +38,7 @@ model User {
   reviews              Review[]
   sessions             Session[]
   wishlist             Wishlist?
+  telegramLoginTokens  TelegramLoginToken[]
 }
 
 model Account {
@@ -56,6 +57,16 @@ model Account {
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+}
+
+model TelegramLoginToken {
+  token     String   @id
+  status    String   @default("PENDING") // PENDING, VERIFIED, EXPIRED
+  userId    String? 
+  user      User?    @relation(fields: [userId], references: [id])
+  telegramId String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
 
 model Session {

@@ -25,6 +25,7 @@
     "next": "16.1.0",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.6.1",
+    "node-telegram-bot-api": "^0.67.0",
     "react": "19.2.3",
     "react-barcode": "^1.6.1",
     "react-dom": "19.2.3",

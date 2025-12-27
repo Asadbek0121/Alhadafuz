@@ -269,6 +269,10 @@ export default function AuthModal() {
                         Google
                     </button>
                     <TelegramLoginButton botName="Hadaf_supportbot" />
+                    {/* Deep Link Button (Temporary Placeholder until backend is ready) */}
+                    {/* <button className={styles.socialBtn} onClick={() => window.open('https://t.me/Hadaf_supportbot?start=login', '_blank')}>
+                        Bot orqali kirish
+                    </button> */}
                 </div>
 
                 <div className={styles.footer}>
