@@ -146,6 +146,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             if (user && user.id) {
                 token.id = user.id;
                 token.role = user.role;
+                console.log("JWT Callback - User Role:", user.role); // DEBUG
                 token.uniqueId = user.uniqueId || undefined;
                 token.phone = (user as any).phone || undefined;
 
