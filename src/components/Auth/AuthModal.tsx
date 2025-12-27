@@ -269,10 +269,63 @@ export default function AuthModal() {
                         Google
                     </button>
                     <TelegramLoginButton botName="Hadaf_supportbot" />
-                    {/* Deep Link Button (Temporary Placeholder until backend is ready) */}
-                    {/* <button className={styles.socialBtn} onClick={() => window.open('https://t.me/Hadaf_supportbot?start=login', '_blank')}>
-                        Bot orqali kirish
-                    </button> */}
+
+                    <button
+                        onClick={async () => {
+                            try {
+                                setIsLoading(true);
+                                const res = await fetch('/api/auth/telegram/generate-token', { method: 'POST' });
+                                const data = await res.json();
+
+                                if (data.token && data.deepLink) {
+                                    // Open Telegram
+                                    window.open(data.deepLink, '_blank');
+
+                                    // Start Polling
+                                    const interval = setInterval(async () => {
+                                        try {
+                                            const checkRes = await fetch('/api/auth/telegram/check-token', {
+                                                method: 'POST',
+                                                body: JSON.stringify({ token: data.token })
+                                            });
+                                            const checkData = await checkRes.json();
+
+                                            if (checkData.status === "VERIFIED" && checkData.user) {
+                                                clearInterval(interval);
+                                                // Sign In
+                                                localStorage.setItem('mergeCartOnLogin', 'true');
+                                                await signIn('telegram-login', {
+                                                    ...checkData.user,
+                                                    redirect: false
+                                                });
+                                                toast.success("Muvaffaqiyatli kirildi!");
+                                                window.location.reload();
+                                            } else if (checkData.status === "EXPIRED" || checkData.status === "INVALID") {
+                                                clearInterval(interval);
+                                                toast.error("Login vaqti tugadi");
+                                            }
+                                        } catch (e) {
+                                            console.error(e);
+                                        }
+                                    }, 2000);
+
+                                    // Clear interval after 2 minutes to prevent infinite loop
+                                    setTimeout(() => clearInterval(interval), 120000);
+                                }
+                            } catch (error) {
+                                toast.error("Xatolik yuz berdi");
+                            } finally {
+                                setIsLoading(false);
+                            }
+                        }}
+                        className="flex items-center justify-center w-full h-12 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors gap-3 bg-white"
+                        type="button"
+                    >
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M21.1 4.30005L18.7 16.9C18.4 18.2 17.6 18.6 16.6 18.1L11 13.9L8.3 16.5C8 16.8 7.8 17 7.2 17L7.6 11.4L17.8 2.20005C18.2 1.80005 17.7 1.60005 17.1 2.00005L4.5 9.90005L-0.9 8.20005C-1.3 8.10005 -1.3 7.40005 -0.8 7.20005L20.2 -0.899951C21.2 -1.29995 22 0.300049 21.1 4.30005Z" fill="#229ED9" />
+                        </svg>
+                        <span className="text-sm font-medium text-gray-700">Bot orqali kirish</span>
+                    </button>
                 </div>
 
                 <div className={styles.footer}>
