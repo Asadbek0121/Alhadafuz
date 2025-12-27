@@ -19,8 +19,15 @@ export default async function AdminLayout({
 }) {
     const session = await auth();
 
-    // Dev Mode Fallback
-    const user = session?.user || { email: 'dev@admin.com', name: 'Dev Admin' };
+    if (!session || session.user?.role !== 'ADMIN') {
+        // This is a safety check. Unauthorized users should be caught by middleware.
+        // But if they reach here, we show nothing or redirect.
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <h1 className="text-2xl font-bold">Unauthorized</h1>
+            </div>
+        );
+    }
 
     const { locale = 'uz' } = (await params) || {};
 

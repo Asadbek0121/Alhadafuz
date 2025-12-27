@@ -4,12 +4,12 @@ import { useState } from 'react';
 import styles from './AuthModal.module.css';
 import { useUserStore } from '@/store/useUserStore';
 import { X, Mail, Lock, User, Loader2, ArrowRight, Eye, EyeOff, Phone } from 'lucide-react';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import { Link } from '@/navigation';
 
-import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
 import TelegramLoginButton from './TelegramLoginButton';
 
@@ -231,7 +231,7 @@ export default function AuthModal() {
 
                     {mode === 'login' && (
                         <div className="flex justify-end mb-4">
-                            <a href="/auth/forgot-password" className={styles.forgotLink}>Parolni unutdingizmi?</a>
+                            <Link href="/auth/forgot-password" className={styles.forgotLink}>Parolni unutdingizmi?</Link>
                         </div>
                     )}
 

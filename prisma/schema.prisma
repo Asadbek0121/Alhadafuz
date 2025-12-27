@@ -1,4 +1,3 @@
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,37 +8,36 @@ datasource db {
 }
 
 model User {
-  id             String        @id @default(cuid())
-  name           String?
-  email          String?       @unique
-  phone          String?       @unique
-  password       String?
-  hashedPassword String?
-  image          String?
-  role           String        @default("USER")
-  provider       String?       @default("credentials")
-  uniqueId       String?       @unique // Readable ID e.g. ID-12345
-  notificationsEnabled Boolean @default(true)
-  isDarkMode     Boolean       @default(false)
-  isDeleted      Boolean       @default(false)
-  emailVerified  DateTime?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  accounts       Account[]
-  logs           ActivityLog[]
-  addresses      Address[]
-  cart           Cart?
-  orders         Order[]
-  sessions       Session[]
-  reviews        Review[]
-  wishlist       Wishlist?
-
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
-  notifications    Notification[]
-  dateOfBirth    DateTime?
-  gender         String?
-  telegramId     String?       @unique
+  id                   String         @id @default(cuid())
+  name                 String?
+  email                String?        @unique
+  phone                String?        @unique
+  password             String?
+  hashedPassword       String?
+  image                String?
+  role                 String         @default("USER")
+  provider             String?        @default("credentials")
+  uniqueId             String?        @unique
+  notificationsEnabled Boolean        @default(true)
+  isDarkMode           Boolean        @default(false)
+  isDeleted            Boolean        @default(false)
+  emailVerified        DateTime?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  dateOfBirth          DateTime?
+  gender               String?
+  telegramId           String?        @unique
+  accounts             Account[]
+  logs                 ActivityLog[]
+  addresses            Address[]
+  cart                 Cart?
+  receivedMessages     Message[]      @relation("ReceivedMessages")
+  sentMessages         Message[]      @relation("SentMessages")
+  notifications        Notification[]
+  orders               Order[]
+  reviews              Review[]
+  sessions             Session[]
+  wishlist             Wishlist?
 }
 
 model Account {
@@ -108,13 +106,11 @@ model Order {
   comment          String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
-  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items            OrderItem[]
-  
-  // Smart Label & Logistics fields
   deliveryToken    String?     @unique
   districtCode     String?
   gpsLogs          String?
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items            OrderItem[]
 
   @@index([userId])
 }
@@ -127,43 +123,37 @@ model OrderItem {
   price     Float
   quantity  Int
   image     String
-  product   Product @relation(fields: [productId], references: [id]) // No Cascade here, keeps record
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
 }
 
 model Product {
-  id          String      @id @default(cuid())
-  title       String
-  description String
-  price       Float
-  oldPrice    Float?
-  discount    Float?
-  image       String
-  images      String? // We simulate list with string split
-  stock       Int         @default(0)
-  // Store dynamic attributes as JSON string if needed, or relation
-  // For this restoration, we use a simple specs structure or separate logic
-  attributes  String? // Store simplified specs
-  specs       String? // JSON string for key-value
-  
-  rating      Float       @default(0)
-  reviewsCount Int        @default(0)
-  
-  category    String // Keeping string for now like before
-  isDeleted   Boolean     @default(false)
-  status      String      @default("ACTIVE")
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  cartItems   CartItem[]
-  orderItems  OrderItem[]
-  
-  // Relations
-  categoryId  String?
-  categoryRel Category?   @relation(fields: [categoryId], references: [id])
-  reviews     Review[]
+  id            String         @id @default(cuid())
+  title         String
+  description   String
+  price         Float
+  oldPrice      Float?
+  discount      Float?
+  image         String
+  images        String?
+  stock         Int            @default(0)
+  attributes    String?
+  specs         String?
+  rating        Float          @default(0)
+  reviewsCount  Int            @default(0)
+  category      String
+  isDeleted     Boolean        @default(false)
+  status        String         @default("ACTIVE")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  categoryId    String?
+  cartItems     CartItem[]
+  orderItems    OrderItem[]
+  categoryRel   Category?      @relation(fields: [categoryId], references: [id])
+  reviews       Review[]
   wishlistItems WishlistItem[]
 }
 
@@ -174,11 +164,11 @@ model Category {
   image     String?
   order     Int        @default(0)
   parentId  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
   products  Product[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
 }
 
 model Review {
@@ -187,26 +177,24 @@ model Review {
   comment   String?
   status    String   @default("PENDING")
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   productId String
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StoreSettings {
-  id           String   @id @default("default")
-  siteName     String   @default("UzMarket")
-  phone        String?
-  email        String?
-  address      String?
-  socialLinks  String?
-  telegramBotToken String? // Bot Token from @BotFather
-  telegramAdminIds String? // Comma separated Chat IDs for admins
-  updatedAt    DateTime @updatedAt
+  id               String   @id @default("default")
+  siteName         String   @default("UzMarket")
+  phone            String?
+  email            String?
+  address          String?
+  socialLinks      String?
+  telegramBotToken String?
+  telegramAdminIds String?
+  updatedAt        DateTime @updatedAt
 }
-
-
 
 model ActivityLog {
   id        String   @id @default(cuid())
@@ -231,18 +219,18 @@ model CartItem {
   cartId    String
   productId String
   quantity  Int
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
 }
 
 model Wishlist {
-  id        String     @id @default(cuid())
-  userId    String     @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String         @id @default(cuid())
+  userId    String         @unique
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   items     WishlistItem[]
 }
 
@@ -251,18 +239,18 @@ model WishlistItem {
   wishlistId String
   productId  String
   createdAt  DateTime @default(now())
-  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
   product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
 
   @@unique([wishlistId, productId])
 }
 
 model Banner {
   id          String   @id @default(cuid())
-  type        String   @default("MAIN") // MAIN, SIDE
+  type        String   @default("MAIN")
   title       String?
   description String?
-  imageUrl    String? 
+  imageUrl    String?
   link        String?
   price       Float?
   oldPrice    Float?
@@ -274,16 +262,15 @@ model Banner {
 }
 
 model Message {
-  id        String   @id @default(cuid())
-  content   String
-  createdAt DateTime @default(now())
-  isRead    Boolean  @default(false)
-  senderId  String
-  sender    User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  content    String
+  createdAt  DateTime @default(now())
+  isRead     Boolean  @default(false)
+  senderId   String
   receiverId String
+  source     String   @default("WEB")
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  source     String   @default("WEB") // WEB or TELEGRAM
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
 
   @@index([senderId])
   @@index([receiverId])
@@ -291,10 +278,10 @@ model Message {
 
 model Notification {
   id        String   @id @default(cuid())
-  userId    String? // Null implies broadcast to all
+  userId    String?
   title     String
   message   String
-  type      String   @default("SYSTEM") // SYSTEM, ORDER, PROMO
+  type      String   @default("SYSTEM")
   isRead    Boolean  @default(false)
   createdAt DateTime @default(now())
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -312,4 +299,10 @@ model Store {
   lng          Float?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model playing_with_neon {
+  id    Int    @id @default(autoincrement())
+  name  String
+  value Float? @db.Real
 }
