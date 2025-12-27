@@ -91,8 +91,18 @@ export default function LoginPage() {
         }
     }
 
-    const handleSocialLogin = (provider: string) => {
-        toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
+    const handleSocialLogin = async (provider: string) => {
+        if (provider === "Google") {
+            setIsLoading(true);
+            try {
+                await signIn("google", { callbackUrl: "/" });
+            } catch (error) {
+                toast.error("Google orqali kirishda xatolik");
+                setIsLoading(false);
+            }
+        } else {
+            toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
+        }
     };
 
     return (
