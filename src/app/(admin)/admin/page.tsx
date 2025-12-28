@@ -5,38 +5,74 @@ import Link from "next/link";
 import { Circle, UserCircle, ShoppingCart, Users, DollarSign, Package } from 'lucide-react';
 
 async function getData() {
-    // Global prisma instance from lib/prisma
-    const userCount = await prisma.user.count();
-    const orderCount = await prisma.order.count({
-        where: {
-            status: { not: 'CANCELLED' }
-        }
-    });
-    // Cast to any if types are not perfectly updated in IDE yet, but runtime should work
-    const productCount = await (prisma as any).product.count();
+    let userCount = 0;
+    let orderCount = 0;
+    let productCount = 0;
+    let totalRevenue = 0;
+    let recentOrders: any[] = [];
+    let recentMessages: any[] = [];
+    let allOrders: any[] = [];
 
-    const revenue = await prisma.order.aggregate({
-        where: { status: { not: 'CANCELLED' } },
-        _sum: { total: true }
-    });
-    const totalRevenue = revenue._sum.total || 0;
+    try {
+        userCount = await prisma.user.count();
+    } catch (e) {
+        console.error("Error fetching userCount:", e);
+    }
 
-    const recentOrders = await prisma.order.findMany({
-        take: 5,
-        orderBy: { createdAt: 'desc' },
-        include: { user: true }
-    });
+    try {
+        orderCount = await prisma.order.count({
+            where: {
+                status: { not: 'CANCELLED' }
+            }
+        });
+    } catch (e) {
+        console.error("Error fetching orderCount:", e);
+    }
 
-    const recentMessages = await (prisma as any).message.findMany({
-        take: 4,
-        orderBy: { createdAt: 'desc' },
-        include: { sender: true }
-    });
+    try {
+        productCount = await (prisma as any).product.count();
+    } catch (e) {
+        console.error("Error fetching productCount:", e);
+    }
 
-    const allOrders = await prisma.order.findMany({
-        select: { createdAt: true, total: true, status: true },
-        orderBy: { createdAt: 'asc' }
-    });
+    try {
+        const revenue = await prisma.order.aggregate({
+            where: { status: { not: 'CANCELLED' } },
+            _sum: { total: true }
+        });
+        totalRevenue = revenue._sum.total || 0;
+    } catch (e) {
+        console.error("Error fetching revenue:", e);
+    }
+
+    try {
+        recentOrders = await prisma.order.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+            include: { user: true }
+        });
+    } catch (e) {
+        console.error("Error fetching recentOrders:", e);
+    }
+
+    try {
+        recentMessages = await (prisma as any).message.findMany({
+            take: 4,
+            orderBy: { createdAt: 'desc' },
+            include: { sender: true }
+        });
+    } catch (e) {
+        console.error("Error fetching recentMessages:", e);
+    }
+
+    try {
+        allOrders = await prisma.order.findMany({
+            select: { createdAt: true, total: true, status: true },
+            orderBy: { createdAt: 'asc' }
+        });
+    } catch (e) {
+        console.error("Error fetching allOrders:", e);
+    }
 
     return {
         stats: { userCount, orderCount, productCount, totalRevenue },
