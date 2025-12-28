@@ -101,7 +101,10 @@ export default async function AdminDashboard() {
             </div>
 
             {/* Charts Area */}
-            <AdminCharts stats={stats} chartData={allOrders} />
+            {/* <AdminCharts stats={stats} chartData={allOrders} /> */}
+            <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', marginBottom: '30px', textAlign: 'center', color: '#666' }}>
+                Xizmat ko'rsatilmoqda (Grafiklar o'chirilgan)
+            </div>
 
             {/* Bottom Grid: Recent Chats & Product Performance */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '30px' }}>
@@ -139,7 +142,10 @@ export default async function AdminDashboard() {
 
                 {/* Recent Orders Table */}
                 <div style={{ gridColumn: 'span 8' }}>
-                    <RecentOrdersTable orders={recentOrders} />
+                    {/* <RecentOrdersTable orders={recentOrders} /> */}
+                    <div style={{ padding: '20px', background: '#fff', borderRadius: '12px', textAlign: 'center', color: '#666' }}>
+                        Jadval vaqtinchalik o'chirilgan
+                    </div>
                 </div>
             </div>
         </div>
