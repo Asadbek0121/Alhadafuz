@@ -48,13 +48,23 @@ export default async function AdminOrdersPage({
 
     const where = statusFilter && statusFilter !== 'ALL' ? { status: statusFilter } : {};
 
-    const [orders, total] = await getOrders(where, skip, limit, search);
+    let orders: any[] = [];
+    let total = 0;
+    try {
+        [orders, total] = await getOrders(where, skip, limit, search);
+    } catch (e) {
+        console.error("Error fetching orders:", e);
+    }
+
     const totalPages = Math.ceil(total / limit);
 
+    // Sanitize orders for Client Components
+    const safeOrders = JSON.parse(JSON.stringify(orders));
+
     const stats = [
-        { label: "Barchasi", value: "ALL", count: await prisma.order.count() },
-        { label: "Yangi", value: "PENDING", count: await prisma.order.count({ where: { status: "PENDING" } }) },
-        { label: "Yetkazildi", value: "DELIVERED", count: await prisma.order.count({ where: { status: "DELIVERED" } }) },
+        { label: "Barchasi", value: "ALL", count: await prisma.order.count().catch(() => 0) },
+        { label: "Yangi", value: "PENDING", count: await prisma.order.count({ where: { status: "PENDING" } }).catch(() => 0) },
+        { label: "Yetkazildi", value: "DELIVERED", count: await prisma.order.count({ where: { status: "DELIVERED" } }).catch(() => 0) },
     ];
 
     return (
@@ -73,7 +83,7 @@ export default async function AdminOrdersPage({
                             buyurtma
                         </Button>
                     </Link>
-                    <BulkLabelPrinter orders={orders} />
+                    <BulkLabelPrinter orders={safeOrders} />
 
                     <div className="flex gap-2 bg-white p-1 rounded-lg border shadow-sm">
                         {stats.map((stat) => (
