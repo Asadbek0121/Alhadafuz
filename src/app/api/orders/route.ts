@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         // VALIDATION
         const result = createOrderSchema.safeParse(body);
         if (!result.success) {
-            return NextResponse.json({ error: 'Invalid input', details: result.error.extractErrors() }, { status: 400 });
+            return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
         }
 
         const { items, paymentMethod, deliveryAddress } = result.data;
