@@ -121,11 +121,23 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 if (parsedCredentials.success) {
                     const { email, password } = parsedCredentials.data;
                     const user = await prisma.user.findUnique({ where: { email } });
-                    if (!user || !user.hashedPassword) return null;
 
-                    const passwordsMatch = await bcrypt.compare(password, user.hashedPassword);
+                    console.log('Login Attempt:', { email, userFound: !!user });
+
+                    // Support both password fields
+                    const dbPassword = user?.hashedPassword || user?.password;
+
+                    if (!user || !dbPassword) {
+                        console.log('Login Failed: User not found or no password set');
+                        return null;
+                    }
+
+                    const passwordsMatch = await bcrypt.compare(password, dbPassword);
+                    console.log('Password Check:', { match: passwordsMatch });
 
                     if (passwordsMatch) return user;
+                } else {
+                    console.log('Validation Failed');
                 }
 
                 return null;
