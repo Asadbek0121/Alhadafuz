@@ -12,6 +12,7 @@ import { verifyTelegramLogin } from "@/lib/telegram-auth";
 export const { auth, signIn, signOut, handlers } = NextAuth({
     ...authConfig,
     adapter: PrismaAdapter(prisma) as any,
+    session: { strategy: "jwt" },
     trustHost: true,
     secret: process.env.AUTH_SECRET,
     providers: [
