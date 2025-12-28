@@ -142,7 +142,7 @@ export default async function AdminOrdersPage({
                                             <span>{order.items.length} ta mahsulot</span>
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1 max-w-[150px] truncate">
-                                            {order.items.map(i => i.title).join(', ')}
+                                            {order.items.map((i: any) => i.title).join(', ')}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -150,20 +150,20 @@ export default async function AdminOrdersPage({
                                             <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit">
                                                 <CreditCard size={12} />
                                                 {/* Translation Map inline for simplicity */}
-                                                {{
+                                                {({
                                                     'CASH': 'Naqd',
                                                     'CARD': 'Karta',
                                                     'CLICK': 'Click',
                                                     'PAYME': 'Payme',
                                                     'UZUM': 'Uzum'
-                                                }[order.paymentMethod.toUpperCase()] || order.paymentMethod}
+                                                } as Record<string, string>)[order.paymentMethod.toUpperCase()] || order.paymentMethod}
                                             </div>
                                             <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit">
                                                 <Truck size={12} />
-                                                {{
+                                                {({
                                                     'COURIER': 'Kuryer',
                                                     'PICKUP': 'Olib ketish'
-                                                }[order.deliveryMethod.toUpperCase()] || order.deliveryMethod}
+                                                } as Record<string, string>)[order.deliveryMethod.toUpperCase()] || order.deliveryMethod}
                                             </div>
                                         </div>
                                     </td>
