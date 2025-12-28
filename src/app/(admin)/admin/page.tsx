@@ -47,7 +47,13 @@ async function getData() {
 }
 
 export default async function AdminDashboard() {
-    const { stats, recentOrders, recentMessages, allOrders } = await getData();
+    const data = await getData();
+
+    // Sanitize data to ensure no Date objects or complex types cause serialization issues in Client Components
+    const stats = JSON.parse(JSON.stringify(data.stats));
+    const recentOrders = JSON.parse(JSON.stringify(data.recentOrders));
+    const recentMessages = JSON.parse(JSON.stringify(data.recentMessages));
+    const allOrders = JSON.parse(JSON.stringify(data.allOrders));
 
     return (
         <div>
