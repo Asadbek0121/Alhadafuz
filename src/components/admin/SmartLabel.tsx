@@ -8,7 +8,8 @@ import { Truck, CreditCard, Package } from 'lucide-react';
 interface SmartLabelProps {
     orderId: string;
     itemsCount: number;
-    districtCode: string;
+    district: string;
+    address: string;
     deliveryToken: string;
     paymentMethod: string;
     date: Date;
@@ -16,7 +17,7 @@ interface SmartLabelProps {
 }
 
 export const SmartLabel = React.forwardRef<HTMLDivElement, SmartLabelProps>(
-    ({ orderId, itemsCount, districtCode, deliveryToken, paymentMethod, date, index }, ref) => {
+    ({ orderId, itemsCount, district, address, deliveryToken, paymentMethod, date, index }, ref) => {
 
         const barcodeValue = orderId.slice(-10).toUpperCase();
 
@@ -47,7 +48,7 @@ export const SmartLabel = React.forwardRef<HTMLDivElement, SmartLabelProps>(
                         <Barcode
                             value={barcodeValue}
                             width={2} // Thicker bars for better thermal print
-                            height={30} // Sufficient height
+                            height={25} // Reduced height slightly to fit address
                             fontSize={12}
                             margin={2}
                             displayValue={false} // Hide default text to customize it below
@@ -61,24 +62,33 @@ export const SmartLabel = React.forwardRef<HTMLDivElement, SmartLabelProps>(
                 </div>
 
                 {/* 2. Grid Layout for Details */}
-                <div className="grid grid-cols-2 gap-x-1 gap-y-1 mt-1 text-[8px] leading-tight">
+                <div className="flex flex-col gap-1 mt-1 text-[8px] leading-tight">
 
-                    {/* District (Prominent) */}
-                    <div className="col-span-2 flex justify-between items-center bg-black text-white px-1 py-0.5 rounded-sm">
-                        <span className="opacity-70 font-light uppercase tracking-wider text-[6px]">Tuman</span>
-                        <span className="font-bold text-[10px] uppercase truncate max-w-[40mm]">{districtCode || '---'}</span>
+                    {/* District & Address */}
+                    <div className="flex flex-col">
+                        <div className="flex justify-between items-center bg-black text-white px-1 py-0.5 rounded-sm">
+                            <span className="opacity-70 font-light uppercase tracking-wider text-[6px]">Manzil</span>
+                            <span className="font-bold text-[10px] uppercase truncate max-w-[40mm]">{district || '---'}</span>
+                        </div>
+                        {address && (
+                            <div className="text-[7px] leading-snug mt-0.5 px-0.5 truncate border-b border-gray-100 pb-0.5 font-medium">
+                                {address}
+                            </div>
+                        )}
                     </div>
 
-                    {/* Payment */}
-                    <div className="flex flex-col border border-gray-200 p-0.5 rounded-sm items-center justify-center">
-                        <span className="text-[6px] text-gray-400 uppercase">To'lov</span>
-                        <div className="font-bold uppercase truncate w-full text-center">{displayPayment}</div>
-                    </div>
+                    <div className="grid grid-cols-2 gap-1">
+                        {/* Payment */}
+                        <div className="flex flex-col border border-gray-200 p-0.5 rounded-sm items-center justify-center">
+                            <span className="text-[6px] text-gray-400 uppercase">To'lov</span>
+                            <div className="font-bold uppercase truncate w-full text-center">{displayPayment}</div>
+                        </div>
 
-                    {/* Count */}
-                    <div className="flex flex-col border border-gray-200 p-0.5 rounded-sm items-center justify-center">
-                        <span className="text-[6px] text-gray-400 uppercase">Soni</span>
-                        <div className="font-bold">{itemsCount} dona</div>
+                        {/* Count */}
+                        <div className="flex flex-col border border-gray-200 p-0.5 rounded-sm items-center justify-center">
+                            <span className="text-[6px] text-gray-400 uppercase">Soni</span>
+                            <div className="font-bold">{itemsCount} dona</div>
+                        </div>
                     </div>
                 </div>
 

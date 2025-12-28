@@ -19,7 +19,7 @@ export default function EditInvoicePage() {
     ]);
 
     const [subTotal, setSubTotal] = useState(0);
-    const [vat, setVat] = useState(10);
+    const [vat, setVat] = useState(0);
     const [grandTotal, setGrandTotal] = useState(0);
 
     useEffect(() => {
@@ -64,19 +64,19 @@ export default function EditInvoicePage() {
                 {/* Header Row */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Order Status:</h2>
+                        <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Invoys holati:</h2>
                         <select
                             value={status}
                             onChange={e => setStatus(e.target.value)}
                             style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', outline: 'none' }}
                         >
                             <option value="Pending">Kutilmoqda (Pending)</option>
-                            <option value="Shipped">Yuborilgan (Shipped)</option>
-                            <option value="Delivered">Yetkazilgan (Delivered)</option>
+                            <option value="Shipped">Yuborildi (Shipped)</option>
+                            <option value="Delivered">Yetkazildi (Delivered)</option>
                         </select>
                     </div>
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Order Date:</h2>
+                        <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Buyurtma sanasi:</h2>
                         <input
                             type="date"
                             value={issueDate}
@@ -93,7 +93,7 @@ export default function EditInvoicePage() {
 
                     {/* Bill From */}
                     <div style={{ flex: 1, minWidth: '300px' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Bill From</h3>
+                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Kimdan</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <input
                                 value={billFrom.name}
@@ -121,7 +121,7 @@ export default function EditInvoicePage() {
 
                     {/* Bill To */}
                     <div style={{ flex: 1, minWidth: '300px' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Bill To</h3>
+                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Kimga</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             <input
                                 value={billTo.name}
@@ -156,11 +156,11 @@ export default function EditInvoicePage() {
                         <thead>
                             <tr style={{ borderBottom: '1px solid #eee' }}>
                                 <th style={styles.th}>#</th>
-                                <th style={styles.th}>Item Name</th>
-                                <th style={styles.th}>Unit Cost</th>
-                                <th style={styles.th}>Unit</th>
-                                <th style={styles.th}>Total</th>
-                                <th style={styles.th}>Action</th>
+                                <th style={styles.th}>Mahsulot nomi</th>
+                                <th style={styles.th}>Narxi</th>
+                                <th style={styles.th}>Dona</th>
+                                <th style={styles.th}>Jami</th>
+                                <th style={styles.th}>Amal</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -203,7 +203,7 @@ export default function EditInvoicePage() {
                         </tbody>
                     </table>
                     <button onClick={addItem} style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#ecf2ff', color: '#0085db', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
-                        <Plus size={16} /> Add Item
+                        <Plus size={16} /> Mahsulot qo'shish
                     </button>
                 </div>
 
@@ -213,16 +213,16 @@ export default function EditInvoicePage() {
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <div style={{ width: '300px' }}>
                         <div style={styles.totalRow}>
-                            <span>Sub Total:</span>
+                            <span>Jami summa:</span>
                             <span>{subTotal.toLocaleString()} so'm</span>
                         </div>
                         <div style={styles.totalRow}>
-                            <span>Vat (10%):</span>
-                            <span>{(subTotal * 0.1).toLocaleString()} so'm</span>
+                            <span>QQS (0%):</span>
+                            <span>0 so'm</span>
                         </div>
                         <hr style={{ margin: '15px 0', border: 'none', borderTop: '1px solid #eee' }} />
                         <div style={{ ...styles.totalRow, fontSize: '18px', fontWeight: 'bold' }}>
-                            <span>Grand Total:</span>
+                            <span>Umumiy summa:</span>
                             <span>{grandTotal.toLocaleString()} so'm</span>
                         </div>
                     </div>
@@ -232,10 +232,10 @@ export default function EditInvoicePage() {
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
                     <button onClick={handleSave} style={{ background: '#0085db', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Save size={18} /> Update Invoice
+                        <Save size={18} /> Invoysni yangilash
                     </button>
                     <button onClick={() => router.back()} style={{ background: '#fa896b', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
-                        Cancel
+                        Bekor qilish
                     </button>
                 </div>
 

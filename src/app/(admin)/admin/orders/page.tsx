@@ -1,42 +1,38 @@
 import { prisma } from "@/lib/prisma";
 import OrderStatusSelect from "./OrderStatusSelect";
 import { format } from 'date-fns';
-import { unstable_cache } from "next/cache";
-import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Search, SlidersHorizontal, Eye } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Search, SlidersHorizontal, Eye, Plus } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
 import OrderScanner from "@/components/admin/OrderScanner";
+import CancelOrderButton from "./CancelOrderButton";
 
-const getOrders = unstable_cache(
-    async (where: any, skip: number, take: number, search: string) => {
-        const finalWhere = {
-            ...where,
-            ...(search ? {
-                OR: [
-                    // { deliveryToken: search }, // Temporarily disabled
-                    { id: search },
-                    ...(search.length < 20 ? [{ id: { endsWith: search } }] : []),
-                    { user: { name: { contains: search } } },
-                    { user: { phone: { contains: search } } },
-                ]
-            } : {})
-        };
+async function getOrders(where: any, skip: number, take: number, search: string) {
+    const finalWhere = {
+        ...where,
+        ...(search ? {
+            OR: [
+                // { deliveryToken: search }, // Temporarily disabled
+                { id: search },
+                ...(search.length < 20 ? [{ id: { endsWith: search } }] : []),
+                { user: { name: { contains: search } } },
+                { user: { phone: { contains: search } } },
+            ]
+        } : {})
+    };
 
-        return await Promise.all([
-            prisma.order.findMany({
-                where: finalWhere,
-                include: { user: true, items: true },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take,
-            }),
-            prisma.order.count({ where: finalWhere }),
-        ]);
-    },
-    ['admin-orders-list'],
-    { tags: ['orders'] }
-);
+    return await Promise.all([
+        prisma.order.findMany({
+            where: finalWhere,
+            include: { user: true, items: true },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take,
+        }),
+        prisma.order.count({ where: finalWhere }),
+    ]);
+}
 
 export default async function AdminOrdersPage({
     searchParams,
@@ -71,6 +67,12 @@ export default async function AdminOrdersPage({
 
                 <div className="flex gap-2 items-center">
                     <OrderScanner />
+                    <Link href="/admin/orders/create">
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
+                            <Plus size={18} />
+                            buyurtma
+                        </Button>
+                    </Link>
                     <BulkLabelPrinter orders={orders} />
 
                     <div className="flex gap-2 bg-white p-1 rounded-lg border shadow-sm">
@@ -164,11 +166,14 @@ export default async function AdminOrdersPage({
                                         <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
                                     </td>
                                     <td className="px-6 py-4 text-center">
-                                        <Link href={`/admin/orders/${order.id}`}>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50">
-                                                <Eye size={16} />
-                                            </Button>
-                                        </Link>
+                                        <div className="flex justify-center items-center gap-1">
+                                            <Link href={`/admin/orders/${order.id}`}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50">
+                                                    <Eye size={16} />
+                                                </Button>
+                                            </Link>
+                                            <CancelOrderButton orderId={order.id} status={order.status} />
+                                        </div>
                                     </td>
                                 </tr>
                             ))}

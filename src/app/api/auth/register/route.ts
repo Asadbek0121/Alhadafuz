@@ -1,34 +1,40 @@
+
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { generateNextUniqueId } from "@/lib/id-generator";
 import { notifyAdmins } from "@/lib/notifications";
+import { z } from "zod";
+
+const registerSchema = z.object({
+    name: z.string().min(2, "Ism kamida 2 ta harf bo'lishi kerak"),
+    email: z.string().email("Noto'g'ri email formati"),
+    password: z.string().min(6, "Parol kamida 6 ta belgidan iborat bo'lishi kerak"),
+    phone: z.string().optional().or(z.literal('')), // Optional phone
+});
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { name, email, password, phone } = body;
 
-        if (!email || !password) {
+        // VALIDATION
+        const result = registerSchema.safeParse(body);
+        if (!result.success) {
             return NextResponse.json(
-                { message: "Email va parol kiritilishi shart" },
+                { message: result.error.errors[0].message },
                 { status: 400 }
             );
         }
 
-        if (password.length < 6) {
-            return NextResponse.json(
-                { message: "Parol kamida 6 ta belgidan iborat bo'lishi kerak" },
-                { status: 400 }
-            );
-        }
+        const { name, email, password, phone } = result.data;
 
         // Check if user exists (email or phone)
         const existingUser = await prisma.user.findFirst({
             where: {
                 OR: [
                     { email },
-                    { phone: phone || undefined } // Check phone only if provided
+                    // Only check phone if it's provided and not empty
+                    ...(phone ? [{ phone }] : [])
                 ]
             },
         });
@@ -47,11 +53,11 @@ export async function POST(req: Request) {
         const uniqueId = await generateNextUniqueId();
 
         // Create user
-        const newUser = await (prisma as any).user.create({
+        const newUser = await prisma.user.create({
             data: {
                 name,
                 email,
-                phone,
+                phone: phone || null,
                 hashedPassword,
                 uniqueId,
                 role: "USER",

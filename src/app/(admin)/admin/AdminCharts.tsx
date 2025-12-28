@@ -19,13 +19,14 @@ export default function AdminCharts({ stats, chartData = [] }: { stats: any, cha
             .slice(-7);
     }, [chartData]);
 
-    // Process chartData for Monthly Earnings
-    const dataEarnings = useMemo(() => {
+    // Process chartData for Cancelled Orders (Monthly)
+    const dataCancelled = useMemo(() => {
         if (!chartData.length) return [];
         const monthly = chartData.reduce((acc: any, order: any) => {
+            if (order.status !== 'CANCELLED') return acc;
             const date = new Date(order.createdAt);
             const key = date.toLocaleString('default', { month: 'short' });
-            acc[key] = (acc[key] || 0) + order.total;
+            acc[key] = (acc[key] || 0) + 1; // Count
             return acc;
         }, {});
         return Object.entries(monthly).map(([name, uv]) => ({ name, uv }));
@@ -68,7 +69,7 @@ export default function AdminCharts({ stats, chartData = [] }: { stats: any, cha
                 </div>
             </div>
 
-            {/* Yearly Breakup - Pie Chart & Monthly Bar */}
+            {/* Yearly Breakup - Pie Chart & Cancelled Orders Bar */}
             <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '30px' }}>
                 {/* Pie Chart: General Stats */}
                 <div style={{ flex: 1, background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
@@ -94,16 +95,19 @@ export default function AdminCharts({ stats, chartData = [] }: { stats: any, cha
                     </div>
                 </div>
 
-                {/* Monthly Earnings - Bar Chart */}
+                {/* Cancelled Orders - Bar Chart */}
                 <div style={{ flex: 1, background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2A3547', margin: 0 }}>Oylik tushum</h3>
+                        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2A3547', margin: 0 }}>Bekor qilingan</h3>
+                        <span className="text-xs font-semibold bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                            {dataCancelled.reduce((a: any, b: any) => a + b.uv, 0)} ta
+                        </span>
                     </div>
                     <div style={{ marginTop: '20px', height: '60px' }}>
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={dataEarnings.length ? dataEarnings : [{ name: 'Bo\'sh', uv: 0 }]}>
-                                <Bar dataKey="uv" fill="#0085db" radius={[3, 3, 0, 0]} />
-                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }} formatter={(value: any) => new Intl.NumberFormat('uz-UZ').format(value)} />
+                            <BarChart data={dataCancelled.length ? dataCancelled : [{ name: 'Bo\'sh', uv: 0 }]}>
+                                <Bar dataKey="uv" fill="#ef4444" radius={[3, 3, 0, 0]} />
+                                <Tooltip cursor={{ fill: 'transparent' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 0 10px rgba(0,0,0,0.1)' }} />
                             </BarChart>
                         </ResponsiveContainer>
                     </div>

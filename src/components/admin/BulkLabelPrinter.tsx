@@ -47,7 +47,8 @@ export default function BulkLabelPrinter({ orders }: BulkLabelPrinterProps) {
                             index={idx}
                             orderId={order.id}
                             itemsCount={order.items?.length || 0}
-                            districtCode={order.districtCode || 'N/A'}
+                            district={order.shippingDistrict || order.districtCode || '---'}
+                            address={order.shippingAddress || ''}
                             deliveryToken={order.deliveryToken || `ORDER:${order.id}`}
                             paymentMethod={order.paymentMethod}
                             date={new Date(order.createdAt)}

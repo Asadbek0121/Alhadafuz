@@ -7,11 +7,16 @@ import { Circle, UserCircle, ShoppingCart, Users, DollarSign, Package } from 'lu
 async function getData() {
     // Global prisma instance from lib/prisma
     const userCount = await prisma.user.count();
-    const orderCount = await prisma.order.count();
+    const orderCount = await prisma.order.count({
+        where: {
+            status: { not: 'CANCELLED' }
+        }
+    });
     // Cast to any if types are not perfectly updated in IDE yet, but runtime should work
     const productCount = await (prisma as any).product.count();
 
     const revenue = await prisma.order.aggregate({
+        where: { status: { not: 'CANCELLED' } },
         _sum: { total: true }
     });
     const totalRevenue = revenue._sum.total || 0;
@@ -29,7 +34,7 @@ async function getData() {
     });
 
     const allOrders = await prisma.order.findMany({
-        select: { createdAt: true, total: true },
+        select: { createdAt: true, total: true, status: true },
         orderBy: { createdAt: 'asc' }
     });
 

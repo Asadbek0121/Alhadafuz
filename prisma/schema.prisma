@@ -5,7 +5,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
+  // directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -110,6 +110,9 @@ model Order {
   total            Float
   paymentMethod    String      @default("CASH")
   deliveryMethod   String      @default("COURIER")
+  paymentStatus    String      @default("PENDING") // NEW, PAID, CANCELLED
+  paymentProvider  String?     // CLICK, PAYME
+  paymentId        String?     // Transaction ID from Click/Payme
   shippingCity     String?
   shippingDistrict String?
   shippingAddress  String?
@@ -121,6 +124,8 @@ model Order {
   deliveryToken    String?     @unique
   districtCode     String?
   gpsLogs          String?
+  creatorId        String?     // Admin ID if created by admin
+  createdVia       String      @default("WEB_APP") // WEB_APP, ADMIN_PANEL, TELEGRAM_BOT
   user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            OrderItem[]
 
@@ -162,6 +167,9 @@ model Product {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
   categoryId    String?
+  mxikCode      String?
+  packageCode   String?
+  vatPercent    Int            @default(0)
   cartItems     CartItem[]
   orderItems    OrderItem[]
   categoryRel   Category?      @relation(fields: [categoryId], references: [id])
@@ -317,4 +325,28 @@ model playing_with_neon {
   id    Int    @id @default(autoincrement())
   name  String
   value Float? @db.Real
+}
+
+model PaymentMethod {
+  id          String   @id @default(cuid())
+  name        String
+  type        String   @default("MERCHANT") // MERCHANT, CARD, CASH
+  provider    String   // CLICK, PAYME, CASH_ON_DELIVERY (Not unique anymore)
+  details     String?  // Extra info (public)
+  config      String?  // Secret config (service_id etc, encrypted preferably, but here simple)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PaymentLog {
+  id           String   @id @default(cuid())
+  provider     String
+  transactionId String?
+  amount       Float?
+  status       String   // REQUEST_RECEIVED, SIGNATURE_FAILED, SUCCESS, ERROR
+  requestData  String?  @db.Text // Store raw JSON/Form data
+  responseData String?  @db.Text
+  ipAddress    String?
+  createdAt    DateTime @default(now())
 }

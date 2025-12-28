@@ -2,11 +2,13 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Inter } from "next/font/google";
 import { auth } from '@/auth';
-import "../../globals.css";
+import "../globals.css";
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
+import QueryProvider from '@/components/QueryProvider';
+import { Toaster } from "@/components/ui/sonner";
 
-import AdminSidebar from './AdminSidebar';
-import AdminHeader from './AdminHeader';
+import AdminSidebar from './admin/AdminSidebar';
+import AdminHeader from './admin/AdminHeader';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -42,15 +44,18 @@ export default async function AdminLayout({
         <html lang={locale}>
             <body className={inter.className} style={{ display: 'flex', minHeight: '100vh', background: '#F2F6FA' }} suppressHydrationWarning={true}>
                 <SessionProviderWrapper session={session}>
-                    <NextIntlClientProvider messages={messages}>
-                        <AdminSidebar />
-                        <AdminHeader />
+                    <QueryProvider>
+                        <NextIntlClientProvider messages={messages}>
+                            <AdminSidebar />
+                            <AdminHeader />
 
-                        {/* Main Content */}
-                        <main style={{ marginLeft: '270px', marginTop: '70px', flex: 1, padding: '30px', width: 'calc(100% - 270px)' }}>
-                            {children}
-                        </main>
-                    </NextIntlClientProvider>
+                            {/* Main Content */}
+                            <main style={{ marginLeft: '270px', marginTop: '70px', flex: 1, padding: '30px', width: 'calc(100% - 270px)' }}>
+                                {children}
+                            </main>
+                            <Toaster />
+                        </NextIntlClientProvider>
+                    </QueryProvider>
                 </SessionProviderWrapper>
             </body>
         </html>

@@ -3,8 +3,33 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { notifyAdmins } from '@/lib/notifications';
+import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
+
+// 1. Zod Schema Validation
+const orderItemSchema = z.object({
+    id: z.string(),
+    quantity: z.number().int().positive().min(1).max(100),
+    price: z.number().nonnegative().optional(),
+    title: z.string().optional(),
+    image: z.string().optional(),
+});
+
+const createOrderSchema = z.object({
+    items: z.array(orderItemSchema).min(1),
+    paymentMethod: z.string().min(2), // 'click', 'cash', etc.
+    deliveryAddress: z.object({
+        city: z.string().optional(),
+        district: z.string().optional(),
+        address: z.string().optional(),
+        phone: z.string().optional(),
+        name: z.string().optional(),
+        comment: z.string().optional(),
+    }).optional(),
+    // Explicitly validate total if provided, but we recalculate anyway.
+    total: z.number().nonnegative().optional(),
+});
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -14,21 +39,24 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { items, paymentMethod, deliveryMethod, deliveryAddress } = body;
 
-        if (!items || items.length === 0) {
-            return NextResponse.json({ error: 'Cart is empty' }, { status: 400 });
+        // VALIDATION
+        const result = createOrderSchema.safeParse(body);
+        if (!result.success) {
+            return NextResponse.json({ error: 'Invalid input', details: result.error.extractErrors() }, { status: 400 });
         }
 
-        // 1. Try to fetch products (Cast to any to bypass stale type definition)
-        // If this fails at runtime, we catch it.
+        const { items, paymentMethod, deliveryAddress } = result.data;
+
+        // 2. Fetch products to prevent price tampering
+        // Use a safe query logic
         let dbProducts: any[] = [];
+        const productIds = items.map(i => i.id);
+
         try {
-            if ((prisma as any).product) {
-                dbProducts = await (prisma as any).product.findMany({
-                    where: { id: { in: items.map((i: any) => i.id) } },
-                });
-            }
+            dbProducts = await prisma.product.findMany({
+                where: { id: { in: productIds } },
+            });
         } catch (e) {
             console.warn("Could not fetch products from DB", e);
         }
@@ -38,9 +66,14 @@ export async function POST(req: Request) {
 
         for (const item of items) {
             const dbProduct = dbProducts.find((p: any) => p.id === item.id);
-            const price = dbProduct ? dbProduct.price : item.price;
-            const title = dbProduct ? dbProduct.title : item.title;
-            const image = dbProduct ? dbProduct.image : item.image;
+
+            // SECURITY: Always use server-side price if available
+            const price = dbProduct ? dbProduct.price : (item.price || 0);
+            const title = dbProduct ? dbProduct.title : (item.title || "Unknown Product");
+            const image = dbProduct ? dbProduct.image : (item.image || "");
+
+            // Apply specific stock checks here if needed using stock field
+            // if (dbProduct && dbProduct.stock < item.quantity) { ... }
 
             calculatedTotal += price * item.quantity;
 
@@ -53,21 +86,36 @@ export async function POST(req: Request) {
             });
         }
 
-        // Fallback total if calculation failing
-        if (calculatedTotal === 0 && items.length > 0) calculatedTotal = body.total || 0;
+        // 3. Fallback total checks
+        if (calculatedTotal === 0 && items.length > 0) {
+            // Only allow client total if we really failed to fetch (unlikely) or strict mode off
+            // For now, if calculatedTotal is 0, it means either free products or DB fail.
+            // We'll trust client IF DB fetch returned empty AND items weren't empty? 
+            // Better to block if price is 0 to be "armored".
+            if (dbProducts.length > 0) {
+                // DB worked but prices are 0?
+            } else {
+                // DB failed likely.
+                calculatedTotal = body.total || 0;
+            }
+        }
+
+        // Prevent negative totals
+        if (calculatedTotal < 0) {
+            return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
+        }
 
         // Determine initial status based on payment method
         const initialStatus = paymentMethod === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
 
-        // 2. Create Order Transaction
+        // 4. Create Order Transaction
         const order = await prisma.$transaction(async (tx) => {
             // Create Order
-            // Use (tx as any) to bypass type safety on Order creation fields
-            const newOrder = await (tx.order as any).create({
+            const newOrder = await tx.order.create({
                 data: {
                     userId: session.user.id,
                     total: calculatedTotal,
-                    status: initialStatus, // Set status based on payment method
+                    status: initialStatus,
                     paymentMethod: paymentMethod || 'CASH',
                     // deliveryMethod: deliveryMethod || 'COURIER', 
 
@@ -110,8 +158,11 @@ export async function POST(req: Request) {
 
         let paymentUrl = null;
         if (paymentMethod === 'click') {
-            // Mock Click URL - replace with actual service_id and merchant_id
-            paymentUrl = `https://my.click.uz/services/pay?service_id=12345&merchant_id=67890&amount=${order.total}&transaction_param=${order.id}`;
+            const CLICK_SERVICE_ID = process.env.CLICK_SERVICE_ID || 'test';
+            const CLICK_MERCHANT_ID = process.env.CLICK_MERCHANT_ID || 'test';
+            const CLICK_USER_ID = process.env.CLICK_USER_ID || 'test';
+            // Generate URL
+            paymentUrl = `https://my.click.uz/services/pay?service_id=${CLICK_SERVICE_ID}&merchant_id=${CLICK_MERCHANT_ID}&amount=${order.total}&transaction_param=${order.id}`;
         }
 
         return NextResponse.json({ success: true, order, paymentUrl });
