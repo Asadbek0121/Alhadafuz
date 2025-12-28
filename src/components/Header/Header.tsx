@@ -250,14 +250,14 @@ export default function Header() {
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors hidden md:block">{t('savatcha')}</span>
                         </button>
 
-                        {/* Admin Link */}
+                        {/* Admin Link (Direct /admin access without locale) */}
                         {user?.role === 'ADMIN' && (
-                            <Link href="/admin" className="hidden md:flex flex-col items-center gap-1 cursor-pointer group">
+                            <a href="/admin" className="hidden md:flex flex-col items-center gap-1 cursor-pointer group">
                                 <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all">
                                     <LayoutDashboard size={24} strokeWidth={2} />
                                 </div>
                                 <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">Admin</span>
-                            </Link>
+                            </a>
                         )}
 
                         {/* Profile */}
