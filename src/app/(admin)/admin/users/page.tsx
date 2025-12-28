@@ -1,8 +1,6 @@
-
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
-import { unstable_cache } from "next/cache";
 
 async function getUsers(where: any, skip: number, take: number) {
     return await Promise.all([
