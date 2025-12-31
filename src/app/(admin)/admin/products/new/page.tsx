@@ -137,13 +137,17 @@ export default function AddProductPage() {
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error("Failed to create");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.details ? JSON.stringify(errorData.details) : "Failed to create product");
+            }
 
             toast.success("Product created successfully");
             router.push("/admin/products");
             router.refresh();
-        } catch (error) {
-            toast.error("Something went wrong");
+        } catch (error: any) {
+            console.error("Submit error:", error);
+            toast.error(error.message || "Something went wrong");
         } finally {
             setLoading(false);
         }

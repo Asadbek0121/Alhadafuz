@@ -14,8 +14,8 @@ const productSchema = z.object({
     image: z.string().min(1, "Rasm bo'lishi shart"), // URL check might be too strict if using relative paths
     category: z.string().min(1, "Kategoriya tanlanishi kerak"),
     stock: z.number().int().nonnegative().default(0),
-    oldPrice: z.number().positive().optional(),
-    discount: z.number().optional(),
+    oldPrice: z.number().positive().nullable().optional(),
+    discount: z.number().nullable().optional(),
 
     // Fiscal fields
     mxikCode: z.string().optional(),
