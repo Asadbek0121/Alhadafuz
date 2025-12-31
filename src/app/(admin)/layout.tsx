@@ -25,9 +25,13 @@ export default async function AdminLayout({
         // This is a safety check. Unauthorized users should be caught by middleware.
         // But if they reach here, we show nothing or redirect.
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <h1 className="text-2xl font-bold">Unauthorized</h1>
-            </div>
+            <html>
+                <body>
+                    <div className="flex items-center justify-center min-h-screen">
+                        <h1 className="text-2xl font-bold">Unauthorized</h1>
+                    </div>
+                </body>
+            </html>
         );
     }
 

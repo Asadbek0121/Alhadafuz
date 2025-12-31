@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Search, Plus, Trash, User, Package, Check } from 'lucide-react';
 import { toast } from 'sonner';
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export default function CreateOrderForm({ users, products }: { users: any[], products: any[] }) {
     const router = useRouter();
@@ -283,9 +284,9 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Telefon raqam</Label>
-                                <Input
+                                <PhoneInput
                                     value={formData.shippingPhone}
-                                    onChange={(e) => setFormData({ ...formData, shippingPhone: e.target.value })}
+                                    onChange={(val) => setFormData({ ...formData, shippingPhone: val })}
                                 />
                             </div>
                             <div className="space-y-2">

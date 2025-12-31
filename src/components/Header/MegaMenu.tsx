@@ -214,11 +214,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         </>
                                     )}
 
-                                    <div className={styles.brandLogos}>
-                                        <img src="https://assets.asaxiy.uz/brand/webp//5e15c4ec85cf2.webp" alt="Samsung" />
-                                        <img src="https://assets.asaxiy.uz/brand/webp//5e15c5de44b63.webp" alt="Apple" />
-                                        <img src="https://assets.asaxiy.uz/brand/webp//5e15c615d99f8.webp" alt="Mi" />
-                                    </div>
+
                                 </div>
                             </>
                         )}

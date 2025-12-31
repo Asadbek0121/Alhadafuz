@@ -5,9 +5,9 @@ import { Link } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
-import { Titan_One } from "next/font/google";
+import { Montserrat } from "next/font/google";
 
-const titanOne = Titan_One({ weight: "400", subsets: ["latin"] });
+const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
 export default function Footer() {
     const t = useTranslations('Footer');
@@ -51,7 +51,7 @@ export default function Footer() {
                 <div className="mb-6 -ml-6">
                     <Link href="/" className="flex items-center gap-0 group">
                         <img src="/logo.png" alt="Hadaf Logo" className="h-[150px] w-auto group-hover:scale-105 transition-transform" />
-                        <span className={`${titanOne.className} text-5xl md:text-6xl text-[#0052FF] -ml-6 pt-2`}>Hadaf</span>
+                        <span className={`${montserrat.className} text-5xl md:text-6xl font-black tracking-tighter text-[#0052FF] -ml-6 pt-2`}>Hadaf</span>
                     </Link>
                 </div>
 
@@ -154,6 +154,9 @@ export default function Footer() {
                     </p>
 
                     <div className="flex items-center gap-4 grayscale opacity-70 hover:grayscale-0 hover:opacity-100 transition-all duration-300">
+                        <div className="bg-white px-6 py-1 rounded overflow-hidden flex items-center justify-center">
+                            <img src="/click_logo_final.png" alt="Click" className="h-6 w-auto object-contain" />
+                        </div>
                         <div className="bg-white px-2 py-1 rounded">
                             <img src="https://asaxiy.uz/custom-assets/images/payme.svg" alt="Payme" className="h-6" />
                         </div>
@@ -169,4 +172,3 @@ export default function Footer() {
         </footer>
     );
 }
-

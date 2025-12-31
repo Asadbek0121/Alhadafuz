@@ -41,7 +41,7 @@
     color: var(--primary);
 }
 
-@media (min-width: 993px) {
+@media (min-width: 1024px) {
     .bottomNav {
         display: none;
     }

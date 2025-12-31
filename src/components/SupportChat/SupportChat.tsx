@@ -175,6 +175,54 @@ export default function SupportChat() {
                         bottom: 90px !important;
                     }
                 }
+
+                @media (max-width: 768px) {
+                    .support-fab {
+                        width: 48px !important;
+                        height: 48px !important;
+                        bottom: 80px !important;
+                        right: 20px !important;
+                    }
+                    .support-fab svg {
+                        width: 24px !important;
+                        height: 24px !important;
+                    }
+                    .support-window {
+                        width: calc(100vw - 40px) !important;
+                        max-width: 360px !important;
+                        height: 500px !important;
+                        max-height: 70vh !important;
+                        bottom: 150px !important;
+                        right: 20px !important;
+                        border-radius: 20px !important;
+                    }
+                    .support-header {
+                        padding: 12px 16px !important;
+                        min-height: 60px !important;
+                    }
+                    .support-header h4 {
+                        font-size: 15px !important;
+                    }
+                    .support-avatar {
+                        width: 40px !important;
+                        height: 40px !important;
+                    }
+                    .support-menu-content {
+                        padding: 20px !important;
+                    }
+                    .support-menu-item {
+                        padding: 12px !important;
+                        gap: 12px !important;
+                    }
+                    .support-icon-box {
+                        width: 40px !important;
+                        height: 40px !important;
+                    }
+                    .support-icon-box svg {
+                        width: 20px !important;
+                        height: 20px !important;
+                    }
+                }
                 `
             }} />
             {/* FAB */}
@@ -188,9 +236,9 @@ export default function SupportChat() {
 
             {/* Window */}
             {isOpen && (
-                <div style={styles.container}>
+                <div style={styles.container} className="support-window">
                     {/* Header - Premium Redesign */}
-                    <div style={styles.header}>
+                    <div style={styles.header} className="support-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
                             {view === 'chat' && (
                                 <button onClick={() => setView('menu')} style={styles.headerBackBtn}>
@@ -198,10 +246,10 @@ export default function SupportChat() {
                                 </button>
                             )}
 
-                            <div style={styles.avatarContainer}>
+                            <div style={styles.avatarContainer} className="support-avatar">
                                 {view === 'menu' ? (
                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)' }}>
-                                        <Headset size={22} color="#fff" />
+                                        <Headset size={22} color="#0052FF" />
                                     </div>
                                 ) : (
                                     <img src="/team/asadbek.jpg" alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -227,7 +275,7 @@ export default function SupportChat() {
                     {/* Content */}
                     <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff' }}>
                         {view === 'menu' ? (
-                            <div style={styles.menuContent}>
+                            <div style={styles.menuContent} className="support-menu-content">
                                 <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
                                     <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Assalomu alaykum! 👋</h3>
                                     <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>
@@ -236,8 +284,8 @@ export default function SupportChat() {
                                 </div>
 
                                 <div style={styles.menuOptions}>
-                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover">
-                                        <div style={{ ...styles.iconBox, background: '#e0f2fe', color: '#0284c7' }}>
+                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover support-menu-item">
+                                        <div style={{ ...styles.iconBox, background: '#e0f2fe', color: '#0284c7' }} className="support-icon-box">
                                             <MessageSquareText size={24} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
@@ -247,8 +295,8 @@ export default function SupportChat() {
                                         <ChevronRight size={18} color="#cbd5e1" />
                                     </button>
 
-                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover">
-                                        <div style={{ ...styles.iconBox, background: '#dcfce7', color: '#16a34a' }}>
+                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover support-menu-item">
+                                        <div style={{ ...styles.iconBox, background: '#dcfce7', color: '#16a34a' }} className="support-icon-box">
                                             <Send size={24} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
@@ -258,8 +306,8 @@ export default function SupportChat() {
                                         <ChevronRight size={18} color="#cbd5e1" />
                                     </a>
 
-                                    <Link href="/faq" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover">
-                                        <div style={{ ...styles.iconBox, background: '#fef9c3', color: '#ca8a04' }}>
+                                    <Link href="/faq" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover support-menu-item">
+                                        <div style={{ ...styles.iconBox, background: '#fef9c3', color: '#ca8a04' }} className="support-icon-box">
                                             <HelpCircle size={24} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>

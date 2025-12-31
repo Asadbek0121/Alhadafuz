@@ -9,6 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 export default function AuthModal() {
     const { isModalOpen, closeAuthModal } = useUserStore();
@@ -188,13 +189,12 @@ export default function AuthModal() {
                                     </div>
                                     <div className="relative">
                                         <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                        <input
-                                            type="tel"
-                                            placeholder="Telefon raqam"
+                                        <PhoneInput
                                             value={phone}
-                                            onChange={(e) => setPhone(e.target.value)}
+                                            onChange={setPhone}
                                             required
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-auto"
+                                            placeholder="+998 (90) 123-45-67"
                                         />
                                     </div>
                                 </div>

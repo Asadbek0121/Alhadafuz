@@ -6,6 +6,7 @@ import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, Check
 import { useState, useEffect } from 'react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
+import { PhoneInput } from '@/components/ui/phone-input';
 
 const regionsData: Record<string, string[]> = {
     "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
@@ -184,12 +185,10 @@ export default function CheckoutPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Telefon raqam</label>
-                                <input
-                                    type="text"
-                                    placeholder={tCheckout('phone')}
+                                <PhoneInput
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 text-sm md:text-base"
                                     value={formData.phone}
-                                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                                    onChange={(val) => setFormData({ ...formData, phone: val })}
                                     required
                                 />
                             </div>

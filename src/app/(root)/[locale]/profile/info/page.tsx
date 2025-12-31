@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useSession } from "next-auth/react";
@@ -10,6 +10,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export default function PersonalInfoPage() {
     const t = useTranslations('Profile');
@@ -31,6 +32,7 @@ export default function PersonalInfoPage() {
         register,
         handleSubmit,
         setValue,
+        control,
         formState: { errors },
     } = useForm<ProfileForm>({
         resolver: zodResolver(profileSchema),
@@ -156,11 +158,18 @@ export default function PersonalInfoPage() {
 
                     <div className="space-y-2">
                         <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('phone')}</label>
-                        <input
-                            {...register("phone")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none dark:bg-gray-700 dark:text-white ${errors.phone ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:border-gray-600"
-                                }`}
-                            placeholder="+998 90 123 45 67"
+                        <Controller
+                            control={control}
+                            name="phone"
+                            render={({ field }) => (
+                                <PhoneInput
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    className={`w-full h-12 px-4 rounded-xl border transition-all outline-none dark:bg-gray-700 dark:text-white ${errors.phone ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:border-gray-600"
+                                        }`}
+                                    placeholder="+998 (90) 123-45-67"
+                                />
+                            )}
                         />
                         {errors.phone && <p className="text-red-500 text-xs font-medium">{errors.phone.message}</p>}
                     </div>
