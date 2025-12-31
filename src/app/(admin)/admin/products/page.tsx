@@ -2,23 +2,17 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import SoftDeleteButton from "./SoftDeleteButton";
-import { unstable_cache } from "next/cache";
-
-const getProducts = unstable_cache(
-    async (skip: number, take: number) => {
-        return await Promise.all([
-            (prisma as any).product.findMany({
-                where: { isDeleted: false },
-                orderBy: { createdAt: "desc" },
-                skip,
-                take,
-            }),
-            (prisma as any).product.count({ where: { isDeleted: false } }),
-        ]);
-    },
-    ['admin-products-list'],
-    { tags: ['products'] }
-);
+const getProducts = async (skip: number, take: number) => {
+    return await Promise.all([
+        (prisma as any).product.findMany({
+            where: { isDeleted: false },
+            orderBy: { createdAt: "desc" },
+            skip,
+            take,
+        }),
+        (prisma as any).product.count({ where: { isDeleted: false } }),
+    ]);
+};
 
 export default async function AdminProductsPage({
     searchParams,
