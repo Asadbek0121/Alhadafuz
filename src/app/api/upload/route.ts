@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
+import { put } from '@vercel/blob';
 import { auth } from '@/auth';
-
-// Configure Cloudinary
-cloudinary.config({
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET,
-});
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -23,23 +16,15 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
         }
 
-        const buffer = Buffer.from(await file.arrayBuffer());
+        // Use the filename directly, Vercel Blob handles uniqueness if needed or overwrites.
+        // To prevent overwrites, we can add a timestamp.
+        const filename = `${Date.now()}-${file.name}`;
 
-        // Upload to Cloudinary using a stream
-        const result: any = await new Promise((resolve, reject) => {
-            const uploadStream = cloudinary.uploader.upload_stream(
-                {
-                    folder: 'hadaf_uploads', // Optional folder name in Cloudinary
-                },
-                (error, result) => {
-                    if (error) reject(error);
-                    else resolve(result);
-                }
-            );
-            uploadStream.end(buffer);
+        const blob = await put(filename, file, {
+            access: 'public',
         });
 
-        return NextResponse.json({ url: result.secure_url });
+        return NextResponse.json({ url: blob.url });
     } catch (error) {
         console.error('Upload error:', error);
         return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
