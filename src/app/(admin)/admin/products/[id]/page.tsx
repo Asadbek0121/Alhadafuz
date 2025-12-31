@@ -82,13 +82,23 @@ export default function EditProductPage() {
                         status: "published"
                     });
 
-                    // Populate attributes if any
-                    if (data.specs) {
-                        const attrs: any[] = [];
-                        Object.entries(data.specs).forEach(([key, value]) => {
-                            attrs.push({ key, value: Array.isArray(value) ? value.join(',') : value });
-                        });
-                        setAttributes(attrs);
+                    // Populate attributes
+                    const attrsSource = data.attributes || data.specs;
+                    if (attrsSource) {
+                        let parsedAttrs = attrsSource;
+                        if (typeof attrsSource === 'string') {
+                            try {
+                                parsedAttrs = JSON.parse(attrsSource);
+                            } catch (e) { }
+                        }
+
+                        if (parsedAttrs && typeof parsedAttrs === 'object') {
+                            const attrs: any[] = [];
+                            Object.entries(parsedAttrs).forEach(([key, value]) => {
+                                attrs.push({ key, value: Array.isArray(value) ? value.join(',') : String(value) });
+                            });
+                            setAttributes(attrs);
+                        }
                     }
                 })
                 .catch(err => {
@@ -167,8 +177,7 @@ export default function EditProductPage() {
             oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
             discount: data.discountValue ? Number(data.discountValue) : null,
             images: imagesList,
-            specs: attrsObject, // Using existing 'specs' field in Prisma? Or 'attributes'
-            attributes: attrsObject // Depending on your schema, handle both or one
+            attributes: attrsObject
         };
 
         try {
@@ -178,13 +187,17 @@ export default function EditProductPage() {
                 body: JSON.stringify(payload),
             });
 
-            if (!res.ok) throw new Error("Failed to update");
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.error || errorData.details ? JSON.stringify(errorData.details) : "Failed to update product");
+            }
 
             toast.success("Product updated successfully");
             router.push("/admin/products");
             router.refresh();
-        } catch (error) {
-            toast.error("Something went wrong");
+        } catch (error: any) {
+            console.error("Update error:", error);
+            toast.error(error.message || "Something went wrong");
         } finally {
             setLoading(false);
         }

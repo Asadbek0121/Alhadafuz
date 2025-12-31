@@ -101,10 +101,22 @@ export default function ProductPage() {
                         setProduct(data);
 
                         // Parse specs to separate selections
-                        if (data.specs) {
+                        // Parse specs to separate selections
+                        let specsSource = data.specs || data.attributes;
+                        let parsedSpecs: Record<string, string | string[]> | null = null;
+
+                        if (typeof specsSource === 'string') {
+                            try {
+                                parsedSpecs = JSON.parse(specsSource);
+                            } catch (e) { console.error("Specs parse error", e); }
+                        } else if (typeof specsSource === 'object') {
+                            parsedSpecs = specsSource;
+                        }
+
+                        if (parsedSpecs) {
                             const sels: [string, string[]][] = [];
                             const stats: [string, string][] = [];
-                            Object.entries(data.specs as Record<string, string | string[]>).forEach(([key, value]) => {
+                            Object.entries(parsedSpecs).forEach(([key, value]) => {
                                 if (Array.isArray(value)) {
                                     sels.push([key, value]);
                                     // Default select first option
@@ -112,7 +124,7 @@ export default function ProductPage() {
                                         setSelectedOptions(prev => ({ ...prev, [key]: value[0] }));
                                     }
                                 } else {
-                                    stats.push([key, value]);
+                                    stats.push([key, String(value)]);
                                 }
                             });
                             setSelections(sels);
