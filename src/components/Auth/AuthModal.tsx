@@ -32,6 +32,8 @@ export default function AuthModal() {
     const [email, setEmail] = useState('');
     const [phone, setPhone] = useState('');
     const [password, setPassword] = useState('');
+    const [isVerifying, setIsVerifying] = useState(false);
+    const [otp, setOtp] = useState('');
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -82,7 +84,6 @@ export default function AuthModal() {
         setIsLoading(true);
 
         try {
-            localStorage.setItem('mergeCartOnLogin', 'true');
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -93,7 +94,36 @@ export default function AuthModal() {
 
             if (!res.ok) {
                 toast.error(data.message || "Ro'yxatdan o'tishda xatolik");
-                localStorage.removeItem('mergeCartOnLogin');
+                return;
+            }
+
+            if (data.requiresVerification) {
+                setIsVerifying(true);
+                toast.success("Tasdiqlash kodi emailingizga yuborildi");
+            }
+        } catch (error) {
+            toast.error("Server xatosi");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsLoading(true);
+
+        try {
+            localStorage.setItem('mergeCartOnLogin', 'true');
+            const res = await fetch('/api/auth/register/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, phone, password, otp }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.message || "Kod noto'g'ri");
                 return;
             }
 
@@ -109,8 +139,7 @@ export default function AuthModal() {
                 window.location.reload();
             }
         } catch (error) {
-            toast.error("Server xatosi");
-            localStorage.removeItem('mergeCartOnLogin');
+            toast.error("Tasdiqlashda xatolik");
         } finally {
             setIsLoading(false);
         }
@@ -173,67 +202,97 @@ export default function AuthModal() {
                             </div>
                         </div>
 
-                        <form onSubmit={mode === 'login' ? handleLogin : handleRegister} className="flex flex-col gap-4">
-                            {mode === 'register' && (
+                        <form onSubmit={isVerifying ? handleVerifyOTP : (mode === 'login' ? handleLogin : handleRegister)} className="flex flex-col gap-4">
+                            {isVerifying ? (
                                 <div className="space-y-4 animate-fade-in-up">
+                                    <div className="text-center p-4 bg-blue-50 rounded-2xl border border-blue-100 mb-2">
+                                        <p className="text-sm text-blue-800 font-medium">
+                                            Kod <b>{email}</b> manziliga yuborildi. Pochtangizni tekshiring.
+                                        </p>
+                                    </div>
                                     <div className="relative">
-                                        <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                                         <input
                                             type="text"
-                                            placeholder="Ism Familiya"
-                                            value={name}
-                                            onChange={(e) => setName(e.target.value)}
+                                            placeholder="6 xonali kodni kiriting"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                             required
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-bold text-xl tracking-[10px] text-center text-slate-900 placeholder:text-slate-400 placeholder:tracking-normal placeholder:font-medium"
                                         />
                                     </div>
-                                    <div className="relative">
-                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                                        <PhoneInput
-                                            value={phone}
-                                            onChange={setPhone}
-                                            required
-                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-auto"
-                                            placeholder="+998 (90) 123-45-67"
-                                        />
-                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsVerifying(false)}
+                                        className="text-sm font-bold text-slate-500 hover:text-slate-700 mx-auto block"
+                                    >
+                                        Ma'lumotlarni o'zgartirish
+                                    </button>
                                 </div>
+                            ) : (
+                                <>
+                                    {mode === 'register' && (
+                                        <div className="space-y-4 animate-fade-in-up">
+                                            <div className="relative">
+                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                                <input
+                                                    type="text"
+                                                    placeholder="Ism Familiya"
+                                                    value={name}
+                                                    onChange={(e) => setName(e.target.value)}
+                                                    required
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400"
+                                                />
+                                            </div>
+                                            <div className="relative">
+                                                <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                                                <PhoneInput
+                                                    value={phone}
+                                                    onChange={setPhone}
+                                                    required
+                                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-auto"
+                                                    placeholder="+998 (90) 123-45-67"
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    <div className="relative">
+                                        <Mail className="absolute left-4 top-3.5 md:top-4 text-slate-400" size={20} />
+                                        <input
+                                            type="email"
+                                            placeholder="Elektron pochta"
+                                            value={email}
+                                            onChange={(e) => setEmail(e.target.value)}
+                                            required
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 md:py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-[50px] md:h-auto"
+                                        />
+                                    </div>
+
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-3.5 md:top-4 text-slate-400" size={20} />
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            placeholder="Parol"
+                                            value={password}
+                                            onChange={(e) => setPassword(e.target.value)}
+                                            required
+                                            minLength={6}
+                                            className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 py-3.5 md:py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-[50px] md:h-auto"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+                                            tabIndex={-1}
+                                        >
+                                            {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                        </button>
+                                    </div>
+                                </>
                             )}
 
-                            <div className="relative">
-                                <Mail className="absolute left-4 top-3.5 md:top-4 text-slate-400" size={20} />
-                                <input
-                                    type="email"
-                                    placeholder="Elektron pochta"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 md:py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-[50px] md:h-auto"
-                                />
-                            </div>
-
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-3.5 md:top-4 text-slate-400" size={20} />
-                                <input
-                                    type={showPassword ? "text" : "password"}
-                                    placeholder="Parol"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
-                                    minLength={6}
-                                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 py-3.5 md:py-4 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-[50px] md:h-auto"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                                    tabIndex={-1}
-                                >
-                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                </button>
-                            </div>
-
-                            {mode === 'login' && (
+                            {mode === 'login' && !isVerifying && (
                                 <div className="flex justify-end">
                                     <Link
                                         href="/auth/forgot-password"
@@ -253,7 +312,7 @@ export default function AuthModal() {
                                 {isLoading ? (
                                     <Loader2 className="animate-spin" />
                                 ) : (
-                                    mode === 'login' ? 'TIZIMGA KIRISH' : "RO'YXATDAN O'TISH"
+                                    isVerifying ? 'TASDIQLASH' : (mode === 'login' ? 'TIZIMGA KIRISH' : "RO'YXATDAN O'TISH")
                                 )}
                             </button>
                         </form>

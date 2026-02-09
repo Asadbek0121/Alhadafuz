@@ -1,6 +1,7 @@
 import { Mail, Phone, MapPin, MessageCircle, HelpCircle, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
+import Link from "next/link";
 
 async function getSettings() {
     const settings = await prisma.storeSettings.findUnique({
@@ -99,25 +100,41 @@ export default async function SupportPage() {
                 ))}
             </div>
 
+            {/* Live Chat Button */}
+            <div className="mb-8 md:mb-12">
+                <Link
+                    href="/support/chat"
+                    className="block max-w-2xl mx-auto bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl p-6 md:p-8 shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] group"
+                >
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-14 h-14 bg-white/20 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                                <MessageCircle size={28} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-1">{t('chat_title') || 'Jonli chat'}</h3>
+                                <p className="text-blue-100 text-sm">{t('chat_subtitle') || 'Tezkor javoblar olish'}</p>
+                            </div>
+                        </div>
+                        <ChevronRight className="w-6 h-6 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                </Link>
+            </div>
+
             <div className="bg-white md:bg-gray-50 rounded-3xl p-0 md:p-12 border-t md:border-0 border-gray-100 pt-8 md:pt-0">
                 <div className="max-w-3xl mx-auto">
                     <h2 className="text-xl md:text-2xl font-bold mb-6 md:mb-8 text-center">{t('faq')}</h2>
                     <div className="space-y-3 md:space-y-4">
-                        {[
-                            "Buyurtmani qanday rasmiylashtirish mumkin?",
-                            "To'lov turlari qanday?",
-                            "Yetkazib berish narxi qancha?",
-                            "Mahsulotni qaytarish tartibi qanday?"
-                        ].map((q, i) => (
+                        {[1, 2, 3, 4].map((i) => (
                             <details key={i} className="group bg-white rounded-xl border border-gray-200 overflow-hidden">
                                 <summary className="flex items-center justify-between p-4 md:p-5 cursor-pointer font-medium text-gray-900 group-open:text-primary">
-                                    {q}
+                                    {t(`q${i}` as any)}
                                     <span className="group-open:rotate-180 transition-transform text-gray-400">
                                         <ChevronRight size={20} className="rotate-90" />
                                     </span>
                                 </summary>
                                 <div className="px-4 md:px-5 pb-5 text-gray-600 text-sm leading-relaxed border-t border-gray-50 pt-4 bg-gray-50/50">
-                                    Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+                                    {t(`a${i}` as any)}
                                 </div>
                             </details>
                         ))}

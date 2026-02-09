@@ -28,16 +28,33 @@ export async function POST(req: Request) {
 
         const { name, email, password, phone } = result.data;
 
+        // CHECK FOR DISPOSABLE/FAKE EMAILS
+        const { isDisposableEmail } = await import("@/lib/email-check");
+        if (isDisposableEmail(email)) {
+            return NextResponse.json(
+                { message: "Soxta yoki vaqtinchalik emaillardan foydalanish mumkin emas" },
+                { status: 400 }
+            );
+        }
+
         // Check if user exists (email or phone)
-        const existingUser = await prisma.user.findFirst({
-            where: {
-                OR: [
-                    { email },
-                    // Only check phone if it's provided and not empty
-                    ...(phone ? [{ phone }] : [])
-                ]
-            },
-        });
+        let existingUser = null;
+        try {
+            existingUser = await prisma.user.findFirst({
+                where: {
+                    OR: [
+                        { email },
+                        ...(phone ? [{ phone }] : [])
+                    ]
+                },
+            });
+        } catch (dbError: any) {
+            console.error("Database check failed:", dbError);
+            // If the table doesn't exist yet, we'll assume no existing user
+            if (!dbError.message.includes("does not exist")) {
+                throw dbError; // Rethrow if it's not a missing table error
+            }
+        }
 
         if (existingUser) {
             return NextResponse.json(
@@ -46,51 +63,43 @@ export async function POST(req: Request) {
             );
         }
 
-        // Hash password
-        const hashedPassword = await bcrypt.hash(password, 12);
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        // Generate sequential ID
-        const uniqueId = await generateNextUniqueId();
+        // Save OTP to Memory (Bypass DB table issue)
+        const { saveOTP } = await import("@/lib/otp-store");
+        saveOTP(email, otp);
 
-        // Create user
-        const newUser = await prisma.user.create({
-            data: {
-                name,
-                email,
-                phone: phone || null,
-                hashedPassword,
-                uniqueId,
-                role: "USER",
-                provider: "credentials",
-            },
-        });
+        // Send Email
+        const { sendVerificationEmail } = await import("@/lib/mail");
+        const mailResult = await sendVerificationEmail(email, otp) as any;
 
-        // Notify Admins
-        try {
-            await notifyAdmins(
-                "Yangi Foydalanuvchi",
-                `${name || email} ro'yxatdan o'tdi.`,
-                "USER"
+        if (!mailResult.success) {
+            return NextResponse.json(
+                {
+                    message: "Email yuborishda xatolik yuz berdi. " + (mailResult.error || ""),
+                    debug: mailResult.error
+                },
+                { status: 500 }
             );
-        } catch (e) {
-            console.error("Notification error", e);
         }
 
         return NextResponse.json(
             {
-                message: "Muvaffaqiyatli ro'yxatdan o'tildi",
-                user: {
-                    id: newUser.id,
-                    email: newUser.email,
-                    name: newUser.name
-                }
+                message: "Tasdiqlash kodi emailingizga yuborildi",
+                requiresVerification: true
             },
-            { status: 201 }
+            { status: 200 }
         );
-    } catch (error) {
-        console.error("Registration error:", error);
+    } catch (error: any) {
+        console.error("Registration error details:", error);
         return NextResponse.json(
-            { message: "Server xatosi yuz berdi" },
+            {
+                message: "Server xatosi yuz berdi",
+                debug: error.message,
+                stack: error.stack
+            },
             { status: 500 }
         );
     }

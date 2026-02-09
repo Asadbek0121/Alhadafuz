@@ -1,38 +1,54 @@
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
-import { PrismaClient } from '@prisma/client'
-import bcrypt from 'bcryptjs'
+const prisma = new PrismaClient();
 
-const prisma = new PrismaClient()
+async function createAdmin() {
+    try {
+        const email = 'admin@hadaf.uz';
+        const password = 'admin123'; // O'zingizning parolingiz
 
-async function main() {
-    console.log('Creating Admin User...')
+        // Check if admin exists
+        const existingAdmin = await prisma.user.findUnique({
+            where: { email },
+        });
 
-    const hashedPassword = await bcrypt.hash('admin123', 10)
+        const hashedPassword = await bcrypt.hash(password, 10);
 
-    const admin = await prisma.user.upsert({
-        where: { email: 'admin@hadaf.uz' },
-        update: {
-            hashedPassword: hashedPassword,
-            role: 'ADMIN'
-        },
-        create: {
-            email: 'admin@hadaf.uz',
-            name: 'Asadbek Admin',
-            hashedPassword: hashedPassword,
-            role: 'ADMIN',
-            provider: 'credentials'
+        if (existingAdmin) {
+            // Update existing user to admin
+            const admin = await prisma.user.update({
+                where: { email },
+                data: {
+                    role: 'ADMIN',
+                    password: hashedPassword,
+                    hashedPassword: hashedPassword,
+                },
+            });
+            console.log('✅ Admin updated:', admin.email);
+        } else {
+            // Create new admin
+            const admin = await prisma.user.create({
+                data: {
+                    email,
+                    name: 'Admin',
+                    password: hashedPassword,
+                    hashedPassword: hashedPassword,
+                    role: 'ADMIN',
+                    provider: 'credentials',
+                },
+            });
+            console.log('✅ Admin created:', admin.email);
         }
-    })
 
-    console.log('✅ Admin user created/updated:', admin.email)
+        console.log('\n📧 Email:', email);
+        console.log('🔑 Password:', password);
+        console.log('\n✅ Endi admin@hadaf.uz va admin123 bilan kirishingiz mumkin!');
+    } catch (error) {
+        console.error('❌ Error:', error);
+    } finally {
+        await prisma.$disconnect();
+    }
 }
 
-main()
-    .then(async () => {
-        await prisma.$disconnect()
-    })
-    .catch(async (e) => {
-        console.error(e)
-        await prisma.$disconnect()
-        process.exit(1)
-    })
+createAdmin();

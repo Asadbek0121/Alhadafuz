@@ -7,23 +7,10 @@ import { useState, useEffect } from 'react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { PhoneInput } from '@/components/ui/phone-input';
+import { regions, districts } from '@/constants/locations';
+import { useMessages } from 'next-intl';
 
-const regionsData: Record<string, string[]> = {
-    "Toshkent shahri": ["Bektemir tumani", "Chilonzor tumani", "Mirobod tumani", "Mirzo Ulug'bek tumani", "Olmazor tumani", "Sergeli tumani", "Shayxontohur tumani", "Uchtepa tumani", "Yakkasaroy tumani", "Yangihayot tumani", "Yashnobod tumani", "Yunusobod tumani"],
-    "Andijon viloyati": ["Andijon shahri", "Asaka tumani", "Baliqchi tumani", "Bo'z tumani", "Buloqboshi tumani", "Jalaquduq tumani", "Izboskan tumani", "Qo'rg'ontepa tumani", "Marhamat tumani", "Oltinko'l tumani", "Paxtaobod tumani", "Shahrixon tumani", "Ulug'nor tumani", "Xo'jaobod tumani", "Xonobod shahri"],
-    "Buxoro viloyati": ["Buxoro shahri", "Buxoro tumani", "G'ijduvon tumani", "Jondor tumani", "Kogon shahri", "Kogon tumani", "Olot tumani", "Peshku tumani", "Qorako'l tumani", "Qorovulbozor tumani", "Romitan tumani", "Shofirkon tumani", "Vobkent tumani"],
-    "Farg'ona viloyati": ["Farg'ona shahri", "Bag'dod tumani", "Beshariq tumani", "Buvayda tumani", "Dang'ara tumani", "Farg'ona tumani", "Furqat tumani", "Qo'qon shahri", "Qo'shtepa tumani", "Marg'ilon shahri", "O'zbekiston tumani", "Oltiariq tumani", "Quva tumani", "Quvasoy shahri", "Rishton tumani", "So'x tumani", "Toshloq tumani", "Uchko'prik tumani", "Yozyovon tumani"],
-    "Jizzax viloyati": ["Jizzax shahri", "Arnasoy tumani", "Baxmal tumani", "Do'stlik tumani", "Forish tumani", "G'allaorol tumani", "Mirzacho'l tumani", "Paxtakor tumani", "Sharof Rashidov tumani", "Yangiobod tumani", "Zomin tumani", "Zafarobod tumani", "Zarbdor tumani"],
-    "Xorazm viloyati": ["Urganch shahri", "Bog'ot tumani", "Gurlan tumani", "Xiva shahri", "Xiva tumani", "Xonqa tumani", "Hazorasp tumani", "Qo'shko'pir tumani", "Shovot tumani", "Urganch tumani", "Yangiariq tumani", "Yangibozor tumani"],
-    "Namangan viloyati": ["Namangan shahri", "Chortoq tumani", "Chust tumani", "Kosonsoy tumani", "Mingbuloq tumani", "Namangan tumani", "Norin tumani", "Pop tumani", "To'raqo'rg'on tumani", "Uchqo'rg'on tumani", "Uychi tumani", "Yangiqo'rg'on tumani"],
-    "Navoiy viloyati": ["Navoiy shahri", "Zarafshon shahri", "Karmana tumani", "Konimex tumani", "Navbahor tumani", "Nurota tumani", "Qiziltepa tumani", "Tomdi tumani", "Uchquduq tumani", "Xatirchi tumani"],
-    "Qashqadaryo viloyati": ["Qarshi shahri", "Shahrisabz shahri", "Chiroqchi tumani", "Dehqonobod tumani", "G'uzor tumani", "Kasbi tumani", "Kitob tumani", "Koson tumani", "Mirishkor tumani", "Muborak tumani", "Nishon tumani", "Qamashi tumani", "Qarshi tumani", "Shahrisabz tumani", "Yakkabog' tumani"],
-    "Qoraqalpog'iston Respublikasi": ["Nukus shahri", "Amudaryo tumani", "Beruniy tumani", "Chimboy tumani", "Ellikqal'a tumani", "Kegeyli tumani", "Mo'ynoq tumani", "Nukus tumani", "Qanliko'l tumani", "Qo'ng'irot tumani", "Qorao'zak tumani", "Shumanay tumani", "Taxtako'pir tumani", "To'rtko'l tumani", "Xo'jayli tumani", "Taxiatosh tumani", "Bo'zatov tumani"],
-    "Samarqand viloyati": ["Samarqand shahri", "Bulung'ur tumani", "Ishtixon tumani", "Jomboy tumani", "Kattaqo'rg'on shahri", "Kattaqo'rg'on tumani", "Narpay tumani", "Nurobod tumani", "Oqdaryo tumani", "Paxtachi tumani", "Payariq tumani", "Pastdarg'om tumani", "Qo'shrabot tumani", "Samarqand tumani", "Tayloq tumani", "Urgut tumani"],
-    "Sirdaryo viloyati": ["Guliston shahri", "Yangiyer shahri", "Shirin shahri", "Boyovut tumani", "Guliston tumani", "Mirzaobod tumani", "Oqoltin tumani", "Sardoba tumani", "Sayxunobod tumani", "Sirdaryo tumani", "Xovos tumani"],
-    "Surxondaryo viloyati": ["Termiz shahri", "Angor tumani", "Bandixon tumani", "Boysun tumani", "Denov tumani", "Jarqo'rg'on tumani", "Muzrabot tumani", "Oltinsoy tumani", "Qiziriq tumani", "Qumqo'rg'on tumani", "Sariosiyo tumani", "Sherobod tumani", "Sho'rchi tumani", "Termiz tumani", "Uzun tumani"],
-    "Toshkent viloyati": ["Nurafshon shahri", "Angren shahri", "Bekobod shahri", "Chirchiq shahri", "Olmaliq shahri", "Ohangaron shahri", "Yangiyo'l shahri", "Bekobod tumani", "Bo'ka tumani", "Bo'stonliq tumani", "Chinoz tumani", "Qibray tumani", "O'rta Chirchiq tumani", "Oqqo'rg'on tumani", "Parkent tumani", "Piskent tumani", "Quyi Chirchiq tumani", "Yangiyo'l tumani", "Yuqori Chirchiq tumani", "Zangiota tumani"]
-};
+const regionsData = districts; // for backward compatibility if needed, but we'll use imported one
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCartStore();
@@ -31,6 +18,9 @@ export default function CheckoutPage() {
     const tCheckout = useTranslations('Checkout');
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
+    const tProfile = useTranslations('Profile');
+    const tLoc = useTranslations('Locations');
+    const messages = useMessages() as any;
     const router = useRouter();
 
     const [deliveryMethod, setDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
@@ -38,12 +28,24 @@ export default function CheckoutPage() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
+    // Safe translation helper that accesses messages directly
+    const safeTranslate = (key: string) => {
+        if (!key) return '';
+        // Directly access the Locations messages
+        const locationMessages = messages?.Locations;
+        if (locationMessages && locationMessages[key]) {
+            return locationMessages[key];
+        }
+        // Fallback to original key if translation not found
+        return key;
+    };
+
     // Form state
     const [formData, setFormData] = useState({
         phone: user?.phone || '',
         name: user?.name || '',
-        city: 'Toshkent shahri',
-        district: 'Yunusobod tumani',
+        city: 'toshkent_sh',
+        district: 'Yunusobod',
         address: '',
         comment: '',
     });
@@ -103,7 +105,7 @@ export default function CheckoutPage() {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
-                            title: 'My Address',
+                            title: tProfile('my_address'),
                             city: formData.city,
                             district: formData.district,
                             street: formData.address,
@@ -184,7 +186,7 @@ export default function CheckoutPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Telefon raqam</label>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('phone_label')}</label>
                                 <PhoneInput
                                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 text-sm md:text-base"
                                     value={formData.phone}
@@ -193,7 +195,7 @@ export default function CheckoutPage() {
                                 />
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Ism-familiya</label>
+                                <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('fio_label')}</label>
                                 <input
                                     type="text"
                                     placeholder={tCheckout('fio')}
@@ -237,7 +239,7 @@ export default function CheckoutPage() {
                                 {savedAddresses.length > 0 && (
                                     <div className="mb-2">
                                         <label className="block text-sm font-bold text-slate-900 mb-3">
-                                            {tHeader('mahsulotlar') === "Products" ? "Saved Addresses" : "Saqlangan manzillar"}
+                                            {tCheckout('saved_addresses')}
                                         </label>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                                             {savedAddresses.map(addr => (
@@ -247,9 +249,13 @@ export default function CheckoutPage() {
                                                     onClick={() => selectAddress(addr)}
                                                 >
                                                     {selectedAddressId === addr.id && <div className="absolute top-3 right-3 text-blue-600"><CheckCircle2 size={18} /></div>}
-                                                    <div className="font-bold text-sm text-slate-900 mb-1">{addr.title || 'Address'}</div>
+                                                    <div className="font-bold text-sm text-slate-900 mb-1">
+                                                        {(addr.title === "My Address" || addr.title === "Mening manzilim" || addr.title === "Мой адрес")
+                                                            ? tProfile('my_address')
+                                                            : (addr.title || tCheckout('address'))}
+                                                    </div>
                                                     <div className="text-xs text-slate-500 leading-relaxed">
-                                                        {addr.city}, {addr.district} <br />
+                                                        {safeTranslate(addr.city)}, {safeTranslate(addr.district)} <br />
                                                         {addr.street} {addr.house}
                                                     </div>
                                                 </div>
@@ -258,10 +264,10 @@ export default function CheckoutPage() {
                                                 className={`cursor-pointer p-4 rounded-xl border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 flex items-center justify-center text-slate-500 hover:text-blue-600 transition-all ${selectedAddressId === null ? 'bg-slate-50' : ''}`}
                                                 onClick={() => {
                                                     setSelectedAddressId(null);
-                                                    setFormData(prev => ({ ...prev, address: '', district: '', city: 'Toshkent shahri' }));
+                                                    setFormData(prev => ({ ...prev, address: '', district: '', city: 'toshkent_sh' }));
                                                 }}
                                             >
-                                                <span className="font-bold text-sm">+ {tHeader('mahsulotlar') === "Products" ? "New Address" : "Yangi manzil"}</span>
+                                                <span className="font-bold text-sm">+ {tCheckout('new_address')}</span>
                                             </div>
                                         </div>
                                     </div>
@@ -269,35 +275,35 @@ export default function CheckoutPage() {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Viloyat / Shahar</label>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('city_label')}</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 text-sm md:text-base appearance-none cursor-pointer"
                                             value={formData.city}
                                             onChange={(e) => setFormData({ ...formData, city: e.target.value, district: '' })}
                                         >
-                                            {Object.keys(regionsData).map((region) => (
-                                                <option key={region} value={region}>{region}</option>
+                                            {regions.map((region) => (
+                                                <option key={region.id} value={region.id}>{safeTranslate(region.id)}</option>
                                             ))}
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Tuman</label>
+                                        <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('district_label')}</label>
                                         <select
                                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 text-sm md:text-base appearance-none cursor-pointer"
                                             value={formData.district}
                                             onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                                             disabled={!formData.city}
                                         >
-                                            <option value="">Tumanni tanlang</option>
-                                            {(regionsData[formData.city] || []).map((dist) => (
-                                                <option key={dist} value={dist}>{dist}</option>
+                                            <option value="">{tCheckout('district_select')}</option>
+                                            {(districts[formData.city] || []).map((dist) => (
+                                                <option key={dist} value={dist}>{safeTranslate(dist)}</option>
                                             ))}
                                         </select>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Aniq manzil (ko'cha, uy, xonadon)</label>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('address_label')}</label>
                                     <input
                                         type="text"
                                         placeholder={tCheckout('address_placeholder')}
@@ -321,13 +327,13 @@ export default function CheckoutPage() {
                                             />
                                         </div>
                                         <label htmlFor="saveAddr" className="text-sm cursor-pointer select-none text-slate-700">
-                                            {tHeader('mahsulotlar') === "Products" ? "Save this address for later" : "Manzilni keyingi safar uchun saqlash"}
+                                            {tCheckout('save_this_for_later')}
                                         </label>
                                     </div>
                                 )}
 
                                 <div>
-                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">Izoh (ixtiyoriy)</label>
+                                    <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('comment_label')}</label>
                                     <textarea
                                         placeholder={tCheckout('comment_placeholder')}
                                         className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 text-sm md:text-base min-h-[100px]"
@@ -340,7 +346,7 @@ export default function CheckoutPage() {
 
                         {deliveryMethod === 'pickup' && (
                             <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-slate-600 text-sm animate-fade-in">
-                                Hozircha faqat Toshkent sh, Yunusobod tumani filialidan olib ketish mumkin.
+                                {tCheckout('pickup_info')}
                             </div>
                         )}
                     </section>
@@ -414,7 +420,7 @@ export default function CheckoutPage() {
                             {isProcessing ? (
                                 <>
                                     <Loader2 size={20} className="animate-spin" />
-                                    <span>Yuklanmoqda...</span>
+                                    <span>{tHeader('loading')}</span>
                                 </>
                             ) : (
                                 tHeader('buyurtma_berish')

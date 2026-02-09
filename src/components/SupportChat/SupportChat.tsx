@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { MessageSquareText, X, Send, User, Loader2, ChevronLeft, HelpCircle, Headset, ChevronRight, MessageSquare } from 'lucide-react';
+import { MessageSquareText, X, Send, User, Loader2, ChevronLeft, HelpCircle, Headset, ChevronRight, MessageSquare, Check, CheckCheck, Image as ImageIcon, Paperclip, Mic, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,6 +12,8 @@ type Message = {
     senderId: string;
     content: string;
     createdAt: string;
+    isRead?: boolean;
+    type?: 'TEXT' | 'IMAGE' | 'AUDIO';
 };
 
 type ViewState = 'menu' | 'chat';
@@ -25,7 +27,11 @@ export default function SupportChat() {
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
     const [loading, setLoading] = useState(false);
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     // Fetch Admin Contact on Mount
     useEffect(() => {
@@ -42,26 +48,8 @@ export default function SupportChat() {
             });
     }, []);
 
-    // Fetch Messages when in chat view
-    useEffect(() => {
-        if (isOpen && view === 'chat' && session?.user && admin) {
-            setLoading(true);
-            fetchMessages();
-            const interval = setInterval(fetchMessages, 5000); // Poll every 5s
-            return () => clearInterval(interval);
-        }
-    }, [isOpen, view, session, admin]);
-
-    // Scroll to bottom
-    useEffect(() => {
-        if (scrollRef.current) {
-            scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-        }
-    }, [messages, isOpen, view]);
-
-    const fetchMessages = () => {
-        if (!admin) return;
-        fetch(`/api/chat/messages?userId=${admin.id}`)
+    const fetchMessages = useCallback(() => {
+        fetch(`/api/chat/support`)
             .then(res => {
                 const contentType = res.headers.get("content-type");
                 if (res.ok && contentType && contentType.includes("application/json")) {
@@ -76,35 +64,174 @@ export default function SupportChat() {
                 }
             })
             .catch(() => setLoading(false));
+    }, []);
+
+    // Fetch Messages when in chat view
+    useEffect(() => {
+        if (isOpen && view === 'chat' && session?.user) {
+            setLoading(true);
+            fetchMessages();
+            const interval = setInterval(fetchMessages, 3000); // Poll every 3s
+            return () => clearInterval(interval);
+        }
+    }, [isOpen, view, session, fetchMessages]);
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // Formatni aniqlash
+            const mimeType = MediaRecorder.isTypeSupported('audio/mp4')
+                ? 'audio/mp4'
+                : MediaRecorder.isTypeSupported('audio/webm')
+                    ? 'audio/webm'
+                    : 'audio/ogg';
+
+            const recorder = new MediaRecorder(stream, { mimeType });
+            const chunks: Blob[] = [];
+
+            recorder.ondataavailable = (e: BlobEvent) => {
+                if (e.data && e.data.size > 0) {
+                    chunks.push(e.data);
+                }
+            };
+
+            recorder.onstop = async () => {
+                if (chunks.length === 0) {
+                    toast.error("Ovoz yozilmadi (bo'sh)");
+                    return;
+                }
+                const blob = new Blob(chunks, { type: mimeType });
+                const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                await handleVoiceUpload(blob, extension);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            recorder.start(1000); // 1 soniyalik bo'laklarga bo'lib yozish (xavfsizroq)
+            setMediaRecorder(recorder);
+            setIsRecording(true);
+            setRecordingTime(0);
+            timerRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+        } catch (err) {
+            toast.error("Mikrofonga ruxsat berilmagan yoki xatolik");
+            console.error('Recording Error:', err);
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+            mediaRecorder.stop();
+            setIsRecording(false);
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+    };
+
+    const handleVoiceUpload = async (blob: Blob, extension: string) => {
+        if (!session) return;
+        const formData = new FormData();
+        formData.append('file', blob, `voice.${extension}`);
+
+        try {
+            setLoading(true);
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.url) {
+                await fetch('/api/chat/support', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: data.url,
+                        type: 'AUDIO'
+                    })
+                });
+                fetchMessages();
+            }
+        } catch (error) {
+            toast.error("Ovozli xabar yuklashda xatolik");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !session) return;
+
+        if (!file.type.startsWith('image/')) {
+            toast.error("Faqat rasm yuklash mumkin");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            setLoading(true);
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await res.json();
+
+            if (data.url) {
+                await fetch('/api/chat/support', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        content: data.url,
+                        type: 'IMAGE'
+                    })
+                });
+                fetchMessages();
+            }
+        } catch (error) {
+            toast.error("Rasm yuklashda xatolik");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!inputValue.trim() || !admin || !session) return;
+        if (!inputValue.trim() || !session) return;
 
-        const optimisticMsg = {
+        const optimisticMsg: Message = {
             id: Date.now().toString(),
             senderId: session.user.id || 'me',
             content: inputValue,
-            createdAt: new Date().toISOString()
+            createdAt: new Date().toISOString(),
+            type: 'TEXT'
         };
 
         setMessages(prev => [...prev, optimisticMsg]);
         setInputValue("");
 
         try {
-            await fetch('/api/chat/send', {
+            await fetch('/api/chat/support', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    receiverId: admin.id,
-                    content: optimisticMsg.content
+                    content: optimisticMsg.content,
+                    type: 'TEXT'
                 })
             });
+            fetchMessages(); // Refresh messages
         } catch (error) {
             toast.error("Xabar yuborilmadi");
         }
     };
+
 
     const handleStartChat = () => {
         if (session) {
@@ -306,16 +433,7 @@ export default function SupportChat() {
                                         <ChevronRight size={18} color="#cbd5e1" />
                                     </a>
 
-                                    <Link href="/faq" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover support-menu-item">
-                                        <div style={{ ...styles.iconBox, background: '#fef9c3', color: '#ca8a04' }} className="support-icon-box">
-                                            <HelpCircle size={24} />
-                                        </div>
-                                        <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Savol-javoblar</div>
-                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Ko'p so'raladigan savollar</div>
-                                        </div>
-                                        <ChevronRight size={18} color="#cbd5e1" />
-                                    </Link>
+
                                 </div>
                             </div>
                         ) : (
@@ -343,7 +461,7 @@ export default function SupportChat() {
                                                     <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                                                         <div style={{
                                                             maxWidth: '75%',
-                                                            padding: '12px 18px',
+                                                            padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp|webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? '4px' : '12px 18px',
                                                             borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
                                                             background: isMe ? 'linear-gradient(135deg, #0052FF 0%, #0040DD 100%)' : '#fff',
                                                             color: isMe ? '#fff' : '#1e293b',
@@ -351,15 +469,39 @@ export default function SupportChat() {
                                                             lineHeight: '1.5',
                                                             wordBreak: 'break-word',
                                                             boxShadow: isMe ? '0 4px 15px rgba(0, 82, 255, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
-                                                            border: isMe ? 'none' : '1px solid #e2e8f0'
+                                                            border: isMe ? 'none' : '1px solid #e2e8f0',
+                                                            overflow: 'hidden'
                                                         }}>
-                                                            {msg.content}
+                                                            {msg.type === 'IMAGE' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
+                                                                <img
+                                                                    src={msg.content}
+                                                                    alt="Chat image"
+                                                                    style={{ width: '100%', borderRadius: '14px', display: 'block' }}
+                                                                    onClick={() => window.open(msg.content, '_blank')}
+                                                                />
+                                                            ) : (msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
+                                                                <div style={{ minWidth: '220px', padding: '6px' }}>
+                                                                    <audio
+                                                                        controls
+                                                                        style={{ width: '100%', height: '40px' }}
+                                                                        preload="auto"
+                                                                    >
+                                                                        <source src={msg.content} type={msg.content.endsWith('mp4') ? 'audio/mp4' : 'audio/webm'} />
+                                                                        Sizning brauzeringiz audioni qo'llab-quvvatlamaydi.
+                                                                    </audio>
+                                                                </div>
+                                                            ) : (
+                                                                msg.content
+                                                            )}
                                                         </div>
-                                                        {!isMe && (
-                                                            <span style={{ fontSize: '10px', color: '#94a3b8', alignSelf: 'flex-end', marginLeft: '8px', marginBottom: '4px' }}>
-                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                            </span>
-                                                        )}
+                                                        <span style={{ fontSize: '10px', color: '#94a3b8', alignSelf: 'flex-end', marginLeft: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            {isMe && (
+                                                                msg.isRead ?
+                                                                    <CheckCheck size={14} color="#4ade80" /> :
+                                                                    <Check size={14} color="#94a3b8" />
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 )
                                             })}
@@ -370,24 +512,101 @@ export default function SupportChat() {
                                 {/* Input - Styled like Image 1 */}
                                 <form onSubmit={handleSend} style={styles.inputArea}>
                                     <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
-                                        <input
-                                            placeholder="Xabaringizni yozing..."
-                                            value={inputValue}
-                                            onChange={e => setInputValue(e.target.value)}
-                                            style={styles.input}
-                                        />
-                                        <button
-                                            type="submit"
-                                            disabled={!inputValue.trim()}
-                                            style={{
-                                                ...styles.sendBtn,
-                                                opacity: !inputValue.trim() ? 0.5 : 1,
-                                                position: 'absolute',
-                                                right: '6px'
-                                            }}
-                                        >
-                                            <Send size={18} />
-                                        </button>
+                                        {isRecording ? (
+                                            <div style={{
+                                                flex: 1,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'space-between',
+                                                padding: '10px 20px',
+                                                background: '#f1f5f9',
+                                                borderRadius: '25px',
+                                                border: '1px solid #e2e8f0'
+                                            }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ef4444' }}>
+                                                    <span style={{
+                                                        width: '10px',
+                                                        height: '10px',
+                                                        background: '#ef4444',
+                                                        borderRadius: '50%',
+                                                        boxShadow: '0 0 8px #ef4444'
+                                                    }}></span>
+                                                    <span style={{ fontWeight: 600, fontSize: '15px' }}>{formatTime(recordingTime)}</span>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={stopRecording}
+                                                    style={{
+                                                        color: '#0052FF',
+                                                        fontWeight: 700,
+                                                        background: 'none',
+                                                        border: 'none',
+                                                        cursor: 'pointer',
+                                                        fontSize: '14px'
+                                                    }}
+                                                >
+                                                    TO'XTATISH VA YUBORISH
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                <label style={{
+                                                    position: 'absolute',
+                                                    left: '12px',
+                                                    cursor: 'pointer',
+                                                    color: '#64748b',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '4px',
+                                                    zIndex: 2
+                                                }}>
+                                                    <Paperclip size={20} />
+                                                    <input
+                                                        type="file"
+                                                        accept="image/*"
+                                                        onChange={handleImageUpload}
+                                                        style={{ display: 'none' }}
+                                                    />
+                                                </label>
+
+                                                <input
+                                                    placeholder="Xabaringizni yozing..."
+                                                    value={inputValue}
+                                                    onChange={e => setInputValue(e.target.value)}
+                                                    style={styles.input}
+                                                />
+
+                                                {!inputValue.trim() ? (
+                                                    <button
+                                                        type="button"
+                                                        onClick={startRecording}
+                                                        style={{
+                                                            ...styles.sendBtn,
+                                                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                                                            position: 'absolute',
+                                                            right: '6px',
+                                                            zIndex: 3,
+                                                            boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)'
+                                                        }}
+                                                    >
+                                                        <Mic size={18} />
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        type="submit"
+                                                        style={{
+                                                            ...styles.sendBtn,
+                                                            position: 'absolute',
+                                                            right: '6px',
+                                                            zIndex: 3
+                                                        }}
+                                                    >
+                                                        <Send size={18} />
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
                                     </div>
                                 </form>
                             </>
@@ -517,7 +736,7 @@ const styles: Record<string, React.CSSProperties> = {
     },
     input: {
         width: '100%',
-        padding: '14px 55px 14px 20px',
+        padding: '14px 55px 14px 45px', // Left padding increased to 45px for paperclip
         borderRadius: '25px',
         border: '1px solid #E2E8F0',
         outline: 'none',
@@ -525,7 +744,8 @@ const styles: Record<string, React.CSSProperties> = {
         background: '#fff',
         color: '#334155',
         boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
-        transition: 'border 0.2s'
+        transition: 'border 0.2s',
+        zIndex: 1
     },
     sendBtn: {
         background: 'linear-gradient(135deg, #0052FF 0%, #0033CC 100%)',

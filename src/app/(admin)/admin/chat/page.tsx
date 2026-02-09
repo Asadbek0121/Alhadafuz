@@ -3,7 +3,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Search, Send, Phone, Video, Info, Menu, X, MessageCircle } from 'lucide-react';
+import { toast } from 'sonner';
+import { Search, Send, Phone, Video, Info, Menu, X, MessageCircle, Check, CheckCheck, Trash2, Loader2 } from 'lucide-react';
 
 type User = {
     id: string;
@@ -20,16 +21,15 @@ type Message = {
     senderId: string;
     content: string;
     createdAt: string;
-    type: 'text' | 'image';
+    type: 'TEXT' | 'IMAGE' | 'AUDIO';
     source?: 'WEB' | 'TELEGRAM';
+    isRead?: boolean;
 };
 
 export default function AdminChatPage() {
     const { data: session } = useSession();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [messageInput, setMessageInput] = useState("");
-    const [viewSource, setViewSource] = useState<'ALL' | 'WEB' | 'TELEGRAM'>('ALL');
-    const [sendTarget, setSendTarget] = useState<'BOTH' | 'WEB' | 'TELEGRAM'>('BOTH');
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
     // Real Data State
@@ -108,7 +108,7 @@ export default function AdminChatPage() {
             senderId: session?.user?.id as string,
             content: messageInput,
             createdAt: new Date().toISOString(),
-            type: 'text'
+            type: 'TEXT'
         };
 
         setMessages(prev => [...prev, optimisticMsg]);
@@ -121,11 +121,33 @@ export default function AdminChatPage() {
                 body: JSON.stringify({
                     receiverId: selectedUser.id,
                     content: optimisticMsg.content,
-                    target: sendTarget
+                    target: 'BOTH'
                 })
             });
         } catch (error) {
             console.error("Yuborishda xatolik:", error);
+        }
+    };
+
+    const handleClearHistory = async () => {
+        if (!selectedUser || !confirm("Siz rostdan ham ushbu suhbat tarixini butkul o'chirib tashlamoqchimisiz?")) return;
+
+        try {
+            setLoading(true);
+            const res = await fetch(`/api/chat/messages?userId=${selectedUser.id}`, {
+                method: 'DELETE'
+            });
+            const data = await res.json();
+            if (data.success) {
+                setMessages([]);
+                toast.success("Suhbat tarixi o'chirildi");
+            } else {
+                toast.error(data.error || "Xatolik yuz berdi");
+            }
+        } catch (error) {
+            toast.error("Xatolik yuz berdi");
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -206,46 +228,47 @@ export default function AdminChatPage() {
                                     <span style={{ fontSize: '12px', color: '#00ceb6' }}>Online</span>
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', gap: '15px', color: '#5A6A85' }}>
-                                <Phone size={20} style={{ cursor: 'pointer' }} />
-                                <Video size={20} style={{ cursor: 'pointer' }} />
-                                <Info size={20} style={{ cursor: 'pointer' }} />
-                            </div>
-                        </div>
-
-                        {/* Filter Tabs */}
-                        <div style={{ display: 'flex', gap: '10px', padding: '10px 24px', background: '#fff', borderBottom: '1px solid #f1f4f9' }}>
-                            {['ALL', 'WEB', 'TELEGRAM'].map((s) => (
+                            <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
                                 <button
-                                    key={s}
-                                    onClick={() => setViewSource(s as any)}
+                                    onClick={handleClearHistory}
+                                    title="Suhbatni tozalash"
                                     style={{
-                                        padding: '6px 16px',
-                                        borderRadius: '20px',
-                                        border: '1px solid',
-                                        borderColor: viewSource === s ? '#0085db' : '#E5EAEF',
-                                        background: viewSource === s ? '#e0f2fe' : '#fff',
-                                        color: viewSource === s ? '#0085db' : '#5A6A85',
-                                        fontSize: '13px',
-                                        fontWeight: 500,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        width: '36px',
+                                        height: '36px',
+                                        borderRadius: '8px',
+                                        border: '1px solid #fee2e2',
+                                        background: '#fef2f2',
+                                        color: '#ef4444',
                                         cursor: 'pointer',
                                         transition: 'all 0.2s'
                                     }}
+                                    onMouseOver={e => { e.currentTarget.style.background = '#fee2e2' }}
+                                    onMouseOut={e => { e.currentTarget.style.background = '#fef2f2' }}
                                 >
-                                    {s === 'ALL' ? 'Barchasi' : s === 'WEB' ? '🌐 Ilova' : '📱 Telegram'}
+                                    <Trash2 size={18} />
                                 </button>
-                            ))}
+                                <div style={{ width: '1px', height: '24px', background: '#e5eaef' }}></div>
+                                <Phone size={20} style={{ cursor: 'pointer', color: '#5A6A85' }} />
+                                <Video size={20} style={{ cursor: 'pointer', color: '#5A6A85' }} />
+                                <Info size={20} style={{ cursor: 'pointer', color: '#5A6A85' }} />
+                            </div>
                         </div>
+
+
 
                         {/* Messages - Styled like Image 2 */}
                         <div ref={scrollRef} style={{ flex: 1, padding: '24px', overflowY: 'auto', background: '#F8F9FA', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                            {messages.filter(m => viewSource === 'ALL' || m.source === viewSource).map((msg) => {
+                            {messages.map((msg) => {
                                 const isMe = msg.senderId === session?.user?.id;
+                                console.log(`Msg: ${msg.content}, Sender: ${msg.senderId}, Me: ${session?.user?.id}, isMe: ${isMe}`);
                                 return (
                                     <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', maxWidth: '70%', gap: '6px' }}>
                                             <div style={{
-                                                padding: '12px 20px',
+                                                padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp|webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? '4px' : '12px 20px',
                                                 borderTopLeftRadius: isMe ? '12px' : '0px',
                                                 borderTopRightRadius: isMe ? '0px' : '12px',
                                                 borderBottomLeftRadius: '12px',
@@ -255,9 +278,30 @@ export default function AdminChatPage() {
                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                                                 fontSize: '15px',
                                                 lineHeight: '1.5',
-                                                border: isMe ? 'none' : '1px solid #F1F4F9'
+                                                border: isMe ? 'none' : '1px solid #F1F4F9',
+                                                overflow: 'hidden'
                                             }}>
-                                                {msg.content}
+                                                {msg.type === 'IMAGE' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
+                                                    <img
+                                                        src={msg.content}
+                                                        alt="Chat image"
+                                                        style={{ maxWidth: '100%', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
+                                                        onClick={() => window.open(msg.content, '_blank')}
+                                                    />
+                                                ) : (msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
+                                                    <div style={{ minWidth: '220px', padding: '6px' }}>
+                                                        <audio
+                                                            controls
+                                                            style={{ width: '100%', height: '40px' }}
+                                                            preload="auto"
+                                                        >
+                                                            <source src={msg.content} type={msg.content.endsWith('mp4') ? 'audio/mp4' : 'audio/webm'} />
+                                                            Sizning brauzeringiz audioni qo'llab-quvvatlamaydi.
+                                                        </audio>
+                                                    </div>
+                                                ) : (
+                                                    msg.content
+                                                )}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                                 {msg.source === 'TELEGRAM' && (
@@ -272,8 +316,13 @@ export default function AdminChatPage() {
                                                         <span style={{ fontWeight: 500 }}>Ilova</span>
                                                     </div>
                                                 )}
-                                                <span style={{ fontSize: '11px', color: '#8E98A8' }}>
+                                                <span style={{ fontSize: '11px', color: isMe ? '#e2e8f0' : '#8E98A8', display: 'flex', alignItems: 'center', gap: '4px' }}>
                                                     {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {isMe && (
+                                                        msg.isRead ?
+                                                            <CheckCheck size={14} color="#4ade80" /> :
+                                                            <Check size={14} color="#cbd5e1" />
+                                                    )}
                                                 </span>
                                             </div>
                                         </div>
@@ -284,35 +333,12 @@ export default function AdminChatPage() {
 
                         {/* Input Area */}
                         <div style={{ padding: '20px', borderTop: '1px solid #e5eaef', background: '#fff' }}>
-                            {/* Destination Selector */}
-                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '12px', color: '#5A6A85', alignSelf: 'center', marginRight: '5px' }}>Javob turi:</span>
-                                {['BOTH', 'WEB', 'TELEGRAM'].map((t) => (
-                                    <button
-                                        key={t}
-                                        type="button"
-                                        onClick={() => setSendTarget(t as any)}
-                                        style={{
-                                            padding: '4px 12px',
-                                            borderRadius: '6px',
-                                            border: '1px solid',
-                                            borderColor: sendTarget === t ? '#0085db' : '#e5eaef',
-                                            background: sendTarget === t ? '#e0f2fe' : '#fff',
-                                            color: sendTarget === t ? '#0085db' : '#5A6A85',
-                                            fontSize: '11px',
-                                            fontWeight: 600,
-                                            cursor: 'pointer'
-                                        }}
-                                    >
-                                        {t === 'BOTH' ? 'Hammasiga' : t === 'WEB' ? 'Faqat Ilova' : 'Faqat Telegram'}
-                                    </button>
-                                ))}
-                            </div>
+
                             <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '15px' }}>
                                 <input
                                     value={messageInput}
                                     onChange={e => setMessageInput(e.target.value)}
-                                    placeholder={sendTarget === 'BOTH' ? "Hamma yo'nalishda javob yozish..." : sendTarget === 'WEB' ? "Ilovaga javob yozish..." : "Telegramga javob yozish..."}
+                                    placeholder="Javob yozish..."
                                     style={{ flex: 1, padding: '12px 18px', borderRadius: '10px', border: '1px solid #e5eaef', outline: 'none', fontSize: '15px' }}
                                 />
                                 <button type="submit" style={{ background: '#0085db', border: 'none', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,133,219,0.2)' }}>

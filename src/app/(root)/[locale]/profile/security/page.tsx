@@ -5,25 +5,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
 import { Lock, ShieldCheck, Key, ShieldAlert, Loader2, CheckCircle2 } from "lucide-react";
-
-const securitySchema = z.object({
-    currentPassword: z.string().min(1, "Current password is required"),
-    newPassword: z.string()
-        .min(8, "Password must be at least 8 characters")
-        .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Password must contain at least one number"),
-    confirmPassword: z.string()
-}).refine((data) => data.newPassword === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-});
-
-type SecurityForm = z.infer<typeof securitySchema>;
+import { useTranslations } from "next-intl";
 
 export default function SecurityPage() {
+    const t = useTranslations('Profile');
     const [isSaving, setIsSaving] = useState(false);
     const [toast, setToast] = useState<{ type: 'success' | 'error', message: string } | null>(null);
+
+    const securitySchema = z.object({
+        currentPassword: z.string().min(1, t('current_password_required')),
+        newPassword: z.string()
+            .min(8, t('error_length'))
+            .regex(/[A-Z]/, t('error_uppercase'))
+            .regex(/[a-z]/, t('error_lowercase'))
+            .regex(/[0-9]/, t('error_number')),
+        confirmPassword: z.string()
+    }).refine((data) => data.newPassword === data.confirmPassword, {
+        message: t('error_match'),
+        path: ["confirmPassword"],
+    });
+
+    type SecurityForm = z.infer<typeof securitySchema>;
 
     const {
         register,
@@ -45,9 +47,9 @@ export default function SecurityPage() {
         await new Promise((resolve) => setTimeout(resolve, 1500));
 
         if (data.currentPassword === "wrong") {
-            showToast('error', 'Current password is incorrect');
+            showToast('error', t('password_error'));
         } else {
-            showToast('success', 'Password successfully updated!');
+            showToast('success', t('password_success'));
             reset();
         }
         setIsSaving(false);
@@ -69,14 +71,14 @@ export default function SecurityPage() {
                         <Lock size={24} />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-bold">Security Settings</h1>
-                        <p className="text-text-muted mt-1">Manage your account protection and password.</p>
+                        <h1 className="text-2xl font-bold">{t('security_settings')}</h1>
+                        <p className="text-text-muted mt-1">{t('security_subtitle')}</p>
                     </div>
                 </div>
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">Current Password</label>
+                        <label className="text-sm font-semibold text-gray-700">{t('current_password')}</label>
                         <div className="relative">
                             <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
                             <input
@@ -92,7 +94,7 @@ export default function SecurityPage() {
 
                     <div className="space-y-4 pt-4">
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-700">New Password</label>
+                            <label className="text-sm font-semibold text-gray-700">{t('new_password')}</label>
                             <div className="relative">
                                 <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
                                 <input
@@ -100,20 +102,20 @@ export default function SecurityPage() {
                                     {...register("newPassword")}
                                     className={`w-full h-12 pl-12 pr-4 rounded-xl border transition-all outline-none ${errors.newPassword ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                         }`}
-                                    placeholder="At least 8 characters"
+                                    placeholder={t('error_length')}
                                 />
                             </div>
                             {errors.newPassword && <p className="text-red-500 text-xs font-medium">{errors.newPassword.message}</p>}
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-sm font-semibold text-gray-700">Confirm New Password</label>
+                            <label className="text-sm font-semibold text-gray-700">{t('confirm_password')}</label>
                             <input
                                 type="password"
                                 {...register("confirmPassword")}
                                 className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.confirmPassword ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                     }`}
-                                placeholder="Confirm password"
+                                placeholder={t('confirm_password')}
                             />
                             {errors.confirmPassword && <p className="text-red-500 text-xs font-medium">{errors.confirmPassword.message}</p>}
                         </div>
@@ -126,7 +128,7 @@ export default function SecurityPage() {
                             className="bg-primary text-white h-12 px-8 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-colors disabled:opacity-50 shadow-lg shadow-primary/20"
                         >
                             {isSaving ? <Loader2 size={20} className="animate-spin" /> : <ShieldCheck size={20} />}
-                            <span>Update Password</span>
+                            <span>{t('update_password')}</span>
                         </button>
                     </div>
                 </form>
@@ -137,11 +139,11 @@ export default function SecurityPage() {
                     <ShieldAlert size={24} />
                 </div>
                 <div className="space-y-1">
-                    <h4 className="font-bold text-blue-900">Two-Factor Authentication</h4>
+                    <h4 className="font-bold text-blue-900">{t('2fa_title')}</h4>
                     <p className="text-sm text-blue-800/80 leading-relaxed">
-                        Add an extra layer of security to your account by requiring more than just a password to log in.
+                        {t('2fa_desc')}
                     </p>
-                    <button className="text-blue-700 font-bold text-sm mt-2 hover:underline">Enable 2FA →</button>
+                    <button className="text-blue-700 font-bold text-sm mt-2 hover:underline">{t('2fa_enable')} →</button>
                 </div>
             </div>
         </div>

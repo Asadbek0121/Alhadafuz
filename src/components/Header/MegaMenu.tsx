@@ -93,52 +93,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
             <div className={styles.megaMenu}>
                 <div className="container">
                     {/* Mobile Navigation Header - Only show if mode is full */}
-                    {menuMode === 'full' && (
-                        <div className={styles.mobileNav}>
-                            <div className={styles.userSection} onClick={handleAuth}>
-                                <div className={styles.avatar}>
-                                    {user?.image ? (
-                                        <img src={user.image} alt={user.name || ''} />
-                                    ) : (
-                                        <UserCircle size={32} />
-                                    )}
-                                </div>
-                                <div className={styles.userInfo}>
-                                    <div className={styles.userName}>
-                                        {user ? (user.name || user.email) : th('kirish')}
-                                    </div>
-                                    {user && <div className={styles.userDesc}>{th('bosh_sahifa')}</div>}
-                                    {!user && <div className={styles.userDesc}>{th('kirish')} / {tAuth('register')}</div>}
-                                </div>
-                                <ChevronRight size={20} className={styles.arrowIcon} />
-                            </div>
 
-                            <div className={styles.actionGrid}>
-                                <div className={styles.actionBtn} onClick={handleCart}>
-                                    <div className={styles.actionIcon}>
-                                        <ShoppingBag size={24} />
-                                        {items.length > 0 && <span className={styles.badge}>{items.length}</span>}
-                                    </div>
-                                    <span>{th('savatcha')}</span>
-                                </div>
-                                <Link href="/favorites" className={styles.actionBtn} onClick={close}>
-                                    <div className={styles.actionIcon}>
-                                        <Heart size={24} />
-                                        {wishlist.length > 0 && <span className={styles.badge}>{wishlist.length}</span>}
-                                    </div>
-                                    <span>{th('sevimlilar')}</span>
-                                </Link>
-                                {(user as any)?.role === 'ADMIN' && (
-                                    <Link href="/admin" className={styles.actionBtn} onClick={close}>
-                                        <div className={styles.actionIcon}>
-                                            <LayoutDashboard size={24} color="#0066cc" />
-                                        </div>
-                                        <span style={{ color: '#0066cc' }}>Admin</span>
-                                    </Link>
-                                )}
-                            </div>
-                        </div>
-                    )}
 
                     <div className={styles.menuGrid}>
                         {loading ? (

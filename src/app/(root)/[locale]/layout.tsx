@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../../globals.css";
 import { NextIntlClientProvider } from 'next-intl';
-import { getMessages } from 'next-intl/server';
+import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
@@ -17,10 +17,15 @@ import { auth } from "@/auth";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
-export const metadata: Metadata = {
-  title: "UzMarket - Online Bozor",
-  description: "O'zbekistondagi eng katta online bozor",
-};
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Meta' });
+
+  return {
+    title: t('title'),
+    description: t('description'),
+  };
+}
 
 export default async function LocaleLayout({
   children,
@@ -38,9 +43,6 @@ export default async function LocaleLayout({
   const messages = await getMessages();
   const session = await auth();
 
-  console.log('LocaleLayout running, locale:', locale);
-  console.log('Messages keys:', Object.keys(messages || {}));
-
   if (!messages) {
     console.error("NextIntl Messages are missing for locale:", locale);
   }
@@ -48,24 +50,22 @@ export default async function LocaleLayout({
   return (
     <html lang={locale}>
       <body className={inter.className} suppressHydrationWarning={true}>
-        <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Tashkent">
-          <Providers>
-            <WishlistProvider>
+        <Providers locale={locale} messages={messages}>
+          <WishlistProvider>
 
-              <SessionProviderWrapper session={session}>
-                <Header />
-                <main className="min-h-screen">
-                  {children}
-                </main>
-                <Footer />
-                <BottomNav />
-                <Toaster />
-                <SupportChat />
-              </SessionProviderWrapper>
+            <SessionProviderWrapper session={session}>
+              <Header />
+              <main className="min-h-screen">
+                {children}
+              </main>
+              <Footer />
+              <BottomNav />
+              <Toaster />
+              <SupportChat />
+            </SessionProviderWrapper>
 
-            </WishlistProvider>
-          </Providers>
-        </NextIntlClientProvider>
+          </WishlistProvider>
+        </Providers>
       </body>
     </html>
   );

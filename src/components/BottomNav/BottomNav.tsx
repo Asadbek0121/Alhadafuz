@@ -1,86 +1,153 @@
 "use client";
 
-import { usePathname } from 'next/navigation';
-import { Link } from '@/navigation';
-import { House, LayoutGrid, ShoppingBag, Heart, UserCircle } from 'lucide-react';
-import styles from './BottomNav.module.css';
-import { useTranslations } from 'next-intl';
+import { usePathname, Link } from '@/navigation';
+import {
+    User,
+    Home,
+    LayoutGrid,
+    ShoppingBag,
+    Heart,
+    UserCircle
+} from "lucide-react";
+import { clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
+import { useTranslations } from "next-intl";
+import { useUserStore } from "@/store/useUserStore";
+import { useSession } from "next-auth/react";
+import { useUIStore } from "@/store/useUIStore";
+import { useWishlist } from "@/context/WishlistContext";
 import { useCartStore } from '@/store/useCartStore';
-import { useUserStore } from '@/store/useUserStore';
-import { useSession } from 'next-auth/react';
+
+function cn(...inputs: any[]) {
+    return twMerge(clsx(inputs));
+}
 
 export default function BottomNav() {
     const pathname = usePathname();
     const t = useTranslations('Header');
-    const { items } = useCartStore();
     const { openAuthModal } = useUserStore();
-    const { status } = useSession();
-    const isAuthenticated = status === "authenticated";
+    const { data: session } = useSession();
+    const isAuthenticated = !!session?.user;
+    const { isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
+    const { items } = useCartStore();
+    const { wishlist } = useWishlist();
 
-    // Helper to check active state
-    const isActive = (path: string) => {
-        if (path === '/') return pathname === '/' || pathname === '/uz' || pathname === '/ru';
-        return pathname.includes(path);
-    };
-
-    const handleProfileClick = (e: React.MouseEvent) => {
-        if (!isAuthenticated) {
-            e.preventDefault();
-            openAuthModal();
-        }
-    };
-
-    // Hide on product detail pages to make room for sticky action bar
+    // Hide upon product detail pages
     if (pathname.includes('/product/')) return null;
 
+    const navItems = [
+        {
+            label: t('bosh_sahifa'),
+            icon: Home,
+            href: "/",
+            isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru") && !isCatalogOpen,
+            action: () => closeCatalog(),
+            fillable: false
+        },
+        {
+            label: t('katalog'),
+            icon: LayoutGrid,
+            href: null, // Custom action
+            isActive: isCatalogOpen,
+            action: () => toggleCatalog(),
+            fillable: false
+        },
+        {
+            label: t('savatcha'),
+            icon: ShoppingBag,
+            href: "/cart",
+            isActive: pathname === "/cart" && !isCatalogOpen,
+            action: () => closeCatalog(),
+            badge: items.length,
+            fillable: false
+        },
+        {
+            label: t('sevimlilar'),
+            icon: Heart,
+            href: "/favorites",
+            isActive: pathname === "/favorites" && !isCatalogOpen,
+            action: () => closeCatalog(),
+            badge: wishlist.length,
+            fillable: true
+        },
+        {
+            label: "Kabinet",
+            icon: isAuthenticated ? User : UserCircle,
+            href: isAuthenticated ? "/profile" : null,
+            isActive: pathname.includes("/profile") && !isCatalogOpen,
+            action: (e: any) => {
+                closeCatalog();
+                if (!isAuthenticated) {
+                    e?.preventDefault();
+                    openAuthModal();
+                }
+            },
+            fillable: true
+        }
+    ];
+
     return (
-        <div className={styles.bottomNav}>
-            {/* Home */}
-            <Link href="/" className={`${styles.navItem} ${isActive('/') ? styles.active : ''}`}>
-                <House size={24} strokeWidth={2.5} />
-                <span>Bosh sahifa</span>
-            </Link>
+        <nav className="lg:hidden fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-2xl border border-white/40 shadow-2xl shadow-blue-900/10 flex items-center justify-between px-2 h-[72px] z-[100] rounded-3xl transition-all duration-300">
+            {navItems.map((item, idx) => {
+                const Icon = item.icon;
+                const active = item.isActive;
 
-            {/* Catalog - Triggers Menu */}
-            <button className={`${styles.navItem}`} onClick={() => document.getElementById('category-btn-trigger')?.click()}>
-                <LayoutGrid size={24} strokeWidth={2.5} />
-                <span>{t('katalog')}</span>
-            </button>
+                const content = (
+                    <div className={cn("flex flex-col items-center justify-center w-full h-full py-1 relative group")}>
+                        {/* Active Glow Background */}
+                        {active && (
+                            <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-indigo-50 rounded-2xl -z-10 animate-fade-in opacity-70" />
+                        )}
 
-            {/* Cart */}
-            <Link href="/cart" className={`${styles.navItem} ${isActive('/cart') ? styles.active : ''}`}>
-                <div style={{ position: 'relative' }}>
-                    <ShoppingBag size={24} strokeWidth={2.5} />
-                    {items.length > 0 && (
-                        <span style={{
-                            position: 'absolute', top: -5, right: -8,
-                            background: '#ff6b00', color: 'white',
-                            fontSize: '10px', borderRadius: '50%',
-                            width: '16px', height: '16px',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>
-                            {items.length}
+                        <div className={cn("p-1.5 rounded-2xl transition-all duration-300 mb-0.5 relative", active ? "text-blue-600 -translate-y-1" : "text-slate-400 group-hover:text-slate-600")}>
+                            {active && <div className="absolute inset-0 bg-blue-50 rounded-xl blur-sm animate-pulse"></div>}
+                            <Icon
+                                size={active ? 26 : 24}
+                                className={cn("relative z-10 transition-all", active ? "stroke-[2.5px]" : "stroke-[1.5px]")}
+                                fill={active && item.fillable ? "currentColor" : "none"}
+                            />
+                            {/* Badge for Cart */}
+                            {(item.badge || 0) > 0 && (
+                                <span className={cn(
+                                    "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-[#ff6b00] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white",
+                                    active ? "scale-110" : ""
+                                )}>
+                                    {item.badge}
+                                </span>
+                            )}
+                        </div>
+
+                        <span className={cn("text-[10px] tracking-wide transition-all duration-300", active ? "font-bold text-blue-600" : "font-medium text-slate-400 scale-90 opacity-80")}>
+                            {item.label}
                         </span>
-                    )}
-                </div>
-                <span>{t('savatcha')}</span>
-            </Link>
 
-            {/* Favorites */}
-            <Link href="/favorites" className={`${styles.navItem} ${isActive('/favorites') ? styles.active : ''}`}>
-                <Heart size={24} strokeWidth={2.5} />
-                <span>{t('sevimlilar')}</span>
-            </Link>
 
-            {/* Profile */}
-            <Link
-                href="/profile"
-                className={`${styles.navItem} ${isActive('/profile') ? styles.active : ''}`}
-                onClick={handleProfileClick}
-            >
-                <UserCircle size={24} strokeWidth={2.5} />
-                <span>Kabinet</span>
-            </Link>
-        </div>
+                    </div>
+                );
+
+                if (item.href) {
+                    return (
+                        <Link
+                            key={idx}
+                            href={item.href}
+                            className="flex-1 h-full"
+                            onClick={item.action}
+                        >
+                            {content}
+                        </Link>
+                    );
+                }
+
+                return (
+                    <div
+                        key={idx}
+                        className="flex-1 h-full cursor-pointer"
+                        onClick={item.action}
+                    >
+                        {content}
+                    </div>
+                );
+            })}
+        </nav>
     );
 }

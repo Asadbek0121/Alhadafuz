@@ -1,0 +1,126 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
+
+export async function GET(req: NextRequest) {
+    try {
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        // Get admin user
+        const admin = await prisma.user.findFirst({
+            where: { role: 'ADMIN' },
+        });
+
+        if (!admin) {
+            return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+        }
+
+        // Get all messages between user and ANY admin
+        const messages = await prisma.message.findMany({
+            where: {
+                OR: [
+                    // User sent to ANY Admin
+                    { senderId: session.user.id, receiver: { role: 'ADMIN' } },
+                    // Any Admin sent to User
+                    { sender: { role: 'ADMIN' }, receiverId: session.user.id }
+                ],
+            },
+            include: {
+                sender: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+                receiver: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+            },
+            orderBy: {
+                createdAt: 'asc',
+            },
+        });
+
+        // Mark ANY admin messages as read
+        await prisma.message.updateMany({
+            where: {
+                sender: { role: 'ADMIN' }, // Fix: Any admin
+                receiverId: session.user.id,
+                isRead: false,
+            },
+            data: {
+                isRead: true,
+            },
+        });
+
+        return NextResponse.json(messages);
+    } catch (error) {
+        console.error('Error fetching support messages:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}
+
+export async function POST(req: NextRequest) {
+    try {
+        const session = await auth();
+
+        if (!session?.user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { content, type = 'TEXT' } = await req.json();
+
+        if (!content?.trim()) {
+            return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
+        }
+
+        // Get admin user
+        const admin = await prisma.user.findFirst({
+            where: { role: 'ADMIN' },
+        });
+
+        if (!admin) {
+            return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+        }
+
+        // Create message from user to admin
+        const message = await (prisma as any).message.create({
+            data: {
+                content: content.trim(),
+                senderId: session.user.id,
+                receiverId: admin.id,
+                source: 'SUPPORT_CHAT',
+            },
+            include: {
+                sender: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+                receiver: {
+                    select: {
+                        id: true,
+                        name: true,
+                        email: true,
+                    },
+                },
+            },
+        });
+
+        return NextResponse.json(message);
+    } catch (error) {
+        console.error('Error sending support message:', error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
+}

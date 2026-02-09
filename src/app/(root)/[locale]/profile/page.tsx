@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { Link } from "@/navigation";
 import NextLink from "next/link";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSession, signOut } from "next-auth/react";
 
 import { useEffect, useState } from "react";
@@ -16,6 +16,8 @@ import { useEffect, useState } from "react";
 export default function ProfileOverviewPage() {
     const { user, openAuthModal } = useUserStore();
     const tProfile = useTranslations('Profile');
+    const tHeader = useTranslations('Header');
+    const currentLocale = useLocale();
     const { data: session, status } = useSession();
     const [statsData, setStatsData] = useState({
         ordersCount: 0,
@@ -56,10 +58,10 @@ export default function ProfileOverviewPage() {
     ];
 
     const mobileMenu = [
-        ...(isAdmin ? [{ icon: LayoutDashboard, label: "Admin Panel", href: "/admin", color: "text-purple-600", value: "" }] : []),
+        ...(isAdmin ? [{ icon: LayoutDashboard, label: tProfile('admin_panel'), href: "/admin", color: "text-purple-600", value: "" }] : []),
         { icon: MapPin, label: tProfile('my_addresses'), href: "/profile/addresses", color: "text-orange-500" },
         { icon: Bell, label: tProfile('notifications'), href: "/profile/notifications", color: "text-red-500" },
-        { icon: Globe, label: tProfile('app_language'), href: "/profile/settings", color: "text-blue-500", value: "O'zbekcha" }, // Language is dynamic in settings
+        { icon: Globe, label: tProfile('app_language'), href: "/profile/settings", color: "text-blue-500", value: tProfile(currentLocale) },
         { icon: Shield, label: tProfile('security'), href: "/profile/security", color: "text-green-500" },
         { icon: HelpCircle, label: tProfile('support'), href: "/support", color: "text-gray-500" },
     ];
@@ -67,7 +69,7 @@ export default function ProfileOverviewPage() {
     return (
         <div>
             {/* MOBILE VIEW */}
-            <div className="md:hidden flex flex-col gap-4">
+            <div className="lg:hidden flex flex-col gap-4">
                 {/* User Header Card */}
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 overflow-hidden">
@@ -116,15 +118,20 @@ export default function ProfileOverviewPage() {
                     {mobileMenu.map((item, index) => {
                         const LinkComponent = item.href === '/admin' ? NextLink : Link;
                         return (
-                            <LinkComponent key={index} href={item.href} className="flex items-center gap-4 p-4 border-b last:border-0 border-gray-100 hover:bg-gray-50 transition-colors">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-gray-50 ${item.color}`}>
-                                    <item.icon size={20} />
+                            <LinkComponent key={index} href={item.href} className="group relative flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_0_10px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out active:scale-[0.98]">
+                                {/* Hover Gradient Background */}
+                                <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-white opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300 -z-10" />
+
+                                <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center bg-gray-50 ${item.color} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:bg-white ring-1 ring-gray-100 group-hover:ring-gray-200`}>
+                                    <item.icon size={22} className="transition-transform duration-300" />
                                 </div>
-                                <div className="flex-1 flex items-center justify-between">
-                                    <span className="font-medium text-gray-800">{item.label}</span>
+                                <div className="flex-1 flex items-center justify-between z-10">
+                                    <span className="font-semibold text-gray-700 group-hover:text-gray-900 text-[15px] transition-colors">{item.label}</span>
                                     <div className="flex items-center gap-2">
-                                        {item.value && <span className="text-xs font-semibold text-gray-400 bg-gray-100 px-2 py-1 rounded-md">{item.value}</span>}
-                                        <ChevronRight size={18} className="text-gray-300" />
+                                        {item.value && <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg group-hover:bg-white group-hover:text-gray-600 transition-colors shadow-sm">{item.value}</span>}
+                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300 shadow-sm opacity-0 group-hover:opacity-100">
+                                            <ChevronRight size={18} strokeWidth={2.5} />
+                                        </div>
                                     </div>
                                 </div>
                             </LinkComponent>
@@ -144,7 +151,7 @@ export default function ProfileOverviewPage() {
 
 
             {/* DESKTOP VIEW - Modern Bento Grid Design */}
-            <div className="hidden md:block space-y-8">
+            <div className="hidden lg:block space-y-8">
                 {/* 1. Header Section with Glass Effect */}
                 <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-600 p-10 text-white shadow-xl">
                     <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl"></div>
@@ -166,7 +173,7 @@ export default function ProfileOverviewPage() {
                                 <div className="flex items-center gap-3">
                                     <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium border border-white/10 flex items-center gap-2">
                                         <Wallet size={14} />
-                                        {tProfile('balance')}: 0 {tProfile('sum', { currency: "so'm" })}
+                                        {tProfile('balance')}: 0 {tHeader('som')}
                                     </span>
                                     <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium border border-white/10">
                                         ID: {user?.uniqueId || '---'}
@@ -178,7 +185,7 @@ export default function ProfileOverviewPage() {
                             {isAdmin && (
                                 <NextLink href="/admin" className="px-5 py-3 bg-white text-blue-700 hover:bg-gray-50 rounded-xl transition-all shadow-lg flex items-center gap-2 font-bold ring-2 ring-white/50">
                                     <LayoutDashboard size={20} />
-                                    Admin Panel
+                                    {tProfile('admin_panel')}
                                 </NextLink>
                             )}
                             <Link href="/profile/settings" className="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-xl transition-all shadow-lg flex items-center gap-2 font-medium">
@@ -252,7 +259,7 @@ export default function ProfileOverviewPage() {
                             </div>
                             <div className="z-10">
                                 <p className="text-xs font-medium text-white/60 mb-1 uppercase tracking-wider">{tProfile('balance')}</p>
-                                <p className="text-2xl font-bold">0 so'm</p>
+                                <p className="text-2xl font-bold">0 {tHeader('som')}</p>
                             </div>
                         </div>
                     </div>

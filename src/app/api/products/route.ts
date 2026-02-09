@@ -22,6 +22,8 @@ export async function GET(request: Request) {
             where: { isDeleted: false },
             orderBy: { createdAt: 'desc' }
         });
+        console.log("API /api/products result:", products);
+        console.log("Is array?", Array.isArray(products));
         return NextResponse.json(products);
     } catch (error: any) {
         console.error("API Error:", error);

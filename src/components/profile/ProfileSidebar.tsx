@@ -40,7 +40,7 @@ export default function ProfileSidebar() {
     };
 
     return (
-        <aside className="hidden md:flex flex-col w-[280px] shrink-0">
+        <aside className="hidden lg:flex flex-col w-[280px] shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
                 <div className="p-4 space-y-1">
                     {menuItems.map((item) => {

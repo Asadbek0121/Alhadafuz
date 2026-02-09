@@ -17,15 +17,16 @@ export default function CartPage() {
     if (items.length === 0) {
         return (
             <div className="container min-h-[60vh] flex flex-col items-center justify-center text-center py-12 px-4">
-                <div className="mb-8 relative">
-                    <div className="absolute inset-0 bg-blue-500/20 blur-3xl rounded-full"></div>
-                    <ShoppingCart size={100} className="text-blue-500 relative z-10" strokeWidth={1.5} />
+                <div className="mb-6 relative">
+                    <div className="w-24 h-24 md:w-32 md:h-32 bg-blue-50 rounded-full flex items-center justify-center">
+                        <ShoppingCart size={48} className="text-blue-500 md:w-14 md:h-14 fill-blue-500/10" strokeWidth={1.5} />
+                    </div>
                 </div>
                 <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">{tCart('empty_title')}</h3>
                 <p className="text-slate-500 text-sm md:text-base max-w-[300px] mb-8 leading-relaxed">
                     {tCart('empty_desc')}
                 </p>
-                <Link href="/" className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95">
+                <Link href="/" className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-colors">
                     {tCart('back_home')}
                 </Link>
             </div>

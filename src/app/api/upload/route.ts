@@ -1,32 +1,38 @@
-import { NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
-import { auth } from '@/auth';
 
-export async function POST(req: Request) {
-    const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+import { NextRequest, NextResponse } from "next/server";
+import { writeFile } from "fs/promises";
+import { join } from "path";
+import { v4 as uuidv4 } from "uuid";
+import { auth } from "@/auth";
 
+export async function POST(req: NextRequest) {
     try {
-        const formData = await req.formData();
-        const file = formData.get('file') as File;
-
-        if (!file) {
-            return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
+        const session = await auth();
+        if (!session) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // Use the filename directly, Vercel Blob handles uniqueness if needed or overwrites.
-        // To prevent overwrites, we can add a timestamp.
-        const filename = `${Date.now()}-${file.name}`;
+        const formData = await req.formData();
+        const file = formData.get("file") as File;
 
-        const blob = await put(filename, file, {
-            access: 'public',
-        });
+        if (!file) {
+            return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
+        }
 
-        return NextResponse.json({ url: blob.url });
-    } catch (error) {
-        console.error('Upload error:', error);
-        return NextResponse.json({ error: 'Upload failed' }, { status: 500 });
+        const bytes = await file.arrayBuffer();
+        const buffer = Buffer.from(bytes);
+
+        // Generate unique filename
+        const ext = file.name.split(".").pop();
+        const filename = `${uuidv4()}.${ext}`;
+        const path = join(process.cwd(), "public/uploads", filename);
+
+        await writeFile(path, buffer);
+
+        const url = `/uploads/${filename}`;
+        return NextResponse.json({ url });
+    } catch (error: any) {
+        console.error("Upload error:", error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

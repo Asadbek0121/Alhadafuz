@@ -33,11 +33,13 @@ interface Order {
     items: OrderItem[];
 }
 
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 
 export default function OrderHistoryPage() {
     const t = useTranslations('Profile');
     const tCart = useTranslations('Cart');
+    const tHeader = useTranslations('Header');
+    const locale = useLocale();
     const [isLoading, setIsLoading] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -91,7 +93,7 @@ export default function OrderHistoryPage() {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('uz-UZ', {
+        return date.toLocaleDateString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US', {
             year: 'numeric',
             month: 'short',
             day: 'numeric'
@@ -100,10 +102,10 @@ export default function OrderHistoryPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div>
-                    <h1 className="text-2xl font-bold dark:text-white">{t('order_history')}</h1>
-                    <p className="text-text-muted mt-1 dark:text-gray-400">{t('my_orders')}</p>
+                    <h1 className="text-2xl font-bold">{t('order_history')}</h1>
+                    <p className="text-text-muted mt-1">{t('my_orders')}</p>
                 </div>
             </div>
 
@@ -114,7 +116,7 @@ export default function OrderHistoryPage() {
                     ))
                 ) : orders.length > 0 ? (
                     orders.map((order) => (
-                        <div key={order.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
+                        <div key={order.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
                             <div
                                 className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
                                 onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
@@ -125,7 +127,7 @@ export default function OrderHistoryPage() {
                                     </div>
                                     <div>
                                         <div className="flex items-center gap-2">
-                                            <span className="font-bold dark:text-white">#{order.id.slice(-8).toUpperCase()}</span>
+                                            <span className="font-bold">#{order.id.slice(-8).toUpperCase()}</span>
                                             <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${getStatusColor(order.status)}`}>
                                                 {t(order.status.toLowerCase())}
                                             </span>
@@ -137,7 +139,7 @@ export default function OrderHistoryPage() {
                                 <div className="flex items-center justify-between md:justify-end gap-6 text-right">
                                     <div>
                                         <p className="text-xs text-text-muted uppercase font-bold tracking-widest">{t('total')}</p>
-                                        <p className="text-lg font-bold text-primary">{order.total.toLocaleString()} {t('sum', { currency: "so'm" })}</p>
+                                        <p className="text-lg font-bold text-primary">{order.total.toLocaleString()} {tHeader('som')}</p>
                                     </div>
                                     <div className="text-text-muted">
                                         {expandedOrder === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
@@ -146,18 +148,18 @@ export default function OrderHistoryPage() {
                             </div>
 
                             {expandedOrder === order.id && (
-                                <div className="border-t border-gray-100 bg-gray-50/50 p-6 space-y-4 dark:border-gray-700 dark:bg-gray-800/50">
+                                <div className="border-t border-gray-100 bg-gray-50/50 p-6 space-y-4">
                                     <h3 className="font-bold text-sm text-text-muted uppercase tracking-wider mb-2">{t('order_content')}</h3>
                                     <div className="grid gap-4">
                                         {order.items.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100 dark:bg-gray-700 dark:border-gray-600">
+                                            <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100">
                                                 <div className="flex items-center gap-4">
                                                     <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
                                                         <Image src={item.image} alt={item.title} fill className="object-cover" />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-sm line-clamp-1 dark:text-white">{item.title}</p>
-                                                        <p className="text-xs text-text-muted">{item.quantity} x {item.price.toLocaleString()} {t('sum', { currency: "so'm" })}</p>
+                                                        <p className="font-bold text-sm line-clamp-1">{item.title}</p>
+                                                        <p className="text-xs text-text-muted">{item.quantity} x {item.price.toLocaleString()} {tHeader('som')}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-2">

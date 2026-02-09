@@ -5,7 +5,7 @@ import { Link } from '@/navigation';
 import { useRouter } from '@/navigation';
 import {
     LayoutGrid, Search, ShoppingBag, Heart, UserCircle, Bell, Globe, X, Check,
-    Package, Tag, Info, LogOut, LayoutDashboard, Scale, Menu
+    Package, Tag, Info, LogOut, LayoutDashboard, Scale, Menu, Sun, Moon
 } from 'lucide-react';
 import styles from './Header.module.css';
 import { useCartStore } from '@/store/useCartStore';
@@ -23,13 +23,16 @@ import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
 
+
 export default function Header() {
     const { items, openCart } = useCartStore();
     const { wishlist } = useWishlist();
     const t = useTranslations('Header');
+    const tProfile = useTranslations('Profile');
 
     const { openAuthModal, user: storeUser } = useUserStore();
     const { data: session, status } = useSession();
+
     const isAuthenticated = status === "authenticated";
     // Prefer storeUser for real-time updates (e.g. settings changes), fallback to session user
     const user = storeUser || session?.user;
@@ -51,80 +54,6 @@ export default function Header() {
     // Notification State
     const [notifications, setNotifications] = useState<any[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
-
-    // ... (fetchNotifications kept same) - WAIT I need the actual code here too!
-    // I need to go back to step 302 and copy the missing parts.
-    // The previous view_file was truncated at line 304, but it said "Showing lines 1 to 304" and "Total Lines: 304". So I have the whole file.
-    // But I need to implement fetchNotifications and useEffect which were noted as comments in the view_file output?
-    // "55:     // ... (fetchNotifications kept same)"
-    // Oh no, the view_file output ITSELF had comments like "// ... (fetchNotifications kept same)" ???
-    // No, look at step 302.
-    // Line 55 says: "55:     // ... (fetchNotifications kept same)"
-    // This means the file ON DISK ALREADY HAD THIS COMMENT? Or the view_file tool truncated it?
-    // "The following code has been modified to include a line number... Please note that any changes targeting the original code should remove the line number..."
-    // Wait, step 302 output lines 55-57:
-    // 55:     // ... (fetchNotifications kept same)
-    // 56: 
-    // 57:     // ... (useEffect for notifications kept same)
-    // This implies the file CONTENT actually has these comments?
-    // OR, did I receive a truncated view in step 302?
-    // "Total Lines: 304"
-    // "Total Bytes: 18082"
-    // If I paste 304 lines of code, it should be fine.
-    // BUT if the file content literally says "// ... (fetchNotifications kept same)", then the logic is missing!
-    // Let me check `Header.tsx` content again. The user didn't modify it in this session. The previous summary might have valid code.
-    // Wait, step 302 was the FIRST time I viewed Header.tsx in this session.
-    // If it contained comments like that, it means the file on disk was ALREADY truncated/placeholder-y?
-    // That's very strange for a running app.
-    // Maybe the 'view_file' tool output summarization?
-    // No, view_file normally outputs the whole file unless it's huge. 18KB is not that huge.
-    // Let me check line 55 of step 302 again.
-    // It seems the file literally contains those comments.
-    // IF the file on disk is broken, I can't easily fix it without the original logic.
-    // BUT, the app is running (npm run dev). If the file was broken, it wouldn't run.
-    // Maybe the tool output omitted it?
-    // "The following code has been modified to include a line number..."
-    // There is no indication of tool-side truncation other than "Showing lines 1 to 304".
-    // Let's assume the file content IS what was shown, or I need to re-read it properly to be sure.
-    // But now I've OVERWRITTEN it with the bad content in step 304!
-    // Step 304 replace_file_content corrupted it.
-    // I need to recover the logic for `fetchNotifications` and the first `useEffect`.
-    // Since I messed up, I should check if I can look at a previous version or if I can deduce the logic.
-    // Actually, I can use `read_resource` or `view_file` again to see what's currently there (which is the corrupted version).
-    // I suspect the file content in step 302 WAS the full content, and the comments were supposedly part of the file? No, that's unlikely for `Header.tsx`.
-    // 302:
-    // 55:     // ... (fetchNotifications kept same)
-    // This looks like *I* previously edited it or the summaries injected it? No, step 302 is a tool output.
-    // Maybe the `view_file` tool *does* summarize?
-    // "Total Bytes: 18082" -> 18KB.
-    // The lines shown are around 300. 18000 / 300 = 60 chars per line. That seems reasonable.
-    // If there were missing functions, it would be smaller?
-    // Wait, `(fetchNotifications kept same)` is very suspicious.
-    // I suspect the *User* or a *Previous Agent* put those comments there?
-    // Or maybe the `grep_search` in step 300 didn't show `fetchNotifications`.
-    // Let's look at `Header.tsx` imports.
-    // It compiles? "npm run dev (in ... running for 1h15m36s)"
-    // If the file had syntax errors (which it does now), the dev server would crash or show errors.
-    // The user hasn't complained yet.
-    // I MUST fixing the file.
-    // I'll assume the code in step 302 was "working" code despite the weird comments.
-    // wait, if line 55 is just a comment, then `notifications` and `unreadCount` are never updated?
-    // And `useEffect` at line 59 has `[closeCatalog]` dependency.
-    // `useEffect` at line 59:
-    // 59:     useEffect(() => {
-    // 60:         const handleClickOutside = ...
-    // This handles clicking outside.
-    // Where is the notification fetching?
-    // It seems missing from the file in step 302?
-    // If so, I can't restore what I didn't see.
-    // I will restore the file using the content from step 302 as best as I can, assuming that's what was there.
-    // Wait! "fetchNotifications kept same" is text I might have seen in a *summary*?
-    // No, step 302 is a raw tool output.
-    // This implies the file on disk literally has `// ... (fetchNotifications kept same)`.
-    // If so, the previous developer (or agent) left it there?
-    // I will proceed with restoring that content.
-
-    // BUT first, I must fix the immediate corruption from step 304 and 310.
 
     useEffect(() => {
         const fetchNotifications = async () => {
@@ -278,6 +207,8 @@ export default function Header() {
                             <LanguageSwitcher />
                         </div>
 
+
+
                         {/* Notifications */}
                         <div
                             className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer"
@@ -304,18 +235,61 @@ export default function Header() {
                                         <Link href="/profile/notifications" className="text-xs text-blue-600 font-medium hover:underline">{t('bildirishnomalarni_boshqarish')}</Link>
                                     </div>
                                     <div className="max-h-[300px] overflow-y-auto p-2">
-                                        {notifications.map(notif => (
-                                            <div key={notif.id} className="p-3 mb-1 rounded-xl hover:bg-slate-50 transition-colors flex gap-3">
-                                                <div className="shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                                    <Info size={16} />
+                                        {notifications.map(notif => {
+                                            const getLocalized = (n: any) => {
+                                                let title = n.title;
+                                                let message = n.message;
+
+                                                if (title === "Buyurtma Holati") {
+                                                    title = tProfile('order_status_title');
+                                                    if (message.includes('raqamli buyurtmangiz holati:')) {
+                                                        const idMatch = message.match(/#([A-Z0-9]+)/i);
+                                                        const id = idMatch ? idMatch[1].toUpperCase() : '';
+                                                        const statusPart = message.split(': ')[1];
+                                                        const uzStatuses: any = {
+                                                            'Buyurtmangiz qabul qilindi va kutilmoqda.': 'pending',
+                                                            'Buyurtmangiz tasdiqlandi va tayyorlanmoqda.': 'processing',
+                                                            'Buyurtmangiz yo\'lga chiqdi va tez orada yetkaziladi.': 'shipping',
+                                                            'Buyurtmangiz muvaffaqiyatli yetkazib berildi. Xaridingiz uchun rahmat!': 'delivered',
+                                                            'Buyurtmangiz bekor qilindi.': 'cancelled'
+                                                        };
+                                                        const status = uzStatuses[statusPart] ? tProfile(uzStatuses[statusPart]) : statusPart;
+                                                        message = tProfile('order_status_msg', { id, status });
+                                                    }
+                                                } else if (title === "Yangi Buyurtma") {
+                                                    title = tProfile('new_order_title');
+                                                    if (message.includes('qabul qilindi. Summa:')) {
+                                                        const idMatch = message.match(/#([A-Z0-9]+)/i);
+                                                        const id = idMatch ? idMatch[1].toUpperCase() : '';
+                                                        const totalVal = message.split('Summa: ')[1]?.replace(/so'm|сум|UZS/i, '').trim();
+                                                        message = tProfile('new_order_msg', { id, total: totalVal + ' ' + t('som') });
+                                                    }
+                                                } else if (title === "Yangi Foydalanuvchi") {
+                                                    title = tProfile('new_user_title');
+                                                    if (message.includes("ro'yxatdan o'tdi.")) {
+                                                        const name = message.replace(" ro'yxatdan o'tdi.", "");
+                                                        message = tProfile('new_user_msg', { name });
+                                                    }
+                                                }
+
+                                                return { title, message };
+                                            };
+
+                                            const localized = getLocalized(notif);
+
+                                            return (
+                                                <div key={notif.id} className="p-3 mb-1 rounded-xl hover:bg-slate-50 transition-colors flex gap-3">
+                                                    <div className="shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
+                                                        <Info size={16} />
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-slate-900">{localized.title}</div>
+                                                        <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{localized.message}</div>
+                                                        <div className="text-[10px] text-slate-400 mt-1">{new Date(notif.createdAt).toLocaleDateString()}</div>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="text-sm font-medium text-slate-900">{notif.title}</div>
-                                                    <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{notif.message}</div>
-                                                    <div className="text-[10px] text-slate-400 mt-1">{new Date(notif.createdAt).toLocaleDateString()}</div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                         {notifications.length === 0 && (
                                             <div className="py-8 text-center text-slate-400 text-sm">
                                                 {t('empty_notif') || "Bildirishnomalar yo'q"}
@@ -384,7 +358,7 @@ export default function Header() {
                             <Search size={18} />
                         </button>
                     </div>
-                    <div className="shrink-0">
+                    <div className="shrink-0 flex items-center gap-2">
                         <LanguageSwitcher minimal={true} />
                     </div>
                 </div>

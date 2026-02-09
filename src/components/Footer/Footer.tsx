@@ -45,7 +45,7 @@ export default function Footer() {
     }, []);
 
     return (
-        <footer className="bg-slate-900 text-slate-300 border-t border-slate-800">
+        <footer className={`bg-slate-900 dark:bg-[#111111] text-slate-300 border-t border-slate-800 dark:border-white/10 ${!isHome ? 'hidden lg:block' : ''}`}>
             {/* Main Footer Content */}
             <div className="container pt-8 pb-32 md:pt-10 md:pb-16">
                 <div className="mb-6 -ml-6">

@@ -43,12 +43,12 @@
 }
 
 .slider {
-    background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+    background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
     border-radius: var(--radius-lg);
     position: relative;
     overflow: hidden;
     height: 100%;
-    color: white;
+    color: var(--text-main);
     display: flex;
     align-items: center;
     justify-content: center;

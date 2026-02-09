@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale, useMessages } from "next-intl";
 
 interface Address {
     id: string;
@@ -23,8 +23,24 @@ import { regions, districts } from "@/constants/locations";
 
 export default function AddressBookPage() {
     const t = useTranslations('Addresses');
+    const tLoc = useTranslations('Locations');
+    const tProfile = useTranslations('Profile');
+    const locale = useLocale();
+    const messages = useMessages() as any;
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Safe translation helper that accesses messages directly
+    const safeTranslate = (key: string) => {
+        if (!key) return '';
+        // Directly access the Locations messages
+        const locationMessages = messages?.Locations;
+        if (locationMessages && locationMessages[key]) {
+            return locationMessages[key];
+        }
+        // Fallback to original key if translation not found
+        return key;
+    };
 
     // address state: city -> region, district -> specific district
     const [newAddress, setNewAddress] = useState({
@@ -115,19 +131,19 @@ export default function AddressBookPage() {
         setNewAddress({ ...newAddress, city: regionName, district: "" });
     };
 
-    // Find the current region ID based on the selected name to show correct districts
-    const currentRegionId = regions.find(r => r.name === newAddress.city)?.id;
+    // Help find current region ID for districts selection
+    const currentRegionId = newAddress.city;
     const availableDistricts = currentRegionId ? districts[currentRegionId] : [];
 
     if (isLoading) return <div className="flex h-40 items-center justify-center"><Loader2 className="animate-spin text-primary" /></div>;
-    if (isError) return <div className="text-center text-red-500 py-10">Failed to load addresses. <Button onClick={() => queryClient.refetchQueries({ queryKey: ["addresses"] })} variant="outline" className="ml-2">Retry</Button></div>;
+    if (isError) return <div className="text-center text-red-500 py-10">{t('load_failed')} <Button onClick={() => queryClient.refetchQueries({ queryKey: ["addresses"] })} variant="outline" className="ml-2">{t('retry')}</Button></div>;
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100 dark:bg-gray-800 dark:border-gray-700">
+            <div className="flex items-center justify-between bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                 <div>
-                    <h1 className="text-2xl font-bold dark:text-white">{t('title')}</h1>
-                    <p className="text-text-muted mt-1 dark:text-gray-400">{t('subtitle')}</p>
+                    <h1 className="text-2xl font-bold">{t('title')}</h1>
+                    <p className="text-text-muted mt-1">{t('subtitle')}</p>
                 </div>
                 <Button onClick={() => setIsModalOpen(true)} className="rounded-full shadow-lg shadow-primary/20">
                     <Plus size={20} className="mr-2" />
@@ -136,14 +152,14 @@ export default function AddressBookPage() {
             </div>
 
             {addresses.length === 0 ? (
-                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed text-gray-400 dark:bg-gray-800/50 dark:border-gray-700">
+                <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed text-gray-400">
                     <MapPin size={48} className="mx-auto mb-4 opacity-50" />
                     <p>{t('no_addresses')}</p>
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {addresses.map((addr) => (
-                        <div key={addr.id} className={`bg-white p-6 rounded-2xl border transition-all relative group dark:bg-gray-800 ${addr.isDefault ? "border-primary ring-4 ring-primary/5" : "border-gray-100 hover:border-gray-200 dark:border-gray-700"
+                        <div key={addr.id} className={`bg-white p-6 rounded-2xl border transition-all relative group ${addr.isDefault ? "border-primary ring-4 ring-primary/5" : "border-gray-100 hover:border-gray-200"
                             }`}>
                             {addr.isDefault && (
                                 <div className="absolute top-6 right-6 text-primary">
@@ -152,18 +168,24 @@ export default function AddressBookPage() {
                             )}
 
                             <div className="flex items-center gap-3 mb-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${addr.isDefault ? "bg-primary text-white" : "bg-gray-100 text-text-muted dark:bg-gray-700"
+                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${addr.isDefault ? "bg-primary text-white" : "bg-gray-100 text-text-muted"
                                     }`}>
                                     <Navigation size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold dark:text-white">{addr.title}</h3>
+                                    <h3 className="font-bold">
+                                        {addr.title === "My Address" || addr.title === "Mening manzilim" || addr.title === "Мой адрес"
+                                            ? tProfile('my_address')
+                                            : addr.title}
+                                    </h3>
                                     {addr.isDefault && <span className="text-[10px] font-bold text-primary uppercase tracking-widest leading-none">{t('default')}</span>}
                                 </div>
                             </div>
 
-                            <div className="space-y-1 text-sm text-text-muted mb-6 dark:text-gray-400">
-                                <p className="font-medium text-text-main dark:text-gray-200">{addr.city}, {addr.district}</p>
+                            <div className="space-y-1 text-sm text-text-muted mb-6">
+                                <p className="font-medium text-text-main">
+                                    {safeTranslate(addr.city)}, {safeTranslate(addr.district)}
+                                </p>
                                 <p>{addr.street}, {addr.house}</p>
                             </div>
 
@@ -182,7 +204,7 @@ export default function AddressBookPage() {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="ml-auto text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                    className="ml-auto text-red-400 hover:text-red-500 hover:bg-red-50"
                                     onClick={() => deleteMutation.mutate(addr.id)}
                                     disabled={deleteMutation.isPending}
                                 >
@@ -197,12 +219,12 @@ export default function AddressBookPage() {
             {/* Simple Modal Overlay */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl dark:bg-gray-800">
-                        <h2 className="text-xl font-bold mb-4 dark:text-white">{t('modal_title')}</h2>
+                    <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-xl">
+                        <h2 className="text-xl font-bold mb-4">{t('modal_title')}</h2>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <div>
                                 <Label>{t('label_title')}</Label>
-                                <Input value={newAddress.title} onChange={e => setNewAddress({ ...newAddress, title: e.target.value })} required placeholder="Home" />
+                                <Input value={newAddress.title} onChange={e => setNewAddress({ ...newAddress, title: e.target.value })} required placeholder={t('label_title')} />
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
@@ -216,7 +238,7 @@ export default function AddressBookPage() {
                                     >
                                         <option value="">{t('select_region')}</option>
                                         {regions.map(r => (
-                                            <option key={r.id} value={r.name}>{r.name}</option>
+                                            <option key={r.id} value={r.id}>{safeTranslate(r.id)}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -231,7 +253,7 @@ export default function AddressBookPage() {
                                     >
                                         <option value="">{t('select_district')}</option>
                                         {availableDistricts.map(d => (
-                                            <option key={d} value={d}>{d}</option>
+                                            <option key={d} value={d}>{safeTranslate(d)}</option>
                                         ))}
                                     </select>
                                 </div>
@@ -239,11 +261,11 @@ export default function AddressBookPage() {
 
                             <div>
                                 <Label>{t('label_street')}</Label>
-                                <Input value={newAddress.street} onChange={e => setNewAddress({ ...newAddress, street: e.target.value })} required placeholder="Amir Temur" />
+                                <Input value={newAddress.street} onChange={e => setNewAddress({ ...newAddress, street: e.target.value })} required placeholder={t('label_street')} />
                             </div>
                             <div>
                                 <Label>{t('label_house')}</Label>
-                                <Input value={newAddress.house} onChange={e => setNewAddress({ ...newAddress, house: e.target.value })} required placeholder="12" />
+                                <Input value={newAddress.house} onChange={e => setNewAddress({ ...newAddress, house: e.target.value })} required placeholder={t('label_house')} />
                             </div>
                             <div className="flex items-center gap-2">
                                 <input type="checkbox" id="isDefault"

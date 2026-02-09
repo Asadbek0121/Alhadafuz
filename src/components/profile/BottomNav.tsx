@@ -22,7 +22,7 @@ import { useUIStore } from "@/store/useUIStore";
 
 export default function BottomNav() {
     const pathname = usePathname();
-    const tProfile = useTranslations('Profile');
+    const tNav = useTranslations('BottomNav');
     const { openAuthModal } = useUserStore();
     const { data: session } = useSession();
     const isAuthenticated = !!session?.user;
@@ -30,35 +30,35 @@ export default function BottomNav() {
 
     const navItems = [
         {
-            label: "Bosh sahifa",
+            label: tNav('home'),
             icon: Home,
             href: "/",
             isActive: pathname === "/" && !isCatalogOpen,
             action: () => closeCatalog()
         },
         {
-            label: "Katalog",
+            label: tNav('catalog'),
             icon: LayoutGrid,
             href: null, // Custom action
             isActive: isCatalogOpen,
             action: () => toggleCatalog()
         },
         {
-            label: "Savatcha",
+            label: tNav('cart'),
             icon: ShoppingBag,
             href: "/cart",
             isActive: pathname === "/cart" && !isCatalogOpen,
             action: () => closeCatalog()
         },
         {
-            label: "Sevimlilar",
+            label: tNav('favorites'),
             icon: Heart,
             href: "/favorites",
             isActive: pathname === "/favorites" && !isCatalogOpen,
             action: () => closeCatalog()
         },
         {
-            label: "Kabinet",
+            label: tNav('profile'),
             icon: User,
             href: isAuthenticated ? "/profile" : null,
             isActive: pathname.includes("/profile") && !isCatalogOpen,
@@ -73,7 +73,7 @@ export default function BottomNav() {
     ];
 
     return (
-        <nav className="md:hidden fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-2xl border border-white/40 shadow-2xl shadow-blue-900/10 flex items-center justify-between px-2 h-[72px] z-[100] rounded-3xl transition-all duration-300">
+        <nav className="lg:hidden fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-2xl border border-white/40 shadow-2xl shadow-blue-900/10 flex items-center justify-between px-2 h-[72px] z-[100] rounded-3xl transition-all duration-300">
             {navItems.map((item, idx) => {
                 const Icon = item.icon;
                 const active = item.isActive;
@@ -98,10 +98,7 @@ export default function BottomNav() {
                             {item.label}
                         </span>
 
-                        {/* Active Dot indicator at bottom */}
-                        {active && (
-                            <div className="absolute -bottom-1 w-1 h-1 bg-blue-600 rounded-full"></div>
-                        )}
+
                     </div>
                 );
 

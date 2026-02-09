@@ -63,7 +63,7 @@ export default function ProductPage() {
             });
 
             if (res.ok) {
-                toast.success("Sharhingiz qabul qilindi va moderatsiyadan o'tgach chop etiladi");
+                toast.success(tProduct('review_success') || "Sharhingiz qabul qilindi");
                 setUserComment("");
                 setUserRating(5);
             } else {
@@ -227,7 +227,7 @@ export default function ProductPage() {
                         {product.oldPrice && (
                             <div className={styles.oldPriceSect}>
                                 <span className={styles.oldPriceVal}>{product.oldPrice.toLocaleString()} {tHeader('som')}</span>
-                                {product.discount && <span className={styles.saveBadge}>Foyda: {product.discount.toLocaleString()} {tHeader('som')}</span>}
+                                {product.discount && <span className={styles.saveBadge}>{tProduct('benefit')}: {product.discount.toLocaleString()} {tHeader('som')}</span>}
                             </div>
                         )}
                         <div className={styles.mainPrice}>{product.price.toLocaleString()} {tHeader('som')}</div>
@@ -265,7 +265,7 @@ export default function ProductPage() {
                         </div>
                         <div className={styles.stockStatus}>
                             <div className={styles.greenDot}></div>
-                            {product.stock > 0 ? tProduct('in_stock') : "Sotuvda yo'q"} ({product.stock} {tHeader('dona')})
+                            {product.stock > 0 ? tProduct('in_stock') : tProduct('out_of_stock')} ({product.stock} {tHeader('dona')})
                         </div>
                     </div>
 
@@ -340,16 +340,16 @@ export default function ProductPage() {
                             </div>
                         ))
                     ) : (
-                        <p style={{ color: '#888', fontStyle: 'italic' }}>Hozircha sharhlar yo'q. Birinchi bo'ling!</p>
+                        <p style={{ color: '#888', fontStyle: 'italic' }}>{tProduct('no_reviews')}</p>
                     )}
                 </div>
 
                 {/* Add Review Form */}
                 <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #eee' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>Sharh qoldirish</h3>
+                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{tProduct('add_review')}</h3>
                     <form onSubmit={handleSubmitReview}>
                         <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Bahongiz</label>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>{tProduct('your_rating')}</label>
                             <div style={{ display: 'flex', gap: '5px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button
@@ -364,14 +364,14 @@ export default function ProductPage() {
                             </div>
                         </div>
                         <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>Fikringiz</label>
+                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>{tProduct('your_review')}</label>
                             <textarea
                                 value={userComment}
                                 onChange={e => setUserComment(e.target.value)}
                                 required
                                 rows={4}
                                 style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
-                                placeholder="Mahsulot haqida taassurotlaringiz..."
+                                placeholder={tProduct('review_placeholder')}
                             />
                         </div>
                         <button
@@ -382,7 +382,7 @@ export default function ProductPage() {
                                 opacity: submittingReview ? 0.7 : 1
                             }}
                         >
-                            {submittingReview ? 'Yuborilmoqda...' : 'Yuborish'}
+                            {submittingReview ? tProduct('submitting') : tProduct('submit')}
                         </button>
                     </form>
                 </div>
@@ -394,7 +394,7 @@ export default function ProductPage() {
                 <div className="container" style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
                     <button className={styles.stickyBtnOutline} onClick={handleAddToCart}>
                         <ShoppingCart size={20} />
-                        <span style={{ marginLeft: '8px' }}>Savatchaga qo'shish</span>
+                        <span style={{ marginLeft: '8px' }}>{tProduct('add_to_cart')}</span>
                     </button>
                     <button className={styles.stickyBtnPrimary} onClick={handleBuyNow}>
                         {tProduct('buy_one_click')}

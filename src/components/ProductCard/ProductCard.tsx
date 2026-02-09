@@ -58,13 +58,15 @@ export default function ProductCard(props: ProductProps) {
             </div>
 
             {/* Wishlist Button */}
-            <button
-                className={`absolute top-2 right-2 z-10 p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-sm transition-all duration-300 ${activeWishlist ? 'text-red-500 bg-white' : 'text-slate-400 hover:text-red-500 hover:bg-white opacity-0 group-hover:opacity-100'}`}
+            <div className={`absolute top-2 right-2 z-10 p-1.5 rounded-full backdrop-blur-sm shadow-sm transition-all duration-300 cursor-pointer group/heart ${isInWishlist(id) ? 'bg-red-50 text-red-500' : 'bg-white/80 text-slate-400 hover:text-red-500 hover:bg-white'}`}
                 onClick={handleToggleWishlist}
-                aria-label={t('sevimlilar')}
             >
-                <Heart size={18} fill={activeWishlist ? "currentColor" : "none"} strokeWidth={activeWishlist ? 0 : 2} />
-            </button>
+                <Heart
+                    size={20}
+                    className={`transition-all duration-300 ${isInWishlist(id) ? 'fill-current scale-110' : 'group-hover/heart:scale-110'}`}
+                    strokeWidth={isInWishlist(id) ? 0 : 2}
+                />
+            </div>
 
             {/* Image Wrapper */}
             <div className="aspect-[4/5] bg-slate-50 w-full relative p-4 overflow-hidden">

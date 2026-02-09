@@ -41,7 +41,7 @@ export default function Hero() {
                         <div className={styles.sliderDesc}>
                             {mainBanner ? mainBanner.description : t('slider_desc')}
                         </div>
-                        <a href={mainBanner?.link || '#'} className={styles.sliderBtn} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'inherit' }}>
+                        <a href={mainBanner?.link || '#'} className={styles.sliderBtn} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'white' }}>
                             {tCommon('batafsil')} <ChevronRight size={18} />
                         </a>
                     </div>

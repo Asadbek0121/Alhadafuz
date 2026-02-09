@@ -19,9 +19,9 @@ export default function PersonalInfoPage() {
     const router = useRouter();
 
     const profileSchema = z.object({
-        name: z.string().min(2, t('name') + " 2+ chars"),
-        email: z.string().email(t('email') + " invalid"),
-        phone: z.string().min(9, t('phone') + " invalid"),
+        name: z.string().min(2, t('name_min')),
+        email: z.string().email(t('email_invalid')),
+        phone: z.string().min(9, t('phone_invalid')),
         dateOfBirth: z.string().optional().or(z.literal("")),
         gender: z.string().optional().or(z.literal("")),
     });
@@ -103,21 +103,21 @@ export default function PersonalInfoPage() {
             toast.success(t('success_update'));
             router.refresh(); // Refresh server components
         } catch (error) {
-            toast.error("An error occurred");
+            toast.error(t('save_fail'));
         } finally {
             setIsSaving(false);
         }
     };
 
     return (
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden dark:bg-gray-800 dark:border-gray-700">
-            <div className="p-8 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold dark:text-white">{t('personal_info')}</h1>
-                    <p className="text-text-muted mt-1 dark:text-gray-400">{t('personal_dashboard')}</p>
+                    <h1 className="text-2xl font-bold">{t('personal_info')}</h1>
+                    <p className="text-text-muted mt-1">{t('personal_dashboard')}</p>
                 </div>
                 <div className="relative group">
-                    <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden relative dark:bg-gray-700 dark:border-gray-600">
+                    <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden relative">
                         {session?.user?.image ? (
                             <Image src={session.user.image} alt="Avatar" fill className="object-cover" />
                         ) : (
@@ -135,29 +135,29 @@ export default function PersonalInfoPage() {
             <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">F.I.O</label>
+                        <label className="text-sm font-semibold text-gray-700">{t('fio')}</label>
                         <input
                             {...register("name")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none dark:bg-gray-700 dark:text-white ${errors.name ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:border-gray-600"
+                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.name ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                 }`}
-                            placeholder="John Doe"
+                            placeholder={t('fio')}
                         />
                         {errors.name && <p className="text-red-500 text-xs font-medium">{errors.name.message}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('email')}</label>
+                        <label className="text-sm font-semibold text-gray-700">{t('email')}</label>
                         <input
                             {...register("email")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none dark:bg-gray-700 dark:text-white ${errors.email ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:border-gray-600"
+                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.email ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                 }`}
-                            placeholder="john@example.com"
+                            placeholder={t('email')}
                         />
                         {errors.email && <p className="text-red-500 text-xs font-medium">{errors.email.message}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('phone')}</label>
+                        <label className="text-sm font-semibold text-gray-700">{t('phone')}</label>
                         <Controller
                             control={control}
                             name="phone"
@@ -165,7 +165,7 @@ export default function PersonalInfoPage() {
                                 <PhoneInput
                                     value={field.value}
                                     onChange={field.onChange}
-                                    className={`w-full h-12 px-4 rounded-xl border transition-all outline-none dark:bg-gray-700 dark:text-white ${errors.phone ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:border-gray-600"
+                                    className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.phone ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                         }`}
                                     placeholder="+998 (90) 123-45-67"
                                 />
@@ -175,21 +175,21 @@ export default function PersonalInfoPage() {
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('date_of_birth')}</label>
+                        <label className="text-sm font-semibold text-gray-700">{t('date_of_birth')}</label>
                         <input
                             type="date"
                             {...register("dateOfBirth")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none dark:bg-gray-700 dark:text-white ${errors.dateOfBirth ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:border-gray-600"
+                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.dateOfBirth ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                 }`}
                         />
                         {errors.dateOfBirth && <p className="text-red-500 text-xs font-medium">{errors.dateOfBirth.message}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">{t('gender')}</label>
+                        <label className="text-sm font-semibold text-gray-700">{t('gender')}</label>
                         <select
                             {...register("gender")}
-                            className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none transition-all cursor-pointer"
+                            className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all cursor-pointer"
                         >
                             <option value="">{t('select_gender')}</option>
                             <option value="male">{t('male')}</option>
@@ -198,7 +198,7 @@ export default function PersonalInfoPage() {
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-gray-100 dark:border-gray-700 flex justify-end">
+                <div className="pt-6 border-t border-gray-100 flex justify-end">
                     <button
                         type="submit"
                         disabled={isSaving}

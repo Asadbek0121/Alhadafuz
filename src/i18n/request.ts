@@ -11,6 +11,16 @@ export default getRequestConfig(async ({ requestLocale }) => {
 
     return {
         locale,
-        messages: (await import(`../../messages/${locale}.json`)).default
+        messages: (await import(`../../messages/${locale}.json`)).default,
+        onError(error) {
+            // Suppress missing message errors in production
+            if (process.env.NODE_ENV === 'production') {
+                console.warn(error.message);
+            }
+        },
+        getMessageFallback({ namespace, key }) {
+            // Return the key itself as fallback
+            return key;
+        }
     };
 });

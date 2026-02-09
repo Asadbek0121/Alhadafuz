@@ -4,7 +4,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useEffect, useState } from 'react';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import styles from './page.module.css';
-import { Heart } from 'lucide-react';
+import { Heart, ShoppingBag } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useTranslations } from 'next-intl';
 
@@ -44,13 +44,19 @@ export default function FavoritesPage() {
 
     if (wishlist.length === 0) {
         return (
-            <div className={`container ${styles.empty}`}>
-                <div className={styles.emptyIcon}>
-                    <Heart size={64} strokeWidth={1} color="#ccc" />
+            <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-red-50 rounded-full flex items-center justify-center mb-6 relative">
+                    <Heart
+                        size={48}
+                        className="text-red-500 md:w-14 md:h-14 fill-red-500/10"
+                        strokeWidth={1.5}
+                    />
                 </div>
-                <h2>{tWishlist('empty_title')}</h2>
-                <p>{tWishlist('empty_desc')}</p>
-                <Link href="/" className="btn btn-primary" style={{ marginTop: '24px' }}>
+                <h2 className="text-2xl md:text-3xl font-black text-slate-900 mb-3 tracking-tight">{tWishlist('empty_title')}</h2>
+                <p className="text-slate-500 max-w-sm mb-8 leading-relaxed text-sm md:text-base mx-auto">
+                    {tWishlist('empty_desc')}
+                </p>
+                <Link href="/" className="px-8 py-3.5 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-colors">
                     {tCart('back_home')}
                 </Link>
             </div>
