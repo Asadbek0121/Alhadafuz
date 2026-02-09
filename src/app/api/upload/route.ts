@@ -2,7 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { writeFile } from "fs/promises";
 import { join } from "path";
-import { v4 as uuidv4 } from "uuid";
+// No import needed for crypto when using global crypto.randomUUID() in Node.js 19+ or Next.js
+
 import { auth } from "@/auth";
 
 export async function POST(req: NextRequest) {
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
         // Generate unique filename
         const ext = file.name.split(".").pop();
-        const filename = `${uuidv4()}.${ext}`;
+        const filename = `${crypto.randomUUID()}.${ext}`;
         const path = join(process.cwd(), "public/uploads", filename);
 
         await writeFile(path, buffer);

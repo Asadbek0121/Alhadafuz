@@ -28,19 +28,32 @@ export async function POST(req: Request) {
 
         const { name, email, password, phone, otp } = result.data;
 
-        // 1. Check OTP (Using Memory Store)
-        const { verifyOTP, clearOTP } = await import("@/lib/otp-store");
-        const isValid = verifyOTP(email, otp);
+        // 1. Check OTP
+        const token = await prisma.verificationToken.findFirst({
+            where: {
+                identifier: email,
+                token: otp,
+            }
+        });
 
-        if (!isValid) {
+        if (!token) {
             return NextResponse.json(
-                { message: "Noto'g'ri yoki muddati o'tgan tasdiqlash kodi" },
+                { message: "Noto'g'ri tasdiqlash kodi" },
+                { status: 400 }
+            );
+        }
+
+        if (new Date() > token.expires) {
+            return NextResponse.json(
+                { message: "Kodning amal qilish muddati tugagan" },
                 { status: 400 }
             );
         }
 
         // 2. Clear token
-        clearOTP(email);
+        await prisma.verificationToken.deleteMany({
+            where: { identifier: email }
+        });
 
         // 3. Double check if user was created while verifying (race condition)
         const existingUser = await prisma.user.findFirst({

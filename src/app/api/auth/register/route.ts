@@ -35,23 +35,14 @@ export async function POST(req: Request) {
         }
 
         // Check if user exists (email or phone)
-        let existingUser = null;
-        try {
-            existingUser = await prisma.user.findFirst({
-                where: {
-                    OR: [
-                        { email },
-                        ...(phone ? [{ phone }] : [])
-                    ]
-                },
-            });
-        } catch (dbError: any) {
-            console.error("Database check failed:", dbError);
-            // If the table doesn't exist yet, we'll assume no existing user
-            if (!dbError.message.includes("does not exist")) {
-                throw dbError; // Rethrow if it's not a missing table error
-            }
-        }
+        const existingUser = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { email },
+                    ...(phone ? [{ phone }] : [])
+                ]
+            },
+        });
 
         if (existingUser) {
             return NextResponse.json(
@@ -64,9 +55,18 @@ export async function POST(req: Request) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        // Save OTP to Memory (Bypass DB table issue)
-        const { saveOTP } = await import("@/lib/otp-store");
-        saveOTP(email, otp);
+        // Save OTP to DB
+        await prisma.verificationToken.deleteMany({
+            where: { identifier: email }
+        });
+
+        await prisma.verificationToken.create({
+            data: {
+                identifier: email,
+                token: otp,
+                expires: expires,
+            }
+        });
 
         // Send Email
         const { sendVerificationEmail } = await import("@/lib/mail");
