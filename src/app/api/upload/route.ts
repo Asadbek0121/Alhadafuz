@@ -1,10 +1,8 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { writeFile } from "fs/promises";
-import { join } from "path";
-// No import needed for crypto when using global crypto.randomUUID() in Node.js 19+ or Next.js
-
+import { put } from "@vercel/blob";
 import { auth } from "@/auth";
+
+export const runtime = 'edge'; // Use Edge Runtime for faster uploads
 
 export async function POST(req: NextRequest) {
     try {
@@ -20,18 +18,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        const bytes = await file.arrayBuffer();
-        const buffer = Buffer.from(bytes);
+        // Upload to Vercel Blob
+        const blob = await put(file.name, file, {
+            access: 'public',
+        });
 
-        // Generate unique filename
-        const ext = file.name.split(".").pop();
-        const filename = `${crypto.randomUUID()}.${ext}`;
-        const path = join(process.cwd(), "public/uploads", filename);
-
-        await writeFile(path, buffer);
-
-        const url = `/uploads/${filename}`;
-        return NextResponse.json({ url });
+        return NextResponse.json({ url: blob.url });
     } catch (error: any) {
         console.error("Upload error:", error);
         return NextResponse.json({ error: error.message }, { status: 500 });
