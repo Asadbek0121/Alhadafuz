@@ -158,11 +158,9 @@ export async function POST(req: Request) {
 
         let paymentUrl = null;
         if (paymentMethod === 'click') {
-            const CLICK_SERVICE_ID = process.env.CLICK_SERVICE_ID || 'test';
-            const CLICK_MERCHANT_ID = process.env.CLICK_MERCHANT_ID || 'test';
-            const CLICK_USER_ID = process.env.CLICK_USER_ID || 'test';
-            // Generate URL
-            paymentUrl = `https://my.click.uz/services/pay?service_id=${CLICK_SERVICE_ID}&merchant_id=${CLICK_MERCHANT_ID}&amount=${order.total}&transaction_param=${order.id}`;
+            // Updated to the link requested by the user
+            // We append amount and order ID (transaction_param) for better user experience
+            paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
         }
 
         return NextResponse.json({ success: true, order, paymentUrl });
