@@ -5,8 +5,6 @@ import { useUserStore } from '@/store/useUserStore';
 import { X, Mail, Lock, User, Loader2, Eye, EyeOff, Phone } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
 import { Link } from '@/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PhoneInput } from '@/components/ui/phone-input';
@@ -21,7 +19,7 @@ export default function AuthModal() {
         }
     }, [session, isModalOpen, closeAuthModal]);
 
-    const router = useRouter();
+
 
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [isLoading, setIsLoading] = useState(false);

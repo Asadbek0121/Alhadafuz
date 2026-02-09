@@ -13,14 +13,8 @@ export const saveOTP = (email: string, otp: string) => {
     const expires = Date.now() + 10 * 60 * 1000; // 10 minutes
     otpStore.set(email, { email, otp, expires });
 
-    // Log for debugging (delete in prod)
-    try {
-        const fs = require('fs');
-        const path = '/Users/macbookairm1/Documents/uzm/OTP_CODE.txt';
-        fs.writeFileSync(path, `Email: ${email}\nCode: ${otp}\nTime: ${new Date().toLocaleString()}\n`);
-    } catch (e) {
-        console.error("OTP file error", e);
-    }
+    // Log for debugging
+    console.log(`[OTP DEBUG] Email: ${email} | Code: ${otp}`);
 };
 
 export const verifyOTP = (email: string, otp: string): boolean => {

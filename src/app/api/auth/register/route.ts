@@ -1,9 +1,6 @@
 
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
-import { generateNextUniqueId } from "@/lib/id-generator";
-import { notifyAdmins } from "@/lib/notifications";
 import { z } from "zod";
 
 const registerSchema = z.object({
