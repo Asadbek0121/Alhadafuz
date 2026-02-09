@@ -461,7 +461,7 @@ export default function SupportChat() {
                                                     <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                                                         <div style={{
                                                             maxWidth: '75%',
-                                                            padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp|webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? '4px' : '12px 18px',
+                                                            padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.content.includes('blob.vercel-storage.com') || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp|webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? '4px' : '12px 18px',
                                                             borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
                                                             background: isMe ? 'linear-gradient(135deg, #0052FF 0%, #0040DD 100%)' : '#fff',
                                                             color: isMe ? '#fff' : '#1e293b',
@@ -472,14 +472,14 @@ export default function SupportChat() {
                                                             border: isMe ? 'none' : '1px solid #e2e8f0',
                                                             overflow: 'hidden'
                                                         }}>
-                                                            {msg.type === 'IMAGE' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
+                                                            {msg.type === 'IMAGE' || (msg.content.includes('blob.vercel-storage.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
                                                                 <img
                                                                     src={msg.content}
                                                                     alt="Chat image"
                                                                     style={{ width: '100%', borderRadius: '14px', display: 'block' }}
                                                                     onClick={() => window.open(msg.content, '_blank')}
                                                                 />
-                                                            ) : (msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
+                                                            ) : (msg.type === 'AUDIO' || (msg.content.includes('blob.vercel-storage.com') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content)) || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
                                                                 <div style={{ minWidth: '220px', padding: '6px' }}>
                                                                     <audio
                                                                         controls

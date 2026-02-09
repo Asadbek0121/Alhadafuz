@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
                 senderId: session.user.id,
                 receiverId: admin.id,
                 source: 'SUPPORT_CHAT',
+                type: type,
             },
             include: {
                 sender: {

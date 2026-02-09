@@ -193,13 +193,31 @@ export default function AdminMessagesPage() {
                                             className={`flex ${isAdmin ? 'justify-end' : 'justify-start'}`}
                                         >
                                             <div
-                                                className={`max-w-md px-4 py-2 rounded-2xl ${isAdmin
+                                                className={`max-w-md ${isAdmin
                                                     ? 'bg-blue-500 text-white'
                                                     : 'bg-white border border-gray-200 text-gray-900'
-                                                    }`}
+                                                    } overflow-hidden rounded-2xl`}
                                             >
-                                                <p className="text-sm">{msg.content}</p>
-                                                <div className={`flex items-center gap-1 mt-1 text-xs ${isAdmin ? 'text-blue-100' : 'text-gray-400'
+                                                <div className={(msg.content.includes('blob.vercel-storage.com') || (msg as any).type === 'IMAGE' || (msg as any).type === 'AUDIO') ? 'p-1' : 'px-4 py-2'}>
+                                                    {(msg.content.includes('blob.vercel-storage.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) || (msg as any).type === 'IMAGE' ? (
+                                                        <img
+                                                            src={msg.content}
+                                                            alt="Chat media"
+                                                            className="max-w-full rounded-xl cursor-pointer hover:opacity-90 transition-opacity"
+                                                            onClick={() => window.open(msg.content, '_blank')}
+                                                        />
+                                                    ) : (msg.content.includes('blob.vercel-storage.com') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content)) || (msg as any).type === 'AUDIO' ? (
+                                                        <div className="min-w-[200px]">
+                                                            <audio controls className="w-full h-10">
+                                                                <source src={msg.content} type={msg.content.endsWith('mp4') ? 'audio/mp4' : 'audio/webm'} />
+                                                                Browser doesn't support audio.
+                                                            </audio>
+                                                        </div>
+                                                    ) : (
+                                                        <p className="text-sm">{msg.content}</p>
+                                                    )}
+                                                </div>
+                                                <div className={`flex items-center gap-1 p-2 pt-0 text-[10px] ${isAdmin ? 'text-blue-100' : 'text-gray-400'
                                                     }`}>
                                                     {formatDistanceToNow(new Date(msg.createdAt), {
                                                         addSuffix: true,
