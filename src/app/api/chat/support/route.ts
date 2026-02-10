@@ -125,6 +125,29 @@ export async function POST(req: NextRequest) {
         });
 
         console.log('Support message created successfully');
+
+        // Notify admins via Telegram
+        try {
+            const { sendTelegramMessage } = await import('@/lib/telegram-bot');
+            const admins = await prisma.user.findMany({
+                where: {
+                    role: 'ADMIN',
+                    telegramId: { not: null }
+                }
+            });
+
+            for (const adminUser of admins) {
+                if (adminUser.telegramId) {
+                    const msgType = type === 'TEXT' ? '' : ` [${type}]`;
+                    await sendTelegramMessage(adminUser.telegramId,
+                        `🔔 <b>Yangi murojaat!</b>\n\n👤 <b>Kim:</b> ${session.user.name || 'Foydalanuvchi'}\n💬 <b>Xabar:</b> ${type === 'TEXT' ? content : msgType}\n\n<i>Admin paneldan javob yuborishingiz mumkin.</i>`
+                    );
+                }
+            }
+        } catch (tgError) {
+            console.error('Failed to notify admins via Telegram:', tgError);
+        }
+
         return NextResponse.json(message);
     } catch (error: any) {
         console.error('Error sending support message:', error);

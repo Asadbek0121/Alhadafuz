@@ -208,8 +208,8 @@ export default function AdminMessagesPage() {
                                                         />
                                                     ) : (msg.content.includes('blob.vercel-storage.com') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content)) || (msg as any).type === 'AUDIO' ? (
                                                         <div className="min-w-[200px]">
-                                                            <audio controls className="w-full h-10">
-                                                                <source src={msg.content} type={msg.content.endsWith('mp4') ? 'audio/mp4' : 'audio/webm'} />
+                                                            <audio controls className="w-full h-10" preload="metadata">
+                                                                <source src={msg.content} />
                                                                 Browser doesn't support audio.
                                                             </audio>
                                                         </div>

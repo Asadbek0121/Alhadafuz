@@ -108,10 +108,13 @@ export default function SupportChat() {
                 else if (mimeType.includes('aac')) extension = 'm4a';
 
                 await handleVoiceUpload(blob, extension);
-                stream.getTracks().forEach(track => track.stop());
+                stream.getTracks().forEach(track => {
+                    track.stop();
+                    console.log(`Track ${track.label} stopped`);
+                });
             };
 
-            recorder.start(1000); // 1 soniyalik bo'laklarga bo'lib yozish (xavfsizroq)
+            recorder.start();
             setMediaRecorder(recorder);
             setIsRecording(true);
             setRecordingTime(0);

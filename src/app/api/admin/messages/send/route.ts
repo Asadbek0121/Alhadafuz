@@ -39,10 +39,17 @@ export async function POST(req: NextRequest) {
                         name: true,
                         email: true,
                         phone: true,
+                        telegramId: true,
                     },
                 },
             },
         });
+
+        // 2. If user is from Telegram, send notification to Telegram
+        if (message.receiver?.telegramId) {
+            const { sendTelegramMessage } = await import('@/lib/telegram-bot');
+            await sendTelegramMessage(message.receiver.telegramId, `<b>Admin:</b>\n\n${content}`);
+        }
 
         return NextResponse.json(message);
     } catch (error) {

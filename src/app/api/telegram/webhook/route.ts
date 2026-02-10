@@ -17,116 +17,120 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // Check for 'message' object
-        if (body.message && body.message.text) {
-            const chatId = body.message.chat.id;
-            const text = body.message.text;
-            const telegramUser = body.message.from;
+        const messageObj = body.message;
+        if (!messageObj) return NextResponse.json({ ok: true });
 
-            // Handle /start login_<token>
-            if (text.startsWith('/start login_')) {
-                const loginTokenStr = text.split('login_')[1];
+        const chatId = messageObj.chat.id;
+        const text = messageObj.text;
+        const telegramUser = messageObj.from;
+        const telegramIdStr = String(telegramUser.id);
 
-                if (loginTokenStr) {
-                    // Find the token in DB
-                    const dbToken = await prisma.telegramLoginToken.findUnique({
-                        where: { token: loginTokenStr }
-                    });
+        // 1. Handle Authentication flow (/start login_...)
+        if (text && text.startsWith('/start login_')) {
+            const loginTokenStr = text.split('login_')[1];
+            if (loginTokenStr) {
+                const dbToken = await prisma.telegramLoginToken.findUnique({
+                    where: { token: loginTokenStr }
+                });
 
-                    if (!dbToken) {
-                        await bot.sendMessage(chatId, "Xatolik: Login kodi topilmadi yoki eskirgan.");
-                        return NextResponse.json({ ok: true });
-                    }
-
-                    if (new Date() > dbToken.expiresAt) {
-                        await bot.sendMessage(chatId, "Xatolik: Login kodi muddati tugagan.");
-                        return NextResponse.json({ ok: true });
-                    }
-
-                    if (dbToken.status === "VERIFIED") {
-                        await bot.sendMessage(chatId, "Siz allaqachon kirgansiz.");
-                        return NextResponse.json({ ok: true });
-                    }
-
-                    // Token valid! Beep boop. verify user.
-                    // 1. Check if user with this Telegram ID exists
-                    const telegramIdStr = String(telegramUser.id);
-
-                    let user = await prisma.user.findUnique({
-                        where: { telegramId: telegramIdStr }
-                    });
-
-                    if (!user) {
-                        // Create new user
-                        const uniqueId = await generateNextUniqueId();
-                        user = await prisma.user.create({
-                            data: {
-                                name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
-                                telegramId: telegramIdStr,
-                                uniqueId: uniqueId,
-                                role: "USER",
-                                provider: "telegram",
-                                // We can also link account model if needed
-                            }
-                        });
-                    }
-
-                    // 2. Update Token status
-                    await prisma.telegramLoginToken.update({
-                        where: { token: loginTokenStr },
-                        data: {
-                            status: "VERIFIED",
-                            userId: user.id,
-                            telegramId: telegramIdStr
-                        }
-                    });
-
-                    await bot.sendMessage(chatId, `Muvaffaqiyatli kirdingiz, ${telegramUser.first_name}! Saytga qaytishingiz mumkin.`);
+                if (!dbToken) {
+                    await bot.sendMessage(chatId, "Xatolik: Login kodi topilmadi yoki eskirgan.");
+                    return NextResponse.json({ ok: true });
                 }
-            } else if (text === '/start') {
-                // simple /start without token
-                await bot.sendMessage(chatId, "Assalomu alaykum! Hadaf Market botiga xush kelibsiz. Savol yoki takliflaringizni shu yerda yozib qoldiring.");
-            } else {
-                // CHAT MESSAGE: Find/Create User and Save Message
-                const telegramIdStr = String(telegramUser.id);
 
-                let user = await prisma.user.findUnique({ where: { telegramId: telegramIdStr } });
+                if (new Date() > dbToken.expiresAt) {
+                    await bot.sendMessage(chatId, "Xatolik: Login kodi muddati tugagan.");
+                    return NextResponse.json({ ok: true });
+                }
 
-                // If user doesn't exist, create partial user
+                let user = await prisma.user.findUnique({
+                    where: { telegramId: telegramIdStr }
+                });
+
                 if (!user) {
                     const uniqueId = await generateNextUniqueId();
                     user = await prisma.user.create({
                         data: {
-                            name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : '') + " (TG)",
+                            name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : ''),
                             telegramId: telegramIdStr,
                             uniqueId: uniqueId,
                             role: "USER",
                             provider: "telegram",
-                            image: `https://ui-avatars.com/api/?name=${telegramUser.first_name}&background=random`
                         }
                     });
                 }
 
-                // Find Admin
-                const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+                await prisma.telegramLoginToken.update({
+                    where: { token: loginTokenStr },
+                    data: {
+                        status: "VERIFIED",
+                        userId: user.id,
+                        telegramId: telegramIdStr
+                    }
+                });
 
-                if (admin) {
-                    await prisma.message.create({
-                        data: {
-                            content: text,
-                            senderId: user.id,
-                            receiverId: admin.id,
-                            source: 'TELEGRAM'
-                        }
-                    });
-
-                    // Update User Timestamp for sorting in Admin Panel
-                    await prisma.user.update({
-                        where: { id: user.id },
-                        data: { updatedAt: new Date() }
-                    });
-                }
+                await bot.sendMessage(chatId, `Muvaffaqiyatli kirdingiz, ${telegramUser.first_name}! Saytga qaytishingiz mumkin.`);
+                return NextResponse.json({ ok: true });
             }
+        }
+
+        // 2. Handle Support Chat (Text, Photo, Voice)
+        let user = await prisma.user.findUnique({ where: { telegramId: telegramIdStr } });
+
+        if (!user) {
+            const uniqueId = await generateNextUniqueId();
+            user = await prisma.user.create({
+                data: {
+                    name: telegramUser.first_name + (telegramUser.last_name ? ` ${telegramUser.last_name}` : '') + " (TG)",
+                    telegramId: telegramIdStr,
+                    uniqueId: uniqueId,
+                    role: "USER",
+                    provider: "telegram",
+                    image: `https://ui-avatars.com/api/?name=${telegramUser.first_name}&background=random`
+                }
+            });
+        }
+
+        const admin = await prisma.user.findFirst({ where: { role: 'ADMIN' } });
+        if (!admin) return NextResponse.json({ ok: true });
+
+        const { uploadTelegramFileToBlob } = await import('@/lib/telegram-file');
+        let content = text || "";
+        let type = "TEXT";
+
+        // Handle Photo
+        if (messageObj.photo && messageObj.photo.length > 0) {
+            const photo = messageObj.photo[messageObj.photo.length - 1]; // pixel high photo
+            const url = await uploadTelegramFileToBlob(photo.file_id, `tg_photo_${Date.now()}.jpg`);
+            if (url) {
+                content = url;
+                type = "IMAGE";
+            }
+        }
+        // Handle Voice
+        else if (messageObj.voice) {
+            const url = await uploadTelegramFileToBlob(messageObj.voice.file_id, `tg_voice_${Date.now()}.ogg`);
+            if (url) {
+                content = url;
+                type = "AUDIO";
+            }
+        }
+
+        if (content) {
+            await (prisma as any).message.create({
+                data: {
+                    content,
+                    senderId: user.id,
+                    receiverId: admin.id,
+                    source: 'TELEGRAM',
+                    type
+                }
+            });
+
+            await prisma.user.update({
+                where: { id: user.id },
+                data: { updatedAt: new Date() }
+            });
         }
 
         return NextResponse.json({ ok: true });

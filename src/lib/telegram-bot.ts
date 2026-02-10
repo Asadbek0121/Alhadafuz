@@ -7,6 +7,7 @@ export async function sendTelegramMessage(chatId: string, text: string, options?
     }
 
     try {
+        console.log(`Sending Telegram message to ${chatId}...`);
         const body: any = {
             chat_id: chatId,
             text: text,
@@ -22,10 +23,12 @@ export async function sendTelegramMessage(chatId: string, text: string, options?
 
         const data = await res.json();
         if (!data.ok) {
-            console.error("Telegram API Error:", data);
+            console.error(`Telegram API Error (ChatID: ${chatId}):`, data);
+        } else {
+            console.log(`Telegram message sent successfully to ${chatId}`);
         }
         return data;
     } catch (error) {
-        console.error("Failed to send telegram message:", error);
+        console.error(`Failed to send telegram message to ${chatId}:`, error);
     }
 }
