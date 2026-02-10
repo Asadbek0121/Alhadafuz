@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { put } from "@vercel/blob";
 import { auth } from "@/auth";
 
-export const runtime = 'edge'; // Use Edge Runtime for faster uploads
+// export const runtime = 'edge'; // Removed to avoid crypto dependency issues in Edge
+
 
 export async function POST(req: NextRequest) {
     try {

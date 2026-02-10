@@ -178,7 +178,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                             data: { uniqueId: newUniqueId }
                         });
                         token.uniqueId = newUniqueId;
-                        token.twoFactorEnabled = updated.twoFactorEnabled;
+                        token.twoFactorEnabled = (updated as any).twoFactorEnabled;
                     } catch (e) {
                         // Ignore collision for now, user will have no ID until next login
                         console.error("Failed to set uniqueId", e);
