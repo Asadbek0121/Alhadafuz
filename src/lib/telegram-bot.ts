@@ -1,8 +1,19 @@
-const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+import { prisma } from './prisma';
 
 export async function sendTelegramMessage(chatId: string, text: string, options?: any) {
-    if (!BOT_TOKEN) {
-        console.warn("TELEGRAM_BOT_TOKEN is not set, skipping message");
+    let token = process.env.TELEGRAM_BOT_TOKEN;
+
+    if (!token) {
+        try {
+            const settings = await prisma.storeSettings.findFirst();
+            token = settings?.telegramBotToken || undefined;
+        } catch (e) {
+            console.error("Error fetching bot token from DB:", e);
+        }
+    }
+
+    if (!token) {
+        console.warn("TELEGRAM_BOT_TOKEN is not set and not found in DB, skipping message");
         return;
     }
 
@@ -15,7 +26,7 @@ export async function sendTelegramMessage(chatId: string, text: string, options?
             ...options
         };
 
-        const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)

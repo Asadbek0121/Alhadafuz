@@ -22,40 +22,30 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // Filter allowed fields to avoid Prisma errors with extra fields
+        // Use fields from Prisma schema and frontend payload
         const {
-            storeName,
-            storeDescription,
-            contactEmail,
-            contactPhone,
+            siteName,
+            phone,
+            email,
             address,
-            workingHours,
-            facebookUrl,
-            instagramUrl,
-            telegramUrl,
-            youtubeUrl,
-            footerText,
-            maintenanceMode
+            socialLinks,
+            telegramBotToken,
+            telegramAdminIds
         } = body;
 
-        const updateData = {
-            storeName,
-            storeDescription,
-            contactEmail,
-            contactPhone,
-            address,
-            workingHours,
-            facebookUrl,
-            instagramUrl,
-            telegramUrl,
-            youtubeUrl,
-            footerText,
-            maintenanceMode,
+        const updateData: any = {
             updatedAt: new Date()
         };
 
-        // Remove undefined fields
-        Object.keys(updateData).forEach(key => (updateData as any)[key] === undefined && delete (updateData as any)[key]);
+        // Mapping from payload to Prisma fields if necessary, 
+        // but here they mostly match now.
+        if (siteName !== undefined) updateData.siteName = siteName;
+        if (phone !== undefined) updateData.phone = phone;
+        if (email !== undefined) updateData.email = email;
+        if (address !== undefined) updateData.address = address;
+        if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
+        if (telegramBotToken !== undefined) updateData.telegramBotToken = telegramBotToken;
+        if (telegramAdminIds !== undefined) updateData.telegramAdminIds = telegramAdminIds;
 
         const settings = await (prisma as any).storeSettings.upsert({
             where: { id: 'default' },

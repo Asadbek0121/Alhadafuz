@@ -291,11 +291,11 @@ export default function AdminChatPage() {
                                                 ) : (msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
                                                     <div style={{ minWidth: '220px', padding: '6px' }}>
                                                         <audio
+                                                            src={msg.content}
                                                             controls
                                                             style={{ width: '100%', height: '40px' }}
-                                                            preload="auto"
+                                                            preload="metadata"
                                                         >
-                                                            <source src={msg.content} type={msg.content.endsWith('mp4') ? 'audio/mp4' : 'audio/webm'} />
                                                             Sizning brauzeringiz audioni qo'llab-quvvatlamaydi.
                                                         </audio>
                                                     </div>

@@ -43,42 +43,24 @@ export async function POST(req: Request) {
 
         // Forward to Telegram if target is TELEGRAM or BOTH
         if ((target === 'TELEGRAM' || target === 'BOTH') && receiver?.telegramId) {
-            const settings = await prisma.storeSettings.findFirst();
-            const token = settings?.telegramBotToken;
-
-            if (token) {
-                // If it was ONLY for telegram, we still create a record in DB but marked as TELEGRAM source 
-                // to show it was a Telegram-specific reply in the admin panel
-                if (target === 'TELEGRAM') {
-                    message = await prisma.message.create({
-                        data: {
-                            content,
-                            senderId: session.user.id,
-                            receiverId,
-                            source: 'TELEGRAM'
-                        }
-                    });
-                }
-
-                try {
-                    const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            chat_id: receiver.telegramId,
-                            text: `👨‍💻 Admin: ${content}`
-                        })
-                    });
-
-                    if (!tgRes.ok) {
-                        const errorData = await tgRes.json();
-                        console.error("Telegram API Error:", errorData);
+            // If it was ONLY for telegram, we still create a record in DB but marked as TELEGRAM source 
+            // to show it was a Telegram-specific reply in the admin panel
+            if (target === 'TELEGRAM') {
+                message = await prisma.message.create({
+                    data: {
+                        content,
+                        senderId: session.user.id,
+                        receiverId,
+                        source: 'TELEGRAM'
                     }
-                } catch (e) {
-                    console.error("TG Forward Error", e);
-                }
-            } else {
-                console.log("Telegram Bot Token is missing in settings");
+                });
+            }
+
+            try {
+                const { sendTelegramMessage } = await import('@/lib/telegram-bot');
+                await sendTelegramMessage(receiver.telegramId, `👨‍💻 Admin: ${content}`);
+            } catch (e) {
+                console.error("TG Forward Error", e);
             }
         }
 
