@@ -273,7 +273,8 @@
         "error_number": "Kamida bitta raqam",
         "2fa_title": "Ikki bosqichli autentifikatsiya",
         "2fa_desc": "Kirish uchun faqat paroldan ko'proq narsani talab qilish orqali hisobingizga qo'shimcha xavfsizlik qatlamini qo'shing.",
-        "2fa_enable": "2FA yoqish"
+        "2fa_enable": "2FA yoqish",
+        "2fa_disable": "2FA o'chirish"
     },
     "BottomNav": {
         "home": "Bosh sahifa",

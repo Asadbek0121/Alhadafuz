@@ -153,6 +153,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 session.user.role = (token.role as string) || 'USER';
                 session.user.uniqueId = (token.uniqueId as string) || null;
                 (session.user as any).phone = (token.phone as string) || null;
+                (session.user as any).twoFactorEnabled = !!token.twoFactorEnabled;
             }
             return session;
         },
@@ -160,6 +161,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             if (user && user.id) {
                 token.id = user.id;
                 token.role = user.role;
+                token.twoFactorEnabled = (user as any).twoFactorEnabled || false;
                 console.log("JWT Callback - User Role:", user.role); // DEBUG
                 token.uniqueId = user.uniqueId || undefined;
                 token.phone = (user as any).phone || undefined;
@@ -171,11 +173,12 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     // We try to update. In rare collision case, next login will fix it or we could loop here.
                     // For simplicity/perf in callback, we try once. 
                     try {
-                        await prisma.user.update({
+                        const updated = await prisma.user.update({
                             where: { id: user.id },
                             data: { uniqueId: newUniqueId }
                         });
                         token.uniqueId = newUniqueId;
+                        token.twoFactorEnabled = updated.twoFactorEnabled;
                     } catch (e) {
                         // Ignore collision for now, user will have no ID until next login
                         console.error("Failed to set uniqueId", e);

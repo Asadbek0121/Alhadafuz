@@ -8,5 +8,6 @@ export const prisma =
     new PrismaClient()
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prismaInstance = prisma
-// Prisma Client Reload Trigger - Schema V2 - 20:41
-// Forced reload Fri Dec 26 20:38:49 +05 2025
+// Prisma Client Reload Trigger - Schema V3 - 2FA Support
+// Forced reload at 01:00 UTC
+

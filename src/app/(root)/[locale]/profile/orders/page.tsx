@@ -29,8 +29,10 @@ interface Order {
     id: string;
     createdAt: string;
     total: number;
-    status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED";
+    status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "AWAITING_PAYMENT";
     items: OrderItem[];
+    paymentUrl?: string | null;
+    paymentMethod: string;
 }
 
 import { useTranslations, useLocale } from "next-intl";
@@ -87,6 +89,7 @@ export default function OrderHistoryPage() {
             case "PROCESSING": return "bg-blue-100 text-blue-700 border-blue-200";
             case "SHIPPED": return "bg-purple-100 text-purple-700 border-purple-200";
             case "CANCELLED": return "bg-red-100 text-red-700 border-red-200";
+            case "AWAITING_PAYMENT": return "bg-amber-100 text-amber-700 border-amber-200";
             default: return "bg-gray-100 text-gray-700 border-gray-200";
         }
     };
@@ -136,11 +139,23 @@ export default function OrderHistoryPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between md:justify-end gap-6 text-right">
-                                    <div>
+                                <div className="flex items-center gap-3">
+                                    <div className="text-right">
                                         <p className="text-xs text-text-muted uppercase font-bold tracking-widest">{t('total')}</p>
                                         <p className="text-lg font-bold text-primary">{order.total.toLocaleString()} {tHeader('som')}</p>
                                     </div>
+                                    {order.status === 'AWAITING_PAYMENT' && order.paymentUrl && (
+                                        <Button
+                                            size="sm"
+                                            className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-9 px-4 rounded-xl"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                window.location.href = order.paymentUrl!;
+                                            }}
+                                        >
+                                            {t('pay_now')}
+                                        </Button>
+                                    )}
                                     <div className="text-text-muted">
                                         {expandedOrder === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                                     </div>

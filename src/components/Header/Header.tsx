@@ -29,6 +29,7 @@ export default function Header() {
     const { wishlist } = useWishlist();
     const t = useTranslations('Header');
     const tProfile = useTranslations('Profile');
+    const tNotif = useTranslations('Notifications');
 
     const { openAuthModal, user: storeUser } = useUserStore();
     const { data: session, status } = useSession();
@@ -240,8 +241,8 @@ export default function Header() {
                                                 let title = n.title;
                                                 let message = n.message;
 
-                                                if (title === "Buyurtma Holati") {
-                                                    title = tProfile('order_status_title');
+                                                if (title === "Buyurtma Holati" || title === "Buyurtma holati yangilandi") {
+                                                    title = tNotif('order_status_title');
                                                     if (message.includes('raqamli buyurtmangiz holati:')) {
                                                         const idMatch = message.match(/#([A-Z0-9]+)/i);
                                                         const id = idMatch ? idMatch[1].toUpperCase() : '';
@@ -254,21 +255,21 @@ export default function Header() {
                                                             'Buyurtmangiz bekor qilindi.': 'cancelled'
                                                         };
                                                         const status = uzStatuses[statusPart] ? tProfile(uzStatuses[statusPart]) : statusPart;
-                                                        message = tProfile('order_status_msg', { id, status });
+                                                        message = tNotif('order_status_msg', { id, status });
                                                     }
                                                 } else if (title === "Yangi Buyurtma") {
-                                                    title = tProfile('new_order_title');
+                                                    title = tNotif('new_order_title');
                                                     if (message.includes('qabul qilindi. Summa:')) {
                                                         const idMatch = message.match(/#([A-Z0-9]+)/i);
                                                         const id = idMatch ? idMatch[1].toUpperCase() : '';
                                                         const totalVal = message.split('Summa: ')[1]?.replace(/so'm|сум|UZS/i, '').trim();
-                                                        message = tProfile('new_order_msg', { id, total: totalVal + ' ' + t('som') });
+                                                        message = tNotif('new_order_msg', { id, total: totalVal + ' ' + t('som') });
                                                     }
                                                 } else if (title === "Yangi Foydalanuvchi") {
-                                                    title = tProfile('new_user_title');
+                                                    title = tNotif('new_user_title');
                                                     if (message.includes("ro'yxatdan o'tdi.")) {
                                                         const name = message.replace(" ro'yxatdan o'tdi.", "");
-                                                        message = tProfile('new_user_msg', { name });
+                                                        message = tNotif('new_user_msg', { name });
                                                     }
                                                 }
 

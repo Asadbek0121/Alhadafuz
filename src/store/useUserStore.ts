@@ -10,6 +10,7 @@ interface User {
     image?: string;
     uniqueId?: string;
     notificationsEnabled?: boolean;
+    twoFactorEnabled?: boolean;
     isDarkMode?: boolean;
     role?: string;
 }

@@ -1,5 +1,6 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/prisma-client"
 }
 
 datasource db {
@@ -19,6 +20,7 @@ model User {
   provider             String?        @default("credentials")
   uniqueId             String?        @unique
   notificationsEnabled Boolean        @default(true)
+  twoFactorEnabled     Boolean        @default(false)
   isDarkMode           Boolean        @default(false)
   isDeleted            Boolean        @default(false)
   emailVerified        DateTime?

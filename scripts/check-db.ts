@@ -4,10 +4,18 @@ const prisma = new PrismaClient();
 
 async function main() {
     try {
-        const result = await (prisma as any).verificationToken.findFirst();
-        console.log('VerificationToken table exists');
-    } catch (error: any) {
-        console.error('Check failed:', error.message);
+        const userCount = await prisma.user.count();
+        console.log('User count:', userCount);
+
+        // Check if twoFactorEnabled exists in columns
+        const columns = await prisma.$queryRaw`
+      SELECT column_name 
+      FROM information_schema.columns 
+      WHERE table_name = 'User' AND column_name = 'twoFactorEnabled'
+    `;
+        console.log('Columns check:', columns);
+    } catch (e) {
+        console.error('Error:', e);
     } finally {
         await prisma.$disconnect();
     }

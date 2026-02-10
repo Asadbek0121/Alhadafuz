@@ -11,7 +11,7 @@ export default function SettingsPage() {
     const router = useRouter();
     const pathname = usePathname();
     const currentLocale = useLocale();
-    const { user, setUser } = useUserStore();
+    const { user, updateUser } = useUserStore();
     const tProfile = useTranslations('Profile');
 
     const [notifications, setNotifications] = useState(true);
@@ -47,7 +47,7 @@ export default function SettingsPage() {
 
             if (res.ok) {
                 const updatedUser = await res.json();
-                setUser({ ...user, ...updatedUser });
+                updateUser(updatedUser);
                 toast.success(tProfile('save_success'));
             } else {
                 toast.error(tProfile('save_error'));

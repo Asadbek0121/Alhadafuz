@@ -13,6 +13,7 @@ import { WishlistProvider } from "@/context/WishlistContext";
 import Providers from "@/providers/QueryProvider";
 import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import SupportChat from "@/components/SupportChat/SupportChat";
+import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
@@ -54,6 +55,7 @@ export default async function LocaleLayout({
           <WishlistProvider>
 
             <SessionProviderWrapper session={session}>
+              <SessionSync />
               <Header />
               <main className="min-h-screen">
                 {children}

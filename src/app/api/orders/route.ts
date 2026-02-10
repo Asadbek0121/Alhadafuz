@@ -184,7 +184,17 @@ export async function GET(req: Request) {
             include: { items: true },
             orderBy: { createdAt: 'desc' }
         });
-        return NextResponse.json({ orders });
+
+        // Add paymentUrl to orders awaiting payment
+        const ordersWithPayments = orders.map(order => {
+            let paymentUrl = null;
+            if (order.status === 'AWAITING_PAYMENT' && order.paymentMethod.toLowerCase() === 'click') {
+                paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
+            }
+            return { ...order, paymentUrl };
+        });
+
+        return NextResponse.json({ orders: ordersWithPayments });
     } catch (error) {
         console.error("Order fetch error:", error);
         return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });
