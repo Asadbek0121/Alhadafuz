@@ -17,14 +17,39 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
             data: {
                 status: 'CANCELLED',
                 paymentStatus: 'CANCELLED'
-            }
+            },
+            include: { user: true }
         });
 
-        // Also restore stock if needed logic here (omitted for now as simple request)
+        // 1. Internal Notification
+        if (order.userId) {
+            await prisma.notification.create({
+                data: {
+                    userId: order.userId,
+                    title: 'Buyurtma bekor qilindi',
+                    message: `#${order.id.slice(-6).toUpperCase()} raqamli buyurtmangiz bekor qilindi.`,
+                    type: 'ORDER'
+                }
+            });
+
+            // 2. Telegram Notification
+            if (order.user?.telegramId) {
+                try {
+                    const { sendTelegramMessage } = await import('@/lib/telegram-bot');
+                    const tgMessage = `❌ <b>Buyurtma bekor qilindi</b>\n\n🆔 Buyurtma: #${order.id.slice(-6).toUpperCase()}\n\n<i>Sizning buyurtmangiz bekor qilindi. Savollaringiz bo'lsa, qo'llab-quvvatlash xizmatiga murojaat qiling.</i>`;
+                    await sendTelegramMessage(order.user.telegramId, tgMessage);
+                } catch (tgError) {
+                    console.error("TG Cancel Notify Error:", tgError);
+                }
+            }
+        }
 
         revalidatePath('/admin/orders');
+        revalidatePath(`/admin/orders/${id}`);
+
         return NextResponse.json(order);
     } catch (error) {
+        console.error("Order Cancel Error:", error);
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }

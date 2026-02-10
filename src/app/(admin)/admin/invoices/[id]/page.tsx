@@ -1,194 +1,190 @@
-"use client";
+import { prisma } from "@/lib/prisma";
+import { notFound, redirect } from "next/navigation";
+import { auth } from "@/auth";
+import { Printer, ArrowLeft, Download } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import PrintButton from "./PrintButton";
 
-import { useParams, useRouter } from "next/navigation";
-import { Printer, Download, ArrowLeft } from "lucide-react";
+export default async function ViewInvoicePage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const session = await auth();
+    if (session?.user?.role !== 'ADMIN') redirect('/');
 
-export default function ViewInvoicePage() {
-    const { id } = useParams();
-    const router = useRouter();
-
-    // Mock Data
-    const invoice = {
-        id: id || "101",
-        status: "Delivered",
-        date: "2023-11-20",
-        billFrom: { name: "UzMarket", address: "Tashkent, Uzbekistan", email: "info@uzmarket.uz", phone: "+998 90 123 45 67" },
-        billTo: { name: "John Doe", address: "Samarkand, Uzbekistan", email: "john@example.com", phone: "+998 93 333 22 11" },
-        items: [
-            { id: 1, name: "iPhone 13 Pro", cost: 12000000, qty: 1 },
-            { id: 2, name: "Silicone Case", cost: 150000, qty: 2 }
-        ],
-        subTotal: 12300000,
-        vat: 0,
-        grandTotal: 13530000
-    };
-
-    const handlePrint = () => {
-        window.print();
-    };
-
-    const getStatusConfig = (status: string) => {
-        const normalizedStatus = status.toUpperCase();
-        switch (normalizedStatus) {
-            case 'PENDING':
-            case 'KUTILMOQDA':
-                return { text: 'Kutilmoqda', bg: '#fef5e5', color: '#ffae1f' };
-            case 'DELIVERED':
-            case 'YETKAZIB BERILDI':
-            case 'YETKAZILDI':
-                return { text: 'Yetkazib berildi', bg: '#e6fffa', color: '#13deb9' };
-            case 'SHIPPED':
-            case 'YUBORILGAN':
-            case 'PROCESSING':
-            case 'JARAYONDA':
-                return { text: 'Yuborildi', bg: '#ecf2ff', color: '#5d87ff' };
-            case 'AWAITING_PAYMENT':
-            case "TO'LOV KUTILMOQDA":
-                return { text: "To'lov kutilmoqda", bg: '#fff8e1', color: '#ffb020' };
-            case 'CANCELLED':
-            case 'BEKOR QILINDI':
-                return { text: 'Bekor qilindi', bg: '#fdede8', color: '#fa896b' };
-            default:
-                return { text: status, bg: '#ecf2ff', color: '#5d87ff' };
+    const order = await prisma.order.findUnique({
+        where: { id },
+        include: {
+            user: true,
+            items: {
+                include: {
+                    product: true
+                }
+            }
         }
+    });
+
+    if (!order) notFound();
+
+    const settings = await (prisma as any).storeSettings.findUnique({ where: { id: 'default' } });
+
+    const statusMap: Record<string, { label: string, color: string, bg: string }> = {
+        'PENDING': { label: 'Kutilmoqda', color: '#d97706', bg: '#fef3c7' },
+        'AWAITING_PAYMENT': { label: 'To\'lov kutilmoqda', color: '#b45309', bg: '#fffbeb' },
+        'PROCESSING': { label: 'Jarayonda', color: '#2563eb', bg: '#dbeafe' },
+        'SHIPPING': { label: 'Yetkazilmoqda', color: '#7c3aed', bg: '#ede9fe' },
+        'DELIVERED': { label: 'Yetkazildi', color: '#059669', bg: '#d1fae5' },
+        'CANCELLED': { label: 'Bekor qilindi', color: '#dc2626', bg: '#fee2e2' },
     };
 
-    const statusConfig = getStatusConfig(invoice.status);
+    const status = statusMap[order.status] || { label: order.status, color: '#4b5563', bg: '#f3f4f6' };
 
     return (
-        <div style={{ padding: "0" }}>
-            <style jsx global>{`
+        <div className="max-w-4xl mx-auto">
+            <style dangerouslySetInnerHTML={{
+                __html: `
                 @media print {
-                    body * {
-                        visibility: hidden;
+                    /* Hide sidebar, header, and other layout elements */
+                    aside, nav, header, .no-print, [role="navigation"], .sidebar, .navbar { 
+                        display: none !important; 
                     }
-                    .no-print {
-                        display: none !important;
+                    
+                    /* Reset body styles for printing */
+                    body { 
+                        background: white !important; 
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        position: static !important;
                     }
-                    #printable-area, #printable-area * {
-                        visibility: visible;
+
+                    /* Ensure main content container takes full width */
+                    main, .main-content {
+                        margin: 0 !important;
+                        padding: 0 !important;
+                        width: 100% !important;
+                        position: static !important;
+                        background: white !important;
                     }
-                    #printable-area {
-                        position: absolute;
-                        left: 0;
-                        top: 0;
-                        width: 100%;
-                        margin: 0;
-                        padding: 20px;
-                        background: white;
-                        box-shadow: none !important;
-                        border-radius: 0;
+
+                    .print-area { 
+                        display: block !important;
+                        box-shadow: none !important; 
+                        border: none !important; 
+                        padding: 1cm !important; 
+                        margin: 0 !important;
+                        width: 100% !important;
+                        transform: scale(1) !important;
+                    }
+
+                    /* Fix for potential page break issues */
+                    table { page-break-inside: auto; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    
+                    @page {
+                        margin: 1.5cm;
+                        size: auto;
                     }
                 }
-            `}</style>
+            `}} />
 
-            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <h1 style={{ fontSize: '20px', fontWeight: 'bold' }}>Hisob-faktura #{invoice.id}</h1>
-                    <span style={{ background: statusConfig.bg, color: statusConfig.color, padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
-                        {statusConfig.text}
-                    </span>
+            <div className="no-print flex justify-between items-center mb-6">
+                <div className="flex items-center gap-4">
+                    <Link href="/admin/invoices">
+                        <Button variant="outline" size="icon" className="rounded-full">
+                            <ArrowLeft size={18} />
+                        </Button>
+                    </Link>
+                    <h1 className="text-xl font-bold">Hisob-faktura #{order.id.slice(-6).toUpperCase()}</h1>
                 </div>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                    <button onClick={() => router.push(`/admin/invoices/${id}/edit`)} style={{ background: '#ecf2ff', color: '#0085db', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
-                        Tahrirlash
-                    </button>
-                    <button onClick={() => router.back()} style={{ background: '#fa896b', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <ArrowLeft size={16} /> Orqaga
-                    </button>
+                <div className="flex gap-2">
+                    <PrintButton />
+                    <Link href={`/admin/orders/${order.id}`}>
+                        <Button className="bg-blue-600 hover:bg-blue-700">Tafsilotlar</Button>
+                    </Link>
                 </div>
             </div>
 
-            <div id="printable-area" style={{ background: '#fff', borderRadius: '12px', padding: '40px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
-
-                {/* Header Info */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px' }}>
+            <div className="print-area bg-white rounded-2xl border border-gray-100 shadow-xl p-10 md:p-16 space-y-12">
+                <div className="flex justify-between items-start">
                     <div>
-                        <span style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '5px' }}>Buyurtma sanasi:</span>
-                        <span style={{ fontWeight: 600, color: '#2A3547' }}>{invoice.date}</span>
+                        <div className="text-3xl font-black text-blue-600 mb-2">{settings?.siteName || "Hadaf Market"}</div>
+                        <p className="text-gray-500 text-sm max-w-xs">Sifatli mahsulotlar va ishonchli xizmat ko'rsatish markazi</p>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                        <span style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '5px' }}>Buyurtma holati:</span>
-                        <span style={{ fontWeight: 600, color: statusConfig.color }}>{statusConfig.text}</span>
-                    </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid #eee', marginBottom: '40px' }} />
-
-                {/* Addresses */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '40px', marginBottom: '40px' }}>
-                    <div style={{ flex: 1 }}>
-                        <h4 style={{ marginBottom: '15px', color: '#2A3547', fontSize: '16px' }}>Kimdan</h4>
-                        <div style={{ fontSize: '14px', color: '#5A6A85', lineHeight: '1.6' }}>
-                            <strong style={{ color: '#2A3547' }}>{invoice.billFrom.name}</strong><br />
-                            {invoice.billFrom.email}<br />
-                            {invoice.billFrom.address}<br />
-                            {invoice.billFrom.phone}
-                        </div>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                        <h4 style={{ marginBottom: '15px', color: '#2A3547', fontSize: '16px' }}>Kimga</h4>
-                        <div style={{ fontSize: '14px', color: '#5A6A85', lineHeight: '1.6' }}>
-                            <strong style={{ color: '#2A3547' }}>{invoice.billTo.name}</strong><br />
-                            {invoice.billTo.email}<br />
-                            {invoice.billTo.address}<br />
-                            {invoice.billTo.phone}
+                    <div className="text-right">
+                        <h2 className="text-4xl font-black text-gray-900 uppercase">Invoys</h2>
+                        <div className="mt-2 flex flex-col items-end">
+                            <span className="text-sm font-bold text-gray-400">ID: <span className="text-gray-900">#{order.id.toUpperCase()}</span></span>
+                            <span className="text-sm font-bold text-gray-400">SANA: <span className="text-gray-900">{new Date(order.createdAt).toLocaleDateString()}</span></span>
                         </div>
                     </div>
                 </div>
 
-                {/* Table */}
-                <div style={{ overflowX: 'auto', marginBottom: '30px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ background: '#f4f7fb' }}>
-                                <th style={{ padding: '15px', textAlign: 'left', borderRadius: '8px 0 0 8px', color: '#5A6A85', fontWeight: 600 }}>Mahsulot nomi</th>
-                                <th style={{ padding: '15px', textAlign: 'left', color: '#5A6A85', fontWeight: 600 }}>Narxi</th>
-                                <th style={{ padding: '15px', textAlign: 'left', color: '#5A6A85', fontWeight: 600 }}>Dona</th>
-                                <th style={{ padding: '15px', textAlign: 'right', borderRadius: '0 8px 8px 0', color: '#5A6A85', fontWeight: 600 }}>Jami summa</th>
+                <div className="grid grid-cols-2 gap-12">
+                    <div>
+                        <h4 className="text-[10px] uppercase font-black text-gray-400 mb-4 tracking-widest">KIMDAN (BILL FROM)</h4>
+                        <div className="text-sm space-y-1">
+                            <p className="font-bold text-gray-900 text-lg">{settings?.siteName || "Hadaf Market"} MCHJ</p>
+                            <p className="text-gray-600">{settings?.address || "Termiz sh, At-Termiziy ko'chasi"}</p>
+                            <p className="text-gray-600">{settings?.email || "info@hadaf.uz"}</p>
+                            <p className="text-gray-600 font-bold">{settings?.phone || "+998 71 200 01 05"}</p>
+                        </div>
+                    </div>
+                    <div>
+                        <h4 className="text-[10px] uppercase font-black text-gray-400 mb-4 tracking-widest">KIMGA (BILL TO)</h4>
+                        <div className="text-sm space-y-1">
+                            <p className="font-bold text-gray-900 text-lg">{order.user.name || "Mehmon"}</p>
+                            <p className="text-gray-600">{order.shippingAddress || "Manzil ko'rsatilmagan"}</p>
+                            <p className="text-gray-600">{order.user.email}</p>
+                            <p className="text-gray-600 font-bold">{order.shippingPhone || order.user.phone}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-gray-100">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-[10px] uppercase font-black text-gray-400 tracking-widest border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4">Mahsulot nomi</th>
+                                <th className="px-6 py-4 text-center">Narxi</th>
+                                <th className="px-6 py-4 text-center">Miqdori</th>
+                                <th className="px-6 py-4 text-right">Jami</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            {invoice.items.map((item, i) => (
-                                <tr key={i} style={{ borderBottom: '1px solid #eee' }}>
-                                    <td style={{ padding: '15px', color: '#2A3547' }}>{item.name}</td>
-                                    <td style={{ padding: '15px', color: '#5A6A85' }}>{item.cost.toLocaleString()}</td>
-                                    <td style={{ padding: '15px', color: '#5A6A85' }}>{item.qty}</td>
-                                    <td style={{ padding: '15px', textAlign: 'right', fontWeight: 600, color: '#2A3547' }}>{(item.cost * item.qty).toLocaleString()}</td>
+                        <tbody className="divide-y divide-gray-50">
+                            {order.items.map((item) => (
+                                <tr key={item.id}>
+                                    <td className="px-6 py-5">
+                                        <div className="font-bold text-gray-900">{item.product.title}</div>
+                                        <div className="text-[10px] text-gray-400 font-medium">SKU: {item.productId.slice(-8).toUpperCase()}</div>
+                                    </td>
+                                    <td className="px-6 py-5 text-center font-medium text-gray-600">
+                                        {item.price.toLocaleString()}
+                                    </td>
+                                    <td className="px-6 py-5 text-center font-medium text-gray-600">
+                                        {item.quantity}
+                                    </td>
+                                    <td className="px-6 py-5 text-right font-black text-gray-900">
+                                        {(item.price * item.quantity).toLocaleString()} <span className="text-[10px] text-gray-400 uppercase ml-0.5">uzs</span>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>
                     </table>
                 </div>
 
-                {/* Totals */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <div style={{ width: '250px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: '#5A6A85' }}>
-                            <span>Jami summa:</span>
-                            <span>{invoice.subTotal.toLocaleString()} so'm</span>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '10px', fontSize: '14px', color: '#5A6A85' }}>
-                            <span>QQS (0%):</span>
-                            <span>{invoice.vat.toLocaleString()} so'm</span>
-                        </div>
-                        <hr style={{ margin: '15px 0', border: 'none', borderTop: '1px solid #eee' }} />
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 'bold', color: '#2A3547' }}>
-                            <span>Umumiy summa:</span>
-                            <span>{invoice.grandTotal.toLocaleString()} so'm</span>
-                        </div>
+                <div className="flex justify-between items-center bg-gray-900 text-white p-8 rounded-2xl">
+                    <div>
+                        <div className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">TO'LOV USULI</div>
+                        <div className="font-bold">{order.paymentMethod}</div>
+                    </div>
+                    <div className="text-right">
+                        <div className="text-[10px] uppercase font-black text-gray-400 tracking-widest mb-1">UMUMIY SUMMA</div>
+                        <div className="text-4xl font-black">{order.total.toLocaleString()} <span className="text-sm font-bold opacity-50 ml-1">UZS</span></div>
                     </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '40px 0' }} className="no-print" />
-
-                <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button onClick={handlePrint} style={{ background: '#0085db', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Printer size={18} /> Chop etish
-                    </button>
-                    <button onClick={handlePrint} style={{ background: '#ecf2ff', color: '#0085db', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Download size={18} /> Yuklab olish
-                    </button>
+                <div className="pt-12 border-t border-gray-100 text-center">
+                    <p className="text-gray-400 text-xs font-medium italic">Xaridingiz uchun rahmat! Savollaringiz bo'lsa, +998 71 200 00 00 raqamiga murojaat qiling.</p>
                 </div>
             </div>
         </div>

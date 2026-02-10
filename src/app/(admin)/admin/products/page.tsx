@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Plus, Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Package, Tag, AlertCircle } from "lucide-react";
 import SoftDeleteButton from "./SoftDeleteButton";
+
 const getProducts = async (skip: number, take: number) => {
     return await Promise.all([
         (prisma as any).product.findMany({
@@ -30,40 +31,73 @@ export default async function AdminProductsPage({
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-                <h1 style={{ fontSize: "24px", fontWeight: "bold" }}>Mahsulotlar ({total})</h1>
-                <Link href="/admin/products/new" style={{ background: "#0066cc", color: "#fff", padding: "10px 20px", borderRadius: "8px", textDecoration: "none", display: "flex", alignItems: "center", gap: "8px", fontWeight: "500" }}>
-                    <Plus size={18} /> Yangi mahsulot
+        <div className="p-8 bg-gray-50/50 min-h-screen space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+                <div className="space-y-1">
+                    <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                        <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
+                            <Package size={24} />
+                        </div>
+                        Mahsulotlar
+                        <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
+                            {total}
+                        </span>
+                    </h1>
+                    <p className="text-gray-500 font-medium">Do'koningiz mahsulotlarini boshqarish</p>
+                </div>
+
+                <Link
+                    href="/admin/products/new"
+                    className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-6 py-3 shadow-xl shadow-indigo-200/50 transition-all active:scale-95 font-black tracking-tight uppercase text-sm"
+                >
+                    <Plus size={18} strokeWidth={3} /> Yangi mahsulot
                 </Link>
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))", gap: "20px" }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {products.map((product: any) => (
-                    <div key={product.id} style={{ background: "#fff", borderRadius: "12px", overflow: "hidden", border: "1px solid #eee", display: "flex", flexDirection: "column" }}>
-                        <div style={{ paddingTop: "75%", position: "relative", background: "#f8f8f8" }}>
+                    <div key={product.id} className="bg-white rounded-[24px] overflow-hidden border border-gray-100 flex flex-col group hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 relative">
+                        <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                                 src={product.image || "https://placehold.co/400"}
                                 alt={product.title}
-                                style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", objectFit: "contain", padding: "10px" }}
+                                className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-110 transition-transform duration-500"
                             />
-                            {product.stock <= 0 && (
-                                <div style={{ position: 'absolute', top: 10, right: 10, background: '#ef4444', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
-                                    TUGAGAN
+
+                            {/* Badges Container */}
+                            <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
+                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm backdrop-blur-md ${product.status === 'ACTIVE'
+                                        ? 'bg-emerald-500/90 text-white'
+                                        : 'bg-amber-500/90 text-white'
+                                    }`}>
+                                    {product.status}
                                 </div>
-                            )}
-                            <div style={{ position: 'absolute', bottom: 10, left: 10, background: product.status === 'ACTIVE' ? '#22c55e' : '#f59e0b', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: 'bold' }}>
-                                {product.status}
+                                {product.stock <= 0 && (
+                                    <div className="px-2.5 py-1 rounded-lg bg-red-500/90 text-white text-[10px] font-black uppercase tracking-wider shadow-sm backdrop-blur-md flex items-center gap-1">
+                                        <AlertCircle size={10} strokeWidth={3} /> Tugagan
+                                    </div>
+                                )}
                             </div>
                         </div>
-                        <div style={{ padding: "16px", flex: 1, display: "flex", flexDirection: "column" }}>
-                            <div style={{ fontSize: "16px", fontWeight: "600", marginBottom: "8px", lineHeight: "1.4", height: '44px', overflow: 'hidden' }}>{product.title}</div>
-                            <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", flex: 1 }}>{product.price.toLocaleString()} so'm</div>
 
-                            <div style={{ display: "flex", gap: "8px", marginTop: "auto" }}>
-                                <Link href={`/admin/products/${product.id}`} style={{ flex: 1, padding: "8px", borderRadius: "6px", border: "1px solid #ddd", background: "none", cursor: "pointer", display: "flex", justifyContent: "center", alignItems: "center", gap: "4px", textDecoration: "none", color: "inherit" }}>
-                                    <Edit size={16} /> <span style={{ fontSize: '13px' }}>Tahrirlash</span>
+                        <div className="p-5 flex-1 flex flex-col">
+                            <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 line-clamp-2 min-h-[44px]" title={product.title}>
+                                {product.title}
+                            </h3>
+
+                            <div className="flex items-center gap-2 mb-4">
+                                <div className="text-indigo-600 font-black text-xl">
+                                    {product.price.toLocaleString()} <span className="text-xs font-bold text-indigo-400 uppercase">so'm</span>
+                                </div>
+                            </div>
+
+                            <div className="mt-auto grid grid-cols-2 gap-2">
+                                <Link
+                                    href={`/admin/products/${product.id}`}
+                                    className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 text-gray-600 font-bold text-xs hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                >
+                                    <Edit size={14} strokeWidth={2.5} /> Tahrirlash
                                 </Link>
                                 <SoftDeleteButton productId={product.id} />
                             </div>
@@ -73,21 +107,29 @@ export default async function AdminProductsPage({
             </div>
 
             {/* Pagination */}
-            <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginTop: "24px" }}>
-                {page > 1 && (
-                    <Link href={`/admin/products?page=${page - 1}`} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #ddd", borderRadius: "6px", display: 'flex', alignItems: 'center' }}>
-                        <ChevronLeft size={16} />
-                    </Link>
-                )}
-                <span style={{ padding: "8px 16px", color: "#666" }}>
-                    Sahifa {page} / {totalPages || 1}
-                </span>
-                {page < totalPages && (
-                    <Link href={`/admin/products?page=${page + 1}`} style={{ padding: "8px 16px", background: "#fff", border: "1px solid #ddd", borderRadius: "6px", display: 'flex', alignItems: 'center' }}>
-                        <ChevronRight size={16} />
-                    </Link>
-                )}
-            </div>
+            {totalPages > 1 && (
+                <div className="flex justify-center gap-2 pt-8">
+                    {page > 1 && (
+                        <Link
+                            href={`/admin/products?page=${page - 1}`}
+                            className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                        >
+                            <ChevronLeft size={18} /> Oldingi
+                        </Link>
+                    )}
+                    <div className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-400 font-medium flex items-center gap-2 shadow-sm">
+                        Sahifa <span className="text-gray-900 font-bold">{page}</span> / {totalPages}
+                    </div>
+                    {page < totalPages && (
+                        <Link
+                            href={`/admin/products?page=${page + 1}`}
+                            className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                        >
+                            Keyingi <ChevronRight size={18} />
+                        </Link>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

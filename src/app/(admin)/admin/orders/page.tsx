@@ -64,42 +64,70 @@ export default async function AdminOrdersPage({
     const stats = [
         { label: "Barchasi", value: "ALL", count: await prisma.order.count().catch(() => 0) },
         { label: "Yangi", value: "PENDING", count: await prisma.order.count({ where: { status: "PENDING" } }).catch(() => 0) },
+        { label: "Jarayonda", value: "PROCESSING", count: await prisma.order.count({ where: { status: "PROCESSING" } }).catch(() => 0) },
+        { label: "Yo'lda", value: "SHIPPING", count: await prisma.order.count({ where: { status: "SHIPPING" } }).catch(() => 0) },
         { label: "Yetkazildi", value: "DELIVERED", count: await prisma.order.count({ where: { status: "DELIVERED" } }).catch(() => 0) },
     ];
 
     return (
         <div className="p-6 space-y-6 bg-gray-50/50 min-h-screen">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
                 <div>
-                    <h1 className="text-3xl font-bold tracking-tight text-gray-900">Buyurtmalar</h1>
-                    <p className="text-muted-foreground mt-1">Jami {total} ta buyurtma</p>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Buyurtmalar</h1>
+                    <p className="text-gray-500 mt-1 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                        Jami {total} ta buyurtma mavjud
+                    </p>
                 </div>
 
-                <div className="flex gap-2 items-center">
-                    <OrderScanner />
-                    <Link href="/admin/orders/create">
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-                            <Plus size={18} />
-                            buyurtma
-                        </Button>
-                    </Link>
-                    <BulkLabelPrinter orders={safeOrders} />
+                <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
+                    {/* Search Bar */}
+                    <form className="relative flex-1 lg:min-w-[300px]">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            name="search"
+                            defaultValue={search}
+                            placeholder="ID, ism yoki telefon..."
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+                        />
+                        {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
+                    </form>
 
-                    <div className="flex gap-2 bg-white p-1 rounded-lg border shadow-sm">
-                        {stats.map((stat) => (
-                            <Link
-                                key={stat.value}
-                                href={`/admin/orders${stat.value !== 'ALL' ? `?status=${stat.value}` : ''}`}
-                                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-all ${(!statusFilter && stat.value === 'ALL') || statusFilter === stat.value
-                                    ? 'bg-blue-600 text-white shadow-md'
-                                    : 'hover:bg-gray-100 text-gray-600'
-                                    }`}
-                            >
-                                {stat.label} <span className="ml-1 opacity-70 text-xs">({stat.count})</span>
-                            </Link>
-                        ))}
+                    <div className="flex gap-2">
+                        <OrderScanner />
+                        <Link href="/admin/orders/create">
+                            <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-200">
+                                <Plus size={18} />
+                                Yangi
+                            </Button>
+                        </Link>
+                        <BulkLabelPrinter orders={safeOrders} />
                     </div>
                 </div>
+            </div>
+
+            {/* Filter Tabs */}
+            <div className="flex flex-wrap gap-2 p-1 bg-white/50 backdrop-blur-sm rounded-2xl border border-gray-100 shadow-sm w-fit">
+                {stats.map((stat) => {
+                    const isActive = (!statusFilter && stat.value === 'ALL') || statusFilter === stat.value;
+                    return (
+                        <Link
+                            key={stat.value}
+                            href={`/admin/orders?${stat.value !== 'ALL' ? `status=${stat.value}&` : ''}${search ? `search=${search}` : ''}`}
+                            className={`px-4 py-2 text-sm font-semibold rounded-xl transition-all flex items-center gap-2 ${isActive
+                                ? 'bg-white text-blue-600 shadow-sm ring-1 ring-gray-100'
+                                : 'text-gray-500 hover:text-gray-900 hover:bg-white/50'
+                                }`}
+                        >
+                            {stat.label}
+                            {stat.count > 0 && (
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full ${isActive ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-500'}`}>
+                                    {stat.count}
+                                </span>
+                            )}
+                        </Link>
+                    );
+                })}
             </div>
 
             <div className="bg-white rounded-xl border shadow-sm overflow-hidden">

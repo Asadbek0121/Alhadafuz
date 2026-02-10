@@ -130,9 +130,9 @@ export default function AdminHeader() {
                                 )}
                             </div>
 
-                            <div className="p-2 border-t bg-gray-50 font-medium text-center text-xs text-gray-500">
+                            <Link href="/admin/notifications" onClick={() => setIsOpen(false)} className="block p-2 border-t bg-gray-50 font-medium text-center text-xs text-gray-500 hover:text-blue-600 transition-colors">
                                 Barcha tarixni ko'rish
-                            </div>
+                            </Link>
                         </div>
                     )}
                 </div>

@@ -24,9 +24,35 @@ export default function CheckoutPage() {
     const router = useRouter();
 
     const [deliveryMethod, setDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
-    const [paymentMethod, setPaymentMethod] = useState<'click' | 'payme' | 'cash' | 'installment'>('click');
+
+    // Payment Method State
+    const [paymentMethod, setPaymentMethod] = useState<string>('');
+    const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
+    const [isMethodsLoading, setIsMethodsLoading] = useState(true);
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    // Fetch Payment Methods
+    useEffect(() => {
+        const fetchMethods = async () => {
+            try {
+                const res = await fetch('/api/payment-methods');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        setPaymentMethods(data);
+                        setPaymentMethod(data[0].provider);
+                    }
+                }
+            } catch (err) {
+                console.error("Failed to fetch payment methods", err);
+            } finally {
+                setIsMethodsLoading(false);
+            }
+        };
+        fetchMethods();
+    }, []);
 
     // Safe translation helper that accesses messages directly
     const safeTranslate = (key: string) => {
@@ -358,22 +384,65 @@ export default function CheckoutPage() {
                             <h2 className="text-lg md:text-xl font-bold text-slate-900">{tCheckout('payment_type')}</h2>
                         </div>
 
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div
-                                className={`cursor-pointer p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 aspect-[4/3] transition-all hover:bg-slate-50 ${paymentMethod === 'click' ? 'border-blue-600 bg-blue-50/30' : 'border-slate-100'}`}
-                                onClick={() => setPaymentMethod('click')}
-                            >
-                                <CreditCard size={28} className="text-blue-600" />
-                                <span className="font-bold text-sm text-slate-900">Click</span>
+                        {isMethodsLoading ? (
+                            <div className="flex justify-center py-8">
+                                <Loader2 className="animate-spin text-slate-400" />
                             </div>
-                            <div
-                                className={`cursor-pointer p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 aspect-[4/3] transition-all hover:bg-slate-50 ${paymentMethod === 'cash' ? 'border-amber-500 bg-amber-50/30' : 'border-slate-100'}`}
-                                onClick={() => setPaymentMethod('cash')}
-                            >
-                                <Banknote size={28} className="text-amber-500" />
-                                <span className="font-bold text-sm text-slate-900">{tCheckout('cash')}</span>
+                        ) : paymentMethods.length === 0 ? (
+                            <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl">
+                                To'lov tizimlari mavjud emas
                             </div>
-                        </div>
+                        ) : (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                {paymentMethods.map((method) => {
+                                    const isSelected = paymentMethod === method.provider;
+                                    let Icon = CreditCard;
+                                    let colorClass = "text-slate-600";
+                                    let bgClass = "bg-slate-50";
+                                    let borderClass = "border-slate-100";
+
+                                    // Style based on provider
+                                    switch (method.provider) {
+                                        case 'CLICK':
+                                            Icon = CreditCard;
+                                            colorClass = "text-[#0085db]";
+                                            if (isSelected) { bgClass = "bg-[#0085db]/10"; borderClass = "border-[#0085db]"; }
+                                            break;
+                                        case 'PAYME':
+                                            Icon = CreditCard;
+                                            colorClass = "text-[#00c1af]";
+                                            if (isSelected) { bgClass = "bg-[#00c1af]/10"; borderClass = "border-[#00c1af]"; }
+                                            break;
+                                        case 'UZUM':
+                                            Icon = Banknote; // Or Wallet
+                                            colorClass = "text-[#7000ff]";
+                                            if (isSelected) { bgClass = "bg-[#7000ff]/10"; borderClass = "border-[#7000ff]"; }
+                                            break;
+                                        case 'CASH':
+                                            Icon = Banknote;
+                                            colorClass = "text-amber-500";
+                                            if (isSelected) { bgClass = "bg-amber-50/50"; borderClass = "border-amber-500"; }
+                                            break;
+                                        case 'CARD':
+                                            Icon = CreditCard;
+                                            colorClass = "text-blue-500";
+                                            if (isSelected) { bgClass = "bg-blue-50"; borderClass = "border-blue-500"; }
+                                            break;
+                                    }
+
+                                    return (
+                                        <div
+                                            key={method.id}
+                                            className={`cursor-pointer p-4 rounded-xl border-2 flex flex-col items-center justify-center gap-2 aspect-[4/3] transition-all hover:bg-slate-50 ${isSelected ? borderClass + ' ' + bgClass : 'border-slate-100'}`}
+                                            onClick={() => setPaymentMethod(method.provider)}
+                                        >
+                                            <Icon size={28} className={colorClass} />
+                                            <span className="font-bold text-sm text-slate-900 text-center leading-tight">{method.name}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </section>
                 </div>
 

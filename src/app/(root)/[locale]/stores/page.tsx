@@ -9,6 +9,8 @@ type Store = {
     address: string;
     phone: string | null;
     workingHours: string | null;
+    lat: number | null;
+    lng: number | null;
 };
 
 export default function StoresPage() {
@@ -80,10 +82,22 @@ export default function StoresPage() {
                                                 </div>
                                             </div>
 
-                                            <button className="w-full mt-8 bg-gray-50 hover:bg-emerald-600 hover:text-white text-gray-900 font-medium py-3 rounded-xl transition-all flex items-center justify-center gap-2">
-                                                <Navigation size={18} />
-                                                Xaritada ko'rish
-                                            </button>
+                                            {store.lat && store.lng ? (
+                                                <a
+                                                    href={`https://www.google.com/maps/search/?api=1&query=${store.lat},${store.lng}`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="w-full mt-8 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-900 font-bold py-3.5 rounded-xl transition-all flex items-center justify-center gap-3 no-underline shadow-sm hover:shadow-lg hover:shadow-emerald-200"
+                                                >
+                                                    <Navigation size={18} />
+                                                    <span>Xaritada ko'rish</span>
+                                                </a>
+                                            ) : (
+                                                <div className="w-full mt-8 bg-gray-50 text-gray-400 font-bold py-3.5 rounded-xl flex items-center justify-center gap-3 opacity-60">
+                                                    <Navigation size={18} />
+                                                    <span>Manzil aniqlanmagan</span>
+                                                </div>
+                                            )}
                                         </div>
                                     ))}
                                 </div>

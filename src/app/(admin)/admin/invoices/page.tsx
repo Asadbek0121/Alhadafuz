@@ -1,103 +1,145 @@
-
 import { prisma } from "@/lib/prisma";
-import { Plus, Search, Eye, Trash2, FileText, CheckCircle, Truck, Clock } from 'lucide-react';
+import { Plus, Eye, FileText, CheckCircle, Truck, Clock, Search } from 'lucide-react';
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import InvoiceSearch from "./InvoiceSearch";
+import DeleteInvoiceButton from "./DeleteInvoiceButton";
+import ExportInvoicesButton from "./ExportInvoicesButton";
+import StatusFilter from "./StatusFilter";
 
-export default async function AdminInvoicesPage() {
-    // Determine Mock or Real Statuses
-    // Assuming Order statuses: PENDING, CONFIRMED, SHIPPED, DELIVERED, CANCELLED
+export default async function AdminInvoicesPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ search?: string; status?: string }>;
+}) {
+    const { search, status: statusFilter } = await searchParams;
 
     const totalCount = await prisma.order.count();
-    const shippedCount = await prisma.order.count({ where: { status: 'SHIPPED' } }); // Adjust status if needed
+    const shippingCount = await prisma.order.count({ where: { status: 'SHIPPING' } });
     const deliveredCount = await prisma.order.count({ where: { status: 'DELIVERED' } });
     const pendingCount = await prisma.order.count({ where: { status: 'PENDING' } });
 
+    // Build Where Clause
+    const where: any = {};
+    if (search) {
+        where.OR = [
+            { id: { contains: search, mode: 'insensitive' } },
+            { user: { name: { contains: search, mode: 'insensitive' } } },
+            { shippingPhone: { contains: search, mode: 'insensitive' } },
+        ];
+    }
+    if (statusFilter && statusFilter !== 'ALL') {
+        where.status = statusFilter;
+    }
+
     const invoices = await prisma.order.findMany({
+        where,
         include: {
-            user: { select: { name: true, email: true } }
+            user: { select: { name: true, email: true, image: true, phone: true } }
         },
         orderBy: { createdAt: 'desc' },
-        take: 50
+        take: 100
     });
 
     return (
-        <div>
+        <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Invoyslar</h1>
+                    <p className="text-gray-500 mt-1">Barcha tranzaksiyalar va buyurtma hujjatlari</p>
+                </div>
+                <Link href="/admin/orders/create">
+                    <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95">
+                        <Plus size={18} /> Yangi Invoys
+                    </Button>
+                </Link>
+            </div>
+
             {/* Stats Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', marginBottom: '30px' }}>
-                <StatCard title="Jami" value={totalCount} icon={<FileText size={24} color="#0085db" />} bg="#ecf2ff" />
-                <StatCard title="Yuborilgan" value={shippedCount} icon={<Truck size={24} color="#00ceb6" />} bg="#e6fffa" />
-                <StatCard title="Yetkazildi" value={deliveredCount} icon={<CheckCircle size={24} color="#13deb9" />} bg="#e6fffa" />
-                <StatCard title="Kutilmoqda" value={pendingCount} icon={<Clock size={24} color="#ffae1f" />} bg="#fef5e5" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <StatCard title="Jami Invoyslar" value={totalCount} icon={<FileText size={22} />} color="blue" />
+                <StatCard title="Yetkazilmoqda" value={shippingCount} icon={<Truck size={22} />} color="purple" />
+                <StatCard title="Yetkazildi" value={deliveredCount} icon={<CheckCircle size={22} />} color="green" />
+                <StatCard title="Kutilmoqda" value={pendingCount} icon={<Clock size={22} />} color="yellow" />
             </div>
 
             {/* Content Area */}
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-                    <div style={{ position: 'relative', width: '300px' }}>
-                        <input
-                            placeholder="Invoyslarni qidirish..."
-                            style={{ width: '100%', padding: '10px 15px 10px 40px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none' }}
-                        />
-                        <Search size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#5A6A85' }} />
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden transition-all hover:shadow-md">
+                <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/30">
+                    <InvoiceSearch />
+                    <div className="flex gap-2">
+                        <ExportInvoicesButton data={invoices} />
+                        <StatusFilter />
                     </div>
-                    <Link href="/admin/invoices/add" style={{ background: '#0085db', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, cursor: 'pointer', textDecoration: 'none' }}>
-                        <Plus size={18} /> Invoys yaratish
-                    </Link>
                 </div>
 
-                <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
-                        <thead>
-                            <tr style={{ borderBottom: '1px solid #e5eaef' }}>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}><input type="checkbox" /></th>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}>ID</th>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}>KIMDAN (BILL FROM)</th>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}>KIMGA (BILL TO)</th>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}>SUMMA</th>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}>STATUS</th>
-                                <th style={{ padding: '15px', color: '#5A6A85', fontWeight: 600, fontSize: '14px' }}>AMALLAR</th>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50/50 border-b border-gray-100">
+                            <tr>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">ID</th>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Mijoz</th>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Summa</th>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Holat</th>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Sana</th>
+                                <th className="px-6 py-4 text-center text-[10px] uppercase font-bold text-gray-400 tracking-wider">Amallar</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="divide-y divide-gray-50">
                             {invoices.map((inv) => (
-                                <tr key={inv.id} style={{ borderBottom: '1px solid #e5eaef' }}>
-                                    <td style={{ padding: '15px' }}><input type="checkbox" /></td>
-                                    <td style={{ padding: '15px', fontWeight: 600, color: '#0085db' }}>#{inv.id.slice(-6).toUpperCase()}</td>
-                                    <td style={{ padding: '15px', color: '#2A3547' }}>UzMarket</td>
-                                    <td style={{ padding: '15px' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <img
-                                                src={`https://ui-avatars.com/api/?name=${inv.user.name || 'User'}&background=random`}
-                                                style={{ width: '30px', height: '30px', borderRadius: '50%' }}
-                                            />
+                                <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors group">
+                                    <td className="px-6 py-4">
+                                        <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                                            #{inv.id.slice(-6).toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs shadow-sm overflow-hidden text-center truncate">
+                                                {inv.user.image ? <img src={inv.user.image} alt="" className="w-full h-full object-cover" /> : inv.user.name?.[0] || 'U'}
+                                            </div>
                                             <div>
-                                                <div style={{ fontSize: '14px', fontWeight: 600, color: '#2A3547' }}>{inv.user.name || "Noma'lum"}</div>
-                                                <div style={{ fontSize: '12px', color: '#5A6A85' }}>{inv.user.email}</div>
+                                                <div className="text-sm font-bold text-gray-900">{inv.user.name || "Mehmon"}</div>
+                                                <div className="text-[11px] text-gray-400 font-medium">{inv.user.email}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td style={{ padding: '15px', color: '#2A3547' }}>{inv.total.toLocaleString()} so'm</td>
-                                    <td style={{ padding: '15px' }}>
+                                    <td className="px-6 py-4">
+                                        <div className="text-sm font-black text-gray-900">
+                                            {inv.total.toLocaleString()} <span className="text-[10px] text-gray-400 font-bold uppercase ml-0.5">so'm</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
                                         <StatusBadge status={inv.status} />
                                     </td>
-                                    <td style={{ padding: '15px' }}>
-                                        <div style={{ display: 'flex', gap: '10px' }}>
-                                            <Link href={`/admin/invoices/${inv.id}`} style={{ color: '#0085db' }}>
-                                                <Eye size={18} />
+                                    <td className="px-6 py-4">
+                                        <div className="text-xs text-gray-500 font-medium">
+                                            {new Date(inv.createdAt).toLocaleDateString()}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <div className="flex justify-center items-center gap-2">
+                                            <Link href={`/admin/invoices/${inv.id}`}>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
+                                                    <Eye size={16} />
+                                                </Button>
                                             </Link>
-                                            <Link href={`/admin/invoices/${inv.id}/edit`} style={{ color: '#00ceb6' }}>
-                                                <FileText size={18} />
-                                            </Link>
-                                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fa896b' }}>
-                                                <Trash2 size={18} />
-                                            </button>
+                                            <DeleteInvoiceButton id={inv.id} />
                                         </div>
                                     </td>
                                 </tr>
                             ))}
                             {invoices.length === 0 && (
                                 <tr>
-                                    <td colSpan={7} style={{ padding: '30px', textAlign: 'center', color: '#999' }}>Ma'lumot topilmadi</td>
+                                    <td colSpan={6} className="px-6 py-20 text-center">
+                                        <div className="flex flex-col items-center gap-2 text-center">
+                                            <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-2">
+                                                <Search size={32} />
+                                            </div>
+                                            <p className="text-gray-900 font-black tracking-tight">Hech qanday ma'lumot topilmadi</p>
+                                            <p className="text-sm text-gray-400 max-w-[200px]">Tanlangan filtrlar yoki qidiruv bo'yicha natija yo'q</p>
+                                        </div>
+                                    </td>
                                 </tr>
                             )}
                         </tbody>
@@ -108,56 +150,42 @@ export default async function AdminInvoicesPage() {
     );
 }
 
-function StatCard({ title, value, icon, bg }: { title: string, value: number, icon: any, bg: string }) {
+function StatCard({ title, value, icon, color }: { title: string, value: number, icon: any, color: 'blue' | 'green' | 'yellow' | 'purple' }) {
+    const colors = {
+        blue: 'bg-blue-50 text-blue-600 border-blue-100 shadow-blue-100',
+        green: 'bg-green-50 text-green-600 border-green-100 shadow-green-100',
+        yellow: 'bg-yellow-50 text-yellow-600 border-yellow-100 shadow-yellow-100',
+        purple: 'bg-purple-50 text-purple-600 border-purple-100 shadow-purple-100',
+    };
+
     return (
-        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', display: 'flex', alignItems: 'center', gap: '15px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
-            <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex items-center gap-4 transition-all hover:shadow-md hover:-translate-y-1">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center border ${colors[color]} shadow-lg`}>
                 {icon}
             </div>
             <div>
-                <h4 style={{ margin: 0, fontSize: '14px', color: '#5A6A85', fontWeight: 500 }}>{title}</h4>
-                <div style={{ fontSize: '24px', fontWeight: 700, color: '#2A3547', marginTop: '4px' }}>{value}</div>
+                <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">{title}</p>
+                <p className="text-2xl font-black text-gray-900 mt-0.5">{value.toLocaleString()}</p>
             </div>
         </div>
     );
 }
 
 function StatusBadge({ status }: { status: string }) {
-    let bg = '#ecf2ff';
-    let color = '#0085db';
-    let text = status;
+    const configs: Record<string, { label: string, color: string }> = {
+        'PENDING': { label: 'Kutilmoqda', color: 'bg-yellow-50 text-yellow-700 border-yellow-100' },
+        'AWAITING_PAYMENT': { label: 'To\'lov kutilmoqda', color: 'bg-amber-50 text-amber-700 border-amber-100' },
+        'PROCESSING': { label: 'Jarayonda', color: 'bg-blue-50 text-blue-700 border-blue-100' },
+        'SHIPPING': { label: 'Yetkazilmoqda', color: 'bg-purple-50 text-purple-700 border-purple-100' },
+        'DELIVERED': { label: 'Yetkazildi', color: 'bg-green-50 text-green-700 border-green-100' },
+        'CANCELLED': { label: 'Bekor qilindi', color: 'bg-red-50 text-red-700 border-red-100' },
+    };
 
-    switch (status) {
-        case 'PENDING':
-            bg = '#fef5e5';
-            color = '#ffae1f';
-            text = 'Kutilmoqda';
-            break;
-        case 'DELIVERED':
-            bg = '#e6fffa';
-            color = '#13deb9';
-            text = 'Yetkazildi';
-            break;
-        case 'SHIPPED':
-            bg = '#ecf2ff';
-            color = '#5d87ff';
-            text = 'Yuborilgan';
-            break;
-        case 'CANCELLED':
-            bg = '#fdede8';
-            color = '#fa896b';
-            text = 'Bekor qilindi';
-            break;
-        case 'AWAITING_PAYMENT':
-            bg = '#fff8e1';
-            color = '#ffb020';
-            text = "To'lov kutilmoqda";
-            break;
-    }
+    const config = configs[status] || { label: status, color: 'bg-gray-50 text-gray-700 border-gray-100' };
 
     return (
-        <span style={{ background: bg, color: color, padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
-            {text}
+        <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-tight border shadow-sm ${config.color}`}>
+            {config.label}
         </span>
     );
 }

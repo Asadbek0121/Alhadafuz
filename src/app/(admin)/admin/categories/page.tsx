@@ -1,16 +1,23 @@
 
 "use client";
 
-import React, { useState, useEffect, Fragment } from 'react';
+import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { toast } from 'sonner';
-import { Loader2, Plus, Trash2, Edit, UploadCloud, CornerDownRight } from 'lucide-react';
-import Image from 'next/image';
+import {
+    Loader2, Plus, Trash2, Edit2, UploadCloud,
+    CornerDownRight, ChevronDown, ChevronRight,
+    Folder, FolderPlus, Search, X, Image as ImageIcon,
+    LayoutGrid, List, MoreVertical
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 
 interface Category {
     id: string;
     name: string;
     parentId: string | null;
     image: string | null;
+    slug: string;
     _count?: { products: number };
     parent?: { name: string };
     children?: Category[];
@@ -20,32 +27,47 @@ export default function AdminCategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [viewMode, setViewMode] = useState<'tree' | 'list'>('tree');
 
     // Form state
     const [name, setName] = useState('');
     const [parentId, setParentId] = useState('');
     const [image, setImage] = useState('');
     const [editId, setEditId] = useState<string | null>(null);
+    const [showForm, setShowForm] = useState(false);
 
     const [uploading, setUploading] = useState(false);
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
+    const toggleExpand = (id: string) => {
+        const next = new Set(expandedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setExpandedIds(next);
+    };
 
-    const fetchCategories = async () => {
+    const fetchCategories = useCallback(async () => {
         try {
             const res = await fetch('/api/admin/categories');
             if (res.ok) {
                 const data = await res.json();
                 setCategories(data);
+                // Expand all by default initially
+                if (expandedIds.size === 0) {
+                    setExpandedIds(new Set(data.filter((c: any) => c.parentId === null).map((c: any) => c.id)));
+                }
             }
         } catch (e) {
             toast.error("Kategoriyalarni yuklashda xatolik");
         } finally {
             setLoading(false);
         }
-    };
+    }, [expandedIds.size]);
+
+    useEffect(() => {
+        fetchCategories();
+    }, [fetchCategories]);
 
     const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         if (!e.target.files?.[0]) return;
@@ -87,11 +109,9 @@ export default function AdminCategoriesPage() {
 
             if (res.ok) {
                 toast.success(editId ? "Kategoriya yangilandi" : "Kategoriya yaratildi");
-                setName('');
-                setParentId('');
-                setImage('');
-                setEditId(null);
+                resetForm();
                 fetchCategories();
+                setShowForm(false);
             } else {
                 toast.error("Saqlashda xatolik");
             }
@@ -102,16 +122,24 @@ export default function AdminCategoriesPage() {
         }
     };
 
+    const resetForm = () => {
+        setName('');
+        setParentId('');
+        setImage('');
+        setEditId(null);
+    };
+
     const handleEdit = (cat: Category) => {
         setEditId(cat.id);
         setName(cat.name);
         setParentId(cat.parentId || '');
         setImage(cat.image || '');
+        setShowForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
+        if (!confirm("O'chirishni tasdiqlaysizmi? Bu kategoriya ostidagi mahsulotlar o'chirilmaydi, lekin kategoriyasiz qolishi mumkin.")) return;
         try {
             const res = await fetch(`/api/admin/categories/${id}`, { method: 'DELETE' });
             if (res.ok) {
@@ -125,172 +153,307 @@ export default function AdminCategoriesPage() {
         }
     };
 
-    // Recursive helper to build tree
-    const getHierarchy = () => {
-        const buildTree = (parentId: string | null = null): Category[] => {
-            return categories
-                .filter(c => c.parentId === parentId)
-                .map(c => ({
-                    ...c,
-                    children: buildTree(c.id)
-                }));
-        };
-        return buildTree(null);
+    const buildTree = (cats: Category[], parentId: string | null = null): Category[] => {
+        return cats
+            .filter(c => c.parentId === parentId)
+            .map(c => ({
+                ...c,
+                children: buildTree(cats, c.id)
+            }));
     };
 
-    const hierarchy = getHierarchy();
+    const tree = buildTree(categories);
 
-    // Recursive render function
-    const renderCategoryRow = (category: Category, depth = 0) => {
-        const isParent = depth === 0;
+    const renderTreeItem = (category: Category, depth = 0) => {
+        const hasChildren = category.children && category.children.length > 0;
+        const isExpanded = expandedIds.has(category.id);
+        const isVisible = searchQuery ?
+            category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            category.children?.some(child => child.name.toLowerCase().includes(searchQuery.toLowerCase())) : true;
+
+        if (searchQuery && !isVisible && !category.children?.some(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))) return null;
 
         return (
             <Fragment key={category.id}>
-                <tr style={{ borderBottom: '1px solid #eee', background: isParent ? '#fff' : (depth === 1 ? '#fafafa' : '#f0fdf4') }}>
-                    <td style={{ padding: '12px 24px' }}>
-                        <div style={{ width: '32px', height: '32px', background: '#f5f5f5', borderRadius: '6px', overflow: 'hidden' }}>
-                            {category.image ? <img src={category.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : null}
+                <motion.div
+                    layout
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    className={`group flex items-center justify-between p-3 rounded-2xl hover:bg-white hover:shadow-xl hover:shadow-gray-200/50 transition-all border border-transparent hover:border-gray-50 mb-1 ${depth > 0 ? 'ml-8' : ''}`}
+                >
+                    <div className="flex items-center gap-4 flex-1">
+                        <div className="flex items-center gap-2">
+                            {hasChildren ? (
+                                <button
+                                    onClick={() => toggleExpand(category.id)}
+                                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-gray-400"
+                                >
+                                    {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
+                                </button>
+                            ) : (
+                                <div className="w-6 h-6" /> // spacer
+                            )}
+
+                            <div className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden shadow-inner flex items-center justify-center text-gray-400">
+                                {category.image ? (
+                                    <img src={category.image} alt="" className="w-full h-full object-cover" />
+                                ) : (
+                                    <Folder size={20} />
+                                )}
+                            </div>
                         </div>
-                    </td>
-                    <td style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', paddingLeft: `${depth * 24}px` }}>
-                            {depth > 0 && <CornerDownRight size={16} style={{ marginRight: '8px', color: '#9ca3af' }} />}
-                            <span style={{ fontWeight: isParent ? 700 : (depth === 1 ? 500 : 400), fontSize: isParent ? '15px' : '14px' }}>
-                                {category.name}
-                            </span>
+
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <span className={`font-bold tracking-tight text-gray-900 ${depth === 0 ? 'text-base' : 'text-sm'}`}>
+                                    {category.name}
+                                </span>
+                                <span className="px-2 py-0.5 rounded-full bg-gray-50 text-[10px] font-black text-gray-400 uppercase tracking-tighter border border-gray-100">
+                                    {category.slug.split('-').slice(0, -1).join('-') || category.slug}
+                                </span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-0.5">
+                                <span className={`text-[10px] font-bold uppercase tracking-widest ${depth === 0 ? 'text-blue-500' : (depth === 1 ? 'text-purple-500' : 'text-green-500')
+                                    }`}>
+                                    {depth === 0 ? 'Asosiy' : (depth === 1 ? 'Sub-kategoriya' : 'Mikro-kategoriya')}
+                                </span>
+                                <span className="w-1 h-1 rounded-full bg-gray-300" />
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                                    {category._count?.products || 0} mahsulot
+                                </span>
+                            </div>
                         </div>
-                    </td>
-                    <td style={{ padding: '12px 24px' }}>
-                        <span style={{
-                            padding: '4px 10px',
-                            background: isParent ? '#e0f2fe' : (depth === 1 ? '#f3f4f6' : '#dcfce7'),
-                            color: isParent ? '#0369a1' : (depth === 1 ? '#374151' : '#166534'),
-                            borderRadius: '20px', fontSize: '11px', fontWeight: '600'
-                        }}>
-                            {depth === 0 ? 'Asosiy' : (depth === 1 ? 'Sub-kategoriya' : 'Mikro-kategoriya')}
-                        </span>
-                    </td>
-                    <td style={{ padding: '12px 24px', fontSize: '13px' }}>{category._count?.products || 0}</td>
-                    <td style={{ padding: '12px 24px' }}>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                            <button onClick={() => handleEdit(category)} style={{ padding: '6px', color: '#0066cc', background: '#eff6ff', borderRadius: '4px', border: 'none', cursor: 'pointer' }}><Edit size={16} /></button>
-                            <button onClick={() => handleDelete(category.id)} style={{ padding: '6px', color: '#ef4444', background: '#fef2f2', borderRadius: '4px', border: 'none', cursor: 'pointer' }}><Trash2 size={16} /></button>
-                        </div>
-                    </td>
-                </tr>
-                {category.children?.map(child => renderCategoryRow(child, depth + 1))}
+                    </div>
+
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
+                            onClick={() => handleEdit(category)}
+                        >
+                            <Edit2 size={16} />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+                            onClick={() => handleDelete(category.id)}
+                        >
+                            <Trash2 size={16} />
+                        </Button>
+                    </div>
+                </motion.div>
+
+                <AnimatePresence>
+                    {isExpanded && hasChildren && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden border-l border-gray-100 ml-6 pl-2"
+                        >
+                            {category.children?.map(child => renderTreeItem(child, depth + 1))}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </Fragment>
         );
     };
 
     return (
-        <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '24px' }}>Kataloglar Boshqaruvi</h1>
+        <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                <div>
+                    <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Kataloglar Boshqaruvi</h1>
+                    <p className="text-gray-500 mt-1">Mahsulot toifalari va iyerarxiyasini boshqaring</p>
+                </div>
+                <Button
+                    onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6"
+                >
+                    {showForm ? <X size={18} /> : <Plus size={18} />}
+                    {showForm ? "Yopish" : "Yangi Kategoriya"}
+                </Button>
+            </div>
 
-            <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', marginBottom: '30px', border: '1px solid #eee' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '16px' }}>
-                    {editId ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya qo\'shish'}
-                </h2>
-                <form onSubmit={handleSubmit} style={{ display: 'grid', gap: '20px' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Nomi</label>
-                            <input
-                                value={name} onChange={e => setName(e.target.value)}
-                                required className="input-field" placeholder="Masalan: Elektronika"
-                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd' }}
-                            />
-                        </div>
-                        <div>
-                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Ota kategoriya</label>
-                            <select
-                                value={parentId} onChange={e => setParentId(e.target.value)}
-                                className="input-field"
-                                style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #ddd', background: '#fff' }}
-                            >
-                                <option value="">Yo'q (Bu asosiy kategoriya)</option>
-                                {/* Flatten hierarchy for select options to show tree structure */}
-                                {categories.map(c => (
-                                    <option key={c.id} value={c.id} disabled={c.id === editId}>
-                                        {c.parent ? `— ${c.name}` : c.name}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+            <AnimatePresence>
+                {showForm && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -20 }}
+                        className="bg-white p-8 rounded-3xl border border-gray-100 shadow-2xl shadow-gray-200/50"
+                    >
+                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                            {editId ? <Edit2 className="text-blue-600" size={24} /> : <FolderPlus className="text-blue-600" size={24} />}
+                            {editId ? 'Kategoriyani tahrirlash' : 'Yangi kategoriya qo\'shish'}
+                        </h2>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Rasm (Ixtiyoriy)</label>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                            {image && (
-                                <div style={{ width: '60px', height: '60px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #eee' }}>
-                                    <img src={image} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700 ml-1">Kategoriya Nomi</label>
+                                    <input
+                                        value={name}
+                                        onChange={e => setName(e.target.value)}
+                                        required
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                        placeholder="Masalan: Uy va Bog' uchun"
+                                    />
                                 </div>
-                            )}
-                            <label style={{
-                                display: 'flex', alignItems: 'center', gap: '10px',
-                                padding: '10px 20px', background: '#f0f9ff', color: '#0066cc',
-                                borderRadius: '8px', cursor: 'pointer', fontWeight: '500'
-                            }}>
-                                {uploading ? <Loader2 className="animate-spin" size={20} /> : <UploadCloud size={20} />}
-                                {uploading ? "Yuklanmoqda..." : "Rasm Yuklash"}
-                                <input type="file" hidden accept="image/*" onChange={handleUpload} />
-                            </label>
-                            {image && (
-                                <button type="button" onClick={() => setImage('')} style={{ color: 'red', border: 'none', background: 'none', cursor: 'pointer' }}>O'chirish</button>
-                            )}
-                        </div>
-                    </div>
 
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                        <button
-                            type="submit" disabled={submitting}
-                            style={{
-                                padding: '12px 24px', background: '#0066cc', color: '#fff',
-                                border: 'none', borderRadius: '8px', fontWeight: '600', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', gap: '8px'
-                            }}
-                        >
-                            {submitting ? <Loader2 className="animate-spin" size={18} /> : (editId ? <Edit size={18} /> : <Plus size={18} />)}
-                            {editId ? "Saqlash" : "Qo'shish"}
-                        </button>
-                        {editId && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700 ml-1">Ota Kategoriya (Hierarchy)</label>
+                                    <select
+                                        value={parentId}
+                                        onChange={e => setParentId(e.target.value)}
+                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
+                                        style={{ backgroundPosition: 'right 1rem center' }}
+                                    >
+                                        <option value="">Asosiy (Ota kategoriya yo'q)</option>
+                                        {categories.filter(c => c.id !== editId).map(c => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.parentId ? '   — ' : ''}{c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
+                                <label className="text-sm font-bold text-gray-700 ml-1">Kategoriya Rasmi</label>
+                                <div className="flex flex-wrap items-center gap-6 p-6 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
+                                    {image ? (
+                                        <div className="relative group">
+                                            <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white shadow-xl ring-1 ring-gray-100">
+                                                <img src={image} alt="Preview" className="w-full h-full object-cover" />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setImage('')}
+                                                className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                                            >
+                                                <X size={12} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="w-24 h-24 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-300">
+                                            <ImageIcon size={32} />
+                                        </div>
+                                    )}
+
+                                    <div className="flex-1 min-w-[200px]">
+                                        <h4 className="text-sm font-bold text-gray-900">Rasm yuklash</h4>
+                                        <p className="text-xs text-gray-400 mt-1">PNG, JPG yoki WEBP, maksimal 2MB</p>
+                                        <label className="mt-4 flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95">
+                                            {uploading ? <Loader2 className="animate-spin" size={16} /> : <UploadCloud size={16} className="text-blue-600" />}
+                                            {uploading ? "Yuklanmoqda..." : "Faylni tanlash"}
+                                            <input type="file" hidden accept="image/*" onChange={handleUpload} />
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex gap-3 pt-4 border-t border-gray-50">
+                                <Button
+                                    type="submit"
+                                    disabled={submitting}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 rounded-2xl shadow-xl shadow-blue-200 font-bold"
+                                >
+                                    {submitting ? <Loader2 className="animate-spin" size={20} /> : (editId ? <Save size={20} /> : <Plus size={20} />)}
+                                    {editId ? "Saqlash" : "Yarating"}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => { setShowForm(false); resetForm(); }}
+                                    className="h-12 px-8 rounded-2xl font-bold border-gray-200 text-gray-500 hover:bg-gray-50"
+                                >
+                                    Bekor qilish
+                                </Button>
+                            </div>
+                        </form>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
+                <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Kategoriyalarni qidirish..."
+                            className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
+                        />
+                        {searchQuery && (
                             <button
-                                type="button" onClick={() => { setEditId(null); setName(''); setParentId(''); setImage(''); }}
-                                style={{ padding: '12px 24px', background: '#f5f5f5', color: '#333', border: 'none', borderRadius: '8px', cursor: 'pointer' }}
+                                onClick={() => setSearchQuery('')}
+                                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                             >
-                                Bekor qilish
+                                <X size={14} />
                             </button>
                         )}
                     </div>
-                </form>
-            </div>
 
-            <div style={{ background: '#fff', borderRadius: '12px', border: '1px solid #eee', overflow: 'hidden' }}>
-                {loading ? (
-                    <div style={{ padding: '40px', textAlign: 'center' }}><Loader2 className="animate-spin" style={{ margin: '0 auto' }} /></div>
-                ) : (
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                        <thead>
-                            <tr style={{ background: '#f9fafb', textAlign: 'left', borderBottom: '1px solid #eee' }}>
-                                <th style={{ padding: '15px 24px', color: '#4b5563', fontWeight: '600', fontSize: '14px' }}>Rasm</th>
-                                <th style={{ padding: '15px 24px', color: '#4b5563', fontWeight: '600', fontSize: '14px' }}>Nomi</th>
-                                <th style={{ padding: '15px 24px', color: '#4b5563', fontWeight: '600', fontSize: '14px' }}>Turi</th>
-                                <th style={{ padding: '15px 24px', color: '#4b5563', fontWeight: '600', fontSize: '14px' }}>Mahsulotlar</th>
-                                <th style={{ padding: '15px 24px', color: '#4b5563', fontWeight: '600', fontSize: '14px' }}>Amallar</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {hierarchy.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} style={{ padding: '30px', textAlign: 'center', color: '#666' }}>Kategoriyalar mavjud emas</td>
-                                </tr>
+                    <div className="flex items-center p-1 bg-gray-100 rounded-xl">
+                        <button
+                            onClick={() => setViewMode('tree')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'tree' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
+                                }`}
+                        >
+                            <LayoutGrid size={14} /> {viewMode === 'tree' && 'Daraxtsimon'}
+                        </button>
+                        <button
+                            onClick={() => setViewMode('list')}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
+                                }`}
+                        >
+                            <List size={14} /> {viewMode === 'list' && 'Ro\'yxat'}
+                        </button>
+                    </div>
+                </div>
+
+                <div className="p-6 overflow-y-auto">
+                    {loading ? (
+                        <div className="flex flex-col items-center justify-center py-32 space-y-4">
+                            <div className="relative">
+                                <div className="w-16 h-16 rounded-full border-4 border-blue-50 animate-spin border-t-blue-500" />
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                    <LayoutGrid className="text-blue-500" size={24} />
+                                </div>
+                            </div>
+                            <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Yuklanmoqda...</p>
+                        </div>
+                    ) : (
+                        <div className="space-y-1">
+                            {viewMode === 'tree' ? (
+                                tree.length > 0 ? (
+                                    tree.map(cat => renderTreeItem(cat))
+                                ) : (
+                                    <div className="text-center py-32">
+                                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-200">
+                                            <ImageIcon size={40} />
+                                        </div>
+                                        <p className="text-xl font-black text-gray-900">Kategoriyalar topilmadi</p>
+                                        <p className="text-gray-400 text-sm mt-1">Hozircha hech qanday ma'lumot mavjud emas</p>
+                                    </div>
+                                )
+                            ) : (
+                                <div className="space-y-2">
+                                    {categories
+                                        .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                        .map(cat => renderTreeItem(cat, 0))}
+                                </div>
                             )}
-                            {hierarchy.map(cat => renderCategoryRow(cat))}
-                        </tbody>
-                    </table>
-                )}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
 }
+
+const Save = ({ size }: { size: number }) => <Plus size={size} />; // Placeholder as Save is not imported

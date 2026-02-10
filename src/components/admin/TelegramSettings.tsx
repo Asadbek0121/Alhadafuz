@@ -1,9 +1,9 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Bot, Save, AlertCircle, CheckCircle, Send } from 'lucide-react';
+import { Bot, Save, AlertCircle, CheckCircle2, Send, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
 export default function TelegramSettings() {
     const [token, setToken] = useState('');
@@ -70,92 +70,75 @@ export default function TelegramSettings() {
     };
 
     return (
-        <div style={{ background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', marginTop: '30px' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2A3547', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Bot size={20} color="#0085db" />
-                Telegram Bot Ulash
-            </h3>
+        <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-150 transition-transform duration-700" />
 
-            <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <div className="flex items-center gap-4 mb-8">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-inner">
+                    <Bot size={24} />
+                </div>
                 <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Bot Token</label>
+                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Telegram Bot</h3>
+                    <p className="text-sm font-medium text-gray-400">Bildirishnomalar uchun integratsiya</p>
+                </div>
+            </div>
+
+            <form onSubmit={handleSave} className="space-y-6 relative z-10">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bot Token</label>
                     <input
                         type="password"
+                        autoComplete="new-password"
                         value={token}
                         onChange={e => setToken(e.target.value)}
                         placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none', fontFamily: 'monospace' }}
+                        className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-mono text-sm text-gray-900 placeholder:text-gray-300"
                     />
-                    <p style={{ fontSize: '11px', color: '#999', marginTop: '5px' }}>
+                    <p className="text-xs text-blue-500/80 font-medium ml-1">
                         @BotFather orqali olingan token
                     </p>
                 </div>
 
-                <div>
-                    <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Admin ID Lar (vergul bilan)</label>
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Admin ID (Chat ID)</label>
                     <input
                         value={adminIds}
                         onChange={e => setAdminIds(e.target.value)}
                         placeholder="12345678, 87654321"
-                        style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none', fontFamily: 'monospace' }}
+                        className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-mono text-sm text-gray-900 placeholder:text-gray-300"
                     />
-                    <p style={{ fontSize: '11px', color: '#999', marginTop: '5px' }}>
-                        Bildirishnoma olishi kerak bo'lgan user ID lari (Chat ID). Telegramda @userinfobot orqali oling.
+                    <p className="text-xs text-blue-500/80 font-medium ml-1">
+                        Vergul bilan ajratilgan IDlar. @userinfobot orqali oling.
                     </p>
                 </div>
 
-                <div style={{ background: '#e6f4ff', padding: '15px', borderRadius: '8px', fontSize: '13px', color: '#0085db', display: 'flex', gap: '10px' }}>
-                    <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
-                    <div>
-                        <strong>Botni ishga tushirish:</strong> Botdan xabar olish uchun avval unga kirib <b>/start</b> tugmasini bosishingiz shart.
-                    </div>
+                <div className="bg-blue-50/50 p-4 rounded-2xl flex gap-3 text-blue-600">
+                    <AlertCircle size={20} className="shrink-0 mt-0.5" />
+                    <p className="text-xs font-medium leading-relaxed">
+                        <span className="font-bold block mb-1">Muhim eslatma:</span>
+                        Botdan xabar olish uchun barcha adminlar botga kirib <span className="font-mono bg-blue-100 px-1 rounded">/start</span> tugmasini bosishlari shart.
+                    </p>
                 </div>
 
-                <div style={{ display: 'flex', gap: '15px' }}>
-                    <button
+                <div className="flex gap-4 pt-2">
+                    <Button
                         type="submit"
                         disabled={loading}
-                        style={{
-                            flex: 1,
-                            padding: '14px',
-                            borderRadius: '8px',
-                            background: isSaved ? '#13deb9' : '#0085db',
-                            color: '#fff',
-                            border: 'none',
-                            fontWeight: '600',
-                            cursor: loading ? 'not-allowed' : 'pointer',
-                            opacity: loading ? 0.7 : 1,
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px',
-                            transition: 'background 0.3s'
-                        }}
+                        className={`flex-1 h-14 rounded-2xl font-black text-base uppercase tracking-tight gap-2 transition-all ${isSaved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-600 hover:bg-blue-700'} text-white shadow-xl shadow-blue-200/20`}
                     >
-                        {isSaved ? <CheckCircle size={18} /> : <Save size={18} />}
-                        {isSaved ? 'Saqlandi' : 'Saqlash'}
-                    </button>
+                        {loading ? <Loader2 className="animate-spin" /> : (isSaved ? <CheckCircle2 size={20} /> : <Save size={20} />)}
+                        {isSaved ? 'SAQLANDI' : 'SAQLASH'}
+                    </Button>
 
-                    <button
+                    <Button
                         type="button"
                         onClick={handleTest}
-                        style={{
-                            padding: '14px 20px',
-                            borderRadius: '8px',
-                            background: '#e6f4ff',
-                            color: '#0085db',
-                            border: 'none',
-                            fontWeight: '600',
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '10px'
-                        }}
+                        variant="outline"
+                        className="h-14 px-6 rounded-2xl border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-200 font-black gap-2"
                     >
                         <Send size={18} />
-                        Test Xabar
-                    </button>
+                        <span className="hidden sm:inline">TEST XABAR</span>
+                    </Button>
                 </div>
             </form>
         </div>

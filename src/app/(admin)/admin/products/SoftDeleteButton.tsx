@@ -1,8 +1,7 @@
-
 "use client";
 
 import { useState } from "react";
-import { Trash2, Loader2 } from "lucide-react";
+import { Trash2, Loader2, Trash } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -34,9 +33,11 @@ export default function SoftDeleteButton({ productId }: { productId: string }) {
         <button
             onClick={handleDelete}
             disabled={loading}
-            style={{ padding: "8px", borderRadius: "6px", background: "#fee2e2", border: "none", color: "#ef4444", cursor: "pointer", opacity: loading ? 0.7 : 1 }}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 text-red-500 font-bold text-xs hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="O'chirish"
         >
-            {loading ? <Loader2 className="animate-spin" size={16} /> : <Trash2 size={16} />}
+            {loading ? <Loader2 className="animate-spin" size={14} /> : <Trash size={14} strokeWidth={2.5} />}
+            <span className="sr-only">O'chirish</span>
         </button>
     );
 }

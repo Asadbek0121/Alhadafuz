@@ -131,6 +131,16 @@ export async function POST(req: Request) {
                 where: { id: user.id },
                 data: { updatedAt: new Date() }
             });
+
+            // Notify admins in the panel
+            try {
+                const { notifyAdmins } = await import('@/lib/notifications');
+                await notifyAdmins(
+                    `TG xabar: ${telegramUser.first_name}`,
+                    type === 'TEXT' ? (content.length > 50 ? content.substring(0, 50) + '...' : content) : `[${type}]`,
+                    'MESSAGE'
+                );
+            } catch (e) { }
         }
 
         return NextResponse.json({ ok: true });

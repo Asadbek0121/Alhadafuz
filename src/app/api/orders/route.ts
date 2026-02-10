@@ -106,7 +106,8 @@ export async function POST(req: Request) {
         }
 
         // Determine initial status based on payment method
-        const initialStatus = paymentMethod === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
+        const method = paymentMethod.toLowerCase();
+        const initialStatus = method === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
 
         // 4. Create Order Transaction
         const order = await prisma.$transaction(async (tx) => {
@@ -116,7 +117,7 @@ export async function POST(req: Request) {
                     userId: session.user.id,
                     total: calculatedTotal,
                     status: initialStatus,
-                    paymentMethod: paymentMethod || 'CASH',
+                    paymentMethod: paymentMethod, // Keep original casing or normalize? Let's keep original for display/logs
                     // deliveryMethod: deliveryMethod || 'COURIER', 
 
                     // Shipping details
@@ -157,7 +158,7 @@ export async function POST(req: Request) {
         }
 
         let paymentUrl = null;
-        if (paymentMethod === 'click') {
+        if (method === 'click') {
             // Updated to the link requested by the user
             // We append amount and order ID (transaction_param) for better user experience
             paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
