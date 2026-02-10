@@ -179,7 +179,7 @@ export default function AdminBannersPage() {
             {/* Modal */}
             {openModal && (
                 <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 999 }}>
-                    <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', width: '500px', maxWidth: '90%' }}>
+                    <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
                         <h2 style={{ margin: '0 0 20px 0', fontSize: '20px' }}>{editBanner ? 'Bannerni Tahrirlash' : 'Yangi Banner'}</h2>
                         <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                             <div>
@@ -265,7 +265,22 @@ export default function AdminBannersPage() {
                                     <input
                                         type="number"
                                         value={formData.price}
-                                        onChange={e => setFormData({ ...formData, price: e.target.value })}
+                                        onChange={e => {
+                                            const newPrice = e.target.value;
+                                            let newDiscount = formData.discount;
+
+                                            // Auto-calculate discount
+                                            if (newPrice && formData.oldPrice) {
+                                                const p = parseFloat(newPrice);
+                                                const o = parseFloat(formData.oldPrice);
+                                                if (o > p) {
+                                                    const d = Math.round(100 - (p / o * 100));
+                                                    newDiscount = `-${d}%`;
+                                                }
+                                            }
+
+                                            setFormData({ ...formData, price: newPrice, discount: newDiscount });
+                                        }}
                                         placeholder="549000"
                                         style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
                                     />
@@ -275,7 +290,22 @@ export default function AdminBannersPage() {
                                     <input
                                         type="number"
                                         value={formData.oldPrice}
-                                        onChange={e => setFormData({ ...formData, oldPrice: e.target.value })}
+                                        onChange={e => {
+                                            const newOldPrice = e.target.value;
+                                            let newDiscount = formData.discount;
+
+                                            // Auto-calculate discount
+                                            if (formData.price && newOldPrice) {
+                                                const p = parseFloat(formData.price);
+                                                const o = parseFloat(newOldPrice);
+                                                if (o > p) {
+                                                    const d = Math.round(100 - (p / o * 100));
+                                                    newDiscount = `-${d}%`;
+                                                }
+                                            }
+
+                                            setFormData({ ...formData, oldPrice: newOldPrice, discount: newDiscount });
+                                        }}
                                         placeholder="819000"
                                         style={{ width: '100%', padding: '10px', borderRadius: '6px', border: '1px solid #ddd' }}
                                     />

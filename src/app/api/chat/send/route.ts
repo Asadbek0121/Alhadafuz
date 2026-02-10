@@ -43,7 +43,7 @@ export async function POST(req: Request) {
 
         // Forward to Telegram if target is TELEGRAM or BOTH
         if ((target === 'TELEGRAM' || target === 'BOTH') && receiver?.telegramId) {
-            const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } }) as StoreSettings | null;
+            const settings = await prisma.storeSettings.findFirst();
             const token = settings?.telegramBotToken;
 
             if (token) {
@@ -60,14 +60,25 @@ export async function POST(req: Request) {
                     });
                 }
 
-                fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: receiver.telegramId,
-                        text: `👨‍💻 Admin: ${content}`
-                    })
-                }).catch(e => console.error("TG Forward Error", e));
+                try {
+                    const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            chat_id: receiver.telegramId,
+                            text: `👨‍💻 Admin: ${content}`
+                        })
+                    });
+
+                    if (!tgRes.ok) {
+                        const errorData = await tgRes.json();
+                        console.error("Telegram API Error:", errorData);
+                    }
+                } catch (e) {
+                    console.error("TG Forward Error", e);
+                }
+            } else {
+                console.log("Telegram Bot Token is missing in settings");
             }
         }
 
