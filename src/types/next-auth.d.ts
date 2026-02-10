@@ -12,12 +12,14 @@ declare module "next-auth" {
             id: string;
             phone?: string | null;
             uniqueId?: string | null;
+            twoFactorEnabled?: boolean;
         } & DefaultSession["user"]
     }
 
     interface User {
         role: string;
         uniqueId?: string | null;
+        twoFactorEnabled?: boolean;
     }
 }
 
@@ -27,5 +29,6 @@ declare module "next-auth/jwt" {
         id: string;
         role: string;
         uniqueId?: string | null;
+        twoFactorEnabled?: boolean;
     }
 }
