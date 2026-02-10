@@ -31,6 +31,12 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ url: blob.url });
     } catch (error: any) {
         console.error("Upload error detailed:", error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+
+        let message = error.message;
+        if (message.includes("No token found") || message.includes("BLOB_READ_WRITE_TOKEN")) {
+            message = "Vercel Blob tokeni topilmadi. Iltimos, .env fayliga BLOB_READ_WRITE_TOKEN ni qo'shing.";
+        }
+
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

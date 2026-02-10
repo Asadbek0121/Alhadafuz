@@ -81,8 +81,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         };
 
         if (category || categoryId) {
-            updateData.categoryId = categoryId || category;
-            updateData.category = category || categoryId;
+            const catId = categoryId || category;
+            const categoryRecord = await prisma.category.findUnique({
+                where: { id: catId }
+            });
+
+            if (categoryRecord) {
+                updateData.categoryId = categoryRecord.id;
+                updateData.category = categoryRecord.name;
+            } else {
+                updateData.category = category || categoryId;
+                // If its not a valid ID, don't set categoryId to avoid FK error
+                delete updateData.categoryId;
+            }
         }
 
         if (images) {
