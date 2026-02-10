@@ -89,12 +89,12 @@ export async function POST(req: NextRequest) {
 
         // Get admin user
         const admin = await prisma.user.findFirst({
-            where: { role: 'ADMIN' },
+            where: { role: { equals: 'ADMIN', mode: 'insensitive' } },
         });
 
         if (!admin) {
-            console.error('Support Chat POST: Admin not found');
-            return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+            console.error('Support Chat POST: No user with ADMIN role found in database');
+            return NextResponse.json({ error: 'Admin topilmadi. Murojaat yuborish uchun admin hisobi zarur.' }, { status: 404 });
         }
 
         // Create message from user to admin

@@ -101,7 +101,12 @@ export default function SupportChat() {
                     return;
                 }
                 const blob = new Blob(chunks, { type: mimeType });
-                const extension = mimeType.includes('mp4') ? 'mp4' : 'webm';
+                let extension = 'webm';
+                if (mimeType.includes('mp4')) extension = 'mp4';
+                else if (mimeType.includes('ogg')) extension = 'ogg';
+                else if (mimeType.includes('wav')) extension = 'wav';
+                else if (mimeType.includes('aac')) extension = 'm4a';
+
                 await handleVoiceUpload(blob, extension);
                 stream.getTracks().forEach(track => track.stop());
             };
@@ -134,6 +139,8 @@ export default function SupportChat() {
 
         try {
             setLoading(true);
+            console.log(`Uploading voice: size=${blob.size}, type=${blob.type}, extension=${extension}`);
+
             const res = await fetch('/api/upload', {
                 method: 'POST',
                 body: formData
@@ -148,6 +155,7 @@ export default function SupportChat() {
             const data = await res.json();
 
             if (data.url) {
+                console.log("Upload successful, saving to chat:", data.url);
                 const saveRes = await fetch('/api/chat/support', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

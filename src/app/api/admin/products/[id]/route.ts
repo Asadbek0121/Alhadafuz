@@ -47,13 +47,46 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const body = await req.json();
 
     try {
-        const { category, attributes, specs, ...otherData } = body;
+        const {
+            title,
+            description,
+            price,
+            oldPrice,
+            discount,
+            stock,
+            status,
+            image,
+            images,
+            category,
+            categoryId,
+            attributes,
+            specs,
+            mxikCode,
+            packageCode,
+            vatPercent
+        } = body;
 
-        const updateData: any = { ...otherData };
+        const updateData: any = {
+            title,
+            description,
+            price: price !== undefined ? Number(price) : undefined,
+            oldPrice: oldPrice !== undefined ? (oldPrice ? Number(oldPrice) : null) : undefined,
+            discount: discount !== undefined ? (discount ? Number(discount) : null) : undefined,
+            stock: stock !== undefined ? Number(stock) : undefined,
+            status,
+            image,
+            mxikCode,
+            packageCode,
+            vatPercent: vatPercent !== undefined ? Number(vatPercent) : undefined,
+        };
 
-        if (category) {
-            updateData.categoryId = category;
-            updateData.category = category; // Keep string field in sync
+        if (category || categoryId) {
+            updateData.categoryId = categoryId || category;
+            updateData.category = category || categoryId;
+        }
+
+        if (images) {
+            updateData.images = Array.isArray(images) ? JSON.stringify(images) : images;
         }
 
         if (attributes) {
@@ -64,6 +97,11 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             updateData.specs = typeof specs === 'object' ? JSON.stringify(specs) : specs;
         }
 
+        // Remove undefined fields
+        Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+        console.log("Updating product with data:", updateData);
+
         const updatedProduct = await (prisma as any).product.update({
             where: { id },
             data: updateData
@@ -73,9 +111,12 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         revalidatePath(`/product/${id}`);
 
         return NextResponse.json(updatedProduct);
-    } catch (error) {
-        console.error(error);
-        return NextResponse.json({ error: 'Failed to update product' }, { status: 500 });
+    } catch (error: any) {
+        console.error("Product update error:", error);
+        return NextResponse.json({
+            error: 'Failed to update product',
+            details: error.message
+        }, { status: 500 });
     }
 }
 

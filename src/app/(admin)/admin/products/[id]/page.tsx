@@ -189,15 +189,16 @@ export default function EditProductPage() {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || errorData.details ? JSON.stringify(errorData.details) : "Failed to update product");
+                const errorMessage = errorData.error || (errorData.details ? (typeof errorData.details === 'string' ? errorData.details : JSON.stringify(errorData.details)) : "Xatolik yuz berdi");
+                throw new Error(errorMessage);
             }
 
-            toast.success("Product updated successfully");
+            toast.success("Mahsulot muvaffaqiyatli yangilandi");
             router.push("/admin/products");
             router.refresh();
         } catch (error: any) {
             console.error("Update error:", error);
-            toast.error(error.message || "Something went wrong");
+            toast.error(error.message || "Xatolik yuz berdi");
         } finally {
             setLoading(false);
         }
