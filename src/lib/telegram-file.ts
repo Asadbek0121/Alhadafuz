@@ -26,6 +26,7 @@ export async function uploadTelegramFileToBlob(fileId: string, fileName: string)
         // 3. Upload to Vercel Blob
         const blob = await put(fileName, fileBuffer, {
             access: 'public',
+            addRandomSuffix: true,
         });
 
         return blob.url;
