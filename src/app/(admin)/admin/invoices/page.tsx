@@ -148,6 +148,11 @@ function StatusBadge({ status }: { status: string }) {
             color = '#fa896b';
             text = 'Bekor qilindi';
             break;
+        case 'AWAITING_PAYMENT':
+            bg = '#fff8e1';
+            color = '#ffb020';
+            text = "To'lov kutilmoqda";
+            break;
     }
 
     return (

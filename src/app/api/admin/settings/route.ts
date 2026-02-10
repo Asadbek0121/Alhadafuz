@@ -21,13 +21,50 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
+
+        // Filter allowed fields to avoid Prisma errors with extra fields
+        const {
+            storeName,
+            storeDescription,
+            contactEmail,
+            contactPhone,
+            address,
+            workingHours,
+            facebookUrl,
+            instagramUrl,
+            telegramUrl,
+            youtubeUrl,
+            footerText,
+            maintenanceMode
+        } = body;
+
+        const updateData = {
+            storeName,
+            storeDescription,
+            contactEmail,
+            contactPhone,
+            address,
+            workingHours,
+            facebookUrl,
+            instagramUrl,
+            telegramUrl,
+            youtubeUrl,
+            footerText,
+            maintenanceMode,
+            updatedAt: new Date()
+        };
+
+        // Remove undefined fields
+        Object.keys(updateData).forEach(key => (updateData as any)[key] === undefined && delete (updateData as any)[key]);
+
         const settings = await (prisma as any).storeSettings.upsert({
             where: { id: 'default' },
-            update: { ...body, updatedAt: new Date() },
-            create: { id: 'default', ...body }
+            update: updateData,
+            create: { id: 'default', ...updateData }
         });
         return NextResponse.json(settings);
-    } catch (e) {
-        return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    } catch (e: any) {
+        console.error("Settings update error:", e);
+        return NextResponse.json({ error: e.message || 'Failed' }, { status: 500 });
     }
 }

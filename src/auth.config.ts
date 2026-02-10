@@ -2,8 +2,7 @@ import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
     pages: {
-        signIn: '/auth/login', // Corrected path to new login page
-        newUser: '/auth/register', // Corrected path to new register page
+        signIn: '/auth/login',
     },
     callbacks: {
         authorized({ auth, request: { nextUrl } }) {

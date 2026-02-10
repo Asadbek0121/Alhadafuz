@@ -23,12 +23,71 @@ export default function ViewInvoicePage() {
         grandTotal: 13530000
     };
 
+    const handlePrint = () => {
+        window.print();
+    };
+
+    const getStatusConfig = (status: string) => {
+        const normalizedStatus = status.toUpperCase();
+        switch (normalizedStatus) {
+            case 'PENDING':
+            case 'KUTILMOQDA':
+                return { text: 'Kutilmoqda', bg: '#fef5e5', color: '#ffae1f' };
+            case 'DELIVERED':
+            case 'YETKAZIB BERILDI':
+            case 'YETKAZILDI':
+                return { text: 'Yetkazib berildi', bg: '#e6fffa', color: '#13deb9' };
+            case 'SHIPPED':
+            case 'YUBORILGAN':
+            case 'PROCESSING':
+            case 'JARAYONDA':
+                return { text: 'Yuborildi', bg: '#ecf2ff', color: '#5d87ff' };
+            case 'AWAITING_PAYMENT':
+            case "TO'LOV KUTILMOQDA":
+                return { text: "To'lov kutilmoqda", bg: '#fff8e1', color: '#ffb020' };
+            case 'CANCELLED':
+            case 'BEKOR QILINDI':
+                return { text: 'Bekor qilindi', bg: '#fdede8', color: '#fa896b' };
+            default:
+                return { text: status, bg: '#ecf2ff', color: '#5d87ff' };
+        }
+    };
+
+    const statusConfig = getStatusConfig(invoice.status);
+
     return (
         <div style={{ padding: "0" }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <style jsx global>{`
+                @media print {
+                    body * {
+                        visibility: hidden;
+                    }
+                    .no-print {
+                        display: none !important;
+                    }
+                    #printable-area, #printable-area * {
+                        visibility: visible;
+                    }
+                    #printable-area {
+                        position: absolute;
+                        left: 0;
+                        top: 0;
+                        width: 100%;
+                        margin: 0;
+                        padding: 20px;
+                        background: white;
+                        box-shadow: none !important;
+                        border-radius: 0;
+                    }
+                }
+            `}</style>
+
+            <div className="no-print" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                    <h1 style={{ fontSize: '20px', fontWeight: 'bold' }}>Invoys #{invoice.id}</h1>
-                    <span style={{ background: '#e6fffa', color: '#00ceb6', padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>{invoice.status}</span>
+                    <h1 style={{ fontSize: '20px', fontWeight: 'bold' }}>Hisob-faktura #{invoice.id}</h1>
+                    <span style={{ background: statusConfig.bg, color: statusConfig.color, padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: 700 }}>
+                        {statusConfig.text}
+                    </span>
                 </div>
                 <div style={{ display: 'flex', gap: '10px' }}>
                     <button onClick={() => router.push(`/admin/invoices/${id}/edit`)} style={{ background: '#ecf2ff', color: '#0085db', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
@@ -40,7 +99,7 @@ export default function ViewInvoicePage() {
                 </div>
             </div>
 
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '40px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
+            <div id="printable-area" style={{ background: '#fff', borderRadius: '12px', padding: '40px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
 
                 {/* Header Info */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '40px' }}>
@@ -50,7 +109,7 @@ export default function ViewInvoicePage() {
                     </div>
                     <div style={{ textAlign: 'right' }}>
                         <span style={{ fontSize: '12px', color: '#999', display: 'block', marginBottom: '5px' }}>Buyurtma holati:</span>
-                        <span style={{ fontWeight: 600, color: '#2A3547' }}>{invoice.status}</span>
+                        <span style={{ fontWeight: 600, color: statusConfig.color }}>{statusConfig.text}</span>
                     </div>
                 </div>
 
@@ -121,13 +180,13 @@ export default function ViewInvoicePage() {
                     </div>
                 </div>
 
-                <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '40px 0' }} />
+                <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '40px 0' }} className="no-print" />
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button style={{ background: '#0085db', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+                    <button onClick={handlePrint} style={{ background: '#0085db', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Printer size={18} /> Chop etish
                     </button>
-                    <button style={{ background: '#ecf2ff', color: '#0085db', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button onClick={handlePrint} style={{ background: '#ecf2ff', color: '#0085db', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Download size={18} /> Yuklab olish
                     </button>
                 </div>

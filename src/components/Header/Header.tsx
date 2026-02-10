@@ -31,12 +31,27 @@ export default function Header() {
     const tProfile = useTranslations('Profile');
     const tNotif = useTranslations('Notifications');
 
-    const { openAuthModal, user: storeUser } = useUserStore();
+    const { openAuthModal, user: storeUser, setUser, logout } = useUserStore();
     const { data: session, status } = useSession();
 
     const isAuthenticated = status === "authenticated";
-    // Prefer storeUser for real-time updates (e.g. settings changes), fallback to session user
-    const user = storeUser || session?.user;
+
+    // Sync store user with session user to prevent stale data (especially from persistence)
+    useEffect(() => {
+        if (status === "authenticated" && session?.user) {
+            // Only update if storeUser is out of sync or missing
+            if (!storeUser || storeUser.email !== session.user.email) {
+                // Here we might want to fetch full user data, but for now just sync session
+                setUser(session.user as any);
+            }
+        } else if (status === "unauthenticated" && storeUser) {
+            logout();
+        }
+    }, [session, status, storeUser, setUser, logout]);
+
+    // Use session user as primary source of truth for authentication state,
+    // and storeUser only as a fallback for real-time UI updates when authenticated.
+    const user = isAuthenticated ? (storeUser || session?.user) : null;
 
     const router = useRouter();
 
@@ -320,14 +335,7 @@ export default function Header() {
                         </button>
 
                         {/* Admin Link (Direct /admin access without locale) */}
-                        {user?.role === 'ADMIN' && (
-                            <a href="/admin" className="hidden md:flex flex-col items-center gap-1 cursor-pointer group">
-                                <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all">
-                                    <LayoutDashboard size={24} strokeWidth={2} />
-                                </div>
-                                <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">Admin</span>
-                            </a>
-                        )}
+
 
                         {/* Profile */}
                         <Link href="/profile" onClick={handleProfileClick} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">

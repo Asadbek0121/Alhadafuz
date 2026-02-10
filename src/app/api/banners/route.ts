@@ -18,6 +18,20 @@ export async function POST(req: Request) {
     const session = await auth();
     if (session?.user?.role !== 'ADMIN') return NextResponse.json({ error: 'Auth' }, { status: 401 });
     const body = await req.json();
-    const banner = await (prisma as any).banner.create({ data: body });
+    const { type, title, description, imageUrl, link, price, oldPrice, discount, isActive } = body;
+
+    const banner = await (prisma as any).banner.create({
+        data: {
+            type,
+            title,
+            description,
+            imageUrl,
+            link,
+            price: price ? Number(price) : null,
+            oldPrice: oldPrice ? Number(oldPrice) : null,
+            discount,
+            isActive: isActive !== undefined ? isActive : true
+        }
+    });
     return NextResponse.json(banner);
 }

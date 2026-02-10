@@ -9,7 +9,22 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     const { id } = await params;
     const body = await req.json();
-    const banner = await (prisma as any).banner.update({ where: { id }, data: body });
+    const { type, title, description, imageUrl, link, price, oldPrice, discount, isActive } = body;
+
+    const banner = await (prisma as any).banner.update({
+        where: { id },
+        data: {
+            type,
+            title,
+            description,
+            imageUrl,
+            link,
+            price: price ? Number(price) : null,
+            oldPrice: oldPrice ? Number(oldPrice) : null,
+            discount,
+            isActive
+        }
+    });
     return NextResponse.json(banner);
 }
 
