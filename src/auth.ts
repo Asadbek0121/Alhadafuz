@@ -51,7 +51,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 // Remove undefined keys
                 Object.keys(telegramData).forEach(key => (telegramData as any)[key] === undefined && delete (telegramData as any)[key]);
 
-                const isValid = verifyTelegramLogin(telegramData);
+                const isValid = await verifyTelegramLogin(telegramData);
 
                 if (!isValid) {
                     console.error("Telegram hash verification failed");
@@ -136,7 +136,58 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     const passwordsMatch = await bcrypt.compare(password, dbPassword);
                     console.log('Password Check:', { match: passwordsMatch });
 
-                    if (passwordsMatch) return user;
+                    if (passwordsMatch) {
+                        // If user has 2FA enabled
+                        if (user.twoFactorEnabled) {
+                            const otp = (credentials as any).otp;
+
+                            // 1. If OTP is provided, verify it
+                            if (otp) {
+                                const verificationToken = await prisma.verificationToken.findUnique({
+                                    where: {
+                                        identifier_token: {
+                                            identifier: email,
+                                            token: otp
+                                        }
+                                    }
+                                });
+
+                                if (!verificationToken || new Date() > verificationToken.expires) {
+                                    throw new Error("OTP_INVALID");
+                                }
+
+                                // Delete token after use
+                                await prisma.verificationToken.delete({
+                                    where: {
+                                        identifier_token: {
+                                            identifier: email,
+                                            token: otp
+                                        }
+                                    }
+                                });
+
+                                return user;
+                            }
+
+                            // 2. If OTP is NOT provided, generate and send it
+                            const generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                            const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+                            await prisma.$executeRaw`
+                                INSERT INTO "VerificationToken" (identifier, token, expires)
+                                VALUES (${email}, ${generatedOtp}, ${expires})
+                                ON CONFLICT (identifier, token) DO UPDATE SET expires = ${expires}
+                            `;
+
+                            const { send2FAEmail } = await import("@/lib/mail");
+                            await send2FAEmail(email, generatedOtp);
+
+                            throw new Error("2FA_REQUIRED");
+                        }
+
+                        // 2FA not enabled, just return user
+                        return user;
+                    }
                 } else {
                     console.log('Validation Failed');
                 }

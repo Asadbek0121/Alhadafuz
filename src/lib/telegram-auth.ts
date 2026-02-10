@@ -1,5 +1,4 @@
 
-import crypto from 'crypto';
 
 interface TelegramUser {
     id: number;
@@ -11,7 +10,7 @@ interface TelegramUser {
     hash: string;
 }
 
-export function verifyTelegramLogin(data: any): boolean {
+export async function verifyTelegramLogin(data: any): Promise<boolean> {
     const botToken = process.env.TELEGRAM_BOT_TOKEN;
     if (!botToken) {
         console.error('TELEGRAM_BOT_TOKEN is not defined');
@@ -30,18 +29,44 @@ export function verifyTelegramLogin(data: any): boolean {
         .map((k) => `${k}=${userData[k]}`)
         .join('\n');
 
-    // Verify
-    const secretKey = crypto.createHash('sha256').update(botToken).digest();
-    const hmac = crypto.createHmac('sha256', secretKey).update(checkString).digest('hex');
+    try {
+        const encoder = new TextEncoder();
+        const botTokenData = encoder.encode(botToken);
 
-    // Check if hash matches
-    if (hmac !== hash) return false;
+        // secret_key = SHA256(token)
+        const secretKeyBuffer = await crypto.subtle.digest('SHA-256', botTokenData);
 
-    // Check auth_date to prevent replay attacks (e.g. valid for 5 mins)
-    const now = Math.floor(Date.now() / 1000);
-    if (now - userData.auth_date > 86400) { // 24 hours just to be safe, or 300s
+        // HMAC-SHA256(data_check_string, secret_key)
+        const key = await crypto.subtle.importKey(
+            'raw',
+            secretKeyBuffer,
+            { name: 'HMAC', hash: 'SHA-256' },
+            false,
+            ['sign']
+        );
+
+        const signature = await crypto.subtle.sign(
+            'HMAC',
+            key,
+            encoder.encode(checkString)
+        );
+
+        const hmacHex = Array.from(new Uint8Array(signature))
+            .map(b => b.toString(16).padStart(2, '0'))
+            .join('');
+
+        // Check if hash matches
+        if (hmacHex !== hash) return false;
+
+        // Check auth_date to prevent replay attacks (e.g. valid for 24 hours)
+        const now = Math.floor(Date.now() / 1000);
+        if (now - Number(userData.auth_date) > 86400) {
+            return false;
+        }
+
+        return true;
+    } catch (err) {
+        console.error('Telegram verification error:', err);
         return false;
     }
-
-    return true;
 }

@@ -74,10 +74,14 @@ export async function POST(req: NextRequest) {
         const session = await auth();
 
         if (!session?.user) {
+            console.error('Support Chat POST: Unauthorized');
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const { content, type = 'TEXT' } = await req.json();
+        const body = await req.json().catch(() => ({}));
+        const { content, type = 'TEXT' } = body;
+
+        console.log(`New support message from ${session.user.id}: type=${type}`);
 
         if (!content?.trim()) {
             return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
@@ -89,6 +93,7 @@ export async function POST(req: NextRequest) {
         });
 
         if (!admin) {
+            console.error('Support Chat POST: Admin not found');
             return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
         }
 
@@ -119,9 +124,13 @@ export async function POST(req: NextRequest) {
             },
         });
 
+        console.log('Support message created successfully');
         return NextResponse.json(message);
-    } catch (error) {
+    } catch (error: any) {
         console.error('Error sending support message:', error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({
+            error: 'Internal server error',
+            details: error.message
+        }, { status: 500 });
     }
 }

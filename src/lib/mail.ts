@@ -20,6 +20,10 @@ export async function sendVerificationEmail(email: string, otpCode: string) {
     return sendOTPEmail(email, otpCode, "Emailni tasdiqlash");
 }
 
+export async function send2FAEmail(email: string, otpCode: string) {
+    return sendOTPEmail(email, otpCode, "Ikki bosqichli autentifikatsiya");
+}
+
 async function sendOTPEmail(email: string, otpCode: string, title: string) {
     const resend = getResend();
 

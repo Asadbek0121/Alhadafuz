@@ -138,10 +138,17 @@ export default function SupportChat() {
                 method: 'POST',
                 body: formData
             });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: "Server hatosi" }));
+                toast.error(`Ovozli xabar yuklashda xatolik: ${errorData.error || res.statusText}`);
+                return;
+            }
+
             const data = await res.json();
 
             if (data.url) {
-                await fetch('/api/chat/support', {
+                const saveRes = await fetch('/api/chat/support', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -149,6 +156,10 @@ export default function SupportChat() {
                         type: 'AUDIO'
                     })
                 });
+
+                if (!saveRes.ok) {
+                    toast.error("Xabarni saqlashda xatolik");
+                }
                 fetchMessages();
             }
         } catch (error) {
@@ -182,10 +193,17 @@ export default function SupportChat() {
                 method: 'POST',
                 body: formData
             });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ error: "Server hatosi" }));
+                toast.error(`Rasm yuklashda xatolik: ${errorData.error || res.statusText}`);
+                return;
+            }
+
             const data = await res.json();
 
             if (data.url) {
-                await fetch('/api/chat/support', {
+                const saveRes = await fetch('/api/chat/support', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -193,6 +211,10 @@ export default function SupportChat() {
                         type: 'IMAGE'
                     })
                 });
+
+                if (!saveRes.ok) {
+                    toast.error("Xabarni saqlashda xatolik");
+                }
                 fetchMessages();
             }
         } catch (error) {
@@ -484,9 +506,9 @@ export default function SupportChat() {
                                                                     <audio
                                                                         controls
                                                                         style={{ width: '100%', height: '40px' }}
-                                                                        preload="auto"
+                                                                        preload="metadata"
                                                                     >
-                                                                        <source src={msg.content} type={msg.content.endsWith('mp4') ? 'audio/mp4' : 'audio/webm'} />
+                                                                        <source src={msg.content} />
                                                                         Sizning brauzeringiz audioni qo'llab-quvvatlamaydi.
                                                                     </audio>
                                                                 </div>

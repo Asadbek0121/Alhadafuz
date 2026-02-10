@@ -52,12 +52,20 @@ export default function AuthModal() {
             const result = await signIn('credentials', {
                 email,
                 password,
+                otp: isVerifying ? otp : undefined,
                 redirect: false,
             });
 
             if (result?.error) {
-                toast.error("Email yoki parol noto'g'ri");
-                localStorage.removeItem('mergeCartOnLogin');
+                if (result.error.includes("2FA_REQUIRED")) {
+                    setIsVerifying(true);
+                    toast.info("Ikki bosqichli autentifikatsiya kodi yuborildi");
+                } else if (result.error.includes("OTP_INVALID")) {
+                    toast.error("Tasdiqlash kodi noto'g'ri");
+                } else {
+                    toast.error("Email yoki parol noto'g'ri");
+                    localStorage.removeItem('mergeCartOnLogin');
+                }
             } else {
                 toast.success("Xush kelibsiz!");
                 closeAuthModal();
@@ -107,6 +115,10 @@ export default function AuthModal() {
     };
 
     const handleVerifyOTP = async (e: React.FormEvent) => {
+        if (mode === 'login') {
+            return handleLogin(e);
+        }
+
         e.preventDefault();
         setIsLoading(true);
 
@@ -354,12 +366,12 @@ export default function AuthModal() {
                             {mode === 'login' ? (
                                 <div className="text-slate-500 font-medium text-sm">
                                     Hisobingiz yo'qmi?{' '}
-                                    <button onClick={() => setMode('register')} className="text-blue-600 font-bold hover:underline">Ro'yxatdan o'tish</button>
+                                    <button onClick={() => { setMode('register'); setIsVerifying(false); }} className="text-blue-600 font-bold hover:underline">Ro'yxatdan o'tish</button>
                                 </div>
                             ) : (
                                 <div className="text-slate-500 font-medium text-sm">
                                     Allaqachon hisobingiz bormi?{' '}
-                                    <button onClick={() => setMode('login')} className="text-blue-600 font-bold hover:underline">Tizimga kirish</button>
+                                    <button onClick={() => { setMode('login'); setIsVerifying(false); }} className="text-blue-600 font-bold hover:underline">Tizimga kirish</button>
                                 </div>
                             )}
                         </div>
