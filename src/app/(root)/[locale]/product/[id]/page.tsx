@@ -147,7 +147,9 @@ export default function ProductPage() {
                 id: product.id,
                 title: product.title,
                 price: product.price,
-                image: product.images[0]
+                image: product.images[0],
+                hasDiscount: !!product.oldPrice || !!product.discount,
+                discountType: (product as any).discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined)
             }, false);
             toast.success(product.title + ' - ' + tHeader('savatcha'));
         }
@@ -159,7 +161,9 @@ export default function ProductPage() {
                 id: product.id,
                 title: product.title,
                 price: product.price,
-                image: product.images[0]
+                image: product.images[0],
+                hasDiscount: !!product.oldPrice || !!product.discount,
+                discountType: (product as any).discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined)
             }, false);
             router.push('/checkout');
         }

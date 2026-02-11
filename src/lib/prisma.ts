@@ -10,4 +10,3 @@ export const prisma =
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prismaInstance = prisma
 // Prisma Client Reload Trigger - Schema V3 - 2FA Support
 // Forced reload at 01:00 UTC
-

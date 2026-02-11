@@ -7,6 +7,8 @@ export interface CartItem {
     price: number;
     image: string;
     quantity: number;
+    hasDiscount?: boolean;
+    discountType?: string;
 }
 
 interface CartState {

@@ -17,6 +17,7 @@ const productSchema = z.object({
     oldPrice: z.union([z.string(), z.number()]).optional(),
     discountType: z.enum(["no_discount", "percentage", "fixed_price"]).default("no_discount"),
     discountValue: z.union([z.string(), z.number()]).optional(),
+    discountCategory: z.string().default("SALE"),
     vatAmount: z.union([z.string(), z.number()]).optional(),
     stock: z.union([z.string(), z.number()]),
     image: z.string().min(1, "Main image is required"),
@@ -125,6 +126,7 @@ export default function AddProductPage() {
             oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
             // Mapping schema fields
             discount: data.discountValue ? Number(data.discountValue) : null,
+            discountType: data.discountCategory,
             images: imagesList,
             attributes: attrsObject,
             category: data.category
@@ -279,16 +281,27 @@ export default function AddProductPage() {
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             {watch('discountType') !== 'no_discount' && (
-                                <div className="form-group">
-                                    <label className="label">Chegirma miqdori</label>
-                                    <input {...register("discountValue")} type="number" className="input" placeholder="0" />
-                                </div>
+                                <>
+                                    <div className="form-group">
+                                        <label className="label">Chegirma miqdori</label>
+                                        <input {...register("discountValue")} type="number" className="input" placeholder="0" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
+                                        <select {...register("discountCategory")} className="input">
+                                            <option value="SALE">Aksiya (SALE)</option>
+                                            <option value="PROMO">Promo (PROMO)</option>
+                                            <option value="HOT">Qaynoq (HOT)</option>
+                                        </select>
+                                    </div>
+                                </>
                             )}
-                            <div className="form-group">
-                                <label className="label">Soliq (%)</label>
-                                <input {...register("vatAmount")} type="number" className="input" placeholder="0" />
-                                <p className="helper-text">QQS miqdorini belgilang.</p>
-                            </div>
+                        </div>
+
+                        <div className="form-group">
+                            <label className="label">Soliq (%)</label>
+                            <input {...register("vatAmount")} type="number" className="input" placeholder="0" />
+                            <p className="helper-text">QQS miqdorini belgilang.</p>
                         </div>
                     </div>
                 </div>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useCartStore } from '@/store/useCartStore';
@@ -10,8 +11,6 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { regions, districts } from '@/constants/locations';
 import { useMessages } from 'next-intl';
 
-const regionsData = districts; // for backward compatibility if needed, but we'll use imported one
-
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCartStore();
     const { user, isAuthenticated, openAuthModal } = useUserStore();
@@ -19,21 +18,55 @@ export default function CheckoutPage() {
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
     const tProfile = useTranslations('Profile');
-    const tLoc = useTranslations('Locations');
     const messages = useMessages() as any;
     const router = useRouter();
 
     const [deliveryMethod, setDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
-
-    // Payment Method State
     const [paymentMethod, setPaymentMethod] = useState<string>('');
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
     const [isMethodsLoading, setIsMethodsLoading] = useState(true);
-
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Fetch Payment Methods
+    // Shipping Zones State
+    const [shippingZones, setShippingZones] = useState<any[]>([]);
+    const [deliveryFee, setDeliveryFee] = useState(0);
+
+    // Form state
+    const [formData, setFormData] = useState({
+        phone: user?.phone || '',
+        name: user?.name || '',
+        city: 'toshkent_sh',
+        district: '',
+        address: '',
+        comment: '',
+    });
+
+    const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
+    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+    const [saveNewAddress, setSaveNewAddress] = useState(false);
+
+    // Safe translation helper
+    const safeTranslate = (key: string) => {
+        if (!key) return '';
+        const locationMessages = messages?.Locations;
+        if (locationMessages && locationMessages[key]) {
+            return locationMessages[key];
+        }
+        return key;
+    };
+
+    const selectAddress = (addr: any) => {
+        setSelectedAddressId(addr.id);
+        setFormData(prev => ({
+            ...prev,
+            city: addr.city,
+            district: addr.district || '',
+            address: addr.street + (addr.house ? `, ${addr.house}` : '') + (addr.apartment ? `, ${addr.apartment}` : ''),
+        }));
+    };
+
+    // 1. Fetch Methods and Zones
     useEffect(() => {
         const fetchMethods = async () => {
             try {
@@ -51,65 +84,95 @@ export default function CheckoutPage() {
                 setIsMethodsLoading(false);
             }
         };
+
+        const fetchZones = async () => {
+            try {
+                const res = await fetch('/api/admin/shipping');
+                if (res.ok) {
+                    const data = await res.json();
+                    setShippingZones(data.filter((z: any) => z.isActive));
+                }
+            } catch (err) {
+                console.error("Failed to fetch shipping zones", err);
+            }
+        };
+
         fetchMethods();
+        fetchZones();
     }, []);
 
-    // Safe translation helper that accesses messages directly
-    const safeTranslate = (key: string) => {
-        if (!key) return '';
-        // Directly access the Locations messages
-        const locationMessages = messages?.Locations;
-        if (locationMessages && locationMessages[key]) {
-            return locationMessages[key];
-        }
-        // Fallback to original key if translation not found
-        return key;
-    };
-
-    // Form state
-    const [formData, setFormData] = useState({
-        phone: user?.phone || '',
-        name: user?.name || '',
-        city: 'toshkent_sh',
-        district: 'Yunusobod',
-        address: '',
-        comment: '',
-    });
-
-    const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
-    const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
-    const [saveNewAddress, setSaveNewAddress] = useState(false);
-
+    // 2. Auth/Cart check and Addresses
     useEffect(() => {
         if (items.length === 0) {
             router.replace('/');
+            return;
         }
 
-        // Fetch addresses
         if (isAuthenticated) {
             fetch('/api/addresses')
                 .then(res => res.json())
                 .then(data => {
                     if (Array.isArray(data)) {
                         setSavedAddresses(data);
-                        // Optional: pre-select default
                         const def = data.find((a: any) => a.isDefault);
                         if (def) selectAddress(def);
                     }
                 })
                 .catch(err => console.error(err));
         }
-    }, [items, router, isAuthenticated]);
+    }, [items.length, router, isAuthenticated]);
 
-    const selectAddress = (addr: any) => {
-        setSelectedAddressId(addr.id);
-        setFormData(prev => ({
-            ...prev,
-            city: addr.city,
-            district: addr.district || '',
-            address: addr.street + (addr.house ? `, ${addr.house}` : '') + (addr.apartment ? `, ${addr.apartment}` : ''),
-        }));
-    };
+    // 3. Dynamic Delivery Fee Calculation
+    useEffect(() => {
+        if (deliveryMethod === 'pickup') {
+            setDeliveryFee(0);
+            return;
+        }
+
+        const currentTotal = total();
+        const cityName = safeTranslate(formData.city);
+
+        // Try to find a specific zone for this district first
+        let selectedZone = shippingZones.find(z =>
+            (z.name === cityName || z.name === formData.city) &&
+            z.district === formData.district
+        );
+
+        // If no district zone, fall back to the city/region zone
+        if (!selectedZone) {
+            selectedZone = shippingZones.find(z =>
+                (z.name === cityName || z.name === formData.city) &&
+                (!z.district || z.district === "")
+            );
+        }
+
+        if (selectedZone) {
+            const isTotalFree = selectedZone.freeFrom && currentTotal >= selectedZone.freeFrom;
+
+            const totalQty = items.reduce((acc, item) => acc + item.quantity, 0);
+            const isQtyFree = selectedZone.freeFromQty && totalQty >= selectedZone.freeFromQty;
+
+            // Check if any item matches the required discount type
+            const isDiscountFree = selectedZone.freeIfHasDiscount && items.some(item => {
+                const cartItem = item as any;
+                if (!cartItem.hasDiscount) return false;
+
+                // If zone accepts ANY discount, any discounted item is enough
+                if (!selectedZone.freeDiscountType || selectedZone.freeDiscountType === 'ANY') return true;
+
+                // Otherwise check for exact match
+                return cartItem.discountType === selectedZone.freeDiscountType;
+            });
+
+            if (isTotalFree || isDiscountFree || isQtyFree) {
+                setDeliveryFee(0);
+            } else {
+                setDeliveryFee(selectedZone.price);
+            }
+        } else {
+            setDeliveryFee(0);
+        }
+    }, [formData.city, formData.district, deliveryMethod, shippingZones, total, items]);
 
     if (items.length === 0) return null;
 
@@ -142,6 +205,8 @@ export default function CheckoutPage() {
                 }
             }
 
+            const cityName = safeTranslate(formData.city);
+
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -153,11 +218,11 @@ export default function CheckoutPage() {
                         quantity: item.quantity,
                         image: item.image,
                     })),
-                    total: total(),
+                    total: total() + deliveryFee,
                     paymentMethod,
                     deliveryMethod,
                     deliveryAddress: {
-                        city: formData.city,
+                        city: cityName,
                         district: formData.district,
                         address: formData.address,
                         comment: formData.comment,
@@ -472,12 +537,14 @@ export default function CheckoutPage() {
                             </div>
                             <div className="flex justify-between text-slate-500 text-sm">
                                 <span>{tHeader('yetkazib_berish')}:</span>
-                                <span className="font-bold text-emerald-600">{tCart('free')}</span>
+                                <span className={deliveryFee === 0 ? "font-bold text-emerald-600" : "font-bold text-slate-900"}>
+                                    {deliveryFee === 0 ? tCart('free') : `${deliveryFee.toLocaleString()} ${tHeader('som')}`}
+                                </span>
                             </div>
                             <div className="border-t border-dashed border-slate-200 my-2"></div>
                             <div className="flex justify-between text-lg font-black text-slate-900">
                                 <span>{tHeader('jami_to_lov')}:</span>
-                                <span>{total().toLocaleString()} {tHeader('som')}</span>
+                                <span>{(total() + deliveryFee).toLocaleString()} {tHeader('som')}</span>
                             </div>
                         </div>
 

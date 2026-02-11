@@ -51,8 +51,9 @@ export default function Footer() {
 
                     {/* Brand & Socials (Col 1 - spans 4 on LG) */}
                     <div className="lg:col-span-4 space-y-6">
-                        <Link href="/" className="flex items-center gap-2 group w-fit">
-                            <span className={`${montserrat.className} text-4xl font-black tracking-tighter text-blue-500`}>Hadaf</span>
+                        <Link href="/" className="flex items-center group w-fit -ml-4">
+                            <img src="/logo.png" alt="Hadaf Logo" className="h-16 w-auto object-contain transition-transform group-hover:scale-105" />
+                            <span className={`${montserrat.className} text-4xl font-black tracking-tighter text-blue-500 -ml-2 pt-1`}>Hadaf</span>
                         </Link>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
                             {t('download_app_desc')}

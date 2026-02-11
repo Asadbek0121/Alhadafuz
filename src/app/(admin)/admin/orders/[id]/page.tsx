@@ -101,6 +101,18 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                                 </div>
                             ))}
                         </div>
+                        <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-500 font-medium">Mahsulotlar:</span>
+                                <span className="font-bold text-gray-900">{(order.total - ((order as any).deliveryFee || 0)).toLocaleString()} so'm</span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                                <span className="text-gray-500 font-medium">Yetkazib berish:</span>
+                                <span className={((order as any).deliveryFee || 0) === 0 ? "font-bold text-green-600" : "font-bold text-gray-900"}>
+                                    {((order as any).deliveryFee || 0) === 0 ? "Bepul" : `${(order as any).deliveryFee.toLocaleString()} so'm`}
+                                </span>
+                            </div>
+                        </div>
                         <div className="p-6 bg-gray-900 text-white">
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-400 font-medium">Jami to'lov miqdori:</span>

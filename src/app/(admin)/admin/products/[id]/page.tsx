@@ -17,6 +17,7 @@ const productSchema = z.object({
     oldPrice: z.union([z.string(), z.number()]).optional(),
     discountType: z.enum(["no_discount", "percentage", "fixed_price"]).default("no_discount"),
     discountValue: z.union([z.string(), z.number()]).optional(),
+    discountCategory: z.string().default("SALE"),
     vatAmount: z.union([z.string(), z.number()]).optional(),
     stock: z.union([z.string(), z.number()]),
     image: z.string().min(1, "Main image is required"),
@@ -78,8 +79,10 @@ export default function EditProductPage() {
                                 : (data.images || '')),
                         category: data.categoryId || (typeof data.category === 'object' ? data.category?.id : (typeof data.category === 'string' && data.category.length > 20 ? data.category : "")) || "",
                         // For demonstration, mapping some fields even if not perfect match
-                        discountType: "no_discount",
-                        status: "published"
+                        discountType: data.discount ? "fixed_price" : "no_discount",
+                        discountValue: data.discount || "",
+                        discountCategory: data.discountType || "SALE",
+                        status: data.status === "ACTIVE" ? "published" : "inactive"
                     });
 
                     // Populate attributes
@@ -176,6 +179,7 @@ export default function EditProductPage() {
             stock: Number(data.stock),
             oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
             discount: data.discountValue ? Number(data.discountValue) : null,
+            discountType: data.discountCategory,
             images: imagesList,
             attributes: attrsObject
         };
@@ -281,9 +285,45 @@ export default function EditProductPage() {
                             <label className="label">Asosiy narx <span className="text-red-500">*</span></label>
                             <input {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
                         </div>
+
+                        <div className="form-group">
+                            <label className="label">Chegirma turi</label>
+                            <div style={{ display: 'flex', gap: '20px', margin: '10px 0' }}>
+                                <label className="radio-label">
+                                    <input type="radio" value="no_discount" {...register("discountType")} /> Chegirma yo'q
+                                </label>
+                                <label className="radio-label">
+                                    <input type="radio" value="percentage" {...register("discountType")} /> Foiz (%)
+                                </label>
+                                <label className="radio-label">
+                                    <input type="radio" value="fixed_price" {...register("discountType")} /> Aniq narx
+                                </label>
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            {watch('discountType') !== 'no_discount' && (
+                                <>
+                                    <div className="form-group">
+                                        <label className="label">Chegirma miqdori</label>
+                                        <input {...register("discountValue")} type="number" className="input" placeholder="0" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
+                                        <select {...register("discountCategory")} className="input">
+                                            <option value="SALE">Aksiya (SALE)</option>
+                                            <option value="PROMO">Promo (PROMO)</option>
+                                            <option value="HOT">Qaynoq (HOT)</option>
+                                        </select>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+
                         <div className="form-group">
                             <label className="label">Eski narx</label>
                             <input {...register("oldPrice")} type="number" className="input" placeholder="Eski narx" />
+                            <p className="helper-text">Chegirmadan oldingi narx (ko'rgazma uchun).</p>
                         </div>
                     </div>
                 </div>

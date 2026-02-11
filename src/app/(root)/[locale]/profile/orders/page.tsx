@@ -33,6 +33,7 @@ interface Order {
     items: OrderItem[];
     paymentUrl?: string | null;
     paymentMethod: string;
+    deliveryFee?: number;
 }
 
 import { useTranslations, useLocale } from "next-intl";
@@ -191,6 +192,24 @@ export default function OrderHistoryPage() {
                                                 </div>
                                             </div>
                                         ))}
+                                    </div>
+
+                                    {/* Order Summary in Expanded View */}
+                                    <div className="mt-6 pt-6 border-t border-gray-100 space-y-2">
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-text-muted">{tHeader('mahsulotlar')}:</span>
+                                            <span className="font-semibold">{(order.total - (order.deliveryFee || 0)).toLocaleString()} {tHeader('som')}</span>
+                                        </div>
+                                        <div className="flex justify-between text-sm">
+                                            <span className="text-text-muted">{tHeader('yetkazib_berish')}:</span>
+                                            <span className={(order.deliveryFee || 0) === 0 ? "text-green-600 font-bold" : "font-semibold"}>
+                                                {(order.deliveryFee || 0) === 0 ? tCart('free') : `${order.deliveryFee?.toLocaleString()} ${tHeader('som')}`}
+                                            </span>
+                                        </div>
+                                        <div className="flex justify-between text-base font-bold pt-2">
+                                            <span>{t('total')}:</span>
+                                            <span className="text-primary">{order.total.toLocaleString()} {tHeader('som')}</span>
+                                        </div>
                                     </div>
                                 </div>
                             )}

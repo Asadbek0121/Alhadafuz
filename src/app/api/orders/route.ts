@@ -18,7 +18,7 @@ const orderItemSchema = z.object({
 
 const createOrderSchema = z.object({
     items: z.array(orderItemSchema).min(1),
-    paymentMethod: z.string().min(2), // 'click', 'cash', etc.
+    paymentMethod: z.string().min(2),
     deliveryAddress: z.object({
         city: z.string().optional(),
         district: z.string().optional(),
@@ -27,7 +27,7 @@ const createOrderSchema = z.object({
         name: z.string().optional(),
         comment: z.string().optional(),
     }).optional(),
-    // Explicitly validate total if provided, but we recalculate anyway.
+    deliveryMethod: z.string().optional().default('COURIER'),
     total: z.number().nonnegative().optional(),
 });
 
@@ -46,10 +46,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
         }
 
-        const { items, paymentMethod, deliveryAddress } = result.data;
+        const { items, paymentMethod, deliveryAddress, deliveryMethod } = result.data;
 
         // 2. Fetch products to prevent price tampering
-        // Use a safe query logic
         let dbProducts: any[] = [];
         const productIds = items.map(i => i.id);
 
@@ -66,14 +65,9 @@ export async function POST(req: Request) {
 
         for (const item of items) {
             const dbProduct = dbProducts.find((p: any) => p.id === item.id);
-
-            // SECURITY: Always use server-side price if available
             const price = dbProduct ? dbProduct.price : (item.price || 0);
             const title = dbProduct ? dbProduct.title : (item.title || "Unknown Product");
             const image = dbProduct ? dbProduct.image : (item.image || "");
-
-            // Apply specific stock checks here if needed using stock field
-            // if (dbProduct && dbProduct.stock < item.quantity) { ... }
 
             calculatedTotal += price * item.quantity;
 
@@ -86,24 +80,62 @@ export async function POST(req: Request) {
             });
         }
 
-        // 3. Fallback total checks
         if (calculatedTotal === 0 && items.length > 0) {
-            // Only allow client total if we really failed to fetch (unlikely) or strict mode off
-            // For now, if calculatedTotal is 0, it means either free products or DB fail.
-            // We'll trust client IF DB fetch returned empty AND items weren't empty? 
-            // Better to block if price is 0 to be "armored".
-            if (dbProducts.length > 0) {
-                // DB worked but prices are 0?
-            } else {
-                // DB failed likely.
+            if (dbProducts.length === 0) {
                 calculatedTotal = body.total || 0;
             }
         }
 
-        // Prevent negative totals
         if (calculatedTotal < 0) {
             return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
         }
+
+        // Calculate Delivery Fee
+        let deliveryFee = 0;
+        if (deliveryMethod === 'courier' && deliveryAddress?.city) {
+            try {
+                // Find specific district zone or fall back to city zone
+                const zones = await (prisma as any).shippingZone.findMany({
+                    where: {
+                        name: deliveryAddress.city,
+                        isActive: true
+                    }
+                });
+
+                const districtZone = zones.find((z: any) => z.district === deliveryAddress.district);
+                const cityZone = zones.find((z: any) => !z.district || z.district === "");
+
+                const zone = districtZone || cityZone;
+
+                if (zone) {
+                    const isTotalFree = zone.freeFrom && calculatedTotal >= zone.freeFrom;
+
+                    const totalQty = items.reduce((acc: number, item: any) => acc + item.quantity, 0);
+                    const isQtyFree = zone.freeFromQty && totalQty >= zone.freeFromQty;
+
+                    const isDiscountFree = zone.freeIfHasDiscount && dbProducts.some((p: any) => {
+                        const hasAnyDiscount = !!p.oldPrice || !!p.discount;
+                        if (!hasAnyDiscount) return false;
+
+                        if (!zone.freeDiscountType || zone.freeDiscountType === 'ANY') return true;
+
+                        return p.discountType === zone.freeDiscountType;
+                    });
+
+                    if (isTotalFree || isDiscountFree || isQtyFree) {
+                        deliveryFee = 0;
+                    } else {
+                        deliveryFee = zone.price;
+                    }
+                } else {
+                    deliveryFee = 0;
+                }
+            } catch (e) {
+                console.warn("Could not fetch shipping zone", e);
+            }
+        }
+
+        const finalTotal = calculatedTotal + deliveryFee;
 
         // Determine initial status based on payment method
         const method = paymentMethod.toLowerCase();
@@ -111,16 +143,15 @@ export async function POST(req: Request) {
 
         // 4. Create Order Transaction
         const order = await prisma.$transaction(async (tx) => {
-            // Create Order
-            const newOrder = await tx.order.create({
+            const newOrder = await (tx.order as any).create({
                 data: {
                     userId: session.user.id,
-                    total: calculatedTotal,
+                    total: finalTotal,
+                    deliveryFee: deliveryFee,
                     status: initialStatus,
-                    paymentMethod: paymentMethod, // Keep original casing or normalize? Let's keep original for display/logs
-                    // deliveryMethod: deliveryMethod || 'COURIER', 
+                    paymentMethod: paymentMethod,
+                    deliveryMethod: deliveryMethod || 'COURIER',
 
-                    // Shipping details
                     shippingCity: deliveryAddress?.city || 'Toshkent',
                     shippingDistrict: deliveryAddress?.district || '',
                     shippingAddress: deliveryAddress?.address || '',

@@ -29,7 +29,14 @@ export default function ProductCard(props: ProductProps) {
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
-        addToCart({ id, title, price, image }, false); // Don't open drawer
+        addToCart({
+            id,
+            title,
+            price,
+            image,
+            hasDiscount: !!oldPrice || !!isSale,
+            discountType: (!!oldPrice || !!isSale) ? 'SALE' : undefined
+        }, false); // Don't open drawer
         toast.success(title + ' - ' + t('savatcha'));
     };
 
@@ -37,7 +44,14 @@ export default function ProductCard(props: ProductProps) {
         e.preventDefault();
         e.stopPropagation();
         setIsBuying(true);
-        addToCart({ id, title, price, image }, false); // Don't open drawer
+        addToCart({
+            id,
+            title,
+            price,
+            image,
+            hasDiscount: !!oldPrice || !!isSale,
+            discountType: (!!oldPrice || !!isSale) ? 'SALE' : undefined
+        }, false); // Don't open drawer
         router.push('/checkout');
     };
 

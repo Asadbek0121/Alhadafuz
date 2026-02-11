@@ -65,6 +65,7 @@ export default function Header() {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
+    const mobileSearchRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     // Notification State
@@ -106,7 +107,8 @@ export default function Header() {
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+            if (searchRef.current && !searchRef.current.contains(event.target as Node) &&
+                mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node)) {
                 setSearchResults([]);
             }
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -363,7 +365,7 @@ export default function Header() {
                 </div>
 
                 {/* Mobile Search Bar (Only visible on mobile) */}
-                <div className="lg:hidden container pb-3 flex items-center gap-3">
+                <div className="lg:hidden container pb-3 flex items-center gap-3 relative" ref={mobileSearchRef}>
                     <div className="relative flex-1">
                         <input
                             type="text"
@@ -379,6 +381,40 @@ export default function Header() {
                     <div className="shrink-0 flex items-center gap-2">
                         <LanguageSwitcher minimal={true} />
                     </div>
+
+                    {/* Mobile Search Dropdown */}
+                    {searchQuery.length > 0 && (
+                        <div className="absolute top-full left-4 right-4 mt-1 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden py-2 z-[70] animate-fade-in-up">
+                            {isSearching ? (
+                                <div className="p-6 text-center text-slate-500">
+                                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                                    {t('loading')}
+                                </div>
+                            ) : searchResults.length > 0 ? (
+                                <div className="max-h-[60vh] overflow-y-auto">
+                                    {searchResults.map((product) => (
+                                        <Link
+                                            key={product.id}
+                                            href={`/product/${product.id}`}
+                                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors border-b border-slate-50 last:border-0"
+                                            onClick={() => { setSearchResults([]); setSearchQuery(''); }}
+                                        >
+                                            <img src={product.image} alt={product.title} className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-slate-100" />
+                                            <div className="min-w-0">
+                                                <div className="font-medium text-slate-900 line-clamp-1 text-sm">{product.title}</div>
+                                                <div className="text-blue-600 font-bold text-xs">{product.price.toLocaleString()} {t('som')}</div>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="p-6 text-center text-slate-500">
+                                    <Search size={20} className="mx-auto mb-2 opacity-50" />
+                                    <span className="text-sm">{t('not_found')}</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </header>
             <MegaMenu isOpen={isCatalogOpen} close={closeCatalog} menuMode={menuMode} />

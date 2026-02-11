@@ -108,6 +108,7 @@ model Order {
   userId           String
   status           String      @default("PENDING")
   total            Float
+  deliveryFee      Float       @default(0)
   paymentMethod    String      @default("CASH")
   deliveryMethod   String      @default("COURIER")
   paymentStatus    String      @default("PENDING") // NEW, PAID, CANCELLED
@@ -157,6 +158,7 @@ model Product {
   price         Float
   oldPrice      Float?
   discount      Float?
+  discountType  String?        // SALE, PROMO, HOT, etc.
   image         String
   images        String?
   stock         Int            @default(0)
@@ -355,4 +357,18 @@ model PaymentLog {
   responseData String?  @db.Text
   ipAddress    String?
   createdAt    DateTime @default(now())
+}
+
+model ShippingZone {
+  id                String   @id @default(cuid())
+  name              String   // Region name (Viloyat)
+  district          String?  // Optional District name (Tuman)
+  price             Float    @default(0)
+  freeFrom          Float?   // Free shipping if total > this
+  freeFromQty       Int?     // Free if item count > this
+  freeIfHasDiscount Boolean  @default(false) // Free if any product has discount
+  freeDiscountType  String   @default("ANY") // ANY, SALE, PROMO, etc.
+  isActive          Boolean  @default(true)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
