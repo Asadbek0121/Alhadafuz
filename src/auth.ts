@@ -14,7 +14,8 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
     adapter: PrismaAdapter(prisma) as any,
     session: { strategy: "jwt" },
     trustHost: true,
-    secret: process.env.AUTH_SECRET,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    debug: process.env.NODE_ENV === "development",
     providers: [
         ...(process.env.GOOGLE_CLIENT_SECRET ? [Google({
             clientId: process.env.GOOGLE_CLIENT_ID || "575519548512-9cmofokav83sd3mv9j5v0ma5tdpd77q9.apps.googleusercontent.com",

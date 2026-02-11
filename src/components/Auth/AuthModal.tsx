@@ -184,8 +184,11 @@ export default function AuthModal() {
             try {
                 localStorage.setItem('mergeCartOnLogin', 'true');
 
+                const params = new URLSearchParams(window.location.search);
+                const callbackUrl = params.get('callbackUrl') || window.location.origin;
+
                 await signIn('google', {
-                    callbackUrl: window.location.href,
+                    callbackUrl,
                     redirect: true
                 });
             } catch (error) {
