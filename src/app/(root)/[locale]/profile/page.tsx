@@ -4,12 +4,13 @@ import { useUserStore } from "@/store/useUserStore";
 import {
     Package, Wallet, Heart, ArrowRight, TrendingUp, Clock, CheckCircle2,
     MapPin, CreditCard, Globe, HelpCircle, LogOut, ChevronRight, Settings,
-    User, Bell, Shield, LayoutDashboard
+    User, Bell, Shield, LayoutDashboard, X
 } from "lucide-react";
 import { Link } from "@/navigation";
 import NextLink from "next/link";
 import { useTranslations, useLocale } from "next-intl";
 import { useSession, signOut } from "next-auth/react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import { useEffect, useState } from "react";
 
@@ -59,8 +60,14 @@ export default function ProfileOverviewPage() {
 
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [isInstallable, setIsInstallable] = useState(false);
+    const [isIOS, setIsIOS] = useState(false);
+    const [showInstructions, setShowInstructions] = useState(false);
 
     useEffect(() => {
+        // Detect iOS
+        const isIosDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+        setIsIOS(isIosDevice);
+
         const handleBeforeInstallPrompt = (e: any) => {
             // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
@@ -72,8 +79,10 @@ export default function ProfileOverviewPage() {
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
         // Check if already installed
-        if (window.matchMedia('(display-mode: standalone)').matches) {
+        const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
+        if (isStandalone) {
             setIsInstallable(false);
+            setIsIOS(false);
         }
 
         return () => {
@@ -82,6 +91,11 @@ export default function ProfileOverviewPage() {
     }, []);
 
     const handleInstallClick = async () => {
+        if (isIOS) {
+            setShowInstructions(true);
+            return;
+        }
+
         if (!deferredPrompt) return;
         // Show the install prompt
         deferredPrompt.prompt();
@@ -95,7 +109,7 @@ export default function ProfileOverviewPage() {
 
     const mobileMenu = [
         ...(isAdmin ? [{ icon: LayoutDashboard, label: tProfile('admin_panel'), href: "/admin", color: "text-purple-600", value: "" }] : []),
-        ...(isInstallable ? [{ icon: Package, label: tProfile('install_app'), action: handleInstallClick, color: "text-indigo-600", isInstall: true }] : []),
+        ...(isInstallable || isIOS ? [{ icon: Package, label: tProfile('install_app'), action: handleInstallClick, color: "text-indigo-600", isInstall: true }] : []),
         { icon: MapPin, label: tProfile('my_addresses'), href: "/profile/addresses", color: "text-orange-500" },
         { icon: Bell, label: tProfile('notifications'), href: "/profile/notifications", color: "text-red-500" },
         { icon: Globe, label: tProfile('app_language'), href: "/profile/settings", color: "text-blue-500", value: tProfile(currentLocale) },
@@ -367,6 +381,63 @@ export default function ProfileOverviewPage() {
                     </Link>
                 </div>
             </div>
+
+            {/* iOS Installation Instructions Modal */}
+            <AnimatePresence>
+                {showInstructions && (
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowInstructions(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ y: 100, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            className="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-4">
+                                <button onClick={() => setShowInstructions(false)} className="p-2 bg-gray-100 rounded-full text-gray-400">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="text-center space-y-4 pt-4">
+                                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Package size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900">Ilovani o'rnatish</h3>
+                                <p className="text-gray-500">Ilovani iPhone'ga o'rnatish uchun quyidagi amallarni bajaring:</p>
+
+                                <div className="space-y-4 py-4 text-left">
+                                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">1</div>
+                                        <p className="text-sm font-medium text-gray-700">Pastdagi <span className="p-1 px-2 border rounded-md bg-white">"Share"</span> tugmasini bosing</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">2</div>
+                                        <p className="text-sm font-medium text-gray-700"><span className="p-1 px-2 border rounded-md bg-white">"Add to Home Screen"</span> bandini tanlang</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">3</div>
+                                        <p className="text-sm font-medium text-gray-700">Yuqoridagi <span className="font-bold text-blue-600">"Add"</span> tugmasini bosing</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowInstructions(false)}
+                                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all"
+                                >
+                                    Tushunarli
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
