@@ -62,6 +62,8 @@ export default function ProfileOverviewPage() {
     const [isInstallable, setIsInstallable] = useState(false);
     const [isIOS, setIsIOS] = useState(false);
     const [showInstructions, setShowInstructions] = useState(false);
+    const [showAndroidInstructions, setShowAndroidInstructions] = useState(false);
+    const [isInBrowser, setIsInBrowser] = useState(false);
 
     useEffect(() => {
         // Detect iOS
@@ -69,21 +71,16 @@ export default function ProfileOverviewPage() {
         setIsIOS(isIosDevice);
 
         const handleBeforeInstallPrompt = (e: any) => {
-            // Prevent Chrome 67 and earlier from automatically showing the prompt
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             setDeferredPrompt(e);
             setIsInstallable(true);
         };
 
         window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
-        // Check if already installed
+        // Check standalone status
         const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone;
-        if (isStandalone) {
-            setIsInstallable(false);
-            setIsIOS(false);
-        }
+        setIsInBrowser(!isStandalone);
 
         return () => {
             window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
@@ -96,20 +93,22 @@ export default function ProfileOverviewPage() {
             return;
         }
 
-        if (!deferredPrompt) return;
-        // Show the install prompt
-        deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            setIsInstallable(false);
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') {
+                setIsInstallable(false);
+            }
+            setDeferredPrompt(null);
+        } else {
+            // Fallback for Android/Chrome if prompt didn't fire
+            setShowAndroidInstructions(true);
         }
-        setDeferredPrompt(null);
     };
 
     const mobileMenu = [
         ...(isAdmin ? [{ icon: LayoutDashboard, label: tProfile('admin_panel'), href: "/admin", color: "text-purple-600", value: "" }] : []),
-        ...(isInstallable || isIOS ? [{ icon: Package, label: tProfile('install_app'), action: handleInstallClick, color: "text-indigo-600", isInstall: true }] : []),
+        ...(isInBrowser ? [{ icon: Package, label: tProfile('install_app'), action: handleInstallClick, color: "text-indigo-600", isInstall: true }] : []),
         { icon: MapPin, label: tProfile('my_addresses'), href: "/profile/addresses", color: "text-orange-500" },
         { icon: Bell, label: tProfile('notifications'), href: "/profile/notifications", color: "text-red-500" },
         { icon: Globe, label: tProfile('app_language'), href: "/profile/settings", color: "text-blue-500", value: tProfile(currentLocale) },
@@ -259,7 +258,7 @@ export default function ProfileOverviewPage() {
                                     {tProfile('admin_panel')}
                                 </NextLink>
                             )}
-                            {isInstallable && (
+                            {isInBrowser && (
                                 <button
                                     onClick={handleInstallClick}
                                     className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-lg flex items-center gap-2 font-bold ring-2 ring-indigo-300"
@@ -409,17 +408,17 @@ export default function ProfileOverviewPage() {
                                 <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
                                     <Package size={32} />
                                 </div>
-                                <h3 className="text-xl font-bold text-gray-900">Ilovani o'rnatish</h3>
+                                <h3 className="text-xl font-bold text-gray-900">Ilovani o'rnatish (iOS)</h3>
                                 <p className="text-gray-500">Ilovani iPhone'ga o'rnatish uchun quyidagi amallarni bajaring:</p>
 
                                 <div className="space-y-4 py-4 text-left">
                                     <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
                                         <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">1</div>
-                                        <p className="text-sm font-medium text-gray-700">Pastdagi <span className="p-1 px-2 border rounded-md bg-white">"Share"</span> tugmasini bosing</p>
+                                        <p className="text-sm font-medium text-gray-700">Brauzer pastidagi <span className="p-1 px-2 border rounded-md bg-white">"Share"</span> tugmasini bosing</p>
                                     </div>
                                     <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
                                         <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">2</div>
-                                        <p className="text-sm font-medium text-gray-700"><span className="p-1 px-2 border rounded-md bg-white">"Add to Home Screen"</span> bandini tanlang</p>
+                                        <p className="text-sm font-medium text-gray-700">Menyudan <span className="p-1 px-2 border rounded-md bg-white">"Add to Home Screen"</span> bandini tanlang</p>
                                     </div>
                                     <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
                                         <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">3</div>
@@ -429,6 +428,56 @@ export default function ProfileOverviewPage() {
 
                                 <button
                                     onClick={() => setShowInstructions(false)}
+                                    className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all"
+                                >
+                                    Tushunarli
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+
+                {showAndroidInstructions && (
+                    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4">
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setShowAndroidInstructions(false)}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        />
+                        <motion.div
+                            initial={{ y: 100, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 100, opacity: 0 }}
+                            className="relative bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl overflow-hidden"
+                        >
+                            <div className="absolute top-0 right-0 p-4">
+                                <button onClick={() => setShowAndroidInstructions(false)} className="p-2 bg-gray-100 rounded-full text-gray-400">
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="text-center space-y-4 pt-4">
+                                <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <Package size={32} />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-900">Ilovani o'rnatish (Android)</h3>
+                                <p className="text-gray-500">Android/Chrome-dan o'rnatish uchun:</p>
+
+                                <div className="space-y-4 py-4 text-left">
+                                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">1</div>
+                                        <p className="text-sm font-medium text-gray-700">Brauzer o'ng burchagidagi <span className="p-1 px-2 border rounded-md bg-white">"..." (menyuni)</span> bosing</p>
+                                    </div>
+                                    <div className="flex items-center gap-4 p-3 bg-gray-50 rounded-2xl">
+                                        <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center font-bold text-blue-600 shadow-sm">2</div>
+                                        <p className="text-sm font-medium text-gray-700">Ro'yxatdan <span className="p-1 px-2 border rounded-md bg-white">"Install app"</span> yoki <span className="p-1 px-2 border rounded-md bg-white">"Add to Home screen"</span> bandini tanlang</p>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={() => setShowAndroidInstructions(false)}
                                     className="w-full py-4 bg-blue-600 text-white rounded-2xl font-bold hover:bg-blue-700 transition-all"
                                 >
                                     Tushunarli
