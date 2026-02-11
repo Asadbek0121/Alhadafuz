@@ -53,16 +53,52 @@ export default function RecentOrdersTable({ orders }: { orders: any[] }) {
                                         </div>
                                     </td>
                                     <td style={{ padding: '15px 0' }}>
-                                        <span style={{
-                                            fontSize: '12px',
-                                            fontWeight: '600',
-                                            padding: '4px 10px',
-                                            borderRadius: '4px',
-                                            background: order.status === 'COMPLETED' ? '#e6fffa' : order.status === 'PENDING' ? '#fbf2ef' : '#ecf2ff',
-                                            color: order.status === 'COMPLETED' ? '#00ceb6' : order.status === 'PENDING' ? '#fa896b' : '#0085db',
-                                        }}>
-                                            {order.status === 'PENDING' ? 'Kutilmoqda' : order.status === 'COMPLETED' ? 'Yetkazildi' : order.status}
-                                        </span>
+                                        {(() => {
+                                            const status = order.status;
+                                            let label = status;
+                                            let bgColor = '#ecf2ff';
+                                            let textColor = '#0085db';
+
+                                            if (status === 'PENDING') {
+                                                label = 'Kutilmoqda';
+                                                bgColor = '#fef5e5';
+                                                textColor = '#ffae1f';
+                                            } else if (status === 'COMPLETED' || status === 'DELIVERED') {
+                                                label = 'Yetkazildi';
+                                                bgColor = '#e6fffa';
+                                                textColor = '#00ceb6';
+                                            } else if (status === 'CANCELLED') {
+                                                label = 'Bekor qilindi';
+                                                bgColor = '#fdede8';
+                                                textColor = '#fa896b';
+                                            } else if (status === 'AWAITING_PAYMENT') {
+                                                label = "To'lov kutilmoqda";
+                                                bgColor = '#ecf2ff';
+                                                textColor = '#0085db';
+                                            } else if (status === 'SHIPPING') {
+                                                label = 'Yo\'lda';
+                                                bgColor = '#e1f5fe';
+                                                textColor = '#0288d1';
+                                            } else if (status === 'PROCESSING') {
+                                                label = 'Tayyorlanmoqda';
+                                                bgColor = '#f3e5f5';
+                                                textColor = '#8e24aa';
+                                            }
+
+                                            return (
+                                                <span style={{
+                                                    fontSize: '11px',
+                                                    fontWeight: '700',
+                                                    padding: '6px 12px',
+                                                    borderRadius: '8px',
+                                                    background: bgColor,
+                                                    color: textColor,
+                                                    textTransform: 'uppercase'
+                                                }}>
+                                                    {label}
+                                                </span>
+                                            );
+                                        })()}
                                     </td>
                                     <td style={{ padding: '15px 0' }}>
                                         <h6 suppressHydrationWarning style={{ margin: 0, fontSize: '14px', fontWeight: '700', color: '#2A3547' }}>

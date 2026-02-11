@@ -130,6 +130,9 @@ model Order {
   items            OrderItem[]
 
   @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([paymentStatus])
 }
 
 model OrderItem {
@@ -175,6 +178,12 @@ model Product {
   categoryRel   Category?      @relation(fields: [categoryId], references: [id])
   reviews       Review[]
   wishlistItems WishlistItem[]
+
+  @@index([title])
+  @@index([category])
+  @@index([price])
+  @@index([createdAt])
+  @@index([status])
 }
 
 model Category {

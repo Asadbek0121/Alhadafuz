@@ -138,7 +138,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                     if (passwordsMatch) {
                         // If user has 2FA enabled
-                        if (user.twoFactorEnabled) {
+                        if ((user as any).twoFactorEnabled) {
                             const otp = (credentials as any).otp;
 
                             // 1. If OTP is provided, verify it

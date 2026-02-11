@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from './ProductCard.module.css';
 import { ShoppingBag, Heart, Scale, Star, Loader2 } from 'lucide-react';
+import Image from "next/image";
 import { useCartStore } from '@/store/useCartStore'; // Updated import
 import { useTranslations } from 'next-intl';
 import { useWishlist } from '@/context/WishlistContext';
@@ -71,11 +72,12 @@ export default function ProductCard(props: ProductProps) {
             {/* Image Wrapper */}
             <div className="aspect-[4/5] bg-slate-50 w-full relative p-4 overflow-hidden">
                 <div className="w-full h-full flex items-center justify-center">
-                    <img
+                    <Image
                         src={image}
                         alt={title}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply"
-                        onError={(e) => { e.currentTarget.style.display = 'none' }}
+                        fill
+                        className="object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply"
+                        sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                     />
                 </div>
             </div>

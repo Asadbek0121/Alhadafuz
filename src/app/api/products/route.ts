@@ -1,5 +1,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { unstable_cache } from 'next/cache';
+
+const getCachedProducts = unstable_cache(
+    async () => {
+        return (prisma as any).product.findMany({
+            where: { isDeleted: false },
+            orderBy: { createdAt: 'desc' }
+        });
+    },
+    ['products-list'],
+    { revalidate: 3600, tags: ['products'] }
+);
 
 export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
@@ -10,7 +22,8 @@ export async function GET(request: Request) {
             const products = await (prisma as any).product.findMany({
                 where: {
                     title: {
-                        contains: q
+                        contains: q,
+                        mode: 'insensitive' // Optimize search
                     },
                     isDeleted: false
                 }
@@ -18,12 +31,7 @@ export async function GET(request: Request) {
             return NextResponse.json(products);
         }
 
-        const products = await (prisma as any).product.findMany({
-            where: { isDeleted: false },
-            orderBy: { createdAt: 'desc' }
-        });
-        console.log("API /api/products result:", products);
-        console.log("Is array?", Array.isArray(products));
+        const products = await getCachedProducts();
         return NextResponse.json(products);
     } catch (error: any) {
         console.error("API Error:", error);

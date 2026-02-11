@@ -123,7 +123,8 @@
         "contact": "Contact",
         "download_app": "Download our App",
         "all_rights_reserved": "All rights reserved",
-        "payment_methods": "Payment Methods"
+        "payment_methods": "Payment Methods",
+        "download_app_desc": "HADAF - Uzbekistan's reliable online trading platform. Purchases with us are convenient and fast!"
     },
     "Auth": {
         "title": "Login or Register",

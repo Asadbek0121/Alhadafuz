@@ -123,7 +123,8 @@
         "contact": "Aloqa",
         "download_app": "Ilovamizni yuklab oling",
         "all_rights_reserved": "Barcha huquqlar himoyalangan",
-        "payment_methods": "To'lov turlari"
+        "payment_methods": "To'lov turlari",
+        "download_app_desc": "HADAF - O'zbekistonning ishonchli onlayn savdo platformasi. Biz bilan xaridlar qulay va tez!"
     },
     "Auth": {
         "title": "Kirish yoki ro'yxatdan o'tish",

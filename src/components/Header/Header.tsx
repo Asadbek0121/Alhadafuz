@@ -75,14 +75,23 @@ export default function Header() {
         const fetchNotifications = async () => {
             if (isAuthenticated) {
                 try {
-                    const res = await fetch('/api/user/notifications');
+                    const res = await fetch('/api/user/notifications', {
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        cache: 'no-store'
+                    });
+
                     if (res.ok) {
                         const data = await res.json();
                         setNotifications(data);
                         setUnreadCount(data.filter((n: any) => !n.isRead).length);
+                    } else {
+                        console.warn("Failed to fetch notifications:", res.status, res.statusText);
                     }
                 } catch (e) {
-                    console.error(e);
+                    // Start quiet logging for network errors
+                    console.warn("Notification fetch error (likely network or server down):", e);
                 }
             }
         };

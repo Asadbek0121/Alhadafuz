@@ -4,6 +4,7 @@ import { useCartStore } from '@/store/useCartStore';
 import styles from './CartDrawer.module.css';
 import { X, Trash2, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Link } from '@/navigation';
+import Image from "next/image";
 import { useTranslations } from 'next-intl';
 
 export default function CartDrawer() {
@@ -42,7 +43,13 @@ export default function CartDrawer() {
                     ) : (
                         items.map(item => (
                             <div key={item.id} className={styles.item}>
-                                <img src={item.image} alt={item.title} className={styles.image} />
+                                <Image
+                                    src={item.image}
+                                    alt={item.title}
+                                    width={70}
+                                    height={70}
+                                    className={styles.image}
+                                />
                                 <div className={styles.details}>
                                     <div className={styles.title}>{item.title}</div>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>

@@ -1,8 +1,15 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from "next/server";
-import { put } from "@vercel/blob";
+import { v2 as cloudinary } from "cloudinary";
 import { auth } from "@/auth";
+
+// Configuration
+cloudinary.config({
+    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+});
 
 export async function POST(req: NextRequest) {
     try {
@@ -16,28 +23,34 @@ export async function POST(req: NextRequest) {
         const file = formData.get("file") as File;
 
         if (!file) {
-            console.error("Upload error: No file in form data");
             return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
         }
 
-        console.log(`Uploading file: ${file.name} (${file.size} bytes)`);
+        console.log(`Uploading file to Cloudinary: ${file.name} (${file.size} bytes)`);
 
-        // Upload to Vercel Blob
-        const blob = await put(file.name, file, {
-            access: 'public',
-            addRandomSuffix: true,
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = new Uint8Array(arrayBuffer);
+
+        const uploadResult: any = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_stream(
+                {
+                    folder: "uzm_products", // Keep everything organized
+                },
+                (error: any, result: any) => {
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+                    resolve(result);
+                }
+            ).end(buffer);
         });
 
-        console.log(`Upload successful: ${blob.url}`);
-        return NextResponse.json({ url: blob.url });
+        console.log(`Cloudinary upload successful: ${uploadResult.secure_url}`);
+        return NextResponse.json({ url: uploadResult.secure_url });
+
     } catch (error: any) {
-        console.error("Upload error detailed:", error);
-
-        let message = error.message;
-        if (message.includes("No token found") || message.includes("BLOB_READ_WRITE_TOKEN")) {
-            message = "Vercel Blob tokeni topilmadi. Iltimos, .env fayliga BLOB_READ_WRITE_TOKEN ni qo'shing.";
-        }
-
-        return NextResponse.json({ error: message }, { status: 500 });
+        console.error("Cloudinary upload error:", error);
+        return NextResponse.json({ error: error.message || "Upload failed" }, { status: 500 });
     }
 }

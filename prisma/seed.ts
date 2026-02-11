@@ -23,6 +23,7 @@ async function main() {
     }
 
     // Products
+    /*
     const products = [
         {
             id: 'iphone-15-pro',
@@ -41,7 +42,7 @@ async function main() {
             title: 'Samsung Galaxy S24 Ultra 512GB',
             description: 'Galaxy AI is here.',
             price: 13800000,
-            image: 'https://images.samsung.com/is/image/samsung/p6pim/uz_ru/sm-s921bzkasek/gallery/uz-ru-galaxy-s24-s921-sm-s921bzkasek-539326889?$650_519_PNG$',
+            image: 'https://placehold.co/600x800/png?text=Samsung+S24+Ultra',
             category: 'phones',
             categoryId: 'phones',
             stock: 20,
@@ -93,6 +94,7 @@ async function main() {
             create: p,
         })
     }
+    */
 
     console.log('Seeding finished.')
 }
