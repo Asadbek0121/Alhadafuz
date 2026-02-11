@@ -1,17 +1,17 @@
 {
-    "name": "UzMarket - Onlayn Savdo",
-    "short_name": "UzMarket",
+    "name": "Hadaf Market - Onlayn Savdo",
+    "short_name": "Hadaf Market",
     "description": "HADAF - O'zbekistonning onlayn savdo platformasi",
     "start_url": "/?pwa=true",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#2563eb",
+    "theme_color": "#ffffff",
     "icons": [
         {
             "src": "/logo.png",
             "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "any"
         },
         {
             "src": "/logo.png",

@@ -34,7 +34,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     appleWebApp: {
       capable: true,
       statusBarStyle: 'default',
-      title: 'UzMarket',
+      title: 'Hadaf Market',
     },
   };
 }
