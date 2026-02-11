@@ -60,8 +60,7 @@
     "postcss": "^8.5.6",
     "prisma": "5.22.0",
     "tailwindcss": "^4.1.18",
-    "typescript": "^5",
-    "@types/cloudinary": "^1.0.9"
+    "typescript": "^5"
   },
   "prisma": {
     "seed": "npx tsx prisma/seed.ts"
