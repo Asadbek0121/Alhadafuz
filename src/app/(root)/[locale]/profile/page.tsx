@@ -119,7 +119,7 @@ export default function ProfileOverviewPage() {
     return (
         <div>
             {/* MOBILE VIEW */}
-            <div className="lg:hidden flex flex-col gap-4">
+            <div className="lg:hidden flex flex-col gap-6">
                 {/* User Header Card */}
                 <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
                     <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 overflow-hidden">
@@ -139,28 +139,56 @@ export default function ProfileOverviewPage() {
                     </Link>
                 </div>
 
-                {/* Quick Stats Grid */}
-                <div className="grid grid-cols-2 gap-3">
-                    <Link href="/profile/orders" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-blue-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center z-10">
-                            <Package size={20} />
+                {/* Shaxsiy ma'lumotlar Section (Personal Info) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">{tProfile('personal_info')}</h3>
+                        <Link href="/profile/settings" className="text-sm font-bold text-blue-600 px-3 py-1 bg-blue-50 rounded-lg">
+                            {tProfile('edit')}
+                        </Link>
+                    </div>
+                    <div className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">{tProfile('fio')}</span>
+                            <span className="font-semibold text-gray-900">{user?.name || "---"}</span>
                         </div>
-                        <div className="z-10">
-                            <p className="text-2xl font-bold text-gray-900">{statsData.ordersCount}</p>
-                            <p className="text-xs font-medium text-gray-500">{tProfile('my_orders')}</p>
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">{tProfile('phone')}</span>
+                            <span className="font-semibold text-gray-900">{user?.phone || "---"}</span>
                         </div>
-                    </Link>
-                    <Link href="/favorites" className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col justify-between h-28 relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 w-16 h-16 bg-pink-50 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-                        <div className="w-10 h-10 bg-pink-100 text-pink-600 rounded-xl flex items-center justify-center z-10">
-                            <Heart size={20} />
+                        <div className="flex justify-between items-center text-sm">
+                            <span className="text-gray-500">Email</span>
+                            <span className="font-semibold text-gray-900">{user?.email || "---"}</span>
                         </div>
-                        <div className="z-10">
-                            <p className="text-2xl font-bold text-gray-900">{statsData.wishlistCount}</p>
-                            <p className="text-xs font-medium text-gray-500">{tProfile('wishlist')}</p>
-                        </div>
-                    </Link>
+                    </div>
+                </div>
+
+                {/* Buyurtmalar statusi (Order History Breakdown) */}
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-bold text-gray-900">{tProfile('order_history')}</h3>
+                        <Link href="/profile/orders" className="text-sm font-bold text-blue-600">
+                            {tProfile('view_all')}
+                        </Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                        {[
+                            { label: tProfile('pending'), count: statsData.ordersByStatus.pending, icon: Clock, color: "text-orange-500", bg: "bg-orange-50" },
+                            { label: tProfile('processing'), count: statsData.ordersByStatus.processing, icon: Package, color: "text-blue-500", bg: "bg-blue-50" },
+                            { label: tProfile('delivered'), count: statsData.ordersByStatus.delivered, icon: CheckCircle2, color: "text-green-500", bg: "bg-green-50" },
+                            { label: tProfile('cancelled'), count: statsData.ordersByStatus.cancelled, icon: LogOut, color: "text-red-500", bg: "bg-red-50" }
+                        ].map((item, idx) => (
+                            <Link key={idx} href="/profile/orders" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
+                                <div className={`w-9 h-9 rounded-full ${item.bg} ${item.color} flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white`}>
+                                    <item.icon size={16} strokeWidth={2.5} />
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-gray-900 leading-tight">{item.count}</p>
+                                    <p className="text-[10px] font-medium text-gray-500 truncate">{item.label}</p>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
                 </div>
 
                 {/* Menu List */}
@@ -212,7 +240,7 @@ export default function ProfileOverviewPage() {
                 {/* Logout Button */}
                 <button
                     onClick={() => signOut()}
-                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center gap-2 text-red-500 font-bold hover:bg-red-50 transition-colors"
+                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center gap-2 text-red-500 font-bold hover:bg-red-50 transition-colors mb-4"
                 >
                     <LogOut size={20} />
                     {tProfile('logout')}

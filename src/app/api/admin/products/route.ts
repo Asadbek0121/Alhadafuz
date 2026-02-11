@@ -45,26 +45,44 @@ export async function POST(req: Request) {
 
         const data = result.data;
 
-        // Cast to any to avoid Prisma type mismatch during build if types aren't fully synced
+        // Initialize data for creation
+        const createData: any = {
+            title: data.title,
+            price: data.price,
+            description: data.description,
+            image: data.image,
+            stock: data.stock,
+            oldPrice: data.oldPrice,
+            discount: data.discount,
+            mxikCode: data.mxikCode,
+            packageCode: data.packageCode,
+            vatPercent: data.vatPercent,
+            images: data.images ? JSON.stringify(data.images) : null,
+            attributes: data.attributes ? JSON.stringify(data.attributes) : null,
+        };
+
+        // Handle category logic (support ID or Name)
+        if (data.category) {
+            const categoryRecord = await prisma.category.findFirst({
+                where: {
+                    OR: [
+                        { id: data.category },
+                        { name: data.category },
+                        { slug: data.category }
+                    ]
+                }
+            });
+
+            if (categoryRecord) {
+                createData.categoryId = categoryRecord.id;
+                createData.category = categoryRecord.name;
+            } else {
+                createData.category = data.category;
+            }
+        }
+
         const product = await prisma.product.create({
-            data: {
-                title: data.title,
-                price: data.price,
-                description: data.description,
-                image: data.image,
-                category: data.category,
-
-                stock: data.stock,
-                oldPrice: data.oldPrice,
-                discount: data.discount,
-
-                mxikCode: data.mxikCode,
-                packageCode: data.packageCode,
-                vatPercent: data.vatPercent,
-
-                images: data.images ? JSON.stringify(data.images) : null,
-                attributes: data.attributes ? JSON.stringify(data.attributes) : null,
-            } as any
+            data: createData as any
         });
 
         revalidatePath('/admin/products');

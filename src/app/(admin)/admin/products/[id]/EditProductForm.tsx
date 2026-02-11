@@ -73,7 +73,7 @@ export default function EditProductForm({ product }: { product: any }) {
             oldPrice: product.oldPrice,
             discount: product.discount,
             stock: product.stock,
-            category: product.category,
+            category: product.categoryId || (typeof product.category === 'string' && product.category.length > 20 ? product.category : ""),
             description: product.description,
             image: product.image,
             images: defaultImagesStr,
@@ -217,7 +217,7 @@ export default function EditProductForm({ product }: { product: any }) {
                     <select {...register("category")} className="input-field" style={{ background: "#fff" }}>
                         <option value="">Tanlang...</option>
                         {categories.map(cat => (
-                            <option key={cat.id} value={cat.name}>{cat.name}</option>
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
                         ))}
                         {/* Fallback to simple values if no categories loaded yet or mix */}
                         {!categories.length && (

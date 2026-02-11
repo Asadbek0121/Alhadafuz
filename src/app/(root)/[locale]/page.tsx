@@ -39,7 +39,7 @@ export default function Home() {
               id={p.id}
               title={p.title}
               price={p.price}
-              oldPrice={p.originalPrice}
+              oldPrice={p.oldPrice}
               image={p.image}
               isSale={p.isSale}
             />

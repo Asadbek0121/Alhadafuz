@@ -73,7 +73,7 @@ export default function FavoritesPage() {
                         id={product.id}
                         title={product.title}
                         price={product.price}
-                        oldPrice={product.originalPrice}
+                        oldPrice={product.oldPrice}
                         image={product.image}
                         isSale={product.isSale}
                     />

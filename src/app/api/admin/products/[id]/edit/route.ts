@@ -15,21 +15,42 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const body = await req.json();
         const { title, price, description, image, category, stock, status, oldPrice, discount, images, attributes } = body;
 
+        const updateData: any = {
+            title,
+            price,
+            description,
+            image,
+            stock,
+            status,
+            oldPrice,
+            discount,
+            images: images ? JSON.stringify(images) : null,
+            attributes: attributes ? JSON.stringify(attributes) : null,
+        };
+
+        // Handle category logic (support ID or Name)
+        if (category) {
+            const categoryRecord = await prisma.category.findFirst({
+                where: {
+                    OR: [
+                        { id: category },
+                        { name: category },
+                        { slug: category }
+                    ]
+                }
+            });
+
+            if (categoryRecord) {
+                updateData.categoryId = categoryRecord.id;
+                updateData.category = categoryRecord.name;
+            } else {
+                updateData.category = category;
+            }
+        }
+
         const product = await (prisma as any).product.update({
             where: { id },
-            data: {
-                title,
-                price,
-                description,
-                image,
-                category,
-                stock,
-                status,
-                oldPrice,
-                discount,
-                images: images ? JSON.stringify(images) : null,
-                attributes: attributes ? JSON.stringify(attributes) : null,
-            }
+            data: updateData
         });
 
         // Log activity

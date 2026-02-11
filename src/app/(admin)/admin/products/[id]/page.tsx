@@ -76,7 +76,7 @@ export default function EditProductPage() {
                             : (typeof data.images === 'string' && data.images.startsWith('[')
                                 ? tryParseJsonImages(data.images)
                                 : (data.images || '')),
-                        category: data.categoryId || data.category?.id || "",
+                        category: data.categoryId || (typeof data.category === 'object' ? data.category?.id : (typeof data.category === 'string' && data.category.length > 20 ? data.category : "")) || "",
                         // For demonstration, mapping some fields even if not perfect match
                         discountType: "no_discount",
                         status: "published"

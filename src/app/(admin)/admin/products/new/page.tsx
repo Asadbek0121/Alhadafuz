@@ -325,7 +325,7 @@ export default function AddProductPage() {
                             <select {...register("category")} className="input">
                                 <option value="">Kategoriyani tanlang</option>
                                 {categories.map((cat: any) => (
-                                    <option key={cat.id} value={cat.slug || cat.id}>
+                                    <option key={cat.id} value={cat.id}>
                                         {cat.parent ? `${cat.parent.name} > ` : ''}{cat.name}
                                     </option>
                                 ))}
