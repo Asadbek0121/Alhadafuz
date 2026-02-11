@@ -57,8 +57,45 @@ export default function ProfileOverviewPage() {
         { label: tProfile('wishlist'), value: statsData.wishlistCount.toString(), icon: Heart, color: "text-pink-600", bg: "bg-pink-50", href: "/favorites" },
     ];
 
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+    const [isInstallable, setIsInstallable] = useState(false);
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e: any) => {
+            // Prevent Chrome 67 and earlier from automatically showing the prompt
+            e.preventDefault();
+            // Stash the event so it can be triggered later.
+            setDeferredPrompt(e);
+            setIsInstallable(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+        // Check if already installed
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            setIsInstallable(false);
+        }
+
+        return () => {
+            window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+        };
+    }, []);
+
+    const handleInstallClick = async () => {
+        if (!deferredPrompt) return;
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+            setIsInstallable(false);
+        }
+        setDeferredPrompt(null);
+    };
+
     const mobileMenu = [
         ...(isAdmin ? [{ icon: LayoutDashboard, label: tProfile('admin_panel'), href: "/admin", color: "text-purple-600", value: "" }] : []),
+        ...(isInstallable ? [{ icon: Package, label: tProfile('install_app'), action: handleInstallClick, color: "text-indigo-600", isInstall: true }] : []),
         { icon: MapPin, label: tProfile('my_addresses'), href: "/profile/addresses", color: "text-orange-500" },
         { icon: Bell, label: tProfile('notifications'), href: "/profile/notifications", color: "text-red-500" },
         { icon: Globe, label: tProfile('app_language'), href: "/profile/settings", color: "text-blue-500", value: tProfile(currentLocale) },
@@ -115,10 +152,12 @@ export default function ProfileOverviewPage() {
 
                 {/* Menu List */}
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden px-2">
-                    {mobileMenu.map((item, index) => {
+                    {mobileMenu.map((item: any, index: number) => {
+                        const isAction = !!item.action;
                         const LinkComponent = item.href === '/admin' ? NextLink : Link;
-                        return (
-                            <LinkComponent key={index} href={item.href} className="group relative flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_0_10px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out active:scale-[0.98]">
+
+                        const content = (
+                            <>
                                 {/* Hover Gradient Background */}
                                 <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-white opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300 -z-10" />
 
@@ -134,6 +173,24 @@ export default function ProfileOverviewPage() {
                                         </div>
                                     </div>
                                 </div>
+                            </>
+                        );
+
+                        if (isAction) {
+                            return (
+                                <button
+                                    key={index}
+                                    onClick={item.action}
+                                    className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_0_10px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out active:scale-[0.98]"
+                                >
+                                    {content}
+                                </button>
+                            );
+                        }
+
+                        return (
+                            <LinkComponent key={index} href={item.href || '#'} className="group relative flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_0_10px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out active:scale-[0.98]">
+                                {content}
                             </LinkComponent>
                         );
                     })}
@@ -187,6 +244,15 @@ export default function ProfileOverviewPage() {
                                     <LayoutDashboard size={20} />
                                     {tProfile('admin_panel')}
                                 </NextLink>
+                            )}
+                            {isInstallable && (
+                                <button
+                                    onClick={handleInstallClick}
+                                    className="px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl transition-all shadow-lg flex items-center gap-2 font-bold ring-2 ring-indigo-300"
+                                >
+                                    <Package size={20} />
+                                    {tProfile('install_app')}
+                                </button>
                             )}
                             <Link href="/profile/settings" className="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-xl transition-all shadow-lg flex items-center gap-2 font-medium">
                                 <Settings size={20} />
