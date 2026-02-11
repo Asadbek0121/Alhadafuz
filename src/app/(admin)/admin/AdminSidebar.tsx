@@ -6,7 +6,7 @@ import { Titan_One } from "next/font/google";
 const titanOne = Titan_One({ weight: "400", subsets: ["latin"] });
 
 import Link from 'next/link';
-import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck } from 'lucide-react';
+import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck, Star } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
 const menuItems = [
@@ -22,6 +22,7 @@ const menuItems = [
     { name: "Do'konlar", icon: <MapPin size={20} />, path: "/admin/stores" },
     { name: "Yetkazib berish", icon: <Truck size={20} />, path: "/admin/shipping" },
     { name: "To'lovlar", icon: <CreditCard size={20} />, path: "/admin/payments" },
+    { name: "Sharhlar", icon: <Star size={20} />, path: "/admin/reviews" },
     { name: "Sozlamalar", icon: <SlidersHorizontal size={20} />, path: "/admin/settings" },
     // { name: "Autentifikatsiya", icon: <Lock size={20} />, path: "/admin/auth" }, // Usually not needed in sidebar if already logged in
 ];

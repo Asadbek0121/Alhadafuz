@@ -175,6 +175,7 @@ model Product {
   mxikCode      String?
   packageCode   String?
   vatPercent    Int            @default(0)
+  brand         String?
   cartItems     CartItem[]
   orderItems    OrderItem[]
   categoryRel   Category?      @relation(fields: [categoryId], references: [id])
@@ -212,6 +213,7 @@ model Review {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  adminReply String?
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

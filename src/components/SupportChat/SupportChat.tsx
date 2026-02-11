@@ -271,7 +271,7 @@ export default function SupportChat() {
             setView('chat');
         } else {
             toast.info("Muloqot qilish uchun tizimga kiring");
-            router.push('/auth/login');
+            router.push('/?auth=login');
         }
     };
 

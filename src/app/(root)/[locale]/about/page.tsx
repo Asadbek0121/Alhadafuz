@@ -1,11 +1,15 @@
 "use client";
 
+import { useState } from 'react';
 import {
     Users, Award, ShieldCheck, Zap, MapPin, TrendingUp, Leaf, BookOpen,
     Smile, ShoppingBag, Calendar, Truck, CheckCircle, Target, ArrowRight
 } from 'lucide-react';
+import VendorApplicationModal from '@/components/VendorApplicationModal';
 
 export default function AboutPage() {
+    const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+
     return (
         <div className="bg-slate-50 min-h-screen font-sans">
             {/* 1. Hero Section with Gradient */}
@@ -333,12 +337,20 @@ export default function AboutPage() {
                         <p className="text-gray-400 mb-6 md:mb-8 max-w-2xl mx-auto text-sm md:text-base">
                             Tadbirkormisiz? O'z mahsulotlaringizni HADAF platformasida soting va biznesingizni yangi bosqichga olib chiqing.
                         </p>
-                        <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold shadow-lg shadow-blue-600/50 transition-all transform hover:scale-105 flex items-center gap-2 mx-auto text-sm md:text-base">
+                        <button
+                            onClick={() => setIsVendorModalOpen(true)}
+                            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold shadow-lg shadow-blue-600/50 transition-all transform hover:scale-105 flex items-center gap-2 mx-auto text-sm md:text-base"
+                        >
                             Hamkorlikni Boshlash <ArrowRight size={20} />
                         </button>
                     </div>
                 </div>
             </div>
+
+            <VendorApplicationModal
+                isOpen={isVendorModalOpen}
+                onClose={() => setIsVendorModalOpen(false)}
+            />
         </div>
     );
 }

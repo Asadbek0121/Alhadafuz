@@ -15,6 +15,7 @@ import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import SupportChat from "@/components/SupportChat/SupportChat";
 import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
+import AuthModal from "@/components/Auth/AuthModal";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -60,7 +61,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning={true}>
       <body className={inter.className} suppressHydrationWarning={true}>
         <Providers locale={locale} messages={messages}>
           <WishlistProvider>
@@ -75,6 +76,7 @@ export default async function LocaleLayout({
               <BottomNav />
               <Toaster />
               <SupportChat />
+              <AuthModal />
             </SessionProviderWrapper>
 
           </WishlistProvider>

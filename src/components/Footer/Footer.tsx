@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Montserrat } from "next/font/google";
+import InstallAppButtons from '../InstallAppButtons';
 
 const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
@@ -125,18 +126,7 @@ export default function Footer() {
 
                         <div>
                             <h3 className="text-white font-bold text-lg mb-4">{t('download_app')}</h3>
-                            <div className="grid grid-cols-2 lg:grid-cols-2 gap-3 max-w-sm">
-                                <AppStoreButton
-                                    icon="https://asaxiy.uz/custom-assets/images/app-store.svg"
-                                    subtitle="Download on the"
-                                    title="App Store"
-                                />
-                                <AppStoreButton
-                                    icon="https://asaxiy.uz/custom-assets/images/google-play.svg"
-                                    subtitle="GET IT ON"
-                                    title="Google Play"
-                                />
-                            </div>
+                            <InstallAppButtons />
                         </div>
                     </div>
                 </div>
@@ -182,18 +172,6 @@ function FooterLink({ href, children }: { href: string, children: React.ReactNod
                 {children}
             </Link>
         </li>
-    );
-}
-
-function AppStoreButton({ icon, subtitle, title }: { icon: string, subtitle: string, title: string }) {
-    return (
-        <a href="#" className="flex items-center gap-3 bg-gray-800 hover:bg-gray-700 px-4 py-2.5 rounded-xl transition-all group border border-gray-700 hover:border-gray-600 w-full justify-center lg:justify-start">
-            <img src={icon} alt={title} className="h-6 w-6 opacity-80 group-hover:opacity-100 transition-opacity" />
-            <div className="flex flex-col items-start">
-                <span className="text-[10px] text-gray-400 leading-none uppercase font-medium">{subtitle}</span>
-                <span className="text-sm font-bold text-white leading-none mt-1">{title}</span>
-            </div>
-        </a>
     );
 }
 

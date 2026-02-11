@@ -52,7 +52,7 @@ export default function ResetPasswordPage() {
     useEffect(() => {
         if (!token || !email) {
             toast.error("Yaroqsiz havola");
-            router.push("/auth/login");
+            router.push("/?auth=login");
         }
     }, [token, email, router]);
 
@@ -70,11 +70,8 @@ export default function ResetPasswordPage() {
             });
 
             if (res.ok) {
-                setIsSuccess(true);
                 toast.success("Parol muvaffaqiyatli yangilandi!");
-                setTimeout(() => {
-                    router.push("/auth/login");
-                }, 3000);
+                window.location.href = "/?resetSuccess=true";
             } else {
                 const data = await res.json();
                 toast.error(data.message || "Xatolik yuz berdi");
@@ -101,7 +98,7 @@ export default function ResetPasswordPage() {
                     <p className="text-gray-500 text-lg mb-8">
                         Sizning parolingiz muvaffaqiyatli o'zgartirildi. 3 soniyadan so'ng kirish sahifasiga yo'naltirilasiz...
                     </p>
-                    <Link href="/auth/login" className="w-full">
+                    <Link href="/?auth=login" className="w-full">
                         <Button className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700">
                             Hoziroq kirish
                         </Button>

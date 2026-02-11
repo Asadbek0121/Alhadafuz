@@ -26,6 +26,8 @@ const productSchema = z.object({
     // Complex fields
     images: z.array(z.string()).optional(),
     attributes: z.any(),
+    brand: z.string().optional(),
+    status: z.string().optional().default("published"),
 });
 
 export async function POST(req: Request) {
@@ -61,6 +63,8 @@ export async function POST(req: Request) {
             vatPercent: data.vatPercent,
             images: data.images ? JSON.stringify(data.images) : null,
             attributes: data.attributes ? JSON.stringify(data.attributes) : null,
+            brand: data.brand,
+            status: data.status,
         };
 
         // Handle category logic (support ID or Name)

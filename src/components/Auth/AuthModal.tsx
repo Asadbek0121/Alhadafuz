@@ -5,11 +5,12 @@ import { useUserStore } from '@/store/useUserStore';
 import { X, Mail, Lock, User, Loader2, Eye, EyeOff, Phone } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { Link } from '@/navigation';
+import { Link, useRouter } from '@/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PhoneInput } from '@/components/ui/phone-input';
 
 export default function AuthModal() {
+    const router = useRouter();
     const { isModalOpen, closeAuthModal, openAuthModal } = useUserStore();
     const { data: session, status } = useSession();
 
@@ -21,6 +22,39 @@ export default function AuthModal() {
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
+    // Handle Query Params (e.g. ?auth=login or ?auth=register)
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        const authParam = params.get('auth');
+        if (authParam === 'login') {
+            setMode('login');
+            openAuthModal();
+            // Clean up URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        } else if (authParam === 'register') {
+            setMode('register');
+            openAuthModal();
+            // Clean up URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+
+        const resetSuccess = params.get('resetSuccess');
+        if (resetSuccess === 'true') {
+            setIsSuccess(true);
+            openAuthModal();
+            // Clean up URL
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+
+            // Final action after animation
+            setTimeout(() => {
+                window.location.reload();
+            }, 5000);
+        }
+    }, [openAuthModal]);
+
     // Form states
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
@@ -30,6 +64,8 @@ export default function AuthModal() {
     const [otp, setOtp] = useState('');
 
     const [isSuccess, setIsSuccess] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [showTermsWarning, setShowTermsWarning] = useState(false);
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -62,10 +98,15 @@ export default function AuthModal() {
         setIsSuccess(true);
         toast.success(message);
 
+        // Immediately push to home to show it as background
+        const params = new URLSearchParams(window.location.search);
+        const callbackUrl = params.get('callbackUrl');
+        if (!callbackUrl && window.location.pathname !== '/') {
+            router.push('/');
+        }
+
         // Final action after animation
         setTimeout(() => {
-            const params = new URLSearchParams(window.location.search);
-            const callbackUrl = params.get('callbackUrl');
             if (callbackUrl) {
                 window.location.href = callbackUrl;
             } else {
@@ -76,6 +117,12 @@ export default function AuthModal() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!termsAccepted) {
+            setShowTermsWarning(true);
+            setTimeout(() => setShowTermsWarning(false), 2000);
+            toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
+            return;
+        }
         setIsLoading(true);
 
         try {
@@ -110,6 +157,12 @@ export default function AuthModal() {
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!termsAccepted) {
+            setShowTermsWarning(true);
+            setTimeout(() => setShowTermsWarning(false), 2000);
+            toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
+            return;
+        }
         setIsLoading(true);
 
         try {
@@ -179,6 +232,12 @@ export default function AuthModal() {
     };
 
     const handleSocialLogin = async (provider: string) => {
+        if (!termsAccepted) {
+            setShowTermsWarning(true);
+            setTimeout(() => setShowTermsWarning(false), 2000);
+            toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
+            return;
+        }
         if (provider === 'Google') {
             setIsLoading(true);
             try {
@@ -211,7 +270,8 @@ export default function AuthModal() {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={closeAuthModal}
-                        className="fixed inset-0 bg-slate-900/60 z-[1000] backdrop-blur-md"
+                        style={{ zIndex: 99998 }}
+                        className="fixed inset-0 bg-slate-900/60 backdrop-blur-md"
                     />
 
                     {/* Modal */}
@@ -220,7 +280,8 @@ export default function AuthModal() {
                         animate={{ y: 0, opacity: 1 }}
                         exit={{ y: "100%", opacity: 0 }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
-                        className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:bottom-auto md:-translate-x-1/2 md:-translate-y-1/2 z-[1001] bg-white w-full md:w-[460px] rounded-t-[32px] md:rounded-[40px] shadow-2xl overflow-hidden min-h-[300px] flex flex-col"
+                        style={{ zIndex: 99999 }}
+                        className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:bottom-auto md:-translate-x-1/2 md:-translate-y-1/2 bg-white w-full md:w-[460px] rounded-t-[32px] md:rounded-[40px] shadow-2xl overflow-hidden min-h-[300px] flex flex-col"
                     >
                         <AnimatePresence mode="wait">
                             {isSuccess ? (
@@ -441,12 +502,44 @@ export default function AuthModal() {
                                             </div>
                                         )}
 
+                                        {!isVerifying && (
+                                            <motion.div
+                                                animate={showTermsWarning ? { x: [-5, 5, -5, 5, 0] } : {}}
+                                                className={`p-4 rounded-2xl border transition-all mb-4 ${termsAccepted ? 'bg-emerald-50/50 border-emerald-100' : showTermsWarning ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}
+                                            >
+                                                <div className="flex items-start gap-3">
+                                                    <div className="relative flex items-center pt-0.5">
+                                                        <input
+                                                            type="checkbox"
+                                                            id="terms-auth"
+                                                            checked={termsAccepted}
+                                                            onChange={(e) => {
+                                                                setTermsAccepted(e.target.checked);
+                                                                if (e.target.checked) setShowTermsWarning(false);
+                                                            }}
+                                                            className={`w-5 h-5 rounded border-2 transition-all cursor-pointer accent-blue-600 ${termsAccepted ? 'border-blue-600' : showTermsWarning ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                                                        />
+                                                    </div>
+                                                    <label htmlFor="terms-auth" className="flex-1 text-[12px] md:text-[13px] text-slate-600 leading-relaxed cursor-pointer select-none">
+                                                        <span className="font-medium">
+                                                            Men <Link href="/terms" className="text-blue-600 hover:underline font-bold decoration-2 underline-offset-2">Ommaviy oferta</Link> shartlari va <Link href="/privacy" className="text-blue-600 hover:underline font-bold decoration-2 underline-offset-2">Maxfiylik siyosati</Link> bilan tanishib chiqdim va roziman.
+                                                        </span>
+                                                        {!termsAccepted && (
+                                                            <div className={`mt-1 text-[10px] font-bold uppercase tracking-wider ${showTermsWarning ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
+                                                                * Tasdiqlash majburiy
+                                                            </div>
+                                                        )}
+                                                    </label>
+                                                </div>
+                                            </motion.div>
+                                        )}
+
                                         <motion.button
-                                            whileHover={{ scale: 1.01 }}
-                                            whileTap={{ scale: 0.98 }}
+                                            whileHover={{ scale: termsAccepted ? 1.01 : 1 }}
+                                            whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
                                             type="submit"
-                                            className="w-full bg-blue-600 text-white py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 flex items-center justify-center gap-2 mt-2"
-                                            disabled={isLoading}
+                                            className={`w-full py-4 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 mt-2 ${termsAccepted ? 'bg-blue-600 text-white shadow-blue-600/20 hover:bg-blue-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+                                            disabled={isLoading || (!isVerifying && !termsAccepted)}
                                         >
                                             {isLoading ? (
                                                 <Loader2 className="animate-spin" />
@@ -467,11 +560,12 @@ export default function AuthModal() {
 
                                     <div className="grid grid-cols-2 gap-4 mb-8">
                                         <motion.button
-                                            whileHover={{ y: -2 }}
-                                            whileTap={{ scale: 0.98 }}
+                                            whileHover={{ y: termsAccepted ? -2 : 0 }}
+                                            whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
                                             type="button"
                                             onClick={() => handleSocialLogin("Google")}
-                                            className="flex items-center justify-center gap-2.5 py-4 px-4 border-2 border-slate-100 rounded-2xl hover:bg-slate-50 hover:border-slate-200 transition-all bg-white shadow-sm"
+                                            className={`flex items-center justify-center gap-2.5 py-4 px-4 border-2 rounded-2xl transition-all shadow-sm ${termsAccepted ? 'border-slate-100 hover:bg-slate-50 hover:border-slate-200 bg-white cursor-pointer' : 'border-slate-50 bg-slate-50 opacity-60 cursor-not-allowed'}`}
+                                            disabled={!termsAccepted}
                                         >
                                             <svg className="h-5 w-5" viewBox="0 0 24 24">
                                                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -482,11 +576,12 @@ export default function AuthModal() {
                                             <span className="font-bold text-slate-700 text-sm">Google</span>
                                         </motion.button>
                                         <motion.button
-                                            whileHover={{ y: -2 }}
-                                            whileTap={{ scale: 0.98 }}
+                                            whileHover={{ y: termsAccepted ? -2 : 0 }}
+                                            whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
                                             type="button"
-                                            className="flex items-center justify-center gap-2.5 py-4 px-4 border-2 border-slate-100 rounded-2xl hover:bg-slate-50 hover:border-slate-200 transition-all bg-white shadow-sm"
+                                            className={`flex items-center justify-center gap-2.5 py-4 px-4 border-2 rounded-2xl transition-all shadow-sm ${termsAccepted ? 'border-slate-100 hover:bg-slate-50 hover:border-slate-200 bg-white cursor-pointer' : 'border-slate-50 bg-slate-50 opacity-60 cursor-not-allowed'}`}
                                             onClick={() => handleSocialLogin("Telegram")}
+                                            disabled={!termsAccepted}
                                         >
                                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">
                                                 <path d="M21.1 4.3L18.7 16.9C18.4 18.2 17.6 18.6 16.6 18.1L11 13.9L8.3 16.5C8 16.8 7.8 17 7.2 17L7.6 11.4L17.8 2.2C18.2 1.8 17.7 1.6 17.1 2L4.5 9.9L-0.9 8.2C-1.3 8.1 -1.3 7.4 -0.8 7.2L20.2 -0.9C21.2 -1.3 22 0.3 21.1 4.3Z" fill="#229ED9" />

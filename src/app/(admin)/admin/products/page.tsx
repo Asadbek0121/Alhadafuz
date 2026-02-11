@@ -4,15 +4,22 @@ import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Package, Tag, AlertCircl
 import SoftDeleteButton from "./SoftDeleteButton";
 
 const getProducts = async (skip: number, take: number) => {
-    return await Promise.all([
-        (prisma as any).product.findMany({
-            where: { isDeleted: false },
-            orderBy: { createdAt: "desc" },
-            skip,
-            take,
-        }),
-        (prisma as any).product.count({ where: { isDeleted: false } }),
-    ]);
+    const products = await (prisma as any).$queryRawUnsafe(`
+        SELECT * FROM "Product" 
+        WHERE "isDeleted" = false 
+        ORDER BY "createdAt" DESC 
+        LIMIT ${take} OFFSET ${skip}
+    `);
+
+    const countResult = await (prisma as any).$queryRawUnsafe(`
+        SELECT COUNT(*) as count FROM "Product" 
+        WHERE "isDeleted" = false
+    `);
+
+    // Postgres returns BigInt for count, convert to Number
+    const count = Number(countResult[0].count);
+
+    return [products, count] as [any[], number];
 };
 
 export default async function AdminProductsPage({
@@ -67,11 +74,20 @@ export default async function AdminProductsPage({
 
                             {/* Badges Container */}
                             <div className="absolute top-3 left-3 right-3 flex justify-between items-start z-10">
-                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm backdrop-blur-md ${product.status === 'ACTIVE'
-                                        ? 'bg-emerald-500/90 text-white'
-                                        : 'bg-amber-500/90 text-white'
+                                <div className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider shadow-sm backdrop-blur-md ${['ACTIVE', 'PUBLISHED'].includes(product.status?.toUpperCase())
+                                        ? 'bg-emerald-500 text-white'
+                                        : ['INACTIVE', 'ARCHIVED'].includes(product.status?.toUpperCase())
+                                            ? 'bg-red-500 text-white'
+                                            : product.status?.toUpperCase() === 'SOTUVDA_KAM_QOLGAN'
+                                                ? 'bg-orange-500 text-white'
+                                                : ['DRAFT'].includes(product.status?.toUpperCase())
+                                                    ? 'bg-gray-500 text-white'
+                                                    : 'bg-gray-500 text-white' // Default case for unknown statuses
                                     }`}>
-                                    {product.status}
+                                    {['ACTIVE', 'PUBLISHED'].includes(product.status?.toUpperCase()) ? 'Sotuvda mavjud' :
+                                        ['INACTIVE', 'ARCHIVED'].includes(product.status?.toUpperCase()) ? 'Sotuvda mavjud emas' :
+                                            product.status?.toUpperCase() === 'SOTUVDA_KAM_QOLGAN' ? 'Sotuvda kam qolgan' :
+                                                ['DRAFT'].includes(product.status?.toUpperCase()) ? 'Qoralama' : product.status}
                                 </div>
                                 {product.stock <= 0 && (
                                     <div className="px-2.5 py-1 rounded-lg bg-red-500/90 text-white text-[10px] font-black uppercase tracking-wider shadow-sm backdrop-blur-md flex items-center gap-1">

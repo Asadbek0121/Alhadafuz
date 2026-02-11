@@ -111,12 +111,8 @@ export default function ForgotPasswordPage() {
             });
 
             if (res.ok) {
-                setStep("SUCCESS");
                 toast.success("Parol muvaffaqiyatli o'zgartirildi!");
-                setTimeout(() => {
-                    // Force refresh/redirect to login
-                    window.location.href = "/auth/login";
-                }, 2000);
+                window.location.href = "/?resetSuccess=true";
             } else {
                 const data = await res.json();
                 toast.error(data.message || "Kod noto'g'ri yoki muddati tugagan");
@@ -277,14 +273,12 @@ export default function ForgotPasswordPage() {
                     </AnimatePresence>
                 </CardContent>
 
-                {step === "EMAIL" && (
-                    <CardFooter className="py-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
-                        <Link href="/auth/login" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-bold transition-all group">
-                            <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
-                            Kirishga qaytish
-                        </Link>
-                    </CardFooter>
-                )}
+                <CardFooter className="py-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                    <Link href="/?auth=login" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 font-bold transition-all group">
+                        <ArrowLeft size={18} className="group-hover:-translate-x-1 transition-transform" />
+                        Kirishga qaytish
+                    </Link>
+                </CardFooter>
             </Card>
         </motion.div>
     );

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft } from "lucide-react";
+import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -13,6 +13,7 @@ const productSchema = z.object({
     title: z.string().min(3, "Product name must be at least 3 characters"),
     description: z.string().min(10, "Description must be at least 10 characters"),
     category: z.string().min(1, "Select a category"),
+    brand: z.string().optional(),
     price: z.union([z.string(), z.number()]),
     oldPrice: z.union([z.string(), z.number()]).optional(),
     discountType: z.enum(["no_discount", "percentage", "fixed_price"]).default("no_discount"),
@@ -23,7 +24,7 @@ const productSchema = z.object({
     image: z.string().min(1, "Main image is required"),
     images: z.string().optional(),
     tags: z.string().optional(),
-    status: z.enum(["published", "draft", "scheduled", "inactive"]).default("published"),
+    status: z.enum(["published", "draft", "scheduled", "inactive", "sotuvda_kam_qolgan"]).default("published"),
     template: z.string().optional(),
 });
 
@@ -44,6 +45,57 @@ export default function EditProductPage() {
     const [fetching, setFetching] = useState(true);
     const [categories, setCategories] = useState<any[]>([]);
     const [attributes, setAttributes] = useState<{ key: string; value: string }[]>([]);
+    const [showBulkPaste, setShowBulkPaste] = useState(false);
+    const [bulkText, setBulkText] = useState("");
+
+    const processBulkPaste = () => {
+        if (!bulkText.trim()) return;
+
+        const lines = bulkText.split('\n');
+        // Filter out empty existing attributes if needed, but let's append
+        const newAttrs = [...attributes.filter(a => a.key || a.value)];
+        let addedCount = 0;
+
+        lines.forEach(line => {
+            if (!line.trim()) return;
+
+            let key = "";
+            let value = "";
+
+            // Try splitting by tab first (Excel copy paste usually uses tabs)
+            if (line.includes('\t')) {
+                const parts = line.split('\t');
+                key = parts[0];
+                value = parts.slice(1).join(' ').trim();
+            }
+            // Then by colon :
+            else if (line.includes(':')) {
+                const parts = line.split(':');
+                key = parts[0];
+                value = parts.slice(1).join(':').trim();
+            }
+            // Then by dash -
+            else if (line.includes(' - ')) {
+                const parts = line.split(' - ');
+                key = parts[0];
+                value = parts.slice(1).join(' - ').trim();
+            }
+
+            if (key && value) {
+                newAttrs.push({ key: key.trim(), value: value.trim() });
+                addedCount++;
+            }
+        });
+
+        if (addedCount > 0) {
+            setAttributes(newAttrs);
+            setBulkText("");
+            setShowBulkPaste(false);
+            toast.success(`${addedCount} ta xususiyat qo'shildi`);
+        } else {
+            toast.error("Format noto'g'ri. Har bir qatorda 'Nomi' va 'Qiymati' bo'lishi kerak");
+        }
+    };
 
     const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<ProductFormValues>({
         resolver: zodResolver(productSchema) as any,
@@ -82,7 +134,11 @@ export default function EditProductPage() {
                         discountType: data.discount ? "fixed_price" : "no_discount",
                         discountValue: data.discount || "",
                         discountCategory: data.discountType || "SALE",
-                        status: data.status === "ACTIVE" ? "published" : "inactive"
+                        brand: data.brand || "",
+                        status: (data.status === "ACTIVE" || data.status === "published") ? "published" :
+                            (data.status === "inactive" ? "inactive" :
+                                (data.status === "sotuvda_kam_qolgan" ? "sotuvda_kam_qolgan" :
+                                    (data.status === "draft" || data.status === "DRAFT" ? "draft" : "inactive")))
                     });
 
                     // Populate attributes
@@ -337,9 +393,10 @@ export default function EditProductPage() {
                         <div className="form-group">
                             <label className="label">Mahsulot holati</label>
                             <select {...register("status")} className="input">
-                                <option value="published">Nashr qilingan</option>
+                                <option value="published">Sotuvda mavjud</option>
+                                <option value="inactive">Sotuvda mavjud emas</option>
+                                <option value="sotuvda_kam_qolgan">Sotuvda kam qolgan</option>
                                 <option value="draft">Qoralama</option>
-                                <option value="inactive">Faol emas</option>
                             </select>
                         </div>
                     </div>
@@ -354,9 +411,40 @@ export default function EditProductPage() {
                                 <button type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger"><X size={16} /></button>
                             </div>
                         ))}
-                        <button type="button" onClick={addAttribute} className="btn-light-primary">
-                            <Plus size={18} style={{ marginRight: '8px' }} /> Xususiyat qo'shish
-                        </button>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+                            <button type="button" onClick={addAttribute} className="btn-light-primary">
+                                <Plus size={18} style={{ marginRight: '8px' }} /> Xususiyat qo'shish
+                            </button>
+                            <button type="button" onClick={() => setShowBulkPaste(!showBulkPaste)} className="btn-light-secondary" style={{ background: '#f0f0f0', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', transition: 'background 0.2s' }}>
+                                <Copy size={18} style={{ marginRight: '8px' }} /> Matndan nusxalash
+                            </button>
+                        </div>
+
+                        {showBulkPaste && (
+                            <div style={{ marginTop: '15px', background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #e5eaef', animation: 'fadeIn 0.3s' }}>
+                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#2A3547' }}>Xususiyatlarni matndan nusxalash</h4>
+                                <p style={{ fontSize: '13px', color: '#5A6A85', marginBottom: '15px', lineHeight: '1.5' }}>
+                                    Excel yoki boshqa saytdan nusxalab tashlang. Har bir qator yangi xususiyat bo'ladi.
+                                    <br />Format: <b>Nomi [Tab] Qiymati</b> yoki <b>Nomi: Qiymati</b>
+                                </p>
+                                <textarea
+                                    className="input"
+                                    rows={8}
+                                    value={bulkText}
+                                    onChange={(e) => setBulkText(e.target.value)}
+                                    placeholder={`Masalan:\nRang\tQizil\nO'lcham\tXL\nMaterial: Paxta`}
+                                    style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.5' }}
+                                />
+                                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                    <button type="button" onClick={processBulkPaste} className="btn-primary">
+                                        Qo'shish
+                                    </button>
+                                    <button type="button" onClick={() => { setShowBulkPaste(false); setBulkText(""); }} className="btn-outline-danger" style={{ border: 'none', padding: '10px 20px' }}>
+                                        Yopish
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Details */}
@@ -372,6 +460,10 @@ export default function EditProductPage() {
                                     </option>
                                 ))}
                             </select>
+                        </div>
+                        <div className="form-group">
+                            <label className="label">Brand</label>
+                            <input {...register("brand")} className="input" placeholder="Brand nomi" />
                         </div>
                         <div className="form-group">
                             <label className="label">Omborda</label>

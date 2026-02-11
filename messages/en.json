@@ -1,6 +1,6 @@
 {
     "Meta": {
-        "title": "UzMarket - Online Marketplace",
+        "title": "Hadaf Market",
         "description": "The largest online marketplace in Uzbekistan"
     },
     "Header": {
@@ -97,7 +97,10 @@
         "review_placeholder": "Your impressions of the product...",
         "submitting": "Submitting...",
         "submit": "Submit",
-        "out_of_stock": "Out of stock"
+        "out_of_stock": "Out of stock",
+        "holati": "Condition",
+        "review_success": "Your review has been submitted",
+        "admin_response": "Admin response"
     },
     "Wishlist": {
         "title": "Wishlist",

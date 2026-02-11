@@ -1,6 +1,6 @@
 {
     "Meta": {
-        "title": "UzMarket - Онлайн магазин",
+        "title": "Hadaf Market",
         "description": "Самый большой онлайн магазин в Узбекистане"
     },
     "Header": {
@@ -97,7 +97,10 @@
         "review_placeholder": "Ваши впечатления о товаре...",
         "submitting": "Отправка...",
         "submit": "Отправить",
-        "out_of_stock": "Нет в наличии"
+        "out_of_stock": "Нет в наличии",
+        "holati": "Состояние",
+        "review_success": "Ваш отзыв был отправлен",
+        "admin_response": "Ответ администратора"
     },
     "Wishlist": {
         "title": "Избранное",

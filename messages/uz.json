@@ -1,6 +1,6 @@
 {
     "Meta": {
-        "title": "UzMarket - Online Bozor",
+        "title": "Hadaf Market",
         "description": "O'zbekistondagi eng katta online bozor"
     },
     "Header": {
@@ -97,7 +97,10 @@
         "review_placeholder": "Mahsulot haqida taassurotlaringiz...",
         "submitting": "Yuborilmoqda...",
         "submit": "Yuborish",
-        "out_of_stock": "Sotuvda yo'q"
+        "out_of_stock": "Sotuvda yo'q",
+        "holati": "Holati",
+        "review_success": "Sharhingiz qabul qilindi",
+        "admin_response": "Admin javobi"
     },
     "Wishlist": {
         "title": "Sevimlilar",

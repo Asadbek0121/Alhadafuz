@@ -144,7 +144,7 @@ export default function CartPage() {
                                 if (isAuthenticated) {
                                     router.push('/checkout');
                                 } else {
-                                    router.push('/auth/login?callbackUrl=/checkout');
+                                    router.push('/?auth=login&callbackUrl=/checkout');
                                 }
                             }}
                             className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 active:scale-[0.98]"

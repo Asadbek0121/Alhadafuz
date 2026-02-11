@@ -18,7 +18,6 @@ import { useTranslations } from 'next-intl';
 import { useUserStore } from '@/store/useUserStore';
 import { useSession } from 'next-auth/react';
 import CartDrawer from '../Cart/CartDrawer';
-import AuthModal from '../Auth/AuthModal';
 import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
@@ -419,7 +418,6 @@ export default function Header() {
             </header>
             <MegaMenu isOpen={isCatalogOpen} close={closeCatalog} menuMode={menuMode} />
             <CartDrawer />
-            <AuthModal />
         </>
     );
 }

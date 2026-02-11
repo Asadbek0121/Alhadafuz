@@ -4,10 +4,12 @@ import { unstable_cache } from 'next/cache';
 
 const getCachedProducts = unstable_cache(
     async () => {
-        return (prisma as any).product.findMany({
-            where: { isDeleted: false },
-            orderBy: { createdAt: 'desc' }
-        });
+        return (prisma as any).$queryRawUnsafe(`
+            SELECT * FROM "Product" 
+            WHERE "isDeleted" = false 
+            AND ("status" = 'published' OR "status" = 'ACTIVE') 
+            ORDER BY "createdAt" DESC
+        `);
     },
     ['products-list'],
     { revalidate: 3600, tags: ['products'] }
@@ -19,15 +21,11 @@ export async function GET(request: Request) {
 
     try {
         if (q) {
-            const products = await (prisma as any).product.findMany({
-                where: {
-                    title: {
-                        contains: q,
-                        mode: 'insensitive' // Optimize search
-                    },
-                    isDeleted: false
-                }
-            });
+            const products = await (prisma as any).$queryRawUnsafe(`
+                SELECT * FROM "Product" 
+                WHERE "title" ILIKE '%${q.replace(/'/g, "''")}%' 
+                AND "isDeleted" = false
+            `);
             return NextResponse.json(products);
         }
 

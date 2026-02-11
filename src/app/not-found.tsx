@@ -7,8 +7,8 @@ import Link from "next/link";
 // It MUST define its own html and body tags because there is no root layout.
 export default function NotFound() {
     return (
-        <html lang="uz">
-            <body>
+        <html lang="uz" suppressHydrationWarning={true}>
+            <body suppressHydrationWarning={true}>
                 <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4 font-sans">
                     <h1 className="text-4xl font-bold text-gray-900 mb-4">404 - Sahifa topilmadi</h1>
                     <p className="text-gray-600 mb-8 text-center max-w-md">

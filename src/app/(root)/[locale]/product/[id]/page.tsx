@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import { useTranslations } from 'next-intl';
-import { Star, ShoppingCart, Share2, User as UserIcon } from 'lucide-react';
+import { Star, ShoppingCart, Share2, User as UserIcon, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './page.module.css';
 
@@ -14,6 +14,7 @@ interface Review {
     comment: string;
     user: { name: string; image: string; };
     createdAt: string;
+    adminReply?: string;
 }
 
 interface Product {
@@ -30,6 +31,7 @@ interface Product {
     rating: number;
     stock: number;
     reviews?: Review[];
+    status?: string;
 }
 
 export default function ProductPage() {
@@ -51,6 +53,32 @@ export default function ProductPage() {
     const [userRating, setUserRating] = useState(5);
     const [userComment, setUserComment] = useState("");
     const [submittingReview, setSubmittingReview] = useState(false);
+
+    // Accordion State
+    const [isDescOpen, setIsDescOpen] = useState(false);
+    const [isSpecsOpen, setIsSpecsOpen] = useState(false);
+    const sectionRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (sectionRef.current && !sectionRef.current.contains(event.target as Node)) {
+                setIsDescOpen(false);
+                setIsSpecsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const toggleDesc = () => {
+        setIsDescOpen(!isDescOpen);
+        if (!isDescOpen) setIsSpecsOpen(false);
+    };
+
+    const toggleSpecs = () => {
+        setIsSpecsOpen(!isSpecsOpen);
+        if (!isSpecsOpen) setIsDescOpen(false);
+    };
 
     const handleSubmitReview = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -117,14 +145,15 @@ export default function ProductPage() {
                             const sels: [string, string[]][] = [];
                             const stats: [string, string][] = [];
                             Object.entries(parsedSpecs).forEach(([key, value]) => {
-                                if (Array.isArray(value)) {
+                                if (Array.isArray(value) && value.length > 1) {
                                     sels.push([key, value]);
                                     // Default select first option
                                     if (value.length > 0) {
                                         setSelectedOptions(prev => ({ ...prev, [key]: value[0] }));
                                     }
                                 } else {
-                                    stats.push([key, String(value)]);
+                                    const valStr = Array.isArray(value) ? value[0] : String(value);
+                                    if (valStr) stats.push([key, valStr]);
                                 }
                             });
                             setSelections(sels);
@@ -166,6 +195,27 @@ export default function ProductPage() {
                 discountType: (product as any).discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined)
             }, false);
             router.push('/checkout');
+        }
+    };
+
+    const handleShare = async () => {
+        if (!product) return;
+        const shareUrl = window.location.href;
+        const shareData = {
+            title: product.title,
+            url: shareUrl,
+        };
+        try {
+            if (navigator.share) {
+                await navigator.share(shareData);
+            } else {
+                await navigator.clipboard.writeText(window.location.href);
+                toast.success(tProduct('link_copied') || "Havola nusxalandi");
+            }
+        } catch (err) {
+            if ((err as Error).name !== 'AbortError') {
+                console.error("Error sharing:", err);
+            }
         }
     };
 
@@ -220,7 +270,7 @@ export default function ProductPage() {
                             <span style={{ fontWeight: 600, marginLeft: '4px' }}>{product.rating || 4.9}</span>
                             <span style={{ color: '#888', marginLeft: '6px' }}>({product.reviewsCount} {tProduct('reviews')})</span>
                         </div>
-                        <button className={styles.shareBtn}>
+                        <button className={styles.shareBtn} onClick={handleShare}>
                             <Share2 size={20} />
                         </button>
                     </div>
@@ -237,49 +287,56 @@ export default function ProductPage() {
                         <div className={styles.mainPrice}>{product.price.toLocaleString()} {tHeader('som')}</div>
                     </div>
 
-                    {/* Dynamic Selections */}
-                    {selections.map(([key, options]) => (
-                        <div key={key} className={styles.selectionRow}>
-                            <div className={styles.selectLabel}>{key}: <span style={{ color: '#000', fontWeight: 600 }}>{selectedOptions[key]}</span></div>
-                            <div className={styles.toggleGroup}>
-                                {options.map(opt => (
-                                    <button
-                                        key={opt}
-                                        className={`${styles.toggleBtn} ${selectedOptions[key] === opt ? styles.toggleBtnActive : ''}`}
-                                        onClick={() => handleOptionSelect(key, opt)}
-                                    >
-                                        {opt}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                    ))}
 
                     <div className={styles.metaInfo}>
-                        {/* Model if exists in static specs */}
-                        {staticSpecs.find(s => s[0].toLowerCase() === 'model') && (
-                            <div className={styles.metaRow}>
-                                <span className={styles.metaLabel}>Model:</span>
-                                <span>{staticSpecs.find(s => s[0].toLowerCase() === 'model')?.[1]}</span>
+                        {/* Static Specs (Model, Artikul, etc from specs) */}
+                        {staticSpecs.map(([key, value]) => (
+                            <div key={key} className={styles.metaRow}>
+                                <span className={styles.metaLabel}>{key}:</span>
+                                <div className={styles.metaDots}></div>
+                                <span className={styles.metaValue}>{value}</span>
                             </div>
-                        )}
+                        ))}
+
+                        {/* Brand */}
                         <div className={styles.metaRow}>
                             <span className={styles.metaLabel}>{tProduct('brand')}:</span>
-                            <span>{product.brand || "UzMarket"}</span>
+                            <div className={styles.metaDots}></div>
+                            <span className={styles.metaValue}>{product.brand || "UzMarket"}</span>
                         </div>
-                        <div className={styles.stockStatus}>
-                            <div className={styles.greenDot}></div>
-                            {product.stock > 0 ? tProduct('in_stock') : tProduct('out_of_stock')} ({product.stock} {tHeader('dona')})
+
+                        {/* Stock */}
+                        <div className={styles.metaRow}>
+                            <span className={styles.metaLabel}>{tProduct('holati') || "Holati"}:</span>
+                            <div className={styles.metaDots}></div>
+                            <div className={styles.stockStatus}>
+                                {product.status?.toLowerCase() === 'sotuvda_kam_qolgan' ? (
+                                    <>
+                                        <div className={styles.greenDot} style={{ backgroundColor: '#ff9800' }}></div>
+                                        Sotuvda kam qolgan
+                                    </>
+                                ) : (product.stock > 0 && !['inactive', 'draft'].includes(product.status?.toLowerCase() || '')) ? (
+                                    <>
+                                        <div className={styles.greenDot}></div>
+                                        Sotuvda mavjud
+                                    </>
+                                ) : (
+                                    <>
+                                        <div className={styles.greenDot} style={{ backgroundColor: '#9e9e9e' }}></div>
+                                        Sotuvda mavjud emas
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
 
-                    {/* Desktop Actions (Optional, but sticky is requested for bottom) */}
+                    {/* Desktop Actions */}
                     <div className={styles.desktopActions}>
-                        <button className={styles.btnOutline} onClick={handleAddToCart}>
-                            <ShoppingCart size={20} />
+                        <button className={styles.btnCart} onClick={handleAddToCart}>
+                            <ShoppingCart size={22} strokeWidth={2.5} />
                             {tProduct('add_to_cart')}
                         </button>
-                        <button className={styles.btnPrimary} onClick={handleBuyNow}>
+                        <button className={styles.btnBuy} onClick={handleBuyNow}>
                             {tProduct('buy_one_click')}
                         </button>
                     </div>
@@ -294,21 +351,61 @@ export default function ProductPage() {
             </div>
 
             {/* Tab Contents */}
-            <div id="desc" className={styles.sectionBlock}>
-                <h2>{tHeader('batafsil')}</h2>
-                <p>{product.description || tProduct('no_info')}</p>
-            </div>
+            {/* Tab Contents - Updated to Accordion Style */}
+            <div ref={sectionRef}>
+                <div id="desc" className={styles.sectionBlock}>
+                    <div
+                        onClick={toggleDesc}
+                        style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: isDescOpen ? '20px' : '0'
+                        }}
+                    >
+                        <h2 style={{ margin: 0 }}>{tHeader('batafsil')}</h2>
+                        {isDescOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                    </div>
 
-            <div id="specs" className={styles.sectionBlock}>
-                <h2>{tProduct('main_characteristics')}</h2>
-                <div className={styles.specsGrid}>
-                    {staticSpecs.map(([key, value]) => (
-                        <div key={key} className={styles.specRowDiv}>
-                            <span className={styles.specKey}>{key}</span>
-                            <span className={styles.specVal}>{value}</span>
+                    {isDescOpen && <p className="animate-in slide-in-from-top-2">{product.description || tProduct('no_info')}</p>}
+                </div>
+
+                <div id="specs" className={styles.sectionBlock}>
+                    <div
+                        onClick={toggleSpecs}
+                        style={{
+                            cursor: 'pointer',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            marginBottom: isSpecsOpen ? '20px' : '0'
+                        }}
+                    >
+                        <h2 style={{ margin: 0 }}>{tProduct('main_characteristics')}</h2>
+                        {isSpecsOpen ? <ChevronUp size={24} /> : <ChevronDown size={24} />}
+                    </div>
+
+                    {isSpecsOpen && (
+                        <div className={`${styles.specsGrid} animate-in slide-in-from-top-2`}>
+                            {/* Selections (Interactive Specs) */}
+                            {selections.map(([key, options]) => (
+                                <div key={key} className={styles.specRowDiv}>
+                                    <span className={styles.specKey}>{key}</span>
+                                    <span className={styles.specVal}>{selectedOptions[key] || options[0]}</span>
+                                </div>
+                            ))}
+
+                            {/* Static Specs */}
+                            {staticSpecs.map(([key, value]) => (
+                                <div key={key} className={styles.specRowDiv}>
+                                    <span className={styles.specKey}>{key}</span>
+                                    <span className={styles.specVal}>{value}</span>
+                                </div>
+                            ))}
+                            {!staticSpecs.length && !selections.length && <p style={{ color: '#888' }}>{tProduct('no_info')}</p>}
                         </div>
-                    ))}
-                    {!staticSpecs.length && <p style={{ color: '#888' }}>{tProduct('no_info')}</p>}
+                    )}
                 </div>
             </div>
 
@@ -319,72 +416,85 @@ export default function ProductPage() {
                 <div style={{ marginBottom: '30px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     {product.reviews && product.reviews.length > 0 ? (
                         product.reviews.map(review => (
-                            <div key={review.id} style={{ padding: '15px', background: '#f9f9f9', borderRadius: '12px', border: '1px solid #eee' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                        <div style={{ width: '32px', height: '32px', background: '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div key={review.id} style={{ padding: '20px', background: '#f9f9f9', borderRadius: '16px', border: '1px solid #eee' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{ width: '40px', height: '40px', background: '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                                             {review.user?.image ? (
-                                                <img src={review.user.image} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                                                <img src={review.user.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
-                                                <UserIcon size={16} color="#666" />
+                                                <UserIcon size={20} color="#666" />
                                             )}
                                         </div>
                                         <div>
-                                            <div style={{ fontWeight: 600, fontSize: '14px' }}>{review.user?.name || "Foydalanuvchi"}</div>
+                                            <div style={{ fontWeight: 700, fontSize: '15px' }}>{review.user?.name || "Foydalanuvchi"}</div>
                                             <div style={{ fontSize: '12px', color: '#888' }}>{new Date(review.createdAt).toLocaleDateString()}</div>
                                         </div>
                                     </div>
                                     <div style={{ display: 'flex' }}>
                                         {[...Array(5)].map((_, i) => (
-                                            <Star key={i} size={14} fill={i < review.rating ? "#ffc107" : "#eee"} color={i < review.rating ? "#ffc107" : "#eee"} />
+                                            <Star key={i} size={16} fill={i < review.rating ? "#ffc107" : "#eee"} color={i < review.rating ? "#ffc107" : "#eee"} />
                                         ))}
                                     </div>
                                 </div>
-                                <p style={{ fontSize: '14px', lineHeight: '1.5' }}>{review.comment}</p>
+                                <p style={{ fontSize: '15px', lineHeight: '1.6', color: '#374151' }}>{review.comment}</p>
+                                {review.adminReply && (
+                                    <div style={{ marginTop: '15px', padding: '15px', background: '#ebf8ff', borderRadius: '12px', borderLeft: '4px solid #3b82f6' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                            <div style={{ fontWeight: 700, fontSize: '14px', color: '#1e40af' }}>{tProduct('admin_response') || "Admin javobi"}</div>
+                                            <Check size={14} className="text-blue-600" />
+                                        </div>
+                                        <p style={{ fontSize: '14px', color: '#1e3a8a', margin: 0 }}>{review.adminReply}</p>
+                                    </div>
+                                )}
                             </div>
                         ))
                     ) : (
-                        <p style={{ color: '#888', fontStyle: 'italic' }}>{tProduct('no_reviews')}</p>
+                        <p style={{ color: '#888', fontStyle: 'italic', padding: '20px', background: '#f9f9f9', borderRadius: '12px' }}>{tProduct('no_reviews')}</p>
                     )}
                 </div>
 
                 {/* Add Review Form */}
-                <div style={{ background: '#fff', padding: '24px', borderRadius: '12px', border: '1px solid #eee' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '15px' }}>{tProduct('add_review')}</h3>
+                <div style={{ background: '#fff', padding: '30px', borderRadius: '16px', border: '1px solid #e5e7eb', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                    <h3 style={{ fontSize: '20px', fontWeight: '800', marginBottom: '20px', color: '#111827' }}>{tProduct('add_review')}</h3>
                     <form onSubmit={handleSubmitReview}>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>{tProduct('your_rating')}</label>
-                            <div style={{ display: 'flex', gap: '5px' }}>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: 600, color: '#374151' }}>{tProduct('your_rating')}</label>
+                            <div style={{ display: 'flex', gap: '8px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
                                     <button
                                         key={star}
                                         type="button"
                                         onClick={() => setUserRating(star)}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, transition: 'transform 0.1s' }}
+                                        className="hover:scale-110"
                                     >
-                                        <Star size={24} fill={star <= userRating ? "#ffc107" : "#eee"} color={star <= userRating ? "#ffc107" : "#ddd"} />
+                                        <Star size={32} fill={star <= userRating ? "#ffc107" : "#f3f4f6"} color={star <= userRating ? "#ffc107" : "#d1d5db"} strokeWidth={1.5} />
                                     </button>
                                 ))}
                             </div>
                         </div>
-                        <div style={{ marginBottom: '15px' }}>
-                            <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: 500 }}>{tProduct('your_review')}</label>
+                        <div style={{ marginBottom: '20px' }}>
+                            <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: 600, color: '#374151' }}>{tProduct('your_review')}</label>
                             <textarea
                                 value={userComment}
                                 onChange={e => setUserComment(e.target.value)}
                                 required
-                                rows={4}
-                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #ddd', outline: 'none' }}
+                                rows={5}
+                                style={{ width: '100%', padding: '16px', borderRadius: '12px', border: '1px solid #d1d5db', outline: 'none', fontSize: '15px', transition: 'border-color 0.2s', resize: 'vertical' }}
                                 placeholder={tProduct('review_placeholder')}
+                                onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
+                                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                             />
                         </div>
                         <button
                             type="submit"
                             disabled={submittingReview}
                             style={{
-                                padding: '12px 24px', background: '#0066cc', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 600, cursor: 'pointer',
-                                opacity: submittingReview ? 0.7 : 1
+                                padding: '14px 28px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 600, cursor: 'pointer',
+                                opacity: submittingReview ? 0.7 : 1, fontSize: '16px', transition: 'background 0.2s', boxShadow: '0 4px 6px rgba(37, 99, 235, 0.2)'
                             }}
+                            className="hover:bg-blue-700"
                         >
                             {submittingReview ? tProduct('submitting') : tProduct('submit')}
                         </button>
@@ -397,8 +507,8 @@ export default function ProductPage() {
             <div className={styles.stickyBar}>
                 <div className="container" style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
                     <button className={styles.stickyBtnOutline} onClick={handleAddToCart}>
-                        <ShoppingCart size={20} />
-                        <span style={{ marginLeft: '8px' }}>{tProduct('add_to_cart')}</span>
+                        <ShoppingCart size={20} strokeWidth={2.5} style={{ marginRight: '8px' }} />
+                        <span>{tProduct('add_to_cart')}</span>
                     </button>
                     <button className={styles.stickyBtnPrimary} onClick={handleBuyNow}>
                         {tProduct('buy_one_click')}

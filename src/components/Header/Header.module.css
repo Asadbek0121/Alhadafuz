@@ -195,6 +195,18 @@
     position: relative;
 }
 
+@media (min-width: 1600px) {
+    .searchBox {
+        max-width: 800px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .searchBox {
+        max-width: 1000px;
+    }
+}
+
 .searchInput {
     flex: 1;
     height: 48px;

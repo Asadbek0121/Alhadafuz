@@ -42,6 +42,20 @@
     height: 380px;
 }
 
+@media (min-width: 1600px) {
+    .heroContent {
+        height: 480px;
+        grid-template-columns: 1fr 400px;
+    }
+}
+
+@media (min-width: 1920px) {
+    .heroContent {
+        height: 550px;
+        grid-template-columns: 1fr 480px;
+    }
+}
+
 .sliderContainer {
     position: relative;
     height: 100%;
