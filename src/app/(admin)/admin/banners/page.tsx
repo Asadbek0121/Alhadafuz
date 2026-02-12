@@ -413,204 +413,205 @@ export default function AdminBannersPage() {
                         </form>
                     </motion.div>
                 )}
-                <AnimatePresence>
-                    {!showForm && (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                    <Eye size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Jami ko'rishlar</p>
-                                    <p className="text-2xl font-black text-gray-900">{totalImpressions.toLocaleString()}</p>
-                                </div>
-                            </motion.div>
+            </AnimatePresence>
+            <AnimatePresence>
+                {!showForm && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                <Eye size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500">Jami ko'rishlar</p>
+                                <p className="text-2xl font-black text-gray-900">{totalImpressions.toLocaleString()}</p>
+                            </div>
+                        </motion.div>
 
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
-                                    <MousePointerClick size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Jami bosishlar</p>
-                                    <p className="text-2xl font-black text-gray-900">{totalClicks.toLocaleString()}</p>
-                                </div>
-                            </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.1 }}
+                            className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
+                                <MousePointerClick size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500">Jami bosishlar</p>
+                                <p className="text-2xl font-black text-gray-900">{totalClicks.toLocaleString()}</p>
+                            </div>
+                        </motion.div>
 
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.2 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                    <TrendingUp size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">O'rtacha CTR</p>
-                                    <p className="text-2xl font-black text-gray-900">{avgCTR}%</p>
-                                </div>
-                            </motion.div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                <TrendingUp size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500">O'rtacha CTR</p>
+                                <p className="text-2xl font-black text-gray-900">{avgCTR}%</p>
+                            </div>
+                        </motion.div>
 
-                            <motion.div
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.3 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
-                            >
-                                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
-                                    <BarChart3 size={24} />
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-gray-500">Faol bannerlar</p>
-                                    <p className="text-2xl font-black text-gray-900">{activeBannersCount} / {banners.length}</p>
-                                </div>
-                            </motion.div>
-                        </div>
-                    )}
-                </AnimatePresence>
-
-                <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden min-h-[500px]">
-                    <div className="p-6 border-b border-gray-50">
-                        <div className="relative w-full md:w-80">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Bannerlarni qidirish..."
-                                className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
-                            />
-                        </div>
+                        <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                        >
+                            <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
+                                <BarChart3 size={24} />
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-gray-500">Faol bannerlar</p>
+                                <p className="text-2xl font-black text-gray-900">{activeBannersCount} / {banners.length}</p>
+                            </div>
+                        </motion.div>
                     </div>
+                )}
+            </AnimatePresence>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                    <th className="px-6 py-4">Rasm</th>
-                                    <th className="px-6 py-4">Sarlavha</th>
-                                    <th className="px-6 py-4">Joylashuv</th>
-                                    <th className="px-6 py-4">Kategoriyalar</th>
-                                    <th className="px-6 py-4 text-center">📊 Clicks</th>
-                                    <th className="px-6 py-4 text-center">👁️ Views</th>
-                                    <th className="px-6 py-4 text-center">📈 CTR</th>
-                                    <th className="px-6 py-4 text-center">🧪 Variant</th>
-                                    <th className="px-6 py-4 text-center">Status</th>
-                                    <th className="px-6 py-4 text-right">Amallar</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-50">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={10} className="text-center py-20 text-gray-400 font-medium">Yuklanmoqda...</td>
-                                    </tr>
-                                ) : filteredBanners.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={10} className="text-center py-20 text-gray-400 font-medium">Bannerlar topilmadi</td>
-                                    </tr>
-                                ) : (
-                                    filteredBanners.map((banner) => (
-                                        <tr key={banner.id} className="hover:bg-gray-50/50 transition-colors group">
-                                            <td className="px-6 py-4">
-                                                <div className="w-16 h-10 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
-                                                    <img src={banner.image} alt="" className="w-full h-full object-cover" />
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 font-bold text-gray-900 text-sm">{banner.title}</td>
-                                            <td className="px-6 py-4">
-                                                <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
-                                                    {POSITIONS.find(p => p.value === banner.position)?.label || banner.position}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="flex flex-wrap gap-1">
-                                                    {banner.categories.slice(0, 3).map(c => (
-                                                        <span key={c.id} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                            {c.name}
-                                                        </span>
-                                                    ))}
-                                                    {banner.categories.length > 3 && (
-                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
-                                                            +{banner.categories.length - 3}
-                                                        </span>
-                                                    )}
-                                                    {banner.categories.length === 0 && <span className="text-gray-400 text-xs italic">-</span>}
-                                                </div>
-                                            </td>
-
-                                            {/* Analytics Columns */}
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="font-bold text-blue-600">{banner.clickCount || 0}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                <span className="font-bold text-purple-600">{banner.impressionCount || 0}</span>
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                {(() => {
-                                                    const ctr = banner.impressionCount && banner.impressionCount > 0
-                                                        ? ((banner.clickCount || 0) / banner.impressionCount * 100).toFixed(1)
-                                                        : '0.0';
-                                                    const ctrNum = parseFloat(ctr);
-                                                    return (
-                                                        <span className={`font-bold ${ctrNum >= 5 ? 'text-green-600' :
-                                                            ctrNum >= 2 ? 'text-yellow-600' :
-                                                                'text-gray-400'
-                                                            }`}>
-                                                            {ctr}%
-                                                        </span>
-                                                    );
-                                                })()}
-                                            </td>
-                                            <td className="px-6 py-4 text-center">
-                                                {banner.variant ? (
-                                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-700">
-                                                        {banner.variant}
-                                                    </span>
-                                                ) : (
-                                                    <span className="text-gray-400 text-xs">-</span>
-                                                )}
-                                            </td>
-
-                                            <td className="px-6 py-4 text-center">
-                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${banner.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                    {banner.isActive ? 'Faol' : 'Nofaol'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
-                                                        onClick={() => handleEdit(banner)}
-                                                    >
-                                                        <Edit2 size={16} />
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
-                                                        onClick={() => handleDelete(banner.id)}
-                                                    >
-                                                        <Trash2 size={16} />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+            <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden min-h-[500px]">
+                <div className="p-6 border-b border-gray-50">
+                    <div className="relative w-full md:w-80">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                        <input
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Bannerlarni qidirish..."
+                            className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
+                        />
                     </div>
                 </div>
+
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                <th className="px-6 py-4">Rasm</th>
+                                <th className="px-6 py-4">Sarlavha</th>
+                                <th className="px-6 py-4">Joylashuv</th>
+                                <th className="px-6 py-4">Kategoriyalar</th>
+                                <th className="px-6 py-4 text-center">📊 Clicks</th>
+                                <th className="px-6 py-4 text-center">👁️ Views</th>
+                                <th className="px-6 py-4 text-center">📈 CTR</th>
+                                <th className="px-6 py-4 text-center">🧪 Variant</th>
+                                <th className="px-6 py-4 text-center">Status</th>
+                                <th className="px-6 py-4 text-right">Amallar</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-50">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={10} className="text-center py-20 text-gray-400 font-medium">Yuklanmoqda...</td>
+                                </tr>
+                            ) : filteredBanners.length === 0 ? (
+                                <tr>
+                                    <td colSpan={10} className="text-center py-20 text-gray-400 font-medium">Bannerlar topilmadi</td>
+                                </tr>
+                            ) : (
+                                filteredBanners.map((banner) => (
+                                    <tr key={banner.id} className="hover:bg-gray-50/50 transition-colors group">
+                                        <td className="px-6 py-4">
+                                            <div className="w-16 h-10 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
+                                                <img src={banner.image} alt="" className="w-full h-full object-cover" />
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 font-bold text-gray-900 text-sm">{banner.title}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
+                                                {POSITIONS.find(p => p.value === banner.position)?.label || banner.position}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-wrap gap-1">
+                                                {banner.categories.slice(0, 3).map(c => (
+                                                    <span key={c.id} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                        {c.name}
+                                                    </span>
+                                                ))}
+                                                {banner.categories.length > 3 && (
+                                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                        +{banner.categories.length - 3}
+                                                    </span>
+                                                )}
+                                                {banner.categories.length === 0 && <span className="text-gray-400 text-xs italic">-</span>}
+                                            </div>
+                                        </td>
+
+                                        {/* Analytics Columns */}
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="font-bold text-blue-600">{banner.clickCount || 0}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className="font-bold text-purple-600">{banner.impressionCount || 0}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            {(() => {
+                                                const ctr = banner.impressionCount && banner.impressionCount > 0
+                                                    ? ((banner.clickCount || 0) / banner.impressionCount * 100).toFixed(1)
+                                                    : '0.0';
+                                                const ctrNum = parseFloat(ctr);
+                                                return (
+                                                    <span className={`font-bold ${ctrNum >= 5 ? 'text-green-600' :
+                                                        ctrNum >= 2 ? 'text-yellow-600' :
+                                                            'text-gray-400'
+                                                        }`}>
+                                                        {ctr}%
+                                                    </span>
+                                                );
+                                            })()}
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            {banner.variant ? (
+                                                <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-700">
+                                                    {banner.variant}
+                                                </span>
+                                            ) : (
+                                                <span className="text-gray-400 text-xs">-</span>
+                                            )}
+                                        </td>
+
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${banner.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                {banner.isActive ? 'Faol' : 'Nofaol'}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
+                                                    onClick={() => handleEdit(banner)}
+                                                >
+                                                    <Edit2 size={16} />
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+                                                    onClick={() => handleDelete(banner.id)}
+                                                >
+                                                    <Trash2 size={16} />
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     );
 }
