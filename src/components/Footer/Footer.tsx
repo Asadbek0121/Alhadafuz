@@ -97,7 +97,7 @@ export default function Footer() {
                                 <li className="flex items-start gap-4">
                                     <Phone className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                                     <div>
-                                        <span className="block text-xs text-gray-500 mb-0.5">Aloqa markazi</span>
+                                        <span className="block text-xs text-gray-500 mb-0.5">{t('call_center')}</span>
                                         <a href={`tel:${contact.phone}`} className="text-white font-medium hover:text-blue-400 transition-colors text-lg block">
                                             {contact.phone}
                                         </a>
@@ -106,7 +106,7 @@ export default function Footer() {
                                 <li className="flex items-start gap-4">
                                     <Mail className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                                     <div>
-                                        <span className="block text-xs text-gray-500 mb-0.5">Elektron pochta</span>
+                                        <span className="block text-xs text-gray-500 mb-0.5">{t('email_label')}</span>
                                         <a href={`mailto:${contact.email}`} className="text-gray-300 hover:text-white transition-colors text-sm block">
                                             {contact.email}
                                         </a>
@@ -115,7 +115,7 @@ export default function Footer() {
                                 <li className="flex items-start gap-4">
                                     <MapPin className="w-5 h-5 text-blue-500 mt-1 shrink-0" />
                                     <div>
-                                        <span className="block text-xs text-gray-500 mb-0.5">Manzil</span>
+                                        <span className="block text-xs text-gray-500 mb-0.5">{t('address_label')}</span>
                                         <span className="text-gray-300 text-sm block">
                                             {contact.address}
                                         </span>
@@ -134,7 +134,7 @@ export default function Footer() {
                 {/* Bottom Section */}
                 <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
                     <p className="text-sm text-gray-500 text-center md:text-left">
-                        &copy; {new Date().getFullYear()} HADAF Marketpleysi. {t('all_rights_reserved')}.
+                        &copy; {new Date().getFullYear()} {t('brand_name')}. {t('all_rights_reserved')}.
                     </p>
 
                     <div className="flex items-center gap-3 opacity-70 hover:opacity-100 transition-opacity">

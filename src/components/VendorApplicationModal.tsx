@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, Send, ShoppingBag, Truck, BarChart3, Clock } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 
 interface VendorApplicationModalProps {
     isOpen: boolean;
@@ -12,6 +13,7 @@ interface VendorApplicationModalProps {
 export default function VendorApplicationModal({ isOpen, onClose }: VendorApplicationModalProps) {
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
+    const t = useTranslations('Vendor');
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -70,16 +72,16 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                     <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-6 backdrop-blur-sm border border-white/20">
                                         <ShoppingBag size={24} />
                                     </div>
-                                    <h3 className="text-2xl font-bold mb-4">HADAF Vendor</h3>
+                                    <h3 className="text-2xl font-bold mb-4">{t('sidebar_title')}</h3>
                                     <p className="text-blue-100 text-sm leading-relaxed mb-8">
-                                        Biznesingizni HADAF bilan kengaytiring. Biz bilan hamkorlik qiling va millionlab foydalanuvchilarga mahsulotingizni soting.
+                                        {t('sidebar_desc')}
                                     </p>
 
                                     <div className="space-y-4">
                                         {[
-                                            { icon: BarChart3, text: "Katta bozor va ko'p savdo" },
-                                            { icon: Truck, text: "Tayyor yetkazib berish tizimi" },
-                                            { icon: Clock, text: "24/7 do'kon boshqaruvi" }
+                                            { icon: BarChart3, text: t('benefit1') },
+                                            { icon: Truck, text: t('benefit2') },
+                                            { icon: Clock, text: t('benefit3') }
                                         ].map((item, idx) => (
                                             <div key={idx} className="flex items-center gap-3 text-sm font-medium text-blue-50">
                                                 <div className="p-1.5 bg-white/10 rounded-lg">
@@ -92,7 +94,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                 </div>
 
                                 <div className="mt-auto">
-                                    <div className="text-[10px] uppercase font-black tracking-widest text-blue-200/50">Partnership Program</div>
+                                    <div className="text-[10px] uppercase font-black tracking-widest text-blue-200/50">{t('sidebar_tag')}</div>
                                 </div>
                             </div>
                         </div>
@@ -109,24 +111,24 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                             {!isSubmitted ? (
                                 <div className="animate-fade-in">
                                     <div className="mb-8">
-                                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">Hamkorlik so'rovi</h2>
-                                        <p className="text-gray-500 font-medium">Ma'lumotlaringizni qoldiring, menedjerlarimiz siz bilan bog'lanishadi.</p>
+                                        <h2 className="text-2xl md:text-3xl font-black text-gray-900 mb-2">{t('modal_title')}</h2>
+                                        <p className="text-gray-500 font-medium">{t('modal_subtitle')}</p>
                                     </div>
 
                                     <form onSubmit={handleSubmit} className="space-y-5">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">F.I.SH / Tadbirkor nomi</label>
+                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_name')}</label>
                                                 <input
                                                     required
                                                     name="name"
                                                     type="text"
-                                                    placeholder="Ismingizni kiriting"
+                                                    placeholder={t('placeholder_name')}
                                                     className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 font-medium"
                                                 />
                                             </div>
                                             <div className="space-y-1.5">
-                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Telefon raqam</label>
+                                                <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_phone')}</label>
                                                 <input
                                                     required
                                                     name="phone"
@@ -139,22 +141,22 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                         </div>
 
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Mahsulot toifasi</label>
+                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_category')}</label>
                                             <select name="category" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 font-medium appearance-none">
-                                                <option>Elektronika va Gadjetlar</option>
-                                                <option>Kiyim-kechak va Poyabzal</option>
-                                                <option>Maishiy texnika</option>
-                                                <option>Uy va Bog' uchun</option>
-                                                <option>Boshqa...</option>
+                                                <option>{t('cat_electronics')}</option>
+                                                <option>{t('cat_fashion')}</option>
+                                                <option>{t('cat_appliances')}</option>
+                                                <option>{t('cat_home')}</option>
+                                                <option>{t('cat_other')}</option>
                                             </select>
                                         </div>
 
                                         <div className="space-y-1.5">
-                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">Qo'shimcha ma'lumot (Ixtiyoriy)</label>
+                                            <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_message')}</label>
                                             <textarea
                                                 rows={3}
                                                 name="message"
-                                                placeholder="Biznesingiz haqida qisqacha..."
+                                                placeholder={t('placeholder_message')}
                                                 className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 font-medium resize-none"
                                             ></textarea>
                                         </div>
@@ -166,7 +168,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                             {loading ? (
                                                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                                             ) : (
-                                                <>Yuborish <Send size={18} /></>
+                                                <>{t('submit')} <Send size={18} /></>
                                             )}
                                         </button>
                                     </form>
@@ -180,15 +182,15 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                     <div className="w-24 h-24 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-8 shadow-inner shadow-green-100">
                                         <CheckCircle size={48} />
                                     </div>
-                                    <h2 className="text-3xl font-black text-gray-900 mb-4">So'rovingiz yuborildi!</h2>
+                                    <h2 className="text-3xl font-black text-gray-900 mb-4">{t('success_title')}</h2>
                                     <p className="text-gray-500 font-medium max-w-sm mb-10 leading-relaxed">
-                                        Muvaffaqiyatli qabul qilindi. Bizning menedjerlarimiz tez orada (24 soat ichida) siz bilan bog'lanishadi.
+                                        {t('success_desc')}
                                     </p>
                                     <button
                                         onClick={onClose}
                                         className="px-10 py-4 bg-gray-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95"
                                     >
-                                        Dargohga qaytish
+                                        {t('back_btn')}
                                     </button>
                                 </motion.div>
                             )}

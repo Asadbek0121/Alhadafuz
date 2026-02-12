@@ -63,24 +63,26 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} suppressHydrationWarning={true}>
       <body className={inter.className} suppressHydrationWarning={true}>
-        <Providers locale={locale} messages={messages}>
-          <WishlistProvider>
+        <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Tashkent">
+          <Providers>
+            <WishlistProvider>
 
-            <SessionProviderWrapper session={session}>
-              <SessionSync />
-              <Header />
-              <main className="min-h-screen">
-                {children}
-              </main>
-              <Footer />
-              <BottomNav />
-              <Toaster />
-              <SupportChat />
-              <AuthModal />
-            </SessionProviderWrapper>
+              <SessionProviderWrapper session={session}>
+                <SessionSync />
+                <Header />
+                <main className="min-h-screen">
+                  {children}
+                </main>
+                <Footer />
+                <BottomNav />
+                <Toaster />
+                <SupportChat />
+                <AuthModal />
+              </SessionProviderWrapper>
 
-          </WishlistProvider>
-        </Providers>
+            </WishlistProvider>
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );

@@ -71,7 +71,7 @@ export default function BottomNav() {
             fillable: true
         },
         {
-            label: "Kabinet",
+            label: t('kabinet'),
             icon: isAuthenticated ? User : UserCircle,
             href: isAuthenticated ? "/profile" : null,
             isActive: pathname.includes("/profile") && !isCatalogOpen,

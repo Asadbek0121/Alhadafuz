@@ -6,6 +6,7 @@ import { MessageSquareText, X, Send, User, Loader2, ChevronLeft, HelpCircle, Hea
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 type Message = {
     id: string;
@@ -19,6 +20,7 @@ type Message = {
 type ViewState = 'menu' | 'chat';
 
 export default function SupportChat() {
+    const t = useTranslations('Chat');
     const { data: session } = useSession();
     const router = useRouter();
     const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +99,7 @@ export default function SupportChat() {
 
             recorder.onstop = async () => {
                 if (chunks.length === 0) {
-                    toast.error("Ovoz yozilmadi (bo'sh)");
+                    toast.error(t('voice_empty'));
                     return;
                 }
                 const blob = new Blob(chunks, { type: mimeType });
@@ -122,7 +124,7 @@ export default function SupportChat() {
                 setRecordingTime(prev => prev + 1);
             }, 1000);
         } catch (err) {
-            toast.error("Mikrofonga ruxsat berilmagan yoki xatolik");
+            toast.error(t('error_mic'));
             console.error('Recording Error:', err);
         }
     };
@@ -151,7 +153,7 @@ export default function SupportChat() {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ error: "Server hatosi" }));
-                toast.error(`Ovozli xabar yuklashda xatolik: ${errorData.error || res.statusText}`);
+                toast.error(`${t('error_voice')}: ${errorData.error || res.statusText}`);
                 return;
             }
 
@@ -169,12 +171,12 @@ export default function SupportChat() {
                 });
 
                 if (!saveRes.ok) {
-                    toast.error("Xabarni saqlashda xatolik");
+                    toast.error(t('error_send'));
                 }
                 fetchMessages();
             }
         } catch (error) {
-            toast.error("Ovozli xabar yuklashda xatolik");
+            toast.error(t('error_voice'));
         } finally {
             setLoading(false);
         }
@@ -191,7 +193,7 @@ export default function SupportChat() {
         if (!file || !session) return;
 
         if (!file.type.startsWith('image/')) {
-            toast.error("Faqat rasm yuklash mumkin");
+            toast.error(t('only_images'));
             return;
         }
 
@@ -207,7 +209,7 @@ export default function SupportChat() {
 
             if (!res.ok) {
                 const errorData = await res.json().catch(() => ({ error: "Server hatosi" }));
-                toast.error(`Rasm yuklashda xatolik: ${errorData.error || res.statusText}`);
+                toast.error(`${t('error_image')}: ${errorData.error || res.statusText}`);
                 return;
             }
 
@@ -224,12 +226,12 @@ export default function SupportChat() {
                 });
 
                 if (!saveRes.ok) {
-                    toast.error("Xabarni saqlashda xatolik");
+                    toast.error(t('error_send'));
                 }
                 fetchMessages();
             }
         } catch (error) {
-            toast.error("Rasm yuklashda xatolik");
+            toast.error(t('error_image'));
         } finally {
             setLoading(false);
         }
@@ -261,7 +263,7 @@ export default function SupportChat() {
             });
             fetchMessages(); // Refresh messages
         } catch (error) {
-            toast.error("Xabar yuborilmadi");
+            toast.error(t('error_send'));
         }
     };
 
@@ -270,7 +272,7 @@ export default function SupportChat() {
         if (session) {
             setView('chat');
         } else {
-            toast.info("Muloqot qilish uchun tizimga kiring");
+            toast.info(t('login_required'));
             router.push('/?auth=login');
         }
     };
@@ -422,7 +424,7 @@ export default function SupportChat() {
                                 </h4>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
                                     <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }}></span>
-                                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.95)', fontWeight: 500 }}>Online</span>
+                                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.95)', fontWeight: 500 }}>{t('online')}</span>
                                 </div>
                             </div>
                         </div>
@@ -437,9 +439,9 @@ export default function SupportChat() {
                         {view === 'menu' ? (
                             <div style={styles.menuContent} className="support-menu-content">
                                 <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>Assalomu alaykum! 👋</h3>
+                                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>{t('welcome')}</h3>
                                     <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>
-                                        Savollaringiz bormi? <br /> Quyidagi bo'limlardan birini tanlang
+                                        {t('subtitle')}
                                     </p>
                                 </div>
 
@@ -449,8 +451,8 @@ export default function SupportChat() {
                                             <MessageSquareText size={24} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Jonli chat</div>
-                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Operator bilan suhbat</div>
+                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>{t('live_chat')}</div>
+                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>{t('live_chat_desc')}</div>
                                         </div>
                                         <ChevronRight size={18} color="#cbd5e1" />
                                     </button>
@@ -460,8 +462,8 @@ export default function SupportChat() {
                                             <Send size={24} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>Telegram bot</div>
-                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Bot orqali murojaat</div>
+                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>{t('telegram_bot')}</div>
+                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>{t('telegram_bot_desc')}</div>
                                         </div>
                                         <ChevronRight size={18} color="#cbd5e1" />
                                     </a>
@@ -476,15 +478,15 @@ export default function SupportChat() {
                                     {loading && messages.length === 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
                                             <Loader2 className="animate-spin" size={32} style={{ marginBottom: '10px', color: '#0052FF' }} />
-                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>Yuklanmoqda...</span>
+                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('loading')}</span>
                                         </div>
                                     ) : messages.length === 0 ? (
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center' }}>
                                             <div style={{ width: '80px', height: '80px', background: '#e0f2fe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
                                                 <MessageSquare size={36} color="#0052FF" />
                                             </div>
-                                            <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>Hozircha xabarlar yo'q</h4>
-                                            <p style={{ fontSize: '13px' }}>Savollaringizni yozib qoldiring, tez orada javob beramiz.</p>
+                                            <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>{t('no_messages')}</h4>
+                                            <p style={{ fontSize: '13px' }}>{t('no_messages_desc')}</p>
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -578,7 +580,7 @@ export default function SupportChat() {
                                                         fontSize: '14px'
                                                     }}
                                                 >
-                                                    TO'XTATISH VA YUBORISH
+                                                    {t('stop_and_send')}
                                                 </button>
                                             </div>
                                         ) : (
@@ -604,7 +606,7 @@ export default function SupportChat() {
                                                 </label>
 
                                                 <input
-                                                    placeholder="Xabaringizni yozing..."
+                                                    placeholder={t('input_placeholder')}
                                                     value={inputValue}
                                                     onChange={e => setInputValue(e.target.value)}
                                                     style={styles.input}

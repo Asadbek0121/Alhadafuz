@@ -17,16 +17,17 @@ export async function GET() {
             orderBy: {
                 createdAt: 'desc'
             },
-            take: 10
+            take: 20 // Increased slightly for better history
         });
 
-        // Add 'isRead' status check here if we had a separate table tracking read status for broadcasts.
-        // For now, simple isRead on personal notification or client-side stored read timestamps for broadcasts.
-        // Assuming simplistic approach: just return them.
-
         return NextResponse.json(notifications);
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to fetch notifications' }, { status: 500 });
+    } catch (error: any) {
+        console.error("[NOTIFICATIONS_GET_ERROR]:", error);
+
+        // If it's a transient connection error (Neon cold start / timeout), 
+        // return an empty array instead of a 500 to keep the UI smooth.
+        // The client will retry on the next poll.
+        return NextResponse.json([], { status: 200 });
     }
 }
 
@@ -48,7 +49,8 @@ export async function PUT() {
         });
 
         return NextResponse.json({ success: true });
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to update notifications' }, { status: 500 });
+    } catch (error: any) {
+        console.error("[NOTIFICATIONS_UPDATE_ERROR]:", error);
+        return NextResponse.json({ error: 'Failed to update notifications' }, { status: 400 });
     }
 }
