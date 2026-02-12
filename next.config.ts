@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'fdn2.gsmarena.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.public.blob.vercel-storage.com',
+      },
     ],
   },
   webpack: (config) => {

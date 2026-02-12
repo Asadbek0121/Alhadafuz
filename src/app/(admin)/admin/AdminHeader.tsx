@@ -33,7 +33,7 @@ export default function AdminHeader() {
                 setUnreadCount(data.unreadCount);
             }
         } catch (error) {
-            console.error(error);
+            console.warn('Xabarnomalarni olishda xatolik:', error);
         }
     };
 

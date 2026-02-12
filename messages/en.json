@@ -18,6 +18,7 @@
         "bosh_sahifa": "Home",
         "som": "sum",
         "dona": "pcs",
+        "chegirma": "Discount",
         "batafsil": "Details",
         "ommabop_mahsulotlar": "Popular Products",
         "yoki": "or",
@@ -76,7 +77,11 @@
         "saved_addresses": "Saved Addresses",
         "new_address": "New Address",
         "address": "Address",
-        "save_this_for_later": "Save this address for later"
+        "save_this_for_later": "Save this address for later",
+        "promo_code": "Promo code",
+        "promo_placeholder": "Enter code",
+        "apply": "Apply",
+        "active_promo": "Active promo code"
     },
     "Product": {
         "loading": "Loading...",

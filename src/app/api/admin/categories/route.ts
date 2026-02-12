@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, parentId, image } = body;
+        const { name, parentId, image, isActive } = body;
 
         // Simple slug generation
         const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now();
@@ -37,7 +37,8 @@ export async function POST(req: Request) {
                 name,
                 slug,
                 parentId: parentId || null,
-                image
+                image,
+                isActive: isActive ?? true // Default to true if not provided
             }
         });
 

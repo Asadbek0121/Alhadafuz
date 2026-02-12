@@ -126,6 +126,8 @@ model Order {
   districtCode     String?
   gpsLogs          String?
   creatorId        String?     // Admin ID if created by admin
+  couponCode       String?
+  discountAmount   Float?      @default(0)
   createdVia       String      @default("WEB_APP") // WEB_APP, ADMIN_PANEL, TELEGRAM_BOT
   user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            OrderItem[]
@@ -171,14 +173,15 @@ model Product {
   status        String         @default("ACTIVE")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  categoryId    String?
+  categoryId    String? // @deprecated
   mxikCode      String?
   packageCode   String?
   vatPercent    Int            @default(0)
   brand         String?
   cartItems     CartItem[]
   orderItems    OrderItem[]
-  categoryRel   Category?      @relation(fields: [categoryId], references: [id])
+  categoryRel   Category?      @relation("ProductCategoryOld", fields: [categoryId], references: [id])
+  categories    Category[]     @relation("ProductToCategory")
   reviews       Review[]
   wishlistItems WishlistItem[]
 
@@ -195,12 +198,46 @@ model Category {
   slug      String     @unique
   image     String?
   order     Int        @default(0)
+  isActive  Boolean    @default(true)
   parentId  String?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
   parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
-  products  Product[]
+  products  Product[]  @relation("ProductToCategory")
+  banners   Banner[]   @relation("BannerToCategory")
+  productsOld Product[] @relation("ProductCategoryOld")
+}
+
+enum BannerPosition {
+  HOME_TOP
+  CATEGORY_TOP
+  SIDEBAR
+  FOOTER
+}
+
+model Banner {
+  id              String         @id @default(cuid())
+  title           String
+  image           String
+  link            String?
+  position        BannerPosition @default(HOME_TOP)
+  isActive        Boolean        @default(true)
+  
+  // Analytics
+  clickCount      Int            @default(0)
+  impressionCount Int            @default(0)
+  
+  // Scheduling
+  startDate       DateTime?
+  endDate         DateTime?
+  
+  // A/B Testing
+  variant         String?        // A, B, C, etc.
+  
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  categories      Category[]     @relation("BannerToCategory")
 }
 
 model Review {
@@ -278,21 +315,6 @@ model WishlistItem {
   @@unique([wishlistId, productId])
 }
 
-model Banner {
-  id          String   @id @default(cuid())
-  type        String   @default("MAIN")
-  title       String?
-  description String?
-  imageUrl    String?
-  link        String?
-  price       Float?
-  oldPrice    Float?
-  discount    String?
-  isActive    Boolean  @default(true)
-  order       Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
 
 model Message {
   id         String   @id @default(cuid())
@@ -373,4 +395,19 @@ model ShippingZone {
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+}
+
+model Coupon {
+  id            String   @id @default(cuid())
+  code          String   @unique
+  discountType  String   // PERCENTAGE, FIXED
+  discountValue Float
+  minAmount     Float    @default(0)
+  startDate     DateTime @default(now())
+  expiryDate    DateTime
+  usageLimit    Int      @default(1)
+  usedCount     Int      @default(0)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

@@ -48,13 +48,12 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
+  const messages = await getMessages();
+  const session = await auth();
 
   if (!['uz', 'ru', 'en'].includes(locale)) {
     notFound();
   }
-
-  const messages = await getMessages();
-  const session = await auth();
 
   if (!messages) {
     console.error("NextIntl Messages are missing for locale:", locale);

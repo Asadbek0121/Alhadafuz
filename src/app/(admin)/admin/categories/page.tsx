@@ -7,7 +7,7 @@ import {
     Loader2, Plus, Trash2, Edit2, UploadCloud,
     CornerDownRight, ChevronDown, ChevronRight,
     Folder, FolderPlus, Search, X, Image as ImageIcon,
-    LayoutGrid, List, MoreVertical
+    LayoutGrid, List, MoreVertical, CheckCircle2, XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ interface Category {
     _count?: { products: number };
     parent?: { name: string };
     children?: Category[];
+    isActive?: boolean;
 }
 
 export default function AdminCategoriesPage() {
@@ -34,6 +35,7 @@ export default function AdminCategoriesPage() {
     const [name, setName] = useState('');
     const [parentId, setParentId] = useState('');
     const [image, setImage] = useState('');
+    const [isActive, setIsActive] = useState(true);
     const [editId, setEditId] = useState<string | null>(null);
     const [showForm, setShowForm] = useState(false);
 
@@ -104,7 +106,7 @@ export default function AdminCategoriesPage() {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, parentId: parentId || null, image })
+                body: JSON.stringify({ name, parentId: parentId || null, image, isActive })
             });
 
             if (res.ok) {
@@ -126,6 +128,7 @@ export default function AdminCategoriesPage() {
         setName('');
         setParentId('');
         setImage('');
+        setIsActive(true);
         setEditId(null);
     };
 
@@ -134,6 +137,7 @@ export default function AdminCategoriesPage() {
         setName(cat.name);
         setParentId(cat.parentId || '');
         setImage(cat.image || '');
+        setIsActive(cat.isActive !== false);
         setShowForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -319,6 +323,31 @@ export default function AdminCategoriesPage() {
                                         ))}
                                     </select>
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-bold text-gray-700 ml-1">Status</label>
+                                    <div className="flex items-center gap-4">
+                                        <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                className="hidden"
+                                                checked={isActive}
+                                                onChange={() => setIsActive(true)}
+                                            />
+                                            <CheckCircle2 size={18} /> Faol
+                                        </label>
+                                        <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                            <input
+                                                type="radio"
+                                                name="status"
+                                                className="hidden"
+                                                checked={!isActive}
+                                                onChange={() => setIsActive(false)}
+                                            />
+                                            <XCircle size={18} /> Nofaol
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
@@ -416,7 +445,7 @@ export default function AdminCategoriesPage() {
                     </div>
                 </div>
 
-                <div className="p-6 overflow-y-auto">
+                <div className="p-0 overflow-x-auto">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-32 space-y-4">
                             <div className="relative">
@@ -428,26 +457,97 @@ export default function AdminCategoriesPage() {
                             <p className="text-sm font-black text-gray-400 uppercase tracking-widest">Yuklanmoqda...</p>
                         </div>
                     ) : (
-                        <div className="space-y-1">
-                            {viewMode === 'tree' ? (
-                                tree.length > 0 ? (
-                                    tree.map(cat => renderTreeItem(cat))
-                                ) : (
-                                    <div className="text-center py-32">
-                                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-200">
-                                            <ImageIcon size={40} />
-                                        </div>
-                                        <p className="text-xl font-black text-gray-900">Kategoriyalar topilmadi</p>
-                                        <p className="text-gray-400 text-sm mt-1">Hozircha hech qanday ma'lumot mavjud emas</p>
-                                    </div>
-                                )
-                            ) : (
-                                <div className="space-y-2">
-                                    {categories
-                                        .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                                        .map(cat => renderTreeItem(cat, 0))}
+                        <div className="min-w-[800px]">
+                            {viewMode === 'list' && (
+                                <div className="grid grid-cols-12 gap-4 px-6 py-3 bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <div className="col-span-1">Rasm</div>
+                                    <div className="col-span-3">Nomi</div>
+                                    <div className="col-span-3">Slug</div>
+                                    <div className="col-span-2">Ota Kategoriya</div>
+                                    <div className="col-span-1 text-center">Holati</div>
+                                    <div className="col-span-2 text-right">Amallar</div>
                                 </div>
                             )}
+
+                            <div className="divide-y divide-gray-50">
+                                {viewMode === 'tree' ? (
+                                    tree.length > 0 ? (
+                                        <div className="p-6 space-y-1">
+                                            {tree.map(cat => renderTreeItem(cat))}
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-32">
+                                            <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-200">
+                                                <ImageIcon size={40} />
+                                            </div>
+                                            <p className="text-xl font-black text-gray-900">Kategoriyalar topilmadi</p>
+                                            <p className="text-gray-400 text-sm mt-1">Hozircha hech qanday ma'lumot mavjud emas</p>
+                                        </div>
+                                    )
+                                ) : (
+                                    categories.length > 0 ? (
+                                        categories
+                                            .filter(c => c.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                            .map(category => (
+                                                <div key={category.id} className="grid grid-cols-12 gap-4 items-center px-6 py-4 hover:bg-gray-50/50 transition-colors group">
+                                                    <div className="col-span-1">
+                                                        <div className="w-10 h-10 rounded-xl bg-gray-100 border border-gray-200 overflow-hidden flex items-center justify-center text-gray-400">
+                                                            {category.image ? (
+                                                                <img src={category.image} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <Folder size={18} />
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <span className="font-bold text-gray-900 text-sm">{category.name}</span>
+                                                        <div className="text-xs text-gray-400">{category._count?.products || 0} mahsulot</div>
+                                                    </div>
+                                                    <div className="col-span-3">
+                                                        <code className="px-2 py-1 rounded-md bg-gray-100 text-xs font-mono text-gray-600">{category.slug}</code>
+                                                    </div>
+                                                    <div className="col-span-2">
+                                                        {category.parent ? (
+                                                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold">
+                                                                <CornerDownRight size={12} />
+                                                                {category.parent.name}
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-xs text-gray-400 italic">—</span>
+                                                        )}
+                                                    </div>
+                                                    <div className="col-span-1 text-center">
+                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${(category as any).isActive !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                            {(category as any).isActive !== false ? 'Faol' : 'Nofaol'}
+                                                        </span>
+                                                    </div>
+                                                    <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
+                                                            onClick={() => handleEdit(category)}
+                                                        >
+                                                            <Edit2 size={16} />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
+                                                            onClick={() => handleDelete(category.id)}
+                                                        >
+                                                            <Trash2 size={16} />
+                                                        </Button>
+                                                    </div>
+                                                </div>
+                                            ))
+                                    ) : (
+                                        <div className="text-center py-20 col-span-12">
+                                            <p className="text-gray-500">Kategoriyalar topilmadi</p>
+                                        </div>
+                                    )
+                                )}
+                            </div>
                         </div>
                     )}
                 </div>

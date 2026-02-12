@@ -18,6 +18,7 @@
         "bosh_sahifa": "Bosh sahifa",
         "som": "so'm",
         "dona": "dona",
+        "chegirma": "Chegirma",
         "batafsil": "Batafsil",
         "ommabop_mahsulotlar": "Ommabop mahsulotlar",
         "yoki": "yoki",
@@ -76,7 +77,11 @@
         "saved_addresses": "Saqlangan manzillar",
         "new_address": "Yangi manzil",
         "address": "Manzil",
-        "save_this_for_later": "Manzilni keyingi safar uchun saqlash"
+        "save_this_for_later": "Manzilni keyingi safar uchun saqlash",
+        "promo_code": "Promo kod",
+        "promo_placeholder": "Kodni kiriting",
+        "apply": "Qo'llash",
+        "active_promo": "Faol promo kod"
     },
     "Product": {
         "loading": "Yuklanmoqda...",

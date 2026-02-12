@@ -1,215 +1,223 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { toast } from 'sonner';
 import {
-    Plus, X, UploadCloud, Edit2, Trash2,
-    Search, Filter, LayoutGrid, List as ListIcon,
-    Loader2, ImageIcon, ExternalLink, Eye, EyeOff,
-    Monitor, Smartphone, ArrowRight
+    Loader2, Plus, Trash2, Edit2, UploadCloud,
+    X, Image as ImageIcon, Search, CheckCircle2, XCircle, Tag,
+    MousePointerClick, Eye, TrendingUp, BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-
-type Banner = {
-    id: string;
-    type: 'MAIN' | 'SIDE';
-    title: string;
-    description: string;
-    imageUrl: string;
-    link: string;
-    price: number | null;
-    oldPrice: number | null;
-    discount: string | null;
-    isActive: boolean;
-    order: number;
-};
 
 interface Category {
     id: string;
     name: string;
-    slug: string;
-    parentId: string | null;
 }
+
+interface Banner {
+    id: string;
+    title: string;
+    image: string;
+    link?: string;
+    position: 'HOME_TOP' | 'CATEGORY_TOP' | 'SIDEBAR' | 'FOOTER';
+    isActive: boolean;
+    categories: Category[];
+    clickCount?: number;
+    impressionCount?: number;
+    startDate?: string;
+    endDate?: string;
+    variant?: string;
+}
+
+const POSITIONS = [
+    { value: 'HOME_TOP', label: 'Bosh Sahifa (Yuqori)' },
+    { value: 'CATEGORY_TOP', label: 'Kategoriya (Yuqori)' },
+    { value: 'SIDEBAR', label: 'Yon Panel (Sidebar)' },
+    { value: 'FOOTER', label: 'Pastki Qism (Footer)' },
+];
 
 export default function AdminBannersPage() {
     const [banners, setBanners] = useState<Banner[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
-    const [showForm, setShowForm] = useState(false);
-    const [editBanner, setEditBanner] = useState<Banner | null>(null);
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
     const [searchQuery, setSearchQuery] = useState('');
-    const [typeFilter, setTypeFilter] = useState<'ALL' | 'MAIN' | 'SIDE'>('ALL');
-    const [linkType, setLinkType] = useState<'category' | 'custom'>('custom');
 
-    // Form State
-    const [formData, setFormData] = useState({
-        type: 'MAIN' as 'MAIN' | 'SIDE',
-        title: '',
-        description: '',
-        imageUrl: '',
-        link: '',
-        price: '',
-        oldPrice: '',
-        discount: '',
-        isActive: true,
-        order: '0'
-    });
+    // Form state
+    const [showForm, setShowForm] = useState(false);
+    const [submitting, setSubmitting] = useState(false);
     const [uploading, setUploading] = useState(false);
-    const [saving, setSaving] = useState(false);
+    const [editId, setEditId] = useState<string | null>(null);
 
-    const fetchBanners = useCallback(async () => {
+    const [title, setTitle] = useState('');
+    const [image, setImage] = useState('');
+    const [link, setLink] = useState('');
+    const [position, setPosition] = useState('HOME_TOP');
+    const [isActive, setIsActive] = useState(true);
+    const [selectedCategoryIds, setSelectedCategoryIds] = useState<Set<string>>(new Set());
+
+    // Scheduling
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+
+    // A/B Testing
+    const [variant, setVariant] = useState('');
+
+    const totalImpressions = banners.reduce((acc, b) => acc + (b.impressionCount || 0), 0);
+    const totalClicks = banners.reduce((acc, b) => acc + (b.clickCount || 0), 0);
+    const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0.0';
+    const activeBannersCount = banners.filter(b => b.isActive).length;
+
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const fetchData = async () => {
         setLoading(true);
         try {
-            const [bannersRes, categoriesRes] = await Promise.all([
-                fetch('/api/banners'),
+            const [bannersRes, catsRes] = await Promise.all([
+                fetch('/api/admin/banners'),
                 fetch('/api/admin/categories')
             ]);
 
-            if (bannersRes.ok) setBanners(await bannersRes.json());
-            if (categoriesRes.ok) setCategories(await categoriesRes.json());
+            if (bannersRes.ok && catsRes.ok) {
+                setBanners(await bannersRes.json());
+                setCategories(await catsRes.json());
+            }
         } catch (error) {
             toast.error("Ma'lumotlarni yuklashda xatolik");
         } finally {
             setLoading(false);
         }
-    }, []);
-
-    useEffect(() => {
-        fetchBanners();
-    }, [fetchBanners]);
-
-    const handleEdit = (banner: Banner) => {
-        setEditBanner(banner);
-        const isCategoryLink = banner.link.startsWith('/category/');
-        setLinkType(isCategoryLink ? 'category' : 'custom');
-
-        setFormData({
-            type: banner.type,
-            title: banner.title || '',
-            description: banner.description || '',
-            imageUrl: banner.imageUrl || '',
-            link: banner.link || '',
-            price: banner.price ? String(banner.price) : '',
-            oldPrice: banner.oldPrice ? String(banner.oldPrice) : '',
-            discount: banner.discount || '',
-            isActive: banner.isActive,
-            order: String(banner.order || 0)
-        });
-        setShowForm(true);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleCreate = () => {
-        setEditBanner(null);
-        setLinkType('custom');
-        setFormData({
-            type: 'MAIN', title: '', description: '',
-            imageUrl: '', link: '', price: '',
-            oldPrice: '', discount: '', isActive: true,
-            order: '0'
-        });
-        setShowForm(true);
-    };
-
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
+    const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (!e.target.files?.[0]) return;
         setUploading(true);
-        const data = new FormData();
-        data.append('file', file);
+        const formData = new FormData();
+        formData.append('file', e.target.files[0]);
 
         try {
             const res = await fetch('/api/upload', {
                 method: 'POST',
-                body: data
+                body: formData
             });
-
-            if (!res.ok) throw new Error('Upload failed');
-            const result = await res.json();
-
-            setFormData(prev => ({ ...prev, imageUrl: result.url }));
-            toast.success("Rasm yuklandi");
-        } catch (error) {
-            console.error("Upload error:", error);
-            toast.error("Rasm yuklashda xatolik");
+            const data = await res.json();
+            if (res.ok) {
+                setImage(data.url);
+                toast.success("Rasm yuklandi");
+            } else {
+                toast.error("Rasm yuklashda xatolik");
+            }
+        } catch (e) {
+            toast.error("Xatolik yuz berdi");
         } finally {
             setUploading(false);
         }
     };
 
-    const handleSave = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setSaving(true);
+        setSubmitting(true);
         try {
-            const method = editBanner ? 'PUT' : 'POST';
-            const url = editBanner ? `/api/banners/${editBanner.id}` : '/api/banners';
-
-            const payload = {
-                ...formData,
-                price: formData.price ? parseFloat(formData.price) : null,
-                oldPrice: formData.oldPrice ? parseFloat(formData.oldPrice) : null,
-                order: parseInt(formData.order) || 0
-            };
+            const url = editId ? `/api/admin/banners/${editId}` : '/api/admin/banners';
+            const method = editId ? 'PATCH' : 'POST';
 
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({
+                    title,
+                    image,
+                    link: link || null,
+                    position,
+                    isActive,
+                    categoryIds: Array.from(selectedCategoryIds),
+                    startDate: startDate || null,
+                    endDate: endDate || null,
+                    variant: variant || null
+                })
             });
+
             if (res.ok) {
-                toast.success(editBanner ? "Banner yangilandi!" : "Yangi banner qo'shildi!");
+                toast.success(editId ? "Banner yangilandi" : "Banner yaratildi");
+                resetForm();
+                fetchData();
                 setShowForm(false);
-                fetchBanners();
             } else {
-                toast.error("Saqlashda xatolik yuz berdi");
+                toast.error("Saqlashda xatolik");
             }
-        } catch (error) {
+        } catch (e) {
             toast.error("Xatolik");
         } finally {
-            setSaving(false);
+            setSubmitting(false);
         }
+    };
+
+    const handleEdit = (banner: Banner) => {
+        setEditId(banner.id);
+        setTitle(banner.title);
+        setImage(banner.image);
+        setLink(banner.link || '');
+        setPosition(banner.position);
+        setIsActive(banner.isActive);
+        setSelectedCategoryIds(new Set(banner.categories.map(c => c.id)));
+        setStartDate(banner.startDate ? banner.startDate.split('T')[0] : '');
+        setEndDate(banner.endDate ? banner.endDate.split('T')[0] : '');
+        setVariant(banner.variant || '');
+        setShowForm(true);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     const handleDelete = async (id: string) => {
-        if (!confirm('O\'chirishni tasdiqlaysizmi?')) return;
+        if (!confirm("O'chirishni tasdiqlaysizmi?")) return;
         try {
-            const res = await fetch(`/api/banners/${id}`, { method: 'DELETE' });
+            const res = await fetch(`/api/admin/banners/${id}`, { method: 'DELETE' });
             if (res.ok) {
                 toast.success("Banner o'chirildi");
-                fetchBanners();
-            } else {
-                toast.error("O'chirishda xatolik");
+                fetchData();
             }
-        } catch (error) {
+        } catch (e) {
             toast.error("Xatolik");
         }
     };
 
-    const filteredBanners = banners.filter(b => {
-        const matchesSearch = b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            b.description?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesType = typeFilter === 'ALL' || b.type === typeFilter;
-        return matchesSearch && matchesType;
-    });
+    const resetForm = () => {
+        setTitle('');
+        setImage('');
+        setLink('');
+        setPosition('HOME_TOP');
+        setIsActive(true);
+        setSelectedCategoryIds(new Set());
+        setStartDate('');
+        setEndDate('');
+        setVariant('');
+        setEditId(null);
+    };
+
+    const toggleCategory = (id: string) => {
+        const next = new Set(selectedCategoryIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedCategoryIds(next);
+    };
+
+    const filteredBanners = banners.filter(b =>
+        b.title.toLowerCase().includes(searchQuery.toLowerCase())
+    );
 
     return (
         <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                <motion.div
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                >
+                <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Bannerlar Boshqaruvi</h1>
-                    <p className="text-gray-500 mt-1">Do'koningizdagi reklama va slider bannerlarini boshqaring</p>
-                </motion.div>
+                    <p className="text-gray-500 mt-1">Reklama va e'lonlar uchun bannerlar tizimi</p>
+                </div>
                 <Button
-                    onClick={() => { setShowForm(!showForm); if (!showForm) handleCreate(); }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6 h-12"
+                    onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
+                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6"
                 >
-                    {showForm ? <X size={20} /> : <Plus size={20} />}
+                    {showForm ? <X size={18} /> : <Plus size={18} />}
                     {showForm ? "Yopish" : "Yangi Banner"}
                 </Button>
             </div>
@@ -220,229 +228,184 @@ export default function AdminBannersPage() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-2xl shadow-gray-200/50"
+                        className="bg-white p-8 rounded-3xl border border-gray-100 shadow-2xl shadow-gray-200/50"
                     >
-                        <h2 className="text-xl font-black text-gray-900 mb-8 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                {editBanner ? <Edit2 size={20} /> : <Plus size={20} />}
-                            </div>
-                            {editBanner ? 'Bannerni tahrirlash' : 'Yangi banner qo\'shish'}
+                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
+                            {editId ? <Edit2 className="text-blue-600" size={24} /> : <ImageIcon className="text-blue-600" size={24} />}
+                            {editId ? 'Banner tahrirlash' : 'Yangi banner qo\'shish'}
                         </h2>
 
-                        <form onSubmit={handleSave} className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4 p-1 bg-gray-100 rounded-2xl">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, type: 'MAIN' })}
-                                        className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${formData.type === 'MAIN' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-                                            }`}
-                                    >
-                                        <Monitor size={16} /> Asosiy Slider
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, type: 'SIDE' })}
-                                        className={`flex items-center justify-center gap-2 py-3 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${formData.type === 'SIDE' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-400 hover:text-gray-600'
-                                            }`}
-                                    >
-                                        <Smartphone size={16} /> Yon Banner
-                                    </button>
+                        <form onSubmit={handleSubmit} className="space-y-8">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-700 ml-1">Sarlavha (Title)</label>
+                                        <input
+                                            value={title}
+                                            onChange={e => setTitle(e.target.value)}
+                                            required
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                            placeholder="Masalan: Yozgi chegirmalar"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-700 ml-1">Joylashuvi (Position)</label>
+                                        <select
+                                            value={position}
+                                            onChange={e => setPosition(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
+                                        >
+                                            {POSITIONS.map(pos => (
+                                                <option key={pos.value} value={pos.value}>{pos.label}</option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-bold text-gray-700 ml-1">Status</label>
+                                        <div className="flex items-center gap-4">
+                                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="status"
+                                                    className="hidden"
+                                                    checked={isActive}
+                                                    onChange={() => setIsActive(true)}
+                                                />
+                                                <CheckCircle2 size={18} /> Faol
+                                            </label>
+                                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                                <input
+                                                    type="radio"
+                                                    name="status"
+                                                    className="hidden"
+                                                    checked={!isActive}
+                                                    onChange={() => setIsActive(false)}
+                                                />
+                                                <XCircle size={18} /> Nofaol
+                                            </label>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Banner Sarlovhasi</label>
+                                        <label className="text-sm font-bold text-gray-700 ml-1">Havola (Link) - ixtiyoriy</label>
                                         <input
-                                            value={formData.title}
-                                            onChange={e => setFormData({ ...formData, title: e.target.value })}
-                                            required
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium"
-                                            placeholder="Masalan: Yangi yil chegirmalari!"
+                                            value={link}
+                                            onChange={e => setLink(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                            placeholder="Masalan: /category/yozgi-chegirmalar"
                                         />
-                                    </div>
-
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Tavsif (Ixtiyoriy)</label>
-                                        <textarea
-                                            value={formData.description}
-                                            onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                            rows={3}
-                                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium resize-none"
-                                            placeholder="Bannerdagi qo'shimcha matn..."
-                                        />
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Yo'naltirish (Link)</label>
-                                            <div className="flex p-0.5 bg-gray-100 rounded-lg">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setLinkType('category')}
-                                                    className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${linkType === 'category' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400'}`}
-                                                >
-                                                    Kategoriya
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setLinkType('custom')}
-                                                    className={`px-3 py-1 text-[10px] font-bold rounded-md transition-all ${linkType === 'custom' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-400'}`}
-                                                >
-                                                    Custom
-                                                </button>
-                                            </div>
-                                        </div>
-
-                                        {linkType === 'category' ? (
-                                            <select
-                                                value={categories.find(c => `/category/${c.slug}` === formData.link)?.id || ''}
-                                                onChange={e => {
-                                                    const cat = categories.find(c => c.id === e.target.value);
-                                                    if (cat) setFormData({ ...formData, link: `/category/${cat.slug}` });
-                                                }}
-                                                className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium appearance-none"
-                                            >
-                                                <option value="">Kategoriyani tanlang...</option>
-                                                {categories.map(cat => (
-                                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                                ))}
-                                            </select>
-                                        ) : (
-                                            <div className="relative">
-                                                <ExternalLink className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                                <input
-                                                    value={formData.link}
-                                                    onChange={e => setFormData({ ...formData, link: e.target.value })}
-                                                    className="w-full pl-11 pr-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium"
-                                                    placeholder="/category/smartphones yoki https://..."
-                                                />
-                                            </div>
-                                        )}
-
-                                        {formData.link && (
-                                            <div className="mt-1 flex items-center gap-2 px-3 py-1.5 bg-blue-50/50 rounded-xl border border-blue-100/50">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-                                                <span className="text-[10px] font-bold text-blue-600 truncate">Result: {formData.link}</span>
-                                            </div>
-                                        )}
+                                        <p className="text-xs text-gray-500 ml-1">Banner bosilganda qayerga o'tishi kerak</p>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-6">
                                 <div className="space-y-4">
                                     <label className="text-sm font-bold text-gray-700 ml-1">Banner Rasmi</label>
-                                    <div className="relative aspect-[21/9] rounded-[32px] bg-gray-50 border-2 border-dashed border-gray-200 overflow-hidden group">
-                                        {formData.imageUrl ? (
-                                            <>
-                                                <img src={formData.imageUrl} alt="" className="w-full h-full object-cover" />
-                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setFormData(p => ({ ...p, imageUrl: '' }))}
-                                                        className="p-3 bg-red-500 text-white rounded-full shadow-xl hover:bg-red-600 transition-colors"
-                                                    >
-                                                        <Trash2 size={20} />
-                                                    </button>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <label className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-100/50 transition-colors">
-                                                <div className="w-16 h-16 rounded-3xl bg-white shadow-xl shadow-gray-200/50 flex items-center justify-center text-blue-600 mb-4 transition-transform group-hover:scale-110">
-                                                    {uploading ? <Loader2 className="animate-spin" size={32} /> : <UploadCloud size={32} />}
-                                                </div>
-                                                <span className="text-sm font-black text-gray-900 uppercase tracking-widest">
-                                                    {uploading ? 'Yuklanmoqda...' : 'Rasm yuklash'}
-                                                </span>
-                                                <span className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-widest">
-                                                    {formData.type === 'MAIN' ? '850x380 px tavsiya etiladi' : '500x500 px tavsiya etiladi'}
-                                                </span>
-                                                <input type="file" hidden accept="image/*" onChange={handleImageUpload} />
-                                            </label>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Narx</label>
-                                        <input
-                                            type="number"
-                                            value={formData.price}
-                                            onChange={e => setFormData({ ...formData, price: e.target.value })}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-sm"
-                                            placeholder="549000"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1 text-gray-400">Eski Narx</label>
-                                        <input
-                                            type="number"
-                                            value={formData.oldPrice}
-                                            onChange={e => setFormData({ ...formData, oldPrice: e.target.value })}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-sm text-gray-400"
-                                            placeholder="819000"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1 text-red-500">Discount</label>
-                                        <input
-                                            value={formData.discount}
-                                            onChange={e => setFormData({ ...formData, discount: e.target.value })}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-black text-sm text-red-600"
-                                            placeholder="-34%"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Tartib raqami (#)</label>
-                                        <input
-                                            type="number"
-                                            value={formData.order}
-                                            onChange={e => setFormData({ ...formData, order: e.target.value })}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-sm text-blue-600"
-                                            placeholder="0"
-                                        />
-                                    </div>
-
-                                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100">
-                                        <div className="flex items-center gap-3">
-                                            {formData.isActive ? <Eye className="text-green-500" size={20} /> : <EyeOff className="text-gray-400" size={20} />}
-                                            <div>
-                                                <p className="text-sm font-bold text-gray-900">Status</p>
-                                                <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{formData.isActive ? 'Saytda ko\'rinadi' : 'Yashirilgan'}</p>
+                                    <div className="flex flex-col items-center gap-4 p-6 bg-gray-50 rounded-3xl border border-dashed border-gray-200 h-full justify-center">
+                                        {image ? (
+                                            <div className="relative group w-full h-40">
+                                                <img src={image} alt="Preview" className="w-full h-full object-cover rounded-2xl shadow-md" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setImage('')}
+                                                    className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                                                >
+                                                    <X size={12} />
+                                                </button>
                                             </div>
-                                        </div>
-                                        <label className="relative inline-flex items-center cursor-pointer">
-                                            <input
-                                                type="checkbox"
-                                                checked={formData.isActive}
-                                                onChange={e => setFormData({ ...formData, isActive: e.target.checked })}
-                                                className="sr-only peer"
-                                            />
-                                            <div className="w-14 h-7 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-blue-600 transition-all"></div>
+                                        ) : (
+                                            <div className="flex flex-col items-center text-center">
+                                                <div className="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-300 mb-2">
+                                                    <ImageIcon size={32} />
+                                                </div>
+                                                <p className="text-xs text-gray-400">Rasm yuklash</p>
+                                            </div>
+                                        )}
+                                        <label className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95 flex items-center gap-2">
+                                            {uploading ? <Loader2 className="animate-spin" size={14} /> : <UploadCloud size={14} />}
+                                            {uploading ? "..." : "Tanlash"}
+                                            <input type="file" hidden accept="image/*" onChange={handleUpload} />
                                         </label>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="lg:col-span-2 flex gap-4 pt-6 border-t border-gray-50">
+                            <div className="space-y-3 pt-4 border-t border-gray-50">
+                                <label className="text-sm font-bold text-gray-700 ml-1">Qaysi Kategoriyalarda Ko'rsatiladi?</label>
+                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 max-h-60 overflow-y-auto p-2 bg-gray-50 rounded-2xl border border-gray-100">
+                                    {categories.map(cat => (
+                                        <label
+                                            key={cat.id}
+                                            className={`flex items-center gap-2 p-2 rounded-xl text-xs font-medium cursor-pointer transition-all ${selectedCategoryIds.has(cat.id) ? 'bg-blue-100 text-blue-700 ring-1 ring-blue-200' : 'hover:bg-white text-gray-600'}`}
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedCategoryIds.has(cat.id)}
+                                                onChange={() => toggleCategory(cat.id)}
+                                                className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                            {cat.name}
+                                        </label>
+                                    ))}
+                                    {categories.length === 0 && <p className="text-gray-400 text-xs col-span-full text-center py-4">Kategoriyalar mavjud emas</p>}
+                                </div>
+                            </div>
+
+                            {/* Scheduling Section */}
+                            <div className="space-y-3 pt-4 border-t border-gray-50">
+                                <label className="text-sm font-bold text-gray-700 ml-1">📅 Vaqt Jadvali (ixtiyoriy)</label>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-gray-600 ml-1">Boshlanish sanasi</label>
+                                        <input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={e => setStartDate(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-xs text-gray-600 ml-1">Tugash sanasi</label>
+                                        <input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={e => setEndDate(e.target.value)}
+                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-gray-500 ml-1">Banner faqat belgilangan vaqt oralig'ida ko'rsatiladi</p>
+                            </div>
+
+                            {/* A/B Testing Section */}
+                            <div className="space-y-3 pt-4 border-t border-gray-50">
+                                <label className="text-sm font-bold text-gray-700 ml-1">🧪 A/B Test Varianti (ixtiyoriy)</label>
+                                <input
+                                    value={variant}
+                                    onChange={e => setVariant(e.target.value)}
+                                    placeholder="Masalan: A, B, Control, Test1"
+                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                />
+                                <p className="text-xs text-gray-500 ml-1">Turli variantlarni test qilish uchun</p>
+                            </div>
+
+                            <div className="flex gap-3 pt-6 border-t border-gray-50">
                                 <Button
                                     type="submit"
-                                    disabled={saving || uploading}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-10 h-14 rounded-2xl shadow-xl shadow-blue-200 font-bold active:scale-95 transition-all min-w-[160px]"
+                                    disabled={submitting}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 rounded-2xl shadow-xl shadow-blue-200 font-bold"
                                 >
-                                    {saving ? <Loader2 className="animate-spin" size={20} /> : (editBanner ? <Edit2 size={20} /> : <Plus size={20} />)}
-                                    {editBanner ? "Saqlash" : "Banner yaratish"}
+                                    {submitting ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
+                                    {editId ? "Saqlash" : "Yarating"}
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() => { setShowForm(false); setEditBanner(null); }}
-                                    className="h-14 px-10 rounded-2xl font-bold border-gray-200 text-gray-500 hover:bg-gray-50"
+                                    onClick={() => { setShowForm(false); resetForm(); }}
+                                    className="h-12 px-8 rounded-2xl font-bold border-gray-200 text-gray-500 hover:bg-gray-50"
                                 >
                                     Bekor qilish
                                 </Button>
@@ -450,164 +413,204 @@ export default function AdminBannersPage() {
                         </form>
                     </motion.div>
                 )}
-            </AnimatePresence>
+                <AnimatePresence>
+                    {!showForm && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                            >
+                                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                    <Eye size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Jami ko'rishlar</p>
+                                    <p className="text-2xl font-black text-gray-900">{totalImpressions.toLocaleString()}</p>
+                                </div>
+                            </motion.div>
 
-            <div className="bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[600px]">
-                <div className="p-8 border-b border-gray-50 bg-gray-50/30 flex flex-col lg:flex-row justify-between items-center gap-6">
-                    <div className="flex items-center gap-6 w-full lg:w-auto">
-                        <div className="relative flex-1 lg:w-80">
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                            >
+                                <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
+                                    <MousePointerClick size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Jami bosishlar</p>
+                                    <p className="text-2xl font-black text-gray-900">{totalClicks.toLocaleString()}</p>
+                                </div>
+                            </motion.div>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                            >
+                                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                    <TrendingUp size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">O'rtacha CTR</p>
+                                    <p className="text-2xl font-black text-gray-900">{avgCTR}%</p>
+                                </div>
+                            </motion.div>
+
+                            <motion.div
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                            >
+                                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
+                                    <BarChart3 size={24} />
+                                </div>
+                                <div>
+                                    <p className="text-sm font-medium text-gray-500">Faol bannerlar</p>
+                                    <p className="text-2xl font-black text-gray-900">{activeBannersCount} / {banners.length}</p>
+                                </div>
+                            </motion.div>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden min-h-[500px]">
+                    <div className="p-6 border-b border-gray-50">
+                        <div className="relative w-full md:w-80">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                             <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Bannerlarni qidirish..."
-                                className="w-full pl-11 pr-10 py-3.5 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
+                                className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
                             />
                         </div>
-                        <div className="flex items-center p-1 bg-white border border-gray-200 rounded-2xl shadow-sm">
-                            {(['ALL', 'MAIN', 'SIDE'] as const).map((type) => (
-                                <button
-                                    key={type}
-                                    onClick={() => setTypeFilter(type)}
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${typeFilter === type ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-gray-400 hover:text-gray-600'
-                                        }`}
-                                >
-                                    {type === 'ALL' ? 'Hammasi' : type === 'MAIN' ? 'Slider' : 'Yon'}
-                                </button>
-                            ))}
-                        </div>
                     </div>
 
-                    <div className="flex items-center p-1 bg-gray-100 rounded-2xl">
-                        <button
-                            onClick={() => setViewMode('grid')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${viewMode === 'grid' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
-                                }`}
-                        >
-                            <LayoutGrid size={16} /> Grid
-                        </button>
-                        <button
-                            onClick={() => setViewMode('list')}
-                            className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-bold transition-all ${viewMode === 'list' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
-                                }`}
-                        >
-                            <ListIcon size={16} /> List
-                        </button>
-                    </div>
-                </div>
-
-                <div className="p-8">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center py-40 space-y-4">
-                            <div className="relative">
-                                <div className="w-20 h-20 rounded-full border-4 border-blue-50 animate-spin border-t-blue-500" />
-                                <div className="absolute inset-0 flex items-center justify-center text-blue-500">
-                                    <ImageIcon size={32} />
-                                </div>
-                            </div>
-                            <p className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] animate-pulse">Yuklanmoqda...</p>
-                        </div>
-                    ) : filteredBanners.length > 0 ? (
-                        <div className={viewMode === 'grid' ? "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8" : "space-y-4"}>
-                            {filteredBanners.map((banner, index) => (
-                                <motion.div
-                                    key={banner.id}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.05 }}
-                                    className={`group bg-white rounded-[32px] border border-gray-100 overflow-hidden hover:shadow-2xl hover:shadow-gray-200/50 transition-all ${viewMode === 'list' ? 'flex items-center p-4 gap-6' : 'flex flex-col'
-                                        }`}
-                                >
-                                    <div className={`relative overflow-hidden bg-gray-50 ${viewMode === 'list' ? 'w-48 h-24 rounded-2xl shrink-0' : 'aspect-[16/9]'
-                                        }`}>
-                                        {banner.imageUrl ? (
-                                            <img
-                                                src={banner.imageUrl}
-                                                alt={banner.title}
-                                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                                            />
-                                        ) : (
-                                            <div className="w-full h-full flex items-center justify-center text-gray-300">
-                                                <ImageIcon size={40} />
-                                            </div>
-                                        )}
-                                        <div className="flex items-center gap-2">
-                                            <span className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-xl backdrop-blur-md ${banner.type === 'MAIN' ? 'bg-blue-600/90 text-white' : 'bg-emerald-500/90 text-white'}`}>
-                                                {banner.type === 'MAIN' ? 'Slider' : 'Side'}
-                                            </span>
-                                            <span className="px-2 py-1.5 rounded-lg bg-white/20 text-[10px] font-black text-white backdrop-blur-md border border-white/20">
-                                                #{banner.order}
-                                            </span>
-                                        </div>
-
-                                    </div>
-
-                                    <div className="p-6 flex-1 space-y-4">
-                                        <div className="space-y-4">
-                                            <div className="flex items-start justify-between">
-                                                <div className="space-y-1 flex-1 min-w-0 pr-4">
-                                                    <div className="flex items-center gap-2">
-                                                        <h3 className="text-lg font-black text-gray-900 tracking-tight leading-none group-hover:text-blue-600 transition-colors line-clamp-1">{banner.title}</h3>
-                                                        {banner.isActive ? <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" /> : <div className="w-1.5 h-1.5 rounded-full bg-gray-300" />}
-                                                    </div>
-                                                    <p className="text-sm text-gray-500 line-clamp-2 leading-relaxed">{banner.description}</p>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                                    <th className="px-6 py-4">Rasm</th>
+                                    <th className="px-6 py-4">Sarlavha</th>
+                                    <th className="px-6 py-4">Joylashuv</th>
+                                    <th className="px-6 py-4">Kategoriyalar</th>
+                                    <th className="px-6 py-4 text-center">📊 Clicks</th>
+                                    <th className="px-6 py-4 text-center">👁️ Views</th>
+                                    <th className="px-6 py-4 text-center">📈 CTR</th>
+                                    <th className="px-6 py-4 text-center">🧪 Variant</th>
+                                    <th className="px-6 py-4 text-center">Status</th>
+                                    <th className="px-6 py-4 text-right">Amallar</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-gray-50">
+                                {loading ? (
+                                    <tr>
+                                        <td colSpan={10} className="text-center py-20 text-gray-400 font-medium">Yuklanmoqda...</td>
+                                    </tr>
+                                ) : filteredBanners.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={10} className="text-center py-20 text-gray-400 font-medium">Bannerlar topilmadi</td>
+                                    </tr>
+                                ) : (
+                                    filteredBanners.map((banner) => (
+                                        <tr key={banner.id} className="hover:bg-gray-50/50 transition-colors group">
+                                            <td className="px-6 py-4">
+                                                <div className="w-16 h-10 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
+                                                    <img src={banner.image} alt="" className="w-full h-full object-cover" />
                                                 </div>
-                                                <div className="flex items-center gap-1 shrink-0">
-                                                    <button
+                                            </td>
+                                            <td className="px-6 py-4 font-bold text-gray-900 text-sm">{banner.title}</td>
+                                            <td className="px-6 py-4">
+                                                <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
+                                                    {POSITIONS.find(p => p.value === banner.position)?.label || banner.position}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex flex-wrap gap-1">
+                                                    {banner.categories.slice(0, 3).map(c => (
+                                                        <span key={c.id} className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                            {c.name}
+                                                        </span>
+                                                    ))}
+                                                    {banner.categories.length > 3 && (
+                                                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600">
+                                                            +{banner.categories.length - 3}
+                                                        </span>
+                                                    )}
+                                                    {banner.categories.length === 0 && <span className="text-gray-400 text-xs italic">-</span>}
+                                                </div>
+                                            </td>
+
+                                            {/* Analytics Columns */}
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="font-bold text-blue-600">{banner.clickCount || 0}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                <span className="font-bold text-purple-600">{banner.impressionCount || 0}</span>
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {(() => {
+                                                    const ctr = banner.impressionCount && banner.impressionCount > 0
+                                                        ? ((banner.clickCount || 0) / banner.impressionCount * 100).toFixed(1)
+                                                        : '0.0';
+                                                    const ctrNum = parseFloat(ctr);
+                                                    return (
+                                                        <span className={`font-bold ${ctrNum >= 5 ? 'text-green-600' :
+                                                            ctrNum >= 2 ? 'text-yellow-600' :
+                                                                'text-gray-400'
+                                                            }`}>
+                                                            {ctr}%
+                                                        </span>
+                                                    );
+                                                })()}
+                                            </td>
+                                            <td className="px-6 py-4 text-center">
+                                                {banner.variant ? (
+                                                    <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-indigo-100 text-indigo-700">
+                                                        {banner.variant}
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-gray-400 text-xs">-</span>
+                                                )}
+                                            </td>
+
+                                            <td className="px-6 py-4 text-center">
+                                                <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${banner.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                    {banner.isActive ? 'Faol' : 'Nofaol'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
                                                         onClick={() => handleEdit(banner)}
-                                                        className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90"
-                                                        title="Tahrirlash"
                                                     >
-                                                        <Edit2 size={18} />
-                                                    </button>
-                                                    <button
+                                                        <Edit2 size={16} />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
                                                         onClick={() => handleDelete(banner.id)}
-                                                        className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-90"
-                                                        title="O'chirish"
                                                     >
-                                                        <Trash2 size={18} />
-                                                    </button>
+                                                        <Trash2 size={16} />
+                                                    </Button>
                                                 </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pt-4 border-t border-gray-50">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
-                                                    <ExternalLink size={14} />
-                                                </div>
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest max-w-[180px] truncate">{banner.link}</span>
-                                            </div>
-                                            <div
-                                                onClick={() => banner.link && window.open(banner.link, '_blank')}
-                                                className="flex items-center gap-2 group-hover:translate-x-1 transition-transform cursor-pointer"
-                                            >
-                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-blue-600">View</span>
-                                                <ArrowRight size={14} className="text-blue-600" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center py-40">
-                            <div className="w-24 h-24 bg-gray-50 rounded-[40px] flex items-center justify-center text-gray-200 mb-6">
-                                <ImageIcon size={48} />
-                            </div>
-                            <h3 className="text-2xl font-black text-gray-900 tracking-tight">Bannerlar topilmadi</h3>
-                            <p className="text-gray-400 text-sm mt-2 font-medium">Qidiruv natijasi yoki filtr bo'yicha ma'lumot yo'q</p>
-                            <Button
-                                variant="outline"
-                                onClick={() => { setSearchQuery(''); setTypeFilter('ALL'); }}
-                                className="mt-8 rounded-2xl font-bold border-gray-200 text-gray-500 px-8"
-                            >
-                                Filtrlarni tozalash
-                            </Button>
-                        </div>
-                    )}
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
         </div>
     );
 }

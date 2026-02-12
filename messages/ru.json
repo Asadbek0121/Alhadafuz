@@ -18,6 +18,7 @@
         "bosh_sahifa": "Главная",
         "som": "сум",
         "dona": "шт",
+        "chegirma": "Скидка",
         "batafsil": "Подробнее",
         "ommabop_mahsulotlar": "Популярные товары",
         "yoki": "или",
@@ -76,7 +77,11 @@
         "saved_addresses": "Сохраненные адреса",
         "new_address": "Новый адрес",
         "address": "Адрес",
-        "save_this_for_later": "Сохранить этот адрес для следующего раза"
+        "save_this_for_later": "Сохранить этот адрес для следующего раза",
+        "promo_code": "Промокод",
+        "promo_placeholder": "Введите код",
+        "apply": "Применить",
+        "active_promo": "Активный промокод"
     },
     "Product": {
         "loading": "Загрузка...",

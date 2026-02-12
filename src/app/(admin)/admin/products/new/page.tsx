@@ -171,6 +171,8 @@ export default function AddProductPage() {
 
         // Calculate final price based on discount logic if needed, or store raw values
         // For now mapping to existing schema structure
+        const categoryIds = data.category?.split(',').filter(Boolean) || [];
+
         const payload = {
             ...data,
             price: Number(data.price),
@@ -181,7 +183,8 @@ export default function AddProductPage() {
             discountType: data.discountCategory,
             images: imagesList,
             attributes: attrsObject,
-            category: data.category
+            category: data.category, // Keep for backward compatibility
+            categoryIds // New M-N relation
         };
 
         try {
@@ -417,16 +420,48 @@ export default function AddProductPage() {
                             <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
-                            <label className="label">Kategoriyalar</label>
-                            <select {...register("category")} className="input">
-                                <option value="">Kategoriyani tanlang</option>
-                                {categories.map((cat: any) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.parent ? `${cat.parent.name} > ` : ''}{cat.name}
-                                    </option>
-                                ))}
-                            </select>
-                            <p className="helper-text">Mahsulotni kategoriyaga biriktiring.</p>
+                            <label className="label">Kategoriyalar (bir yoki bir nechta)</label>
+                            <div style={{ maxHeight: '250px', overflowY: 'auto', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e5eaef' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
+                                    {categories.map((cat: any) => {
+                                        const isSelected = watch('category')?.split(',').includes(cat.id);
+                                        return (
+                                            <label
+                                                key={cat.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '10px',
+                                                    padding: '10px 12px',
+                                                    borderRadius: '8px',
+                                                    cursor: 'pointer',
+                                                    background: isSelected ? '#ecf2ff' : '#fff',
+                                                    border: isSelected ? '1px solid #0085db' : '1px solid #e5eaef',
+                                                    transition: 'all 0.2s',
+                                                    fontSize: '13px',
+                                                    fontWeight: isSelected ? 600 : 500,
+                                                    color: isSelected ? '#0085db' : '#5A6A85'
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={(e) => {
+                                                        const current = watch('category')?.split(',').filter(Boolean) || [];
+                                                        const next = e.target.checked
+                                                            ? [...current, cat.id]
+                                                            : current.filter(id => id !== cat.id);
+                                                        setValue('category', next.join(','));
+                                                    }}
+                                                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                                />
+                                                <span>{cat.parent ? `${cat.parent.name} > ` : ''}{cat.name}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <p className="helper-text">Mahsulotni bir yoki bir nechta kategoriyaga biriktiring.</p>
                             <button type="button" className="btn-light-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>
                                 <Plus size={16} style={{ marginRight: '5px' }} /> Yangi kategoriya yaratish
                             </button>

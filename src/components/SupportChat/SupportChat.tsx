@@ -47,6 +47,10 @@ export default function SupportChat() {
             })
             .then(data => {
                 if (data && !data.error) setAdmin(data);
+            })
+            .catch(err => {
+                // Silently fail - admin contact is optional
+                console.log('Admin contact not available');
             });
     }, []);
 

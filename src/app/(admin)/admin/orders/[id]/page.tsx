@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin, User, Package, Calendar, CreditCard, ChevronDown } from "lucide-react";
+import { ArrowLeft, MapPin, User, Package, Calendar, CreditCard, ChevronDown, Tag } from "lucide-react";
 import OrderStatusSelect from "../OrderStatusSelect";
 import { auth } from "@/auth";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
@@ -104,7 +104,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                         <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500 font-medium">Mahsulotlar:</span>
-                                <span className="font-bold text-gray-900">{(order.total - ((order as any).deliveryFee || 0)).toLocaleString()} so'm</span>
+                                <span className="font-bold text-gray-900">{(order.total - ((order as any).deliveryFee || 0) + ((order as any).discountAmount || 0)).toLocaleString()} so'm</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500 font-medium">Yetkazib berish:</span>
@@ -112,6 +112,15 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                                     {((order as any).deliveryFee || 0) === 0 ? "Bepul" : `${(order as any).deliveryFee.toLocaleString()} so'm`}
                                 </span>
                             </div>
+                            {((order as any).discountAmount || 0) > 0 && (
+                                <div className="flex justify-between items-center text-sm text-emerald-600">
+                                    <span className="font-medium flex items-center gap-2">
+                                        <Tag size={14} />
+                                        Chegirma {(order as any).couponCode ? `(${(order as any).couponCode})` : ''}:
+                                    </span>
+                                    <span className="font-black">-{((order as any).discountAmount || 0).toLocaleString()} so'm</span>
+                                </div>
+                            )}
                         </div>
                         <div className="p-6 bg-gray-900 text-white">
                             <div className="flex justify-between items-center">

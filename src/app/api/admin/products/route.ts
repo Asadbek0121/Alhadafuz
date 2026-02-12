@@ -67,7 +67,8 @@ export async function POST(req: Request) {
             status: data.status,
         };
 
-        // Handle category logic (support ID or Name)
+
+        // Handle category logic (support ID or Name) - backward compatibility
         if (data.category) {
             const categoryRecord = await prisma.category.findFirst({
                 where: {
@@ -85,6 +86,14 @@ export async function POST(req: Request) {
             } else {
                 createData.category = data.category;
             }
+        }
+
+        // Handle M-N categories relation (new approach)
+        const categoryIds = (body.categoryIds || []) as string[];
+        if (categoryIds.length > 0) {
+            createData.categories = {
+                connect: categoryIds.map(id => ({ id }))
+            };
         }
 
         const product = await prisma.product.create({

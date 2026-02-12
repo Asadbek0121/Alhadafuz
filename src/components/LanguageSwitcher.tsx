@@ -76,7 +76,17 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                         }}
                     />
                 ) : (
-                    <span style={{ fontSize: '18px', lineHeight: 1 }}>{activeLang.flag}</span>
+                    <img
+                        src={activeLang.img}
+                        alt={activeLang.label}
+                        style={{
+                            width: '20px',
+                            height: '20px',
+                            objectFit: 'cover',
+                            borderRadius: '50%',
+                            display: 'block'
+                        }}
+                    />
                 )}
 
                 {!minimal && (

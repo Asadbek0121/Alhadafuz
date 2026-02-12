@@ -6,13 +6,14 @@ import { Titan_One } from "next/font/google";
 const titanOne = Titan_One({ weight: "400", subsets: ["latin"] });
 
 import Link from 'next/link';
-import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck, Star } from 'lucide-react';
+import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck, Star, Ticket } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
 const menuItems = [
     { name: "Boshqaruv Paneli", icon: <Layers size={20} />, path: "/admin" },
     { name: "Foydalanuvchilar", icon: <Users size={20} />, path: "/admin/users" },
     { name: "Mahsulotlar", icon: <ShoppingBag size={20} />, path: "/admin/products" },
+    { name: "Kuponlar", icon: <Ticket size={20} />, path: "/admin/coupons" },
     { name: "Xabarlar", icon: <MessageCircle size={20} />, path: "/admin/chat" },
     { name: "Bildirishnomalar", icon: <Bell size={20} />, path: "/admin/notifications" },
     { name: "Buyurtmalar", icon: <FileStack size={20} />, path: "/admin/orders" },

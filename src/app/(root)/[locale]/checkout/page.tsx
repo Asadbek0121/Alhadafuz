@@ -3,13 +3,14 @@
 
 import { useCartStore } from '@/store/useCartStore';
 import { useUserStore } from '@/store/useUserStore';
-import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { regions, districts } from '@/constants/locations';
 import { useMessages } from 'next-intl';
+import { toast } from 'sonner';
 
 export default function CheckoutPage() {
     const { items, total, clearCart } = useCartStore();
@@ -45,6 +46,40 @@ export default function CheckoutPage() {
     const [savedAddresses, setSavedAddresses] = useState<any[]>([]);
     const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
     const [saveNewAddress, setSaveNewAddress] = useState(false);
+
+    // Coupon state
+    const [couponCode, setCouponCode] = useState('');
+    const [isApplyingCoupon, setIsApplyingCoupon] = useState(false);
+    const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+    const [couponError, setCouponError] = useState<string | null>(null);
+
+    const addressFormRef = useRef<HTMLDivElement>(null);
+    const citySelectRef = useRef<HTMLSelectElement>(null);
+
+    const applyCoupon = async () => {
+        if (!couponCode) return;
+        setIsApplyingCoupon(true);
+        setCouponError(null);
+        try {
+            const res = await fetch('/api/coupons/validate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code: couponCode, amount: total() })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setAppliedCoupon(data);
+                toast.success("Promo kod muvaffaqiyatli qo'llanildi");
+            } else {
+                setCouponError(data.error);
+                setAppliedCoupon(null);
+            }
+        } catch (err) {
+            setCouponError("Xatolik yuz berdi");
+        } finally {
+            setIsApplyingCoupon(false);
+        }
+    };
 
     // Safe translation helper
     const safeTranslate = (key: string) => {
@@ -218,9 +253,11 @@ export default function CheckoutPage() {
                         quantity: item.quantity,
                         image: item.image,
                     })),
-                    total: total() + deliveryFee,
+                    total: total() + deliveryFee - (appliedCoupon?.discountAmount || 0),
                     paymentMethod,
                     deliveryMethod,
+                    couponCode: appliedCoupon?.code,
+                    discountAmount: appliedCoupon?.discountAmount || 0,
                     deliveryAddress: {
                         city: cityName,
                         district: formData.district,
@@ -356,6 +393,12 @@ export default function CheckoutPage() {
                                                 onClick={() => {
                                                     setSelectedAddressId(null);
                                                     setFormData(prev => ({ ...prev, address: '', district: '', city: 'toshkent_sh' }));
+
+                                                    // Smooth scroll and focus
+                                                    setTimeout(() => {
+                                                        addressFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                                        citySelectRef.current?.focus();
+                                                    }, 100);
                                                 }}
                                             >
                                                 <span className="font-bold text-sm">+ {tCheckout('new_address')}</span>
@@ -364,10 +407,11 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4" ref={addressFormRef}>
                                     <div>
                                         <label className="block text-xs font-bold text-slate-500 mb-1.5 uppercase tracking-wide">{tCheckout('city_label')}</label>
                                         <select
+                                            ref={citySelectRef}
                                             className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-medium text-slate-900 text-sm md:text-base appearance-none cursor-pointer"
                                             value={formData.city}
                                             onChange={(e) => setFormData({ ...formData, city: e.target.value, district: '' })}
@@ -530,6 +574,58 @@ export default function CheckoutPage() {
                             ))}
                         </div>
 
+
+                        {/* Promo Code Section */}
+                        <div className="mb-6 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Tag size={16} className="text-blue-600" />
+                                <span className="text-sm font-bold text-slate-900">{tCheckout('promo_code')}</span>
+                            </div>
+
+                            {!appliedCoupon ? (
+                                <div className="space-y-2">
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            placeholder={tCheckout('promo_placeholder')}
+                                            className={`flex-1 bg-white border ${couponError ? 'border-red-500' : 'border-slate-200'} rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all uppercase font-bold`}
+                                            value={couponCode}
+                                            onChange={(e) => {
+                                                setCouponCode(e.target.value.toUpperCase());
+                                                setCouponError(null);
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={applyCoupon}
+                                            disabled={isApplyingCoupon || !couponCode}
+                                            className="bg-blue-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-blue-700 transition-all disabled:opacity-50"
+                                        >
+                                            {isApplyingCoupon ? <Loader2 size={16} className="animate-spin" /> : tCheckout('apply')}
+                                        </button>
+                                    </div>
+                                    {couponError && <p className="text-[10px] font-bold text-red-500 animate-fade-in">{couponError}</p>}
+                                </div>
+                            ) : (
+                                <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-3 rounded-xl animate-scale-in">
+                                    <div>
+                                        <p className="text-[10px] font-black uppercase text-emerald-600 tracking-wider">{tCheckout('active_promo')}</p>
+                                        <p className="font-black text-emerald-700">{appliedCoupon.code}</p>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setAppliedCoupon(null);
+                                            setCouponCode('');
+                                        }}
+                                        className="text-emerald-700 hover:text-red-500 p-1 transition-colors"
+                                    >
+                                        <XCircle size={20} />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="space-y-3 mb-8">
                             <div className="flex justify-between text-slate-500 text-sm">
                                 <span>{tHeader('mahsulotlar')}:</span>
@@ -541,10 +637,18 @@ export default function CheckoutPage() {
                                     {deliveryFee === 0 ? tCart('free') : `${deliveryFee.toLocaleString()} ${tHeader('som')}`}
                                 </span>
                             </div>
+
+                            {appliedCoupon && (
+                                <div className="flex justify-between text-emerald-600 text-sm animate-fade-in">
+                                    <span>{tHeader('chegirma')} ({appliedCoupon.code}):</span>
+                                    <span className="font-bold">-{appliedCoupon.discountAmount.toLocaleString()} {tHeader('som')}</span>
+                                </div>
+                            )}
+
                             <div className="border-t border-dashed border-slate-200 my-2"></div>
                             <div className="flex justify-between text-lg font-black text-slate-900">
                                 <span>{tHeader('jami_to_lov')}:</span>
-                                <span>{(total() + deliveryFee).toLocaleString()} {tHeader('som')}</span>
+                                <span>{(total() + deliveryFee - (appliedCoupon?.discountAmount || 0)).toLocaleString()} {tHeader('som')}</span>
                             </div>
                         </div>
 

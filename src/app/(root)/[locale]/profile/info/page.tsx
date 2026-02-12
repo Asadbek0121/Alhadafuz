@@ -54,16 +54,23 @@ export default function PersonalInfoPage() {
                     const res = await fetch('/api/user/info');
                     if (res.ok) {
                         const userData = await res.json();
-                        setValue("name", userData.name || session.user.name || "");
-                        setValue("email", userData.email || session.user.email || "");
-                        setValue("phone", userData.phone || (session.user as any).phone || "");
+                        if (userData) {
+                            setValue("name", userData.name || session?.user?.name || "");
+                            setValue("email", userData.email || session?.user?.email || "");
+                            setValue("phone", userData.phone || (session?.user as any)?.phone || "");
 
-                        // Date format for input type="date" is YYYY-MM-DD
-                        if (userData.dateOfBirth) {
-                            const date = new Date(userData.dateOfBirth);
-                            setValue("dateOfBirth", date.toISOString().split('T')[0]);
+                            // Date format for input type="date" is YYYY-MM-DD
+                            if (userData.dateOfBirth) {
+                                const date = new Date(userData.dateOfBirth);
+                                setValue("dateOfBirth", date.toISOString().split('T')[0]);
+                            }
+                            setValue("gender", userData.gender || "");
+                        } else {
+                            // Fallback to session data if DB user not found
+                            setValue("name", session?.user?.name || "");
+                            setValue("email", session?.user?.email || "");
+                            setValue("phone", (session?.user as any)?.phone || "");
                         }
-                        setValue("gender", userData.gender || "");
                     }
                 } catch (e) {
                     console.error("Failed to fetch user data", e);

@@ -115,6 +115,16 @@ export default function EditProductPage() {
                     return res.json();
                 })
                 .then(data => {
+                    // Handle category IDs (M-N relation)
+                    let categoryValue = '';
+                    if (data.categories && Array.isArray(data.categories)) {
+                        // New M-N relation
+                        categoryValue = data.categories.map((c: any) => c.id).join(',');
+                    } else if (data.categoryId) {
+                        // Old single category
+                        categoryValue = data.categoryId;
+                    }
+
                     // Populate Form
                     reset({
                         title: data.title,
@@ -129,7 +139,7 @@ export default function EditProductPage() {
                             : (typeof data.images === 'string' && data.images.startsWith('[')
                                 ? tryParseJsonImages(data.images)
                                 : (data.images || '')),
-                        category: data.categoryId || (typeof data.category === 'object' ? data.category?.id : (typeof data.category === 'string' && data.category.length > 20 ? data.category : "")) || "",
+                        category: categoryValue,
                         // For demonstration, mapping some fields even if not perfect match
                         discountType: data.discount ? "fixed_price" : "no_discount",
                         discountValue: data.discount || "",
@@ -229,6 +239,8 @@ export default function EditProductPage() {
             }
         });
 
+        const categoryIds = data.category?.split(',').filter(Boolean) || [];
+
         const payload = {
             ...data,
             price: Number(data.price),
@@ -237,7 +249,9 @@ export default function EditProductPage() {
             discount: data.discountValue ? Number(data.discountValue) : null,
             discountType: data.discountCategory,
             images: imagesList,
-            attributes: attrsObject
+            attributes: attrsObject,
+            category: data.category,
+            categoryIds
         };
 
         try {
@@ -451,15 +465,47 @@ export default function EditProductPage() {
                     <div className="card">
                         <h2 className="card-title">Mahsulot ma'lumotlari</h2>
                         <div className="form-group">
-                            <label className="label">Kategoriya</label>
-                            <select {...register("category")} className="input">
-                                <option value="">Kategoriyani tanlang</option>
-                                {categories.map((cat: any) => (
-                                    <option key={cat.id} value={cat.id}>
-                                        {cat.parent ? `${cat.parent.name} > ` : ''}{cat.name}
-                                    </option>
-                                ))}
-                            </select>
+                            <label className="label">Kategoriyalar (bir yoki bir nechta)</label>
+                            <div style={{ maxHeight: '200px', overflowY: 'auto', padding: '12px', background: '#f8f9fa', borderRadius: '8px', border: '1px solid #e5eaef' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px' }}>
+                                    {categories.map((cat: any) => {
+                                        const isSelected = watch('category')?.split(',').includes(cat.id);
+                                        return (
+                                            <label
+                                                key={cat.id}
+                                                style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: '8px',
+                                                    padding: '8px 10px',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    background: isSelected ? '#ecf2ff' : '#fff',
+                                                    border: isSelected ? '1px solid #0085db' : '1px solid #e5eaef',
+                                                    transition: 'all 0.2s',
+                                                    fontSize: '13px',
+                                                    fontWeight: isSelected ? 600 : 500,
+                                                    color: isSelected ? '#0085db' : '#5A6A85'
+                                                }}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    checked={isSelected}
+                                                    onChange={(e) => {
+                                                        const current = watch('category')?.split(',').filter(Boolean) || [];
+                                                        const next = e.target.checked
+                                                            ? [...current, cat.id]
+                                                            : current.filter(id => id !== cat.id);
+                                                        setValue('category', next.join(','));
+                                                    }}
+                                                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                                />
+                                                <span>{cat.parent ? `${cat.parent.name} > ` : ''}{cat.name}</span>
+                                            </label>
+                                        );
+                                    })}
+                                </div>
+                            </div>
                         </div>
                         <div className="form-group">
                             <label className="label">Brand</label>

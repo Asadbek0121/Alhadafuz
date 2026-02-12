@@ -29,6 +29,7 @@ const createOrderSchema = z.object({
     }).optional(),
     deliveryMethod: z.string().optional().default('COURIER'),
     total: z.number().nonnegative().optional(),
+    couponCode: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -46,7 +47,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
         }
 
-        const { items, paymentMethod, deliveryAddress, deliveryMethod } = result.data;
+        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode } = result.data;
 
         // 2. Fetch products to prevent price tampering
         let dbProducts: any[] = [];
@@ -88,6 +89,31 @@ export async function POST(req: Request) {
 
         if (calculatedTotal < 0) {
             return NextResponse.json({ error: 'Invalid total' }, { status: 400 });
+        }
+
+        // --- COUPON VALIDATION ---
+        let discountAmount = 0;
+        let validatedCoupon = null;
+
+        if (couponCode) {
+            validatedCoupon = await (prisma as any).coupon.findUnique({
+                where: { code: couponCode.toUpperCase() }
+            });
+
+            if (validatedCoupon && validatedCoupon.isActive) {
+                const now = new Date();
+                const isWithinDates = now >= new Date(validatedCoupon.startDate) && now <= new Date(validatedCoupon.expiryDate);
+                const isWithinUsage = validatedCoupon.usedCount < validatedCoupon.usageLimit;
+                const isAmountMet = calculatedTotal >= validatedCoupon.minAmount;
+
+                if (isWithinDates && isWithinUsage && isAmountMet) {
+                    if (validatedCoupon.discountType === 'PERCENTAGE') {
+                        discountAmount = (calculatedTotal * validatedCoupon.discountValue) / 100;
+                    } else {
+                        discountAmount = validatedCoupon.discountValue;
+                    }
+                }
+            }
         }
 
         // Calculate Delivery Fee
@@ -135,7 +161,7 @@ export async function POST(req: Request) {
             }
         }
 
-        const finalTotal = calculatedTotal + deliveryFee;
+        const finalTotal = calculatedTotal + deliveryFee - discountAmount;
 
         // Determine initial status based on payment method
         const method = paymentMethod.toLowerCase();
@@ -143,7 +169,15 @@ export async function POST(req: Request) {
 
         // 4. Create Order Transaction
         const order = await prisma.$transaction(async (tx) => {
-            const newOrder = await (tx.order as any).create({
+            // Update coupon usage count if used
+            if (validatedCoupon && discountAmount > 0) {
+                await (tx as any).coupon.update({
+                    where: { id: validatedCoupon.id },
+                    data: { usedCount: { increment: 1 } }
+                });
+            }
+
+            const newOrder = await (tx as any).order.create({
                 data: {
                     userId: session.user.id,
                     total: finalTotal,
@@ -158,6 +192,9 @@ export async function POST(req: Request) {
                     comment: deliveryAddress?.comment || '',
                     shippingPhone: deliveryAddress?.phone || session.user?.phone || '',
                     shippingName: deliveryAddress?.name || session.user?.name || '',
+
+                    couponCode: validatedCoupon?.code || null,
+                    discountAmount: discountAmount,
 
                     items: {
                         create: finalOrderItems.map(i => ({

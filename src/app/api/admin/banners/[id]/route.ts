@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -13,21 +12,10 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     const { id } = await context.params;
 
     try {
-        // Optional: Check for children and warn/prevent or cascade? 
-        // For now, let's assume Prisma handles cascade or we just delete.
-        // If 'onDelete: SetNull' is set in schema, it's fine.
-        // My schema for Category self-relation usually defaults. 
-        // If I delete a parent, children might become orphans or be deleted.
-        // Let's just delete.
-
-        await (prisma as any).category.delete({ where: { id } });
-
-        revalidatePath('/', 'layout');
-        revalidatePath('/admin/categories');
-
+        await (prisma as any).banner.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (e) {
-        console.error("Delete category error", e);
+        console.error("Delete banner error", e);
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }
@@ -38,25 +26,29 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     const { id } = await context.params;
     const body = await req.json();
-    const { name, parentId, image } = body;
+    const { title, image, link, position, isActive, categoryIds, startDate, endDate, variant } = body;
 
     try {
-        await (prisma as any).category.update({
+        await (prisma as any).banner.update({
             where: { id },
             data: {
-                name,
-                parentId: parentId || null,
+                title,
                 image,
-                isActive: body.isActive
+                link,
+                position,
+                isActive,
+                startDate: startDate ? new Date(startDate) : null,
+                endDate: endDate ? new Date(endDate) : null,
+                variant,
+                categories: {
+                    set: categoryIds?.map((catId: string) => ({ id: catId })) || []
+                }
             }
         });
 
-        revalidatePath('/', 'layout');
-        revalidatePath('/admin/categories');
-
         return NextResponse.json({ success: true });
     } catch (e) {
-        console.error("Update category error", e);
+        console.error("Update banner error", e);
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
     }
 }

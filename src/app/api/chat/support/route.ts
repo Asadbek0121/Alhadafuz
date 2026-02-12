@@ -11,12 +11,19 @@ export async function GET(req: NextRequest) {
         }
 
         // Get admin user
-        const admin = await prisma.user.findFirst({
-            where: { role: 'ADMIN' },
+        let admin = await prisma.user.findFirst({
+            where: { role: { equals: 'ADMIN', mode: 'insensitive' } },
         });
 
+        // Fallback to specific admin email if no role found
         if (!admin) {
-            return NextResponse.json({ error: 'Admin not found' }, { status: 404 });
+            admin = await prisma.user.findFirst({
+                where: { email: 'admin@hadaf.uz' },
+            });
+        }
+
+        if (!admin) {
+            return NextResponse.json([], { status: 200 }); // Return empty messages if no admin found
         }
 
         // Get all messages between user and ANY admin

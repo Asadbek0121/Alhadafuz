@@ -19,7 +19,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 
         const product = productRows[0];
 
-        // Fetch category relation manually
+        // Fetch category relation manually (old single category)
         let categoryRel = null;
         if (product.categoryId) {
             const catRows: any[] = await (prisma as any).$queryRawUnsafe(`
@@ -29,6 +29,14 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
                 categoryRel = catRows[0];
             }
         }
+
+        // Fetch M-N categories
+        const categoriesRows: any[] = await (prisma as any).$queryRawUnsafe(`
+            SELECT c.id, c.name, c.slug 
+            FROM "Category" c
+            INNER JOIN "_ProductToCategory" pc ON c.id = pc."B"
+            WHERE pc."A" = '${id.replace(/'/g, "''")}'
+        `);
 
         // Fetch reviews manually to get adminReply
         const reviews: any[] = await (prisma as any).$queryRawUnsafe(`
@@ -53,7 +61,8 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 
         return NextResponse.json({
             ...product,
-            category: categoryRel ? { id: categoryRel.id, name: categoryRel.name } : product.category, // Return object if found, else original string
+            category: categoryRel ? { id: categoryRel.id, name: categoryRel.name } : product.category,
+            categories: categoriesRows, // M-N categories
             reviews: mappedReviews,
             rating: parseFloat(rating.toFixed(1)),
             reviewsCount
@@ -86,6 +95,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             images,
             category,
             categoryId,
+            categoryIds, // New M-N support
             discountType,
             attributes,
             specs,
@@ -111,6 +121,14 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             brand,
         };
 
+        // Handle M-N categories (new approach)
+        if (categoryIds && Array.isArray(categoryIds) && categoryIds.length > 0) {
+            updateData.categories = {
+                set: categoryIds.map((catId: string) => ({ id: catId }))
+            };
+        }
+
+        // Handle old single category (backward compatibility)
         if (category || categoryId) {
             const catId = categoryId || category;
 
@@ -121,17 +139,9 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
 
             if (categoryRecord) {
                 updateData.categoryId = categoryRecord.id;
-                // updateData.category = categoryRecord.name; // Product model keeps relations usually, redundant string 'category' field might exist or not. 
-                // Based on previous code, it seems 'category' field might exist as string fallback or relation name.
-                // Let's safe update it if it exists in schema, but for raw sql we should only update what exists.
-                // Assuming 'category' column exists as string based on previous GET code: `categoryRel || product.category`.
                 updateData.category = categoryRecord.name;
             } else {
-                // If ID lookup failed, maybe it's just a string category name?
-                // Or if it's a new ID that doesn't exist?
-                // Original code: `updateData.category = category || categoryId; delete updateData.categoryId;`
                 updateData.category = category || categoryId;
-                // We don't set categoryId if it's invalid to avoid FK constraint error
             }
         }
 
@@ -140,67 +150,21 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         }
 
         if (attributes) {
-            // "attributes" column in DB
             updateData.attributes = typeof attributes === 'object' ? JSON.stringify(attributes) : attributes;
         }
 
-        // "specs" might be another column or mapped to attributes? 
-        // Previous code handled both. Let's assume 'specs' column exists if it was there.
-        // Actually, looking at schema earlier would help, but strict raw SQL will fail if column doesn't exist.
-        // Let's assume 'attributes' is the main one for specs based on GET: `specs = JSON.parse(dbProduct.attributes)`.
-        // So 'specs' in body likely maps to 'attributes' in DB.
-        // But original code had: `if (specs) updateData.specs ...` 
-        // Only one of them should be used.
-        // If 'specs' is passed, it likely should go to 'attributes' column if that's what GET uses.
-        // Let's check GET again: `specs = JSON.parse(dbProduct.attributes)`.
-        // So DB has 'attributes'.
-        // If body has 'specs', we should save it to 'attributes'.
         if (specs && !updateData.attributes) {
             updateData.attributes = typeof specs === 'object' ? JSON.stringify(specs) : specs;
         }
-        // If body has 'attributes', it's already set.
 
         // Remove undefined fields
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
 
-        // Construct Raw SQL Update
-        const updates: string[] = [];
-        updates.push(`"updatedAt" = NOW()`);
-
-        for (const [key, value] of Object.entries(updateData)) {
-            // Valid columns only. We need to be careful not to update non-existent columns.
-            // valid fields: title, description, price, oldPrice, discount, stock, status, image, images, category, categoryId, attributes, brand, mxikCode, packageCode, vatPercent
-            // 'specs' field in updateData might be wrong if column is 'attributes'. We handled that above.
-            // 'discountType' ? Check schema. 'mxikCode' ? 'packageCode' ?
-            // To be safe, let's map keys to known columns or trust the body matches schema.
-            // Given the error context, 'brand' and 'status' are the problematic ones for Prisma Client, but they exist in DB (pushed).
-
-            if (key === 'specs') continue; // Skip if mapped to attributes
-
-            if (value === null) {
-                updates.push(`"${key}" = NULL`);
-            } else if (typeof value === 'number') {
-                updates.push(`"${key}" = ${value}`);
-            } else if (typeof value === 'boolean') {
-                updates.push(`"${key}" = ${value}`);
-            } else {
-                // String
-                const safeVal = String(value).replace(/'/g, "''");
-                updates.push(`"${key}" = '${safeVal}'`);
-            }
-        }
-
-        const query = `UPDATE "Product" SET ${updates.join(', ')} WHERE "id" = '${id}' RETURNING *`;
-
-        console.log("Executing Raw Update:", query);
-
-        const result: any[] = await (prisma as any).$queryRawUnsafe(query);
-
-        if (!result || result.length === 0) {
-            throw new Error("Product not found or update failed");
-        }
-
-        const updatedProduct = result[0];
+        // Use Prisma update for M-N relation support
+        const updatedProduct = await (prisma as any).product.update({
+            where: { id },
+            data: updateData
+        });
 
         revalidatePath('/admin/products');
         revalidatePath(`/product/${id}`);
