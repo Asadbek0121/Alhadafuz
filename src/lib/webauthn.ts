@@ -14,9 +14,15 @@ export {
     verifyAuthenticationResponse,
 };
 
-export const RP_ID = process.env.NEXT_PUBLIC_RP_ID || 'localhost';
+// RP_ID should be the domain name without protocol (e.g. alhadafuz.vercel.app)
+export const RP_ID = process.env.NEXT_PUBLIC_RP_ID ||
+    (typeof window !== 'undefined' ? window.location.hostname : 'localhost');
+
 export const RP_NAME = 'Hadaf Market';
-export const ORIGIN = process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000';
+
+// ORIGIN should be the full URL (e.g. https://alhadafuz.vercel.app)
+export const ORIGIN = process.env.NEXT_PUBLIC_ORIGIN ||
+    (typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
 /**
  * Gets the current challenge for a user or session.
