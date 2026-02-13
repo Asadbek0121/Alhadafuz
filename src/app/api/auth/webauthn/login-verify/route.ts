@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import {
     verifyAuthenticationResponse,
-    RP_ID,
-    ORIGIN,
+    getRPID,
+    getOrigin,
 } from "@/lib/webauthn";
 import { logActivity } from "@/lib/security";
 
@@ -57,8 +57,8 @@ export async function POST(req: Request) {
         const verification = await verifyAuthenticationResponse({
             response: body,
             expectedChallenge,
-            expectedOrigin: ORIGIN,
-            expectedRPID: RP_ID,
+            expectedOrigin: await getOrigin(),
+            expectedRPID: await getRPID(),
             authenticator: {
                 credentialID: Buffer.from(authenticator.credentialID, 'base64'),
                 credentialPublicKey: authenticator.credentialPublicKey,

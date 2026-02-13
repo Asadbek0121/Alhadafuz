@@ -3,8 +3,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
     verifyRegistrationResponse,
-    RP_ID,
-    ORIGIN,
+    getRPID,
+    getOrigin,
     getChallenge,
     saveChallenge
 } from "@/lib/webauthn";
@@ -26,8 +26,8 @@ export async function POST(req: Request) {
         const verification = await verifyRegistrationResponse({
             response: body,
             expectedChallenge,
-            expectedOrigin: ORIGIN,
-            expectedRPID: RP_ID,
+            expectedOrigin: await getOrigin(),
+            expectedRPID: await getRPID(),
         });
 
         if (verification.verified && verification.registrationInfo) {

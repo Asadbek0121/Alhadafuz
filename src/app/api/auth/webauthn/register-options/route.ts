@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import {
     generateRegistrationOptions,
-    RP_ID,
+    getRPID,
     RP_NAME,
     saveChallenge
 } from "@/lib/webauthn";
@@ -26,7 +26,7 @@ export async function GET() {
 
         const options = await generateRegistrationOptions({
             rpName: RP_NAME,
-            rpID: RP_ID,
+            rpID: await getRPID(),
             userID: user.id,
             userName: user.email || user.phone || user.id,
             // Don't re-register already registered authenticators

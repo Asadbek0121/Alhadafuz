@@ -287,6 +287,18 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             },
         }),
     ],
+    events: {
+        async createUser({ user }) {
+            if (user.id && !user.uniqueId) {
+                const uniqueId = await generateNextUniqueId("USER");
+                await prisma.user.update({
+                    where: { id: user.id },
+                    data: { uniqueId }
+                });
+                console.log(`Assigned uniqueId ${uniqueId} to new OAuth user ${user.email}`);
+            }
+        }
+    },
     callbacks: {
         ...authConfig.callbacks,
         async session({ session, token }: any) {

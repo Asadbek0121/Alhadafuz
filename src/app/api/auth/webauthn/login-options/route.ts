@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import {
     generateAuthenticationOptions,
-    RP_ID,
+    getRPID,
 } from "@/lib/webauthn";
 
 export async function POST(req: Request) {
@@ -42,9 +42,10 @@ export async function POST(req: Request) {
             }
         }
 
-        console.log("Generating authentication options for RP_ID:", RP_ID);
+        const currentRPID = await getRPID();
+        console.log("Generating authentication options for RP_ID:", currentRPID);
         const options = await generateAuthenticationOptions({
-            rpID: RP_ID,
+            rpID: currentRPID,
             allowCredentials: userAuthenticators.map(auth => {
                 let transports;
                 try {
