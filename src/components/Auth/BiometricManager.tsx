@@ -107,7 +107,10 @@ export async function startBiometricLogin(login?: string) {
             body: JSON.stringify({ login }),
         });
 
-        if (!optionsRes.ok) throw new Error("Biometrik login sozlamalarini olishda xatolik");
+        if (!optionsRes.ok) {
+            const errorData = await optionsRes.json().catch(() => ({}));
+            throw new Error(errorData.details || errorData.error || "Biometrik login sozlamalarini olishda xatolik");
+        }
         const options = await optionsRes.json();
 
         // 2. Start biometric authentication on the browser

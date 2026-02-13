@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
-import { X, Mail, Lock, User, Loader2, Eye, EyeOff, Phone, Fingerprint } from 'lucide-react';
+import { X, Mail, Lock, User, Loader2, Eye, EyeOff, Phone, Fingerprint, CheckCircle2 } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Link, useRouter } from '@/navigation';
@@ -26,6 +26,9 @@ export default function AuthModal() {
     const [isLoading, setIsLoading] = useState(false);
     const [isBiometricLoading, setIsBiometricLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [isBiometricSupported, setIsBiometricSupported] = useState(false);
+    const [biometricLinked, setBiometricLinked] = useState(false);
+    const redirectTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     // Handle Query Params (e.g. ?auth=login or ?auth=register)
     useEffect(() => {
@@ -57,6 +60,12 @@ export default function AuthModal() {
             setTimeout(() => {
                 window.location.reload();
             }, 5000);
+        }
+
+        // Check biometric support
+        if (typeof window !== "undefined" && (window as any).PublicKeyCredential) {
+            (window as any).PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+                .then((available: boolean) => setIsBiometricSupported(available));
         }
     }, [openAuthModal]);
 
@@ -111,13 +120,55 @@ export default function AuthModal() {
         }
 
         // Final action after animation
-        setTimeout(() => {
+        redirectTimerRef.current = setTimeout(() => {
             if (callbackUrl) {
                 window.location.href = callbackUrl;
             } else {
                 window.location.reload();
             }
         }, 5000);
+    };
+
+    const handleLinkBiometric = async () => {
+        if (redirectTimerRef.current) {
+            clearTimeout(redirectTimerRef.current);
+        }
+        setIsBiometricLoading(true);
+        try {
+            const { startRegistration } = await import("@simplewebauthn/browser");
+            const optionsRes = await fetch('/api/auth/webauthn/register-options');
+            if (!optionsRes.ok) throw new Error("Sozlamalarni olishda xatolik");
+            const options = await optionsRes.json();
+
+            const credential = await startRegistration(options);
+
+            const verifyRes = await fetch('/api/auth/webauthn/register-verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credential),
+            });
+
+            if (verifyRes.ok) {
+                const result = await verifyRes.json();
+                if (result.verified) {
+                    toast.success(tp('biometric_success') || "Barmoq izi muvaffaqiyatli bog'landi!");
+                    setBiometricLinked(true);
+                    // Redirect after success
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 2000);
+                }
+            }
+        } catch (error: any) {
+            console.error(error);
+            if (error.name !== 'NotAllowedError') {
+                toast.error(tp('biometric_error') || "Biometrik bog'lashda xatolik");
+            }
+            // Resume redirect if failed or cancelled
+            handleSuccess("Muvaffaqiyatli kirdingiz");
+        } finally {
+            setIsBiometricLoading(false);
+        }
     };
 
     const handleLogin = async (e: React.FormEvent) => {
@@ -380,9 +431,47 @@ export default function AuthModal() {
                                         <h3 className="text-4xl font-black mb-3 tracking-tight text-white drop-shadow-md">
                                             Muvaffaqiyatli!
                                         </h3>
-                                        <p className="text-blue-100 font-medium text-lg leading-relaxed max-w-[280px] mx-auto">
+                                        <p className="text-blue-100 font-medium text-lg leading-relaxed max-w-[280px] mx-auto mb-6">
                                             Xush kelibsiz! Tizimga muvaffaqiyatli kirdingiz.
                                         </p>
+
+                                        {isBiometricSupported && !biometricLinked && (
+                                            <motion.div
+                                                initial={{ y: 10, opacity: 0 }}
+                                                animate={{ y: 0, opacity: 1 }}
+                                                transition={{ delay: 0.6 }}
+                                                className="bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20"
+                                            >
+                                                <p className="text-sm text-white/90 mb-4 font-medium">
+                                                    Keyingi safar parolsiz kirishni xohlaysizmi? Barmoq izini hoziroq faollashtiring.
+                                                </p>
+                                                <button
+                                                    onClick={handleLinkBiometric}
+                                                    disabled={isBiometricLoading}
+                                                    className="w-full h-12 bg-white text-blue-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors shadow-lg disabled:opacity-50"
+                                                >
+                                                    {isBiometricLoading ? <Loader2 size={20} className="animate-spin" /> : <Fingerprint size={20} />}
+                                                    <span>Faollashtirish</span>
+                                                </button>
+                                                <button
+                                                    onClick={() => window.location.reload()}
+                                                    className="mt-3 text-xs text-white/60 hover:text-white font-medium transition-colors"
+                                                >
+                                                    Hozir emas, keyinroq
+                                                </button>
+                                            </motion.div>
+                                        )}
+
+                                        {biometricLinked && (
+                                            <motion.div
+                                                initial={{ scale: 0.9, opacity: 0 }}
+                                                animate={{ scale: 1, opacity: 1 }}
+                                                className="bg-green-500/20 backdrop-blur-md p-4 rounded-3xl border border-green-500/30 flex items-center justify-center gap-3 text-white"
+                                            >
+                                                <CheckCircle2 size={24} className="text-green-400" />
+                                                <span className="font-bold">Barmoq izi faollashtirildi!</span>
+                                            </motion.div>
+                                        )}
                                     </motion.div>
                                 </motion.div>
                             ) : (
@@ -618,7 +707,24 @@ export default function AuthModal() {
                                                 className={`flex items-center justify-center gap-2 py-4 bg-slate-50 rounded-2xl font-bold border transition-all ${termsAccepted ? 'text-slate-700 border-slate-200 hover:bg-slate-100 opacity-100' : 'text-slate-400 border-slate-100 cursor-not-allowed opacity-50'}`}
                                                 disabled={!termsAccepted}
                                             >
-                                                <Image src="/google.svg" alt="Google" width={20} height={20} />
+                                                <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                                    <path
+                                                        fill="#4285F4"
+                                                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                                                    />
+                                                    <path
+                                                        fill="#34A853"
+                                                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                                                    />
+                                                    <path
+                                                        fill="#FBBC05"
+                                                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                                                    />
+                                                    <path
+                                                        fill="#EA4335"
+                                                        d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                                                    />
+                                                </svg>
                                                 Google
                                             </motion.button>
                                             <motion.button
@@ -633,8 +739,10 @@ export default function AuthModal() {
                                                 }}
                                                 disabled={!termsAccepted}
                                             >
-                                                <img src="/apple.svg" alt="Apple" className="w-5 h-5" />
-                                                Apple
+                                                <svg className="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="#229ED9">
+                                                    <path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.577.191l-8.536 7.705-.33 4.946c.485 0 .699-.223.97-.485l2.33-2.265 4.848 3.581c.894.492 1.535.239 1.756-.823l3.176-14.991c.325-1.302-.5-1.894-1.353-1.509z" />
+                                                </svg>
+                                                Telegram
                                             </motion.button>
                                         </div>
                                     </div>
