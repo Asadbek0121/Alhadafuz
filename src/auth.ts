@@ -136,17 +136,18 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                                 { phone: { equals: login } }
                             ]
                         },
-                        include: { devices: true }
+                        include: { devices: true } as any
                     });
 
                     if (!user) return null;
 
                     // --- Brute Force Protection ---
-                    if (user.lockedUntil && user.lockedUntil > new Date()) {
+                    const u = user as any;
+                    if (u.lockedUntil && new Date(u.lockedUntil) > new Date()) {
                         throw new Error("ACCOUNT_LOCKED");
                     }
 
-                    const dbPassword = user.hashedPassword || user.password || user.pinHash;
+                    const dbPassword = u.hashedPassword || u.password || u.pinHash;
                     if (!dbPassword) return null;
 
                     const passwordsMatch = await argon2.verify(dbPassword, password);
@@ -155,10 +156,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                             where: { id: user.id },
                             data: {
                                 failedAttempts: { increment: 1 },
-                                lockedUntil: (user.failedAttempts || 0) + 1 >= 5
+                                lockedUntil: (u.failedAttempts || 0) + 1 >= 5
                                     ? new Date(Date.now() + 30 * 60 * 1000)
                                     : undefined
-                            }
+                            } as any
                         });
                         return null;
                     }
@@ -166,14 +167,15 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     // Reset on success
                     await prisma.user.update({
                         where: { id: user.id },
-                        data: { failedAttempts: 0, lockedUntil: null }
+                        data: { failedAttempts: 0, lockedUntil: null } as any
                     });
 
                     // --- Device Trust System ---
                     if (deviceId) {
-                        let device = user.devices.find(d => d.deviceId === deviceId);
+                        const devices = u.devices || [];
+                        let device = devices.find((d: any) => d.deviceId === deviceId);
                         if (!device) {
-                            device = await prisma.device.create({
+                            device = await (prisma as any).device.create({
                                 data: {
                                     userId: user.id,
                                     deviceId,
@@ -183,10 +185,10 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                             });
 
                             // Instant Alert for New Device
-                            if (user.telegramId) {
+                            if (u.telegramId) {
                                 try {
                                     const { sendTelegramMessage } = await import("@/lib/telegram-bot");
-                                    await sendTelegramMessage(user.telegramId,
+                                    await sendTelegramMessage(u.telegramId,
                                         `⚠️ <b>Yangi qurilmadan kirish!</b>\n\n` +
                                         `🖥 Qurilma: ${deviceName || 'Noma\'lum'}\n` +
                                         `📅 Vaqt: ${new Date().toLocaleString()}\n\n` +
@@ -204,7 +206,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                                 }
                             }
                         } else {
-                            await prisma.device.update({
+                            await (prisma as any).device.update({
                                 where: { id: device.id },
                                 data: { lastSeen: new Date() }
                             });
@@ -267,16 +269,16 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 try {
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
-                        select: { isVerified: true, role: true, lockedUntil: true }
-                    });
+                        select: { isVerified: true, role: true, lockedUntil: true } as any
+                    }) as any;
 
-                    if (!dbUser || (dbUser.lockedUntil && dbUser.lockedUntil > new Date())) {
+                    if (!dbUser || (dbUser.lockedUntil && new Date(dbUser.lockedUntil) > new Date())) {
                         return { ...token, error: "USER_BLOCKED" };
                     }
 
                     token.lastSync = Date.now();
                     token.role = dbUser.role;
-                    token.isVerified = dbUser.isVerified;
+                    token.isVerified = !!dbUser.isVerified;
                 } catch (e) {
                     console.error("Session sync failed", e);
                 }

@@ -46,7 +46,7 @@ export async function POST(req: Request) {
         // --- Handle Callback Queries (Buttons) ---
         if (callbackData?.startsWith('verify_device_')) {
             const deviceId = callbackData.replace('verify_device_', '');
-            await prisma.device.update({
+            await (prisma as any).device.update({
                 where: { id: deviceId },
                 data: { isTrusted: true }
             });
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
                 if (loginToken && loginToken.expiresAt > new Date() && loginToken.status === 'PENDING') {
                     await prisma.user.update({
                         where: { id: loginToken.userId! },
-                        data: { telegramId: telegramIdStr, isVerified: true, botState: 'FINISHED' }
+                        data: { telegramId: telegramIdStr, isVerified: true, botState: 'FINISHED' } as any
                     });
                     await prisma.telegramLoginToken.update({
                         where: { token: tokenValue },
@@ -101,10 +101,13 @@ export async function POST(req: Request) {
                             botState: 'REG_CAPTCHA',
                             role: 'USER',
                             image: `https://ui-avatars.com/api/?name=User&background=random`
-                        }
+                        } as any
                     });
                 } else {
-                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_CAPTCHA' } });
+                    await prisma.user.update({
+                        where: { id: user.id },
+                        data: { botState: 'REG_CAPTCHA', isVerified: false } as any
+                    });
                 }
 
                 // Simple Math Captcha
@@ -159,9 +162,9 @@ export async function POST(req: Request) {
             }
 
             if (state === 'RECOVERY_ASK_KEY' && text) {
-                const isKeyValid = await argon2.verify(user.recoveryHash || '', text.trim().toUpperCase());
+                const isKeyValid = await argon2.verify((user as any).recoveryHash || '', text.trim().toUpperCase());
                 if (isKeyValid) {
-                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_ASK_PIN' } });
+                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_ASK_PIN' } as any });
                     await safeSend(chatId, "Kalit to'g'ri! ✅\n\nYangi 6 xonali PIN kodni kiriting:");
                 } else {
                     await safeSend(chatId, "Xato tiklash kaliti. Qayta urinib ko'ring:");
@@ -221,7 +224,7 @@ export async function POST(req: Request) {
                         botState: 'FINISHED',
                         isVerified: true,
                         tempData: null
-                    }
+                    } as any
                 });
 
                 await safeSend(chatId, `Tabriklaymiz! Ro'yxatdan muvaffaqiyatli o'tdingiz. 🎊\n\n🗝 **MUHIM: BU SIZNING TIKLASH KALITINGIZ:**\n\n\`${recoveryKey}\`\n\nUni xavfsiz joyda saqlang! PIN kodni unutsangiz, faqat shu kalit yordamida hisobni tiklash mumkin.`);
