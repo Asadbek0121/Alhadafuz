@@ -126,10 +126,20 @@ export default function AuthModal() {
         setIsLoading(true);
 
         try {
+            // --- Device Identification ---
+            let dId = typeof window !== 'undefined' ? localStorage.getItem('hadaf_device_id') : null;
+            if (!dId && typeof window !== 'undefined') {
+                dId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+                localStorage.setItem('hadaf_device_id', dId);
+            }
+            const dName = typeof window !== 'undefined' ? navigator.userAgent.substring(0, 50) : "Web Browser";
+
             localStorage.setItem('mergeCartOnLogin', 'true');
             const result = await signIn('credentials', {
-                login: email, // We pass the email state as 'login' to authorize
+                login: email,
                 password,
+                deviceId: dId || undefined,
+                deviceName: dName,
                 otp: isVerifying ? otp : undefined,
                 redirect: false,
             });
@@ -140,6 +150,10 @@ export default function AuthModal() {
                     toast.info("Ikki bosqichli autentifikatsiya kodi yuborildi");
                 } else if (result.error.includes("OTP_INVALID")) {
                     toast.error("Tasdiqlash kodi noto'g'ri");
+                } else if (result.error.includes("ACCOUNT_LOCKED")) {
+                    toast.error("Xavfsizlik: Hisobingiz 30 daqiqaga bloklandi! (Ketma-ket xato urinishlar)", {
+                        duration: 5000,
+                    });
                 } else {
                     toast.error("Email/Login yoki parol noto'g'ri");
                     localStorage.removeItem('mergeCartOnLogin');

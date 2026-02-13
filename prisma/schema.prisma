@@ -28,6 +28,12 @@ model User {
   updatedAt            DateTime       @updatedAt
   dateOfBirth          DateTime?
   gender               String?
+  isVerified           Boolean        @default(false)
+  riskScore            Int            @default(0)
+  failedAttempts       Int            @default(0)
+  lockedUntil          DateTime?
+  pinHash              String?        // Argon2 encrypted PIN
+  recoveryHash         String?        // Argon2 encrypted recovery key
   telegramId           String?        @unique
   botState             String?        // For telegram bot registration steps
   tempData             String?        @db.Text // JSON for temp data in registration
@@ -42,6 +48,7 @@ model User {
   reviews              Review[]
   products             Product[]      @relation("VendorProducts")
   sessions             Session[]
+  devices              Device[]
   wishlist             Wishlist?
   telegramLoginTokens  TelegramLoginToken[]
 }
@@ -81,7 +88,26 @@ model Session {
   expires      DateTime
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  deviceId     String?  // Linked device if applicable
+  device       Device?  @relation(fields: [deviceId], references: [id])
+  ipAddress    String?
+  userAgent    String?
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Device {
+  id           String   @id @default(cuid())
+  userId       String
+  deviceId     String   @unique // Browser fingerprint or App ID
+  deviceName   String
+  isTrusted    Boolean  @default(false)
+  lastSeen     DateTime @updatedAt
+  riskScore    Int      @default(0)
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions     Session[]
+
+  @@index([userId])
 }
 
 model VerificationToken {
