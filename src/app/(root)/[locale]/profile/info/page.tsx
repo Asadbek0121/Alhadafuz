@@ -278,8 +278,8 @@ export default function PersonalInfoPage() {
                             className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all cursor-pointer"
                         >
                             <option value="">{t('select_gender')}</option>
-                            <option value="male">{t('male')}</option>
-                            <option value="female">{t('female')}</option>
+                            <option value="MALE">{t('male')}</option>
+                            <option value="FEMALE">{t('female')}</option>
                         </select>
                     </div>
                 </div>

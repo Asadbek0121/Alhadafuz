@@ -1,24 +1,24 @@
 .overlay {
     position: fixed;
-    top: 80px;
+    top: 112px;
     /* Adjust based on header height */
     left: 0;
     right: 0;
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
-    z-index: 90;
+    z-index: 40;
     backdrop-filter: blur(2px);
     animation: fadeIn 0.2s ease;
 }
 
 .megaMenu {
     position: fixed;
-    top: 80px;
+    top: 112px;
     left: 0;
     right: 0;
     bottom: 0;
     background: white;
-    z-index: 91;
+    z-index: 41;
     border-bottom: 1px solid var(--border-light);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
     padding: 0;
@@ -200,13 +200,13 @@
 @media (max-width: 992px) {
     .megaMenu {
         position: fixed;
-        top: 140px;
+        top: 144px;
         /* Adjusted to sit right below the search bar */
         bottom: 0;
         height: auto;
         left: 0;
         right: 0;
-        z-index: 110;
+        z-index: 41;
         overflow-y: auto;
         background: #f8f9fa;
         padding-bottom: 80px;

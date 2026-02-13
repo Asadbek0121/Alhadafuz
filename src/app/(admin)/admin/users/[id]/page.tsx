@@ -172,7 +172,7 @@ export default async function UserDetailPage(props: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label style={{ fontSize: '12px', color: '#888' }}>Jinsi</label>
-                                <div>{user.gender === 'MALE' ? 'Erkak' : user.gender === 'FEMALE' ? 'Ayol' : 'Kiritilmagan'}</div>
+                                <div>{user.gender?.toUpperCase() === 'MALE' ? 'Erkak' : user.gender?.toUpperCase() === 'FEMALE' ? 'Ayol' : 'Kiritilmagan'}</div>
                             </div>
                         </div>
                     </div>
