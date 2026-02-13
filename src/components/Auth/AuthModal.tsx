@@ -24,6 +24,7 @@ export default function AuthModal() {
 
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [isLoading, setIsLoading] = useState(false);
+    const [isBiometricLoading, setIsBiometricLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     // Handle Query Params (e.g. ?auth=login or ?auth=register)
@@ -582,20 +583,28 @@ export default function AuthModal() {
                                     <div className="flex flex-col gap-4 mb-8">
                                         {mode === 'login' && !isVerifying && (
                                             <motion.button
-                                                whileHover={{ y: -2 }}
-                                                whileTap={{ scale: 0.98 }}
+                                                whileHover={{ y: isBiometricLoading ? 0 : -2 }}
+                                                whileTap={{ scale: isBiometricLoading ? 1 : 0.98 }}
                                                 type="button"
+                                                disabled={isBiometricLoading}
                                                 onClick={async () => {
-                                                    const { startBiometricLogin } = await import("@/components/Auth/BiometricManager");
-                                                    toast.promise(startBiometricLogin(email), {
-                                                        loading: tp('biometric_checking') || 'Barmoq izi tekshirilmoqda...',
-                                                        success: t('welcome') || 'Xush kelibsiz!',
-                                                        error: tp('biometric_error') || 'Biometrik kirishda xatolik'
-                                                    });
+                                                    setIsBiometricLoading(true);
+                                                    try {
+                                                        const { startBiometricLogin } = await import("@/components/Auth/BiometricManager");
+                                                        await toast.promise(startBiometricLogin(email), {
+                                                            loading: tp('biometric_checking') || 'Barmoq izi tekshirilmoqda...',
+                                                            success: t('welcome') || 'Xush kelibsiz!',
+                                                            error: tp('biometric_error') || 'Biometrik kirishda xatolik'
+                                                        });
+                                                    } catch (error) {
+                                                        console.error(error);
+                                                    } finally {
+                                                        setIsBiometricLoading(false);
+                                                    }
                                                 }}
-                                                className="w-full flex items-center justify-center gap-3 py-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold border border-indigo-100 hover:bg-indigo-100 transition-all"
+                                                className={`w-full flex items-center justify-center gap-3 py-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold border border-indigo-100 transition-all ${isBiometricLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-indigo-100'}`}
                                             >
-                                                <Fingerprint size={22} />
+                                                {isBiometricLoading ? <Loader2 size={22} className="animate-spin" /> : <Fingerprint size={22} />}
                                                 <span>{tp('biometric_login') || 'Barmoq izi orqali kirish'}</span>
                                             </motion.button>
                                         )}

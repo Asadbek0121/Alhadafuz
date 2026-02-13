@@ -132,8 +132,12 @@ export async function startBiometricLogin(login?: string) {
                 return signInResult;
             }
         }
-        return { error: "Verification failed" };
+        throw new Error("Tizimga kirish tasdiqlanmadi");
     } catch (error: any) {
+        if (error.name === 'NotAllowedError') {
+            // User cancelled, don't throw to avoid error toast
+            return null;
+        }
         console.error(error);
         throw error;
     }
