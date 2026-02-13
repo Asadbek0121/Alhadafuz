@@ -58,7 +58,8 @@ export async function POST(req: Request) {
                 return {
                     id: Buffer.from(auth.credentialID, 'base64'),
                     type: 'public-key',
-                    transports: transports,
+                    // On mobile, sometimes explicit transports limit discovery
+                    transports: transports && transports.length > 0 ? transports : undefined,
                 };
             }),
             userVerification: 'preferred',

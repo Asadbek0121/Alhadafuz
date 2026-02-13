@@ -38,7 +38,8 @@ export async function GET() {
             authenticatorSelection: {
                 residentKey: 'preferred',
                 userVerification: 'preferred',
-                authenticatorAttachment: 'platform', // This forces phone/OS biometrics
+                // Remove 'platform' lock to allow more devices on Android
+                // authenticatorAttachment: 'platform', 
             },
         });
 
