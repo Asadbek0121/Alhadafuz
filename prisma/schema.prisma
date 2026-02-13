@@ -339,14 +339,14 @@ model StoreSettings {
 
 model ActivityLog {
   id         String   @id @default(cuid())
-  userId     String
+  userId     String?
   action     String   // LOGIN, FAILED_LOGIN, PIN_CHANGE, LOGOUT, RECOVERY_START, DEVICE_TRUSTED
   details    String?  // JSON string for additional info
   ip         String?
   location   String?  // City, Country via API
   userAgent  String?
   createdAt  DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Cart {
