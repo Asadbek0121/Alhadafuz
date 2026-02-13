@@ -4,6 +4,7 @@ import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import argon2 from "argon2";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { generateNextUniqueId } from "@/lib/id-generator";
@@ -128,12 +129,44 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 if (parsedCredentials.success) {
                     const { login, password, deviceId, deviceName } = parsedCredentials.data;
 
+                    // --- Token Based Auth (Auto-login from Telegram) ---
+                    if (login === 'TELEGRAM_TOKEN' && password) {
+                        const loginToken = await (prisma as any).telegramLoginToken.findUnique({
+                            where: { token: password },
+                            include: { user: { include: { devices: true } } }
+                        });
+
+                        if (loginToken && loginToken.expiresAt > new Date() && loginToken.status === 'PENDING') {
+                            // Mark token as used
+                            await (prisma as any).telegramLoginToken.update({
+                                where: { token: password },
+                                data: { status: 'VERIFIED' }
+                            });
+
+                            const user = loginToken.user;
+                            if (user) {
+                                (user as any).currentDeviceId = deviceId; // Optionally bond to current device
+                                return user;
+                            }
+                        }
+                        return null;
+                    }
+
+                    // Normalize login (phone number)
+                    let normalizedLogin = login;
+                    if (/^\d+$/.test(login) && !login.startsWith('+')) {
+                        // If it's all digits and doesn't start with +, try to normalize it
+                        if (login.length === 9) normalizedLogin = `+998${login}`;
+                        else if (login.length === 12) normalizedLogin = `+${login}`;
+                    }
+
                     const user = await prisma.user.findFirst({
                         where: {
                             OR: [
                                 { email: { equals: login, mode: 'insensitive' } },
                                 { username: { equals: login, mode: 'insensitive' } },
-                                { phone: { equals: login } }
+                                { phone: { equals: login } },
+                                { phone: { equals: normalizedLogin } }
                             ]
                         },
                         include: { devices: true } as any
@@ -150,7 +183,21 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     const dbPassword = u.hashedPassword || u.password || u.pinHash;
                     if (!dbPassword) return null;
 
-                    const passwordsMatch = await argon2.verify(dbPassword, password);
+                    let passwordsMatch = false;
+                    try {
+                        if (dbPassword.startsWith('$argon2')) {
+                            // Try Argon2id (New PINs)
+                            passwordsMatch = await argon2.verify(dbPassword, password);
+                        } else {
+                            // Fallback to Bcrypt (Old Passwords)
+                            passwordsMatch = await bcrypt.compare(password, dbPassword);
+                        }
+                    } catch (e) {
+                        console.error("Hash comparison error:", e);
+                        // Final fallback attempt
+                        try { passwordsMatch = await bcrypt.compare(password, dbPassword); } catch (i) { }
+                    }
+
                     if (!passwordsMatch) {
                         await prisma.user.update({
                             where: { id: user.id },

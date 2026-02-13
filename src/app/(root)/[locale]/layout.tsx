@@ -16,6 +16,8 @@ import SupportChat from "@/components/SupportChat/SupportChat";
 import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
 import AuthModal from "@/components/Auth/AuthModal";
+import Script from "next/script";
+import TelegramAuthSync from "@/components/TelegramAuthSync";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -67,7 +69,9 @@ export default async function LocaleLayout({
             <WishlistProvider>
 
               <SessionProviderWrapper session={session}>
+                <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
                 <SessionSync />
+                <TelegramAuthSync />
                 <Header />
                 <main className="min-h-screen">
                   {children}

@@ -473,7 +473,7 @@ export default function AuthModal() {
                                                     <Mail className="absolute left-4 top-3.5 md:top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
                                                     <input
                                                         type="text"
-                                                        placeholder="Email yoki Login"
+                                                        placeholder="Telefon yoki Email"
                                                         value={email}
                                                         onChange={(e) => setEmail(e.target.value)}
                                                         required
@@ -485,7 +485,7 @@ export default function AuthModal() {
                                                     <Lock className="absolute left-4 top-3.5 md:top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
                                                     <input
                                                         type={showPassword ? "text" : "password"}
-                                                        placeholder="Parol"
+                                                        placeholder="PIN yoki Parol"
                                                         value={password}
                                                         onChange={(e) => setPassword(e.target.value)}
                                                         required

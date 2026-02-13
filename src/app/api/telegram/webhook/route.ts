@@ -165,6 +165,8 @@ export async function POST(req: Request) {
                 const isKeyValid = await argon2.verify((user as any).recoveryHash || '', text.trim().toUpperCase());
                 if (isKeyValid) {
                     await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_ASK_PIN' } as any });
+
+                    // Create a faster path for recovery success later
                     await safeSend(chatId, "Kalit to'g'ri! ✅\n\nYangi 6 xonali PIN kodni kiriting:");
                 } else {
                     await safeSend(chatId, "Xato tiklash kaliti. Qayta urinib ko'ring:");
@@ -227,8 +229,27 @@ export async function POST(req: Request) {
                     } as any
                 });
 
-                await safeSend(chatId, `Tabriklaymiz! Ro'yxatdan muvaffaqiyatli o'tdingiz. 🎊\n\n🗝 **MUHIM: BU SIZNING TIKLASH KALITINGIZ:**\n\n\`${recoveryKey}\`\n\nUni xavfsiz joyda saqlang! PIN kodni unutsangiz, faqat shu kalit yordamida hisobni tiklash mumkin.`);
-                await safeSend(chatId, "Endi saytda o'z hisobingizdan foydalanishingiz mumkin.");
+                // --- Generate Auto-Login Token ---
+                const loginTokenValue = crypto.randomBytes(32).toString('hex');
+                await (prisma as any).telegramLoginToken.create({
+                    data: {
+                        token: loginTokenValue,
+                        userId: user.id,
+                        status: 'PENDING',
+                        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
+                    }
+                });
+
+                const me = await bot.getMe();
+                const botLink = `https://t.me/${me.username}/app?startapp=auth_${loginTokenValue}`;
+
+                await safeSend(chatId, `Tabriklaymiz! Ro'yxatdan muvaffaqiyatli o'tdingiz. 🎊\n\n🗝 **MUHIM: BU SIZNING TIKLASH KALITINGIZ:**\n\n\`${recoveryKey}\`\n\nUni xavfsiz joyda saqlang! PIN kodni unutsangiz, faqat shu kalit yordamida hisobni tiklash mumkin.`, {
+                    reply_markup: {
+                        inline_keyboard: [[
+                            { text: "🚀 Saytga kirish (Auto-login)", url: botLink }
+                        ]]
+                    }
+                });
                 return NextResponse.json({ ok: true });
             }
         }
