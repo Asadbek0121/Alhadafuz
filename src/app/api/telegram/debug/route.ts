@@ -21,7 +21,7 @@ export async function GET() {
 
         const bot = new TelegramBot(effectiveToken, { polling: false });
         const me = await bot.getMe();
-        const webhook = await bot.getWebhookInfo();
+        const webhook = await bot.getWebHookInfo();
 
         return NextResponse.json({
             ok: true,
