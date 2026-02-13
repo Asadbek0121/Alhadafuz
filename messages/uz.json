@@ -317,7 +317,15 @@
         "2fa_title": "Ikki bosqichli autentifikatsiya",
         "2fa_desc": "Kirish uchun faqat paroldan ko'proq narsani talab qilish orqali hisobingizga qo'shimcha xavfsizlik qatlamini qo'shing.",
         "2fa_enable": "2FA yoqish",
-        "2fa_disable": "2FA o'chirish"
+        "2fa_disable": "2FA o'chirish",
+        "biometric_title": "Biometrik Himoya (Passkeys)",
+        "biometric_desc": "Telefoningizning barmoq izi yoki yuz tanish (FaceID) funksiyasidan foydalanib, parolsiz kirishni yoqing.",
+        "biometric_enable": "Hoziroq yoqing",
+        "biometric_active": "Faollashtirilgan",
+        "biometric_success": "Barmoq izi muvaffaqiyatli bog'landi!",
+        "biometric_error": "Biometrik kirishda xatolik yuz berdi",
+        "biometric_checking": "Barmoq izi tekshirilmoqda...",
+        "biometric_login": "Barmoq izi orqali kirish"
     },
     "BottomNav": {
         "home": "Bosh sahifa",

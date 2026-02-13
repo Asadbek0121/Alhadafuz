@@ -45,25 +45,28 @@ export default function TelegramAuthSync() {
 
                     toast.info("Telegram orqali kirish jarayoni boshlandi...");
 
-                    signIn('credentials', {
-                        login: 'TELEGRAM_TOKEN',
-                        password: token,
-                        deviceId: deviceId,
-                        deviceName: "Telegram App",
-                        redirect: false
-                    }).then((result: any) => {
-                        console.log("TelegramAuthSync: SignIn result:", result);
-                        if (result?.ok && !result?.error) {
-                            toast.success("Xush kelibsiz!");
-                            setTimeout(() => window.location.href = '/', 800);
-                        } else {
-                            const errorMsg = result?.error || "Token noto'g'ri yoki muddati o'tgan";
-                            toast.error("Kirishda xatolik: " + errorMsg);
-                            console.error("Login failed:", errorMsg);
-                        }
-                    }).catch(err => {
-                        console.error("SignIn catch error:", err);
-                        toast.error("Tizimda xatolik yuz berdi");
+                    import("@/lib/fingerprint").then(({ getBrowserFingerprint }) => {
+                        signIn('credentials', {
+                            login: 'TELEGRAM_TOKEN',
+                            password: token,
+                            deviceId: deviceId,
+                            deviceName: "Telegram App",
+                            fingerprint: getBrowserFingerprint(),
+                            redirect: false
+                        }).then((result: any) => {
+                            console.log("TelegramAuthSync: SignIn result:", result);
+                            if (result?.ok && !result?.error) {
+                                toast.success("Xush kelibsiz!");
+                                setTimeout(() => window.location.href = '/', 800);
+                            } else {
+                                const errorMsg = result?.error || "Token noto'g'ri yoki muddati o'tgan";
+                                toast.error("Kirishda xatolik: " + errorMsg);
+                                console.error("Login failed:", errorMsg);
+                            }
+                        }).catch(err => {
+                            console.error("SignIn catch error:", err);
+                            toast.error("Tizimda xatolik yuz berdi");
+                        });
                     });
                 } else if (status === 'authenticated') {
                     console.log("TelegramAuthSync: Already authenticated.");

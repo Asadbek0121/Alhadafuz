@@ -216,8 +216,15 @@ export default function SecurityPage() {
                             </button>
                         </div>
                     </div>
+
+                    <div className="pt-2">
+                        {/* Biometric Management Component */}
+                        <BiometricManager />
+                    </div>
                 </>
             )}
         </div>
     );
 }
+
+import BiometricManager from "@/components/Auth/BiometricManager";

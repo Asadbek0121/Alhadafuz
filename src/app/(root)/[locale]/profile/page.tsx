@@ -142,7 +142,7 @@ export default function ProfileOverviewPage() {
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
                     <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-bold text-gray-900">{tProfile('personal_info')}</h3>
-                        <Link href="/profile/settings" className="text-sm font-bold text-blue-600 px-3 py-1 bg-blue-50 rounded-lg">
+                        <Link href="/profile/info" className="text-sm font-bold text-blue-600 px-3 py-1 bg-blue-50 rounded-lg">
                             {tProfile('edit')}
                         </Link>
                     </div>

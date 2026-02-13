@@ -37,6 +37,8 @@ model User {
   telegramId           String?        @unique
   botState             String?        // For telegram bot registration steps
   tempData             String?        @db.Text // JSON for temp data in registration
+  lastLoginAt          DateTime?
+  lastIp               String?
   accounts             Account[]
   logs                 ActivityLog[]
   addresses            Address[]
@@ -51,6 +53,7 @@ model User {
   devices              Device[]
   wishlist             Wishlist?
   telegramLoginTokens  TelegramLoginToken[]
+  authenticators       Authenticator[]
 }
 
 model Account {
@@ -103,9 +106,25 @@ model Device {
   isTrusted    Boolean  @default(false)
   lastSeen     DateTime @updatedAt
   riskScore    Int      @default(0)
+  fingerprint  String?  // Hardware-based unique hash
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions     Session[]
+
+  @@index([userId])
+}
+
+model Authenticator {
+  id                   String   @id @default(cuid())
+  credentialID         String   @unique
+  credentialPublicKey  Bytes
+  counter              BigInt
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  transports           String?
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt            DateTime @default(now())
 
   @@index([userId])
 }
@@ -319,12 +338,15 @@ model StoreSettings {
 }
 
 model ActivityLog {
-  id        String   @id @default(cuid())
-  adminId   String
-  action    String
-  details   String?
-  createdAt DateTime @default(now())
-  admin     User     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  userId     String
+  action     String   // LOGIN, FAILED_LOGIN, PIN_CHANGE, LOGOUT, RECOVERY_START, DEVICE_TRUSTED
+  details    String?  // JSON string for additional info
+  ip         String?
+  location   String?  // City, Country via API
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Cart {

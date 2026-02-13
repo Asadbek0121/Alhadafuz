@@ -25,7 +25,8 @@ export async function GET(req: Request) {
 
     // Fetch fresh user data to include new fields
     const user = await prisma.user.findUnique({
-        where: { id: userId }
+        where: { id: userId },
+        include: { authenticators: true }
     });
 
     return NextResponse.json(user);

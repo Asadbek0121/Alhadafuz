@@ -309,7 +309,15 @@
         "2fa_title": "Two-Factor Authentication",
         "2fa_desc": "Add an extra layer of security to your account by requiring more than just a password to log in.",
         "2fa_enable": "Enable 2FA",
-        "2fa_disable": "Disable 2FA"
+        "2fa_disable": "Disable 2FA",
+        "biometric_title": "Biometric Protection (Passkeys)",
+        "biometric_desc": "Enable passwordless login using your phone's fingerprint or face recognition (FaceID).",
+        "biometric_enable": "Enable Now",
+        "biometric_active": "Activated",
+        "biometric_success": "Fingerprint successfully linked!",
+        "biometric_error": "Biometric login error occurred",
+        "biometric_checking": "Checking fingerprint...",
+        "biometric_login": "Login with fingerprint"
     },
     "BottomNav": {
         "home": "Home",

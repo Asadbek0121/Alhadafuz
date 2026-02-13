@@ -8,6 +8,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { generateNextUniqueId } from "@/lib/id-generator";
+import { logActivity, checkRisk } from "@/lib/security";
 import { verifyTelegramLogin } from "@/lib/telegram-auth";
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
@@ -122,12 +123,13 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         login: z.string().min(2),
                         password: z.string().min(6),
                         deviceId: z.string().optional(),
-                        deviceName: z.string().optional()
+                        deviceName: z.string().optional(),
+                        fingerprint: z.string().optional()
                     })
                     .safeParse(credentials);
 
                 if (parsedCredentials.success) {
-                    const { login, password, deviceId, deviceName } = parsedCredentials.data;
+                    const { login, password, deviceId, deviceName, fingerprint } = parsedCredentials.data;
 
                     // --- Token Based Auth (Auto-login from Telegram) ---
                     if (login === 'TELEGRAM_TOKEN' && password) {
@@ -145,6 +147,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                             const user = loginToken.user;
                             if (user) {
+                                await logActivity(user.id, "LOGIN", { method: "TELEGRAM_AUTO", deviceId });
                                 (user as any).currentDeviceId = deviceId; // Optionally bond to current device
                                 return user;
                             }
@@ -208,6 +211,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                                     : undefined
                             } as any
                         });
+                        await logActivity(user.id, "FAILED_LOGIN", { login, deviceId });
                         return null;
                     }
 
@@ -216,6 +220,15 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         where: { id: user.id },
                         data: { failedAttempts: 0, lockedUntil: null } as any
                     });
+
+                    // --- RISK CHECK ---
+                    const { highRisk } = await checkRisk(user.id, (user as any).lastIp || '');
+                    if (highRisk && u.telegramId) {
+                        const { sendTelegramMessage } = await import("@/lib/telegram-bot");
+                        await sendTelegramMessage(u.telegramId, `🔴 **XAVF: Noodatiy kirish!**\n\nSizning hisobingizga yangi joydan kirildi. Agar bu siz bo'lmasangiz, darhol PIN kodni o'zgartiring!`);
+                    }
+
+                    await logActivity(user.id, "LOGIN", { method: "CREDENTIALS", deviceId });
 
                     // --- Device Trust System ---
                     if (deviceId) {
@@ -227,8 +240,9 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                                     userId: user.id,
                                     deviceId,
                                     deviceName: deviceName || "Unknown Device",
-                                    isTrusted: false
-                                }
+                                    isTrusted: false,
+                                    fingerprint
+                                } as any
                             });
 
                             // Instant Alert for New Device
