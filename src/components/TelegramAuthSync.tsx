@@ -9,37 +9,59 @@ export default function TelegramAuthSync() {
     const [processed, setProcessed] = useState(false);
 
     useEffect(() => {
-        if (typeof window === "undefined" || processed) return;
+        let attempts = 0;
+        const checkTg = setInterval(() => {
+            const tg = (window as any).Telegram?.WebApp;
+            attempts++;
 
-        const tg = (window as any).Telegram?.WebApp;
-        if (!tg) return;
+            if (tg) {
+                clearInterval(checkTg);
+                tg.ready();
 
-        // Expanded for WebApp view
-        tg.ready();
-        tg.expand();
+                // Get start_param from various possible locations
+                const startParam = tg.initDataUnsafe?.start_param ||
+                    new URLSearchParams(window.location.search).get('tgWebAppStartParam');
 
-        const startParam = tg.initDataUnsafe?.start_param;
+                if (startParam?.startsWith('auth_') && status === 'unauthenticated' && !processed) {
+                    const token = startParam.replace('auth_', '');
+                    setProcessed(true);
 
-        if (startParam?.startsWith('auth_') && status === 'unauthenticated') {
-            const token = startParam.replace('auth_', '');
-            setProcessed(true);
+                    // Generate a temporary device ID for tracking
+                    let deviceId = localStorage.getItem('deviceId');
+                    if (!deviceId) {
+                        deviceId = 'tg-webapp-' + Math.random().toString(36).substring(2, 12);
+                        localStorage.setItem('deviceId', deviceId);
+                    }
 
-            toast.promise(
-                signIn('credentials', {
-                    login: 'TELEGRAM_TOKEN',
-                    password: token,
-                    redirect: false
-                }),
-                {
-                    loading: "Tizimga kirilmoqda...",
-                    success: (result) => {
-                        if (result?.error) throw new Error(result.error);
-                        return "Mualliflik muvaffaqiyatli!";
-                    },
-                    error: "Avtomatik kirishda xatolik"
+                    toast.promise(
+                        signIn('credentials', {
+                            login: 'TELEGRAM_TOKEN',
+                            password: token,
+                            deviceId: deviceId,
+                            deviceName: "Telegram Mini App",
+                            redirect: false
+                        }),
+                        {
+                            loading: "Avtomatik kirish tekshirilmoqda...",
+                            success: (result: any) => {
+                                if (result?.error) throw new Error(result.error);
+                                // Small delay before reload to let session settle
+                                setTimeout(() => window.location.reload(), 500);
+                                return "Xush kelibsiz! Tizimga kirdingiz.";
+                            },
+                            error: (err) => {
+                                console.error("Auto-login error:", err);
+                                return "Avtomatik kirishda xatolik: " + (err.message || "Token yaroqsiz");
+                            }
+                        }
+                    );
                 }
-            );
-        }
+            }
+
+            if (attempts > 30) clearInterval(checkTg); // Max 3 seconds
+        }, 100);
+
+        return () => clearInterval(checkTg);
     }, [status, processed]);
 
     return null;
