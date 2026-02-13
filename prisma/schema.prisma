@@ -224,6 +224,9 @@ model Category {
 enum BannerPosition {
   HOME_TOP      // Main Slider (Chap qism)
   HOME_SIDE     // Side Promo (O'ng qism)
+  SIDEBAR
+  CATEGORY_TOP
+  FOOTER
 }
 
 model Banner {
