@@ -134,6 +134,9 @@ export async function startBiometricLogin(login?: string) {
                 });
                 return signInResult;
             }
+        } else {
+            const errorData = await verifyRes.json().catch(() => ({}));
+            throw new Error(errorData.details || errorData.error || "Tizimga kirish tasdiqlanmadi");
         }
         throw new Error("Tizimga kirish tasdiqlanmadi");
     } catch (error: any) {

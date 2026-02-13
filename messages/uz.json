@@ -325,7 +325,12 @@
         "biometric_success": "Barmoq izi muvaffaqiyatli bog'landi!",
         "biometric_error": "Biometrik kirishda xatolik yuz berdi",
         "biometric_checking": "Barmoq izi tekshirilmoqda...",
-        "biometric_login": "Barmoq izi orqali kirish"
+        "biometric_login": "Barmoq izi orqali kirish",
+        "biometric_setup_title": "Parolsiz kirish",
+        "biometric_setup_desc": "Keyingi safar parolsiz kirishni xohlaysizmi? Barmoq izini hoziroq faollashtiring.",
+        "biometric_setup_btn": "Faollashtirish",
+        "biometric_setup_skip": "Hozir emas, keyinroq",
+        "biometric_setup_success": "Barmoq izi faollashtirildi!"
     },
     "BottomNav": {
         "home": "Bosh sahifa",

@@ -429,10 +429,10 @@ export default function AuthModal() {
                                         className="relative z-10"
                                     >
                                         <h3 className="text-4xl font-black mb-3 tracking-tight text-white drop-shadow-md">
-                                            Muvaffaqiyatli!
+                                            {t('success_title') || 'Muvaffaqiyatli!'}
                                         </h3>
                                         <p className="text-blue-100 font-medium text-lg leading-relaxed max-w-[280px] mx-auto mb-6">
-                                            Xush kelibsiz! Tizimga muvaffaqiyatli kirdingiz.
+                                            {t('success_message') || 'Xush kelibsiz! Tizimga muvaffaqiyatli kirdingiz.'}
                                         </p>
 
                                         {isBiometricSupported && !biometricLinked && (
@@ -442,8 +442,9 @@ export default function AuthModal() {
                                                 transition={{ delay: 0.6 }}
                                                 className="bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20"
                                             >
-                                                <p className="text-sm text-white/90 mb-4 font-medium">
-                                                    Keyingi safar parolsiz kirishni xohlaysizmi? Barmoq izini hoziroq faollashtiring.
+                                                <h4 className="text-white font-bold mb-1">{tp('biometric_setup_title') || 'Parolsiz kirish'}</h4>
+                                                <p className="text-sm text-white/80 mb-4 font-medium leading-tight">
+                                                    {tp('biometric_setup_desc') || 'Keyingi safar parolsiz kirishni xohlaysizmi? Barmoq izini hoziroq faollashtiring.'}
                                                 </p>
                                                 <button
                                                     onClick={handleLinkBiometric}
@@ -451,13 +452,13 @@ export default function AuthModal() {
                                                     className="w-full h-12 bg-white text-blue-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors shadow-lg disabled:opacity-50"
                                                 >
                                                     {isBiometricLoading ? <Loader2 size={20} className="animate-spin" /> : <Fingerprint size={20} />}
-                                                    <span>Faollashtirish</span>
+                                                    <span>{tp('biometric_setup_btn') || 'Faollashtirish'}</span>
                                                 </button>
                                                 <button
                                                     onClick={() => window.location.reload()}
-                                                    className="mt-3 text-xs text-white/60 hover:text-white font-medium transition-colors"
+                                                    className="mt-3 text-xs text-white/50 hover:text-white font-medium transition-colors"
                                                 >
-                                                    Hozir emas, keyinroq
+                                                    {tp('biometric_setup_skip') || 'Hozir emas, keyinroq'}
                                                 </button>
                                             </motion.div>
                                         )}
@@ -469,7 +470,7 @@ export default function AuthModal() {
                                                 className="bg-green-500/20 backdrop-blur-md p-4 rounded-3xl border border-green-500/30 flex items-center justify-center gap-3 text-white"
                                             >
                                                 <CheckCircle2 size={24} className="text-green-400" />
-                                                <span className="font-bold">Barmoq izi faollashtirildi!</span>
+                                                <span className="font-bold">{tp('biometric_setup_success') || 'Barmoq izi faollashtirildi!'}</span>
                                             </motion.div>
                                         )}
                                     </motion.div>

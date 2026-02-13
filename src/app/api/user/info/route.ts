@@ -20,7 +20,7 @@ export async function GET(req: Request) {
     const userId = session?.user?.id;
 
     if (!userId) {
-        return new NextResponse("Unauthorized", { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Fetch fresh user data to include new fields

@@ -317,7 +317,12 @@
         "biometric_success": "Fingerprint successfully linked!",
         "biometric_error": "Biometric login error occurred",
         "biometric_checking": "Checking fingerprint...",
-        "biometric_login": "Login with fingerprint"
+        "biometric_login": "Login with fingerprint",
+        "biometric_setup_title": "Passwordless Login",
+        "biometric_setup_desc": "Want to log in without a password next time? Enable biometric authentication now.",
+        "biometric_setup_btn": "Enable Now",
+        "biometric_setup_skip": "Not now, maybe later",
+        "biometric_setup_success": "Biometrics enabled!"
     },
     "BottomNav": {
         "home": "Home",

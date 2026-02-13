@@ -322,7 +322,12 @@
         "biometric_success": "Отпечаток пальца успешно привязан!",
         "biometric_error": "Ошибка биометрического входа",
         "biometric_checking": "Проверка отпечатка пальца...",
-        "biometric_login": "Вход по отпечатку пальца"
+        "biometric_login": "Вход по отпечатку пальца",
+        "biometric_setup_title": "Вход без пароля",
+        "biometric_setup_desc": "Хотите входить без пароля в следующий раз? Активируйте вход по отпечатку пальца прямо сейчас.",
+        "biometric_setup_btn": "Активировать",
+        "biometric_setup_skip": "Не сейчас, позже",
+        "biometric_setup_success": "Биометрия активирована!"
     },
     "BottomNav": {
         "home": "Главная",

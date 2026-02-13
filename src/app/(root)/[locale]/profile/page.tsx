@@ -49,9 +49,9 @@ export default function ProfileOverviewPage() {
 
             // 2. Fetch Fresh User Info to sync session if role/ID changed
             fetch('/api/user/info')
-                .then(res => res.json())
+                .then(res => res.ok ? res.json() : null)
                 .then(dbUser => {
-                    if (!dbUser) return;
+                    if (!dbUser || dbUser.error) return;
 
                     const sessionRole = (session.user as any).role;
                     const sessionId = (session.user as any).uniqueId;

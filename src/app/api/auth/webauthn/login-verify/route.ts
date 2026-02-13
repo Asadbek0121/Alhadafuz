@@ -16,18 +16,42 @@ export async function POST(req: Request) {
         const expectedUserId = cookieStore.get('webauthn_user_id')?.value;
 
         if (!expectedChallenge) {
+            console.error("WebAuthn Error: Challenge not found in cookies");
             return NextResponse.json({ error: "Challenge not found or expired" }, { status: 400 });
         }
 
-        // Find the authenticator by credentialID
-        const base64ID = body.id; // Usually base64url
-        const authenticator = await prisma.authenticator.findUnique({
-            where: { credentialID: base64ID },
+        const credentialID = body.id;
+        console.log("WebAuthn: Login attempt with credentialID:", credentialID);
+
+        // helper to normalize base64url to base64 with padding
+        const normalize = (id: string) => {
+            let base64 = id.replace(/-/g, '+').replace(/_/g, '/');
+            while (base64.length % 4) base64 += '=';
+            return base64;
+        };
+
+        const normalizedID = normalize(credentialID);
+        console.log("WebAuthn: Normalized ID for lookup:", normalizedID);
+
+        let authenticator = await prisma.authenticator.findUnique({
+            where: { credentialID: normalizedID },
             include: { user: true }
         });
 
+        // Try raw ID if normalized didn't work (just in case)
+        if (!authenticator && normalizedID !== credentialID) {
+            authenticator = await prisma.authenticator.findUnique({
+                where: { credentialID: credentialID },
+                include: { user: true }
+            });
+        }
+
         if (!authenticator) {
-            return NextResponse.json({ error: "Authenticator not recognized" }, { status: 404 });
+            console.error("WebAuthn Error: Authenticator not found in DB for ID:", normalizedID);
+            return NextResponse.json({
+                error: "Authenticator not recognized",
+                details: "Sizning qurilmangiz ushbu hisobga bog'lanmagan or ma'lumotlar mos kelmadi."
+            }, { status: 404 });
         }
 
         const verification = await verifyAuthenticationResponse({
