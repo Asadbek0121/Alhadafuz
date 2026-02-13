@@ -10,56 +10,73 @@ export default function TelegramAuthSync() {
 
     useEffect(() => {
         let attempts = 0;
+        console.log("TelegramAuthSync: Initializing check...");
+
         const checkTg = setInterval(() => {
             const tg = (window as any).Telegram?.WebApp;
             attempts++;
 
             if (tg) {
                 clearInterval(checkTg);
+                console.log("TelegramAuthSync: WebApp found!", tg.initDataUnsafe);
                 tg.ready();
 
-                // Get start_param from various possible locations
+                // Try to get token from multiple sources
+                const urlParams = new URLSearchParams(window.location.search);
+                const hashParams = new URLSearchParams(window.location.hash.slice(1));
+
                 const startParam = tg.initDataUnsafe?.start_param ||
-                    new URLSearchParams(window.location.search).get('tgWebAppStartParam');
+                    urlParams.get('start_param') ||
+                    urlParams.get('tgWebAppStartParam') ||
+                    hashParams.get('start_param');
+
+                console.log("TelegramAuthSync: startParam =", startParam);
 
                 if (startParam?.startsWith('auth_') && status === 'unauthenticated' && !processed) {
                     const token = startParam.replace('auth_', '');
                     setProcessed(true);
+                    console.log("TelegramAuthSync: Attempting login with token:", token);
 
-                    // Generate a temporary device ID for tracking
                     let deviceId = localStorage.getItem('deviceId');
                     if (!deviceId) {
                         deviceId = 'tg-webapp-' + Math.random().toString(36).substring(2, 12);
                         localStorage.setItem('deviceId', deviceId);
                     }
 
-                    toast.promise(
-                        signIn('credentials', {
-                            login: 'TELEGRAM_TOKEN',
-                            password: token,
-                            deviceId: deviceId,
-                            deviceName: "Telegram Mini App",
-                            redirect: false
-                        }),
-                        {
-                            loading: "Avtomatik kirish tekshirilmoqda...",
-                            success: (result: any) => {
-                                if (result?.error) throw new Error(result.error);
-                                // Small delay before reload to let session settle
-                                setTimeout(() => window.location.reload(), 500);
-                                return "Xush kelibsiz! Tizimga kirdingiz.";
-                            },
-                            error: (err) => {
-                                console.error("Auto-login error:", err);
-                                return "Avtomatik kirishda xatolik: " + (err.message || "Token yaroqsiz");
-                            }
+                    toast.info("Telegram orqali kirish jarayoni boshlandi...");
+
+                    signIn('credentials', {
+                        login: 'TELEGRAM_TOKEN',
+                        password: token,
+                        deviceId: deviceId,
+                        deviceName: "Telegram App",
+                        redirect: false
+                    }).then((result: any) => {
+                        console.log("TelegramAuthSync: SignIn result:", result);
+                        if (result?.ok && !result?.error) {
+                            toast.success("Xush kelibsiz!");
+                            setTimeout(() => window.location.href = '/', 800);
+                        } else {
+                            const errorMsg = result?.error || "Token noto'g'ri yoki muddati o'tgan";
+                            toast.error("Kirishda xatolik: " + errorMsg);
+                            console.error("Login failed:", errorMsg);
                         }
-                    );
+                    }).catch(err => {
+                        console.error("SignIn catch error:", err);
+                        toast.error("Tizimda xatolik yuz berdi");
+                    });
+                } else if (status === 'authenticated') {
+                    console.log("TelegramAuthSync: Already authenticated.");
+                } else if (!startParam) {
+                    console.log("TelegramAuthSync: No startParam found.");
                 }
             }
 
-            if (attempts > 30) clearInterval(checkTg); // Max 3 seconds
-        }, 100);
+            if (attempts > 30) {
+                clearInterval(checkTg);
+                console.log("TelegramAuthSync: Max attempts reached, WebApp not found or no token.");
+            }
+        }, 300);
 
         return () => clearInterval(checkTg);
     }, [status, processed]);
