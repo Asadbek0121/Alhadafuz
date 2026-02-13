@@ -7,11 +7,20 @@ import {
 
 export async function POST(req: Request) {
     try {
-        const { login } = await req.json();
+        let body;
+        try {
+            body = await req.json();
+        } catch (e) {
+            console.error("Failed to parse request body:", e);
+            return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+        }
+
+        const { login } = body;
         let userAuthenticators: any[] = [];
-        let userIdForChallenge = "anonymous"; // We can't easily link to user if we don't know who they are
+        let userIdForChallenge = "anonymous";
 
         if (login) {
+            console.log("Searching user for login:", login);
             const user = await prisma.user.findFirst({
                 where: {
                     OR: [
@@ -23,41 +32,66 @@ export async function POST(req: Request) {
                 },
                 include: { authenticators: true }
             });
+
             if (user) {
+                console.log("User found:", user.id);
                 userAuthenticators = user.authenticators;
                 userIdForChallenge = user.id;
+            } else {
+                console.log("User not found for login:", login);
             }
         }
 
+        console.log("Generating authentication options for RP_ID:", RP_ID);
         const options = await generateAuthenticationOptions({
             rpID: RP_ID,
-            allowCredentials: userAuthenticators.map(auth => ({
-                id: Buffer.from(auth.credentialID, 'base64'),
-                type: 'public-key',
-                transports: auth.transports ? JSON.parse(auth.transports) : undefined,
-            })),
+            allowCredentials: userAuthenticators.map(auth => {
+                let transports;
+                try {
+                    transports = auth.transports ? JSON.parse(auth.transports) : undefined;
+                    if (Array.isArray(transports) && transports.length === 0) transports = undefined;
+                } catch (e) {
+                    console.error("Failed to parse transports for auth:", auth.id);
+                }
+
+                return {
+                    id: Buffer.from(auth.credentialID, 'base64'),
+                    type: 'public-key',
+                    transports: transports,
+                };
+            }),
             userVerification: 'preferred',
         });
 
-        // Store challenge globally or in a way that can be retrieved by the login-verify step
-        // For now, we'll use a Cookie or a temporary store. 
-        // A cookie is easiest for stateless Next.js API.
+        console.log("Options generated successfully");
         const response = NextResponse.json(options);
+
+        // Use a more robust way to set cookies in App Router if needed, 
+        // but this should work in plupart of cases.
         response.cookies.set('webauthn_challenge', options.challenge, {
             httpOnly: true,
-            secure: true,
+            secure: process.env.NODE_ENV === 'production',
             path: '/',
-            maxAge: 300 // 5 minutes 
+            maxAge: 300,
+            sameSite: 'lax'
         });
 
-        // If login was provided, also track which user we expect
         if (userIdForChallenge !== "anonymous") {
-            response.cookies.set('webauthn_user_id', userIdForChallenge, { httpOnly: true, secure: true, path: '/', maxAge: 300 });
+            response.cookies.set('webauthn_user_id', userIdForChallenge, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                maxAge: 300,
+                sameSite: 'lax'
+            });
         }
 
         return response;
-    } catch (error) {
+    } catch (error: any) {
         console.error("WebAuthn Login Options Error:", error);
-        return NextResponse.json({ error: "Failed to generate options" }, { status: 500 });
+        return NextResponse.json({
+            error: "Failed to generate options",
+            details: error.message
+        }, { status: 500 });
     }
 }
