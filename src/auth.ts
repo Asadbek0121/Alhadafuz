@@ -3,7 +3,7 @@ import { authConfig } from "./auth.config";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import bcrypt from "bcryptjs";
+import argon2 from "argon2";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { generateNextUniqueId } from "@/lib/id-generator";
@@ -149,7 +149,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     const dbPassword = user.hashedPassword || user.password || user.pinHash;
                     if (!dbPassword) return null;
 
-                    const passwordsMatch = await bcrypt.compare(password, dbPassword);
+                    const passwordsMatch = await argon2.verify(dbPassword, password);
                     if (!passwordsMatch) {
                         await prisma.user.update({
                             where: { id: user.id },

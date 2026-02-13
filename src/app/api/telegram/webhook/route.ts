@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import TelegramBot from 'node-telegram-bot-api';
 import { generateNextUniqueId } from '@/lib/id-generator';
-import bcrypt from 'bcryptjs';
+import argon2 from 'argon2';
 import crypto from 'crypto';
 
 async function getBot() {
@@ -159,7 +159,7 @@ export async function POST(req: Request) {
             }
 
             if (state === 'RECOVERY_ASK_KEY' && text) {
-                const isKeyValid = await bcrypt.compare(text.trim().toUpperCase(), user.recoveryHash || '');
+                const isKeyValid = await argon2.verify(user.recoveryHash || '', text.trim().toUpperCase());
                 if (isKeyValid) {
                     await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_ASK_PIN' } });
                     await safeSend(chatId, "Kalit to'g'ri! ✅\n\nYangi 6 xonali PIN kodni kiriting:");
@@ -209,9 +209,9 @@ export async function POST(req: Request) {
                     return NextResponse.json({ ok: true });
                 }
 
-                const pinHash = await bcrypt.hash(text, 10);
+                const pinHash = await argon2.hash(text, { type: argon2.argon2id });
                 const recoveryKey = generateRecoveryKey();
-                const recoveryHash = await bcrypt.hash(recoveryKey, 10);
+                const recoveryHash = await argon2.hash(recoveryKey, { type: argon2.argon2id });
 
                 await prisma.user.update({
                     where: { id: user.id },
