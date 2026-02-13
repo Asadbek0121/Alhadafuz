@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -10,21 +10,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
 
 const productSchema = z.object({
-    title: z.string().min(3, "Product name must be at least 3 characters"),
-    description: z.string().min(10, "Description must be at least 10 characters"),
-    category: z.string().min(1, "Select a category"),
+    title: z.string().min(3, "Mahsulot nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
+    description: z.string().min(10, "Tavsif kamida 10 ta belgidan iborat bo'lishi kerak"),
+    category: z.string().min(1, "Kategoriya tanlang"),
     brand: z.string().optional(),
-    price: z.union([z.string(), z.number()]),
-    oldPrice: z.union([z.string(), z.number()]).optional(),
+    price: z.coerce.number().positive("Narx musbat bo'lishi kerak"),
+    oldPrice: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().positive().optional()),
     discountType: z.enum(["no_discount", "percentage", "fixed_price"]).default("no_discount"),
-    discountValue: z.union([z.string(), z.number()]).optional(),
+    discountValue: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().nonnegative().optional()),
     discountCategory: z.string().default("SALE"),
-    vatAmount: z.union([z.string(), z.number()]).optional(),
-    stock: z.union([z.string(), z.number()]),
-    image: z.string().min(1, "Main image is required"),
+    vatAmount: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().nonnegative().optional()),
+    stock: z.coerce.number().int().nonnegative("Ombordagi soni manfiy bo'lishi mumkin emas").default(0),
+    image: z.string().min(1, "Asosiy rasm majburiy"),
     images: z.string().optional(),
     tags: z.string().optional(),
     status: z.enum(["published", "draft", "scheduled", "inactive"]).default("published"),
+    isNew: z.boolean().default(true),
+    freeDelivery: z.boolean().default(false),
+    hasVideo: z.boolean().default(false),
+    hasGift: z.boolean().default(false),
+    showLowStock: z.boolean().default(false),
+    allowInstallment: z.boolean().default(false),
     template: z.string().optional(),
 });
 
@@ -99,13 +105,68 @@ export default function AddProductPage() {
         defaultValues: {
             title: "",
             description: "",
-            price: "",
-            stock: "",
+            price: 0,
+            stock: 0,
             category: "",
+            isNew: true,
+            freeDelivery: false,
+            hasVideo: false,
+            hasGift: false,
+            showLowStock: false,
+            allowInstallment: false,
             discountType: "no_discount",
             status: "published"
         }
     });
+
+    // Auto-calculate price based on discount
+    const watchOldPrice = watch('oldPrice');
+    const watchPrice = watch('price');
+    const watchDiscountValue = watch('discountValue');
+    const watchDiscountType = watch('discountType');
+
+    const isCalculating = useRef(false);
+
+    useEffect(() => {
+        if (isCalculating.current) return;
+
+        if (watchDiscountType === 'no_discount') {
+            return;
+        }
+
+        isCalculating.current = true;
+        const discVal = Number(watchDiscountValue || 0);
+
+        if (watchOldPrice && watchOldPrice > 0) {
+            const oldPriceNum = Number(watchOldPrice);
+            let calculatedPrice = 0;
+
+            if (watchDiscountType === 'percentage') {
+                calculatedPrice = Math.round(oldPriceNum - (oldPriceNum * (discVal / 100)));
+            } else if (watchDiscountType === 'fixed_price') {
+                calculatedPrice = Math.round(oldPriceNum - discVal);
+            }
+
+            if (calculatedPrice !== watchPrice) {
+                setValue('price', calculatedPrice);
+            }
+        } else if (watchPrice && watchPrice > 0 && discVal > 0) {
+            const priceNum = Number(watchPrice);
+            let calculatedOldPrice = 0;
+
+            if (watchDiscountType === 'percentage') {
+                calculatedOldPrice = Math.round(priceNum / (1 - (discVal / 100)));
+            } else if (watchDiscountType === 'fixed_price') {
+                calculatedOldPrice = Math.round(priceNum + discVal);
+            }
+
+            if (calculatedOldPrice !== watchOldPrice) {
+                setValue('oldPrice', calculatedOldPrice);
+            }
+        }
+
+        isCalculating.current = false;
+    }, [watchOldPrice, watchPrice, watchDiscountValue, watchDiscountType, setValue]);
 
     const addAttribute = () => {
         setAttributes([...attributes, { key: "", value: "" }]);
@@ -165,22 +226,23 @@ export default function AddProductPage() {
         const attrsObject: Record<string, string | string[]> = {};
         attributes.forEach(attr => {
             if (attr.key && attr.value) {
-                attrsObject[attr.key] = attr.value.split(',').map(s => s.trim());
+                const values = attr.value.split(',').map(s => s.trim()).filter(Boolean);
+                if (values.length > 0) {
+                    attrsObject[attr.key] = values;
+                }
             }
         });
 
-        // Calculate final price based on discount logic if needed, or store raw values
-        // For now mapping to existing schema structure
         const categoryIds = data.category?.split(',').filter(Boolean) || [];
 
         const payload = {
             ...data,
-            price: Number(data.price),
-            stock: Number(data.stock),
-            oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
-            // Mapping schema fields
-            discount: data.discountValue ? Number(data.discountValue) : null,
-            discountType: data.discountCategory,
+            price: data.price,
+            stock: data.stock,
+            oldPrice: data.oldPrice || null,
+            discount: data.discountValue || null,
+            discountType: data.discountCategory || "SALE",
+            vatPercent: data.vatAmount || 0,
             images: imagesList,
             attributes: attrsObject,
             category: data.category, // Keep for backward compatibility
@@ -194,17 +256,35 @@ export default function AddProductPage() {
                 body: JSON.stringify(payload),
             });
 
+            const responseData = await res.json().catch(() => ({}));
+
             if (!res.ok) {
-                const errorData = await res.json().catch(() => ({}));
-                throw new Error(errorData.error || errorData.details ? JSON.stringify(errorData.details) : "Failed to create product");
+                let errorMessage = responseData.error || "Failed to create product";
+
+                // If there are validation details, format them nicely
+                if (responseData.details) {
+                    const details = responseData.details;
+                    const errorFields = Object.keys(details).filter(k => k !== "_errors");
+                    if (errorFields.length > 0) {
+                        const fieldErrors = errorFields.map(field => {
+                            const messages = details[field]._errors || [];
+                            return `${field}: ${messages.join(", ")}`;
+                        }).join("; ");
+                        errorMessage = `Ma'lumotlar xato: ${fieldErrors}`;
+                    } else if (details._errors && details._errors.length > 0) {
+                        errorMessage = details._errors.join(", ");
+                    }
+                }
+
+                throw new Error(errorMessage);
             }
 
-            toast.success("Product created successfully");
+            toast.success("Mahsulot muvaffaqiyatli yaratildi");
             router.push("/admin/products");
             router.refresh();
         } catch (error: any) {
-            console.error("Submit error:", error);
-            toast.error(error.message || "Something went wrong");
+            console.error("Submit error details:", error);
+            toast.error(error.message || "Xatolik yuz berdi");
         } finally {
             setLoading(false);
         }
@@ -343,11 +423,19 @@ export default function AddProductPage() {
                             <h2 className="card-title">Narx</h2>
                             <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
-                        <div className="form-group">
-                            <label className="label">Asosiy narx <span className="text-red-500">*</span></label>
-                            <input {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
-                            {errors.price && <span className="error">{errors.price.message}</span>}
-                            <p className="helper-text">Mahsulot narxini belgilang.</p>
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                            <div className="form-group">
+                                <label className="label">Asosiy narx <span className="text-red-500">*</span></label>
+                                <input {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
+                                {errors.price && <span className="error">{errors.price.message}</span>}
+                                <p className="helper-text">Mahsulot narxini belgilang.</p>
+                            </div>
+                            <div className="form-group">
+                                <label className="label">Eski narx (optional)</label>
+                                <input {...register("oldPrice")} type="number" className="input" placeholder="0" />
+                                {errors.oldPrice && <span className="error">{errors.oldPrice.message}</span>}
+                                <p className="helper-text">Chegirmadan oldingi narx.</p>
+                            </div>
                         </div>
 
                         <div className="form-group">
@@ -387,6 +475,7 @@ export default function AddProductPage() {
                         <div className="form-group">
                             <label className="label">Soliq (%)</label>
                             <input {...register("vatAmount")} type="number" className="input" placeholder="0" />
+                            {errors.vatAmount && <span className="error">{errors.vatAmount.message}</span>}
                             <p className="helper-text">QQS miqdorini belgilang.</p>
                         </div>
                     </div>
@@ -461,6 +550,7 @@ export default function AddProductPage() {
                                     })}
                                 </div>
                             </div>
+                            {errors.category && <span className="error">{errors.category.message}</span>}
                             <p className="helper-text">Mahsulotni bir yoki bir nechta kategoriyaga biriktiring.</p>
                             <button type="button" className="btn-light-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>
                                 <Plus size={16} style={{ marginRight: '5px' }} /> Yangi kategoriya yaratish
@@ -503,6 +593,45 @@ export default function AddProductPage() {
                         <div className="form-group">
                             <label className="label">Ombordagi soni</label>
                             <input {...register("stock")} type="number" className="input" placeholder="0" />
+                            {errors.stock && <span className="error">{errors.stock.message}</span>}
+                        </div>
+                    </div>
+
+                    {/* Marketing */}
+                    <div className="card">
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <h2 className="card-title">Marketing</h2>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                        </div>
+                        <div className="form-group">
+                            <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                <input type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
+                                <span>"YANGI" belgisi</span>
+                            </label>
+                        </div>
+                        <div className="form-group">
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
+                                    <span>🚚 Bepul yetkazib berish</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
+                                    <span>🎬 Video-sharh mavjud</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
+                                    <span>🎁 Sovg'asi bor</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
+                                    <span>⚠️ "Kam qoldi" (Stock Alert)</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
+                                    <span>💰 Bo'lib to'lash</span>
+                                </label>
+                            </div>
                         </div>
                     </div>
 
@@ -549,6 +678,6 @@ export default function AddProductPage() {
                 .btn-outline-danger { background: transparent; color: #fa896b; border: 1px solid #fa896b; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
                 .btn-outline-danger:hover { background: #fdede8; }
             `}</style>
-        </div>
+        </div >
     );
 }

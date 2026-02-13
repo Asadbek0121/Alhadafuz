@@ -30,6 +30,7 @@ const createOrderSchema = z.object({
     deliveryMethod: z.string().optional().default('COURIER'),
     total: z.number().nonnegative().optional(),
     couponCode: z.string().optional(),
+    storeId: z.string().optional(),
 });
 
 export async function POST(req: Request) {
@@ -47,7 +48,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
         }
 
-        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode } = result.data;
+        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode, storeId } = result.data;
 
         // 2. Fetch products to prevent price tampering
         let dbProducts: any[] = [];
@@ -168,7 +169,7 @@ export async function POST(req: Request) {
         const initialStatus = method === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
 
         // 4. Create Order Transaction
-        const order = await prisma.$transaction(async (tx) => {
+        const order = await prisma.$transaction(async (tx: any) => {
             // Update coupon usage count if used
             if (validatedCoupon && discountAmount > 0) {
                 await (tx as any).coupon.update({
@@ -185,6 +186,7 @@ export async function POST(req: Request) {
                     status: initialStatus,
                     paymentMethod: paymentMethod,
                     deliveryMethod: deliveryMethod || 'COURIER',
+                    storeId: storeId || null,
 
                     shippingCity: deliveryAddress?.city || 'Toshkent',
                     shippingDistrict: deliveryAddress?.district || '',
@@ -255,7 +257,7 @@ export async function GET(req: Request) {
         });
 
         // Add paymentUrl to orders awaiting payment
-        const ordersWithPayments = orders.map(order => {
+        const ordersWithPayments = orders.map((order: any) => {
             let paymentUrl = null;
             if (order.status === 'AWAITING_PAYMENT' && order.paymentMethod.toLowerCase() === 'click') {
                 paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;

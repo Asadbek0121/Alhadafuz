@@ -83,7 +83,7 @@ export const useCartStore = create<CartState>()(
             itemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
         }),
         {
-            name: 'cart-storage',
+            name: 'hadaf-market-cart-v1', // More unique name to avoid localhost collisions
             onRehydrateStorage: () => (state) => {
                 state?.setHydrated();
             },

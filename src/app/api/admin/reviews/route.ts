@@ -4,24 +4,26 @@ import { auth } from '@/auth';
 
 export async function GET(req: Request) {
     const session = await auth();
+    const userRole = (session?.user as any)?.role;
+    const userId = session?.user?.id;
 
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    if (!session?.user || (userRole !== 'ADMIN' && userRole !== 'VENDOR')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        const rawReviews: any[] = await (prisma as any).$queryRawUnsafe(`
-            SELECT 
-                r.id, r.rating, r.comment, r.status, r."createdAt", r."adminReply",
-                u.name as "userName", u.email as "userEmail",
-                p.title as "productTitle", p.images as "productImages"
-            FROM "Review" r
-            LEFT JOIN "User" u ON r."userId" = u.id
-            LEFT JOIN "Product" p ON r."productId" = p.id
-            ORDER BY r."createdAt" DESC
-        `);
+        const where = userRole === 'VENDOR' ? { product: { vendorId: userId } } : {};
 
-        const reviews = rawReviews.map(r => ({
+        const reviewsData = await prisma.review.findMany({
+            where,
+            include: {
+                user: { select: { name: true, email: true } },
+                product: { select: { title: true, images: true } }
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+
+        const reviews = reviewsData.map((r: any) => ({
             id: r.id,
             rating: r.rating,
             comment: r.comment,
@@ -29,12 +31,12 @@ export async function GET(req: Request) {
             createdAt: r.createdAt,
             adminReply: r.adminReply,
             user: {
-                name: r.userName,
-                email: r.userEmail
+                name: r.user?.name || "Noma'lum",
+                email: r.user?.email || ""
             },
             product: {
-                title: r.productTitle,
-                image: Array.isArray(r.productImages) && r.productImages.length > 0 ? r.productImages[0] : ""
+                title: r.product?.title || "O'chirilgan mahsulot",
+                image: r.product?.images ? (typeof r.product.images === 'string' ? JSON.parse(r.product.images)[0] : r.product.images[0]) : ""
             }
         }));
 

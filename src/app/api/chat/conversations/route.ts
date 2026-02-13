@@ -5,7 +5,8 @@ import { auth } from '@/auth';
 
 export async function GET(req: Request) {
     const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
+    const userRole = (session?.user as any)?.role;
+    if (userRole !== 'ADMIN' && userRole !== 'VENDOR') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

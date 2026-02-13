@@ -245,6 +245,14 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                     oldPrice={p.oldPrice}
                                     image={p.image || '/placeholder.png'}
                                     isSale={p.isSale}
+                                    discountType={p.discountType}
+                                    isNew={p.isNew}
+                                    freeDelivery={p.freeDelivery}
+                                    hasVideo={p.hasVideo}
+                                    hasGift={p.hasGift}
+                                    showLowStock={p.showLowStock}
+                                    allowInstallment={p.allowInstallment}
+                                    stock={p.stock}
                                 />
                             ))}
                         </div>
@@ -353,6 +361,14 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                         oldPrice={p.oldPrice}
                                         image={p.image || '/placeholder.png'}
                                         isSale={p.isSale}
+                                        discountType={p.discountType}
+                                        isNew={p.isNew}
+                                        freeDelivery={p.freeDelivery}
+                                        hasVideo={p.hasVideo}
+                                        hasGift={p.hasGift}
+                                        showLowStock={p.showLowStock}
+                                        allowInstallment={p.allowInstallment}
+                                        stock={p.stock}
                                     />
                                 ))}
                             </div>

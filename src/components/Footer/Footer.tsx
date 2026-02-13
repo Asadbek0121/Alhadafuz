@@ -7,6 +7,9 @@ import { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Montserrat } from "next/font/google";
 import InstallAppButtons from '../InstallAppButtons';
+import VendorApplicationModal from '../VendorApplicationModal';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 
 const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
@@ -24,6 +27,8 @@ export default function Footer() {
         address: "Termiz sh, At-Termiziy ko'chasi",
         email: 'info@hadaf.uz'
     });
+    const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
+    const tAbout = useTranslations('About');
 
     const isHome = pathname === '/' || pathname === '/uz' || pathname === '/ru' || pathname === '/en';
 
@@ -46,6 +51,30 @@ export default function Footer() {
 
     return (
         <footer className={`bg-[#111827] text-gray-300 border-t border-gray-800 ${!isHome ? 'hidden lg:block' : ''}`}>
+            {/* Partnership Section - Moved from About Page */}
+            <div className="container mx-auto px-4 pt-12">
+                <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-950 rounded-3xl p-6 md:p-10 text-center md:text-left text-white relative overflow-hidden shadow-2xl group border border-blue-500/20">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-32 -mt-32"></div>
+                    <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                        <div className="flex-1">
+                            <h2 className="text-xl md:text-3xl font-black mb-3 leading-tight tracking-tight">
+                                {tAbout('cta_title')}
+                            </h2>
+                            <p className="text-blue-100/70 max-w-xl text-sm md:text-base font-medium">
+                                {tAbout('cta_desc')}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setIsVendorModalOpen(true)}
+                            className="whitespace-nowrap bg-white text-blue-900 px-6 py-3 md:px-10 md:py-4 rounded-2xl font-black uppercase text-xs md:text-sm tracking-widest shadow-xl shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-3 group/btn"
+                        >
+                            {tAbout('cta_btn')}
+                            <ArrowRight size={20} className="transition-transform group-hover/btn:translate-x-1" />
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             {/* Main Footer Content */}
             <div className="container mx-auto px-4 py-12 md:py-16">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8">
@@ -145,6 +174,11 @@ export default function Footer() {
                     </div>
                 </div>
             </div>
+
+            <VendorApplicationModal
+                isOpen={isVendorModalOpen}
+                onClose={() => setIsVendorModalOpen(false)}
+            />
         </footer>
     );
 }

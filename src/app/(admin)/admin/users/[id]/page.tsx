@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { User, ShoppingCart, Heart, MapPin, Trash2, Clock, Package } from "lucide-react";
 import DeleteUserButton from "./DeleteUserButton";
+import UserRoleSwitcher from "./UserRoleSwitcher";
 import { auth } from "@/auth";
 
 export default async function UserDetailPage(props: { params: Promise<{ id: string }> }) {
@@ -163,7 +164,15 @@ export default async function UserDetailPage(props: { params: Promise<{ id: stri
                             </div>
                             <div>
                                 <label style={{ fontSize: '12px', color: '#888' }}>Rol</label>
-                                <div>{user.role}</div>
+                                <UserRoleSwitcher userId={user.id} currentRole={user.role} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '12px', color: '#888' }}>Tug'ilgan sana</label>
+                                <div>{user.dateOfBirth ? new Date(user.dateOfBirth).toLocaleDateString() : "Kiritilmagan"}</div>
+                            </div>
+                            <div>
+                                <label style={{ fontSize: '12px', color: '#888' }}>Jinsi</label>
+                                <div>{user.gender === 'MALE' ? 'Erkak' : user.gender === 'FEMALE' ? 'Ayol' : 'Kiritilmagan'}</div>
                             </div>
                         </div>
                     </div>

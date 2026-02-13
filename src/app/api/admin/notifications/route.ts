@@ -5,7 +5,9 @@ import { auth } from '@/auth';
 
 export async function GET(req: Request) {
     const session = await auth();
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    const userRole = (session?.user as any)?.role;
+
+    if (!session?.user || (userRole !== 'ADMIN' && userRole !== 'VENDOR')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -16,6 +18,12 @@ export async function GET(req: Request) {
         if (getAll) {
             // Fetch all notifications (history for admin page)
             const notifications = await prisma.notification.findMany({
+                where: {
+                    OR: [
+                        { userId: null },
+                        { userId: session.user.id }
+                    ]
+                },
                 orderBy: { createdAt: 'desc' },
                 take: 50,
                 include: {
@@ -23,30 +31,41 @@ export async function GET(req: Request) {
                         select: { name: true, email: true }
                     }
                 }
-            });
+            }).catch(() => []); // Return empty if table missing
             return NextResponse.json(notifications);
         }
 
         // Fetch notifications for the admin (header dropdown)
         const notifications = await prisma.notification.findMany({
-            where: { userId: session.user.id },
+            where: {
+                OR: [
+                    { userId: session.user.id },
+                    { userId: null }
+                ]
+            },
             orderBy: { createdAt: 'desc' },
             take: 20
-        });
+        }).catch(() => []);
 
         const unreadCount = await prisma.notification.count({
-            where: { userId: session.user.id, isRead: false }
-        });
+            where: {
+                userId: session.user.id,
+                isRead: false
+            }
+        }).catch(() => 0);
 
         return NextResponse.json({ notifications, unreadCount });
     } catch (error) {
-        return NextResponse.json({ error: 'Error fetching notifications' }, { status: 500 });
+        console.error("Notifications fetch error:", error);
+        return NextResponse.json({ notifications: [], unreadCount: 0 }); // Fallback
     }
 }
 
 export async function POST(req: Request) {
     const session = await auth();
-    if (!session?.user || session.user.role !== 'ADMIN') {
+    const userRole = (session?.user as any)?.role;
+
+    if (!session?.user || (userRole !== 'ADMIN' && userRole !== 'VENDOR')) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -92,14 +111,28 @@ export async function POST(req: Request) {
                     }
                 });
             } else if (type === 'personal' && userId) {
-                await prisma.notification.create({
-                    data: {
-                        title,
-                        message,
-                        type: 'PERSONAL',
-                        userId: userId
+                // Try to find user by ID first, then by uniqueId (readable ID like H-0001)
+                let userMatch = await prisma.user.findFirst({
+                    where: {
+                        OR: [
+                            { id: userId },
+                            { uniqueId: userId }
+                        ]
                     }
                 });
+
+                if (userMatch) {
+                    await prisma.notification.create({
+                        data: {
+                            title,
+                            message,
+                            type: 'PERSONAL',
+                            userId: userMatch.id
+                        }
+                    });
+                } else {
+                    return NextResponse.json({ error: 'User not found' }, { status: 404 });
+                }
             }
             return NextResponse.json({ success: true });
         }

@@ -18,7 +18,7 @@ export default function ProfileOverviewPage() {
     const tProfile = useTranslations('Profile');
     const tHeader = useTranslations('Header');
     const currentLocale = useLocale();
-    const { data: session, status } = useSession();
+    const { data: session, status, update: updateSession } = useSession();
     const [statsData, setStatsData] = useState({
         ordersCount: 0,
         wishlistCount: 0,
@@ -39,17 +39,67 @@ export default function ProfileOverviewPage() {
 
     useEffect(() => {
         if (session?.user) {
+            // 1. Fetch Stats
             fetch('/api/user/stats')
                 .then(res => res.json())
                 .then(data => {
                     if (!data.error) setStatsData(data);
                 })
                 .catch(err => console.error(err));
+
+            // 2. Fetch Fresh User Info to sync session if role/ID changed
+            fetch('/api/user/info')
+                .then(res => res.json())
+                .then(dbUser => {
+                    if (!dbUser) return;
+
+                    const sessionRole = (session.user as any).role;
+                    const sessionId = (session.user as any).uniqueId;
+
+                    const roleMismatch = dbUser.role !== sessionRole;
+                    const idMismatch = dbUser.uniqueId !== sessionId;
+
+                    if (roleMismatch || idMismatch) {
+                        console.log("Session out of sync with DB. Syncing...");
+                        updateSession({
+                            role: dbUser.role,
+                            uniqueId: dbUser.uniqueId
+                        }).then(() => {
+                            // After sync, check if ID prefix itself needs fixing for the new role
+                            const expectedPrefix = dbUser.role === 'ADMIN' ? 'A-' : (dbUser.role === 'VENDOR' ? 'V-' : 'H-');
+                            if (dbUser.uniqueId && !dbUser.uniqueId.startsWith(expectedPrefix)) {
+                                fetch('/api/user/fix-my-id', { method: 'POST' })
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        if (data.success) {
+                                            updateSession({ uniqueId: data.uniqueId }).then(() => window.location.reload());
+                                        }
+                                    });
+                            }
+                        });
+                    } else {
+                        // Role matches session, but check if ID prefix itself is wrong for this role
+                        const expectedPrefix = dbUser.role === 'ADMIN' ? 'A-' : (dbUser.role === 'VENDOR' ? 'V-' : 'H-');
+                        if (dbUser.uniqueId && !dbUser.uniqueId.startsWith(expectedPrefix)) {
+                            console.log("Fixing ID prefix for role:", dbUser.role);
+                            fetch('/api/user/fix-my-id', { method: 'POST' })
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        updateSession({ uniqueId: data.uniqueId }).then(() => window.location.reload());
+                                    }
+                                });
+                        }
+                    }
+                })
+                .catch(err => console.error("Session sync failed:", err));
         }
     }, [session]);
 
-    // Check for admin role
+    // Check for panel access (Admin or Vendor)
     const isAdmin = (user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'ADMIN';
+    const isVendor = (user as any)?.role === 'VENDOR' || (session?.user as any)?.role === 'VENDOR';
+    const hasPanelAccess = isAdmin || isVendor;
 
     const stats = [
         { label: tProfile('active_orders'), value: statsData.ordersCount.toString(), icon: Package, color: "text-blue-600", bg: "bg-blue-50", href: "/profile/orders" },
@@ -58,7 +108,6 @@ export default function ProfileOverviewPage() {
     ];
 
     const mobileMenu = [
-        ...(isAdmin ? [{ icon: LayoutDashboard, label: tProfile('admin_panel'), href: "/admin", color: "text-purple-600", value: "" }] : []),
         { icon: MapPin, label: tProfile('my_addresses'), href: "/profile/addresses", color: "text-orange-500" },
         { icon: Bell, label: tProfile('notifications'), href: "/profile/notifications", color: "text-red-500" },
         { icon: Globe, label: tProfile('app_language'), href: "/profile/settings", color: "text-blue-500", value: tProfile(currentLocale) },
@@ -230,10 +279,10 @@ export default function ProfileOverviewPage() {
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
-                            {isAdmin && (
+                            {hasPanelAccess && (
                                 <NextLink href="/admin" className="px-5 py-3 bg-white text-blue-700 hover:bg-gray-50 rounded-xl transition-all shadow-lg flex items-center gap-2 font-bold ring-2 ring-white/50">
                                     <LayoutDashboard size={20} />
-                                    {tProfile('admin_panel')}
+                                    {isAdmin ? tProfile('admin_panel') : "Sotuvchi paneli"}
                                 </NextLink>
                             )}
                             <Link href="/profile/settings" className="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-xl transition-all shadow-lg flex items-center gap-2 font-medium">

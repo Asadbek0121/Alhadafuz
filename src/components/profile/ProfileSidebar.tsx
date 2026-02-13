@@ -17,11 +17,19 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
+import { useSession } from "next-auth/react";
+import NextLink from "next/link";
 
 export default function ProfileSidebar() {
     const pathname = usePathname();
     const tProfile = useTranslations('Profile');
     const { logout } = useUserStore();
+    const { data: session } = useSession();
+
+    const userRole = (session?.user as any)?.role;
+    const isAdmin = userRole === 'ADMIN';
+    const isVendor = userRole === 'VENDOR';
+    const hasPanelAccess = isAdmin || isVendor;
 
     const menuItems = [
         { title: tProfile('overview'), href: "/profile", icon: LayoutGrid },
@@ -43,10 +51,12 @@ export default function ProfileSidebar() {
         <aside className="hidden lg:flex flex-col w-[280px] shrink-0">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
                 <div className="p-4 space-y-1">
-                    {menuItems.map((item) => {
+                    {menuItems.map((item: any) => {
                         const isActive = pathname === item.href;
+                        const LinkComponent = item.isExternal ? NextLink : Link;
+
                         return (
-                            <Link
+                            <LinkComponent
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
@@ -65,7 +75,7 @@ export default function ProfileSidebar() {
                                     )}
                                 />
                                 <span>{item.title}</span>
-                            </Link>
+                            </LinkComponent>
                         );
                     })}
                 </div>

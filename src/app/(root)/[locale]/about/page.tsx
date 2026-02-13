@@ -1,16 +1,13 @@
 "use client";
 
-import { useState } from 'react';
 import {
     Users, Award, ShieldCheck, Zap, MapPin, TrendingUp, Leaf, BookOpen,
     Smile, ShoppingBag, Calendar, Truck, CheckCircle, Target, ArrowRight
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import VendorApplicationModal from '@/components/VendorApplicationModal';
 import { useTranslations } from 'next-intl';
 
 export default function AboutPage() {
-    const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
     const t = useTranslations('About');
 
     return (
@@ -343,29 +340,6 @@ export default function AboutPage() {
                 </div>
             </div>
 
-            {/* 7. Call to Action */}
-            <div className="container pb-16 md:pb-20">
-                <div className="bg-gradient-to-r from-gray-900 to-gray-800 rounded-3xl p-8 md:p-12 text-center text-white relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-20"></div>
-                    <div className="relative z-10">
-                        <h2 className="text-2xl md:text-4xl font-bold mb-4 md:mb-6">{t('cta_title')}</h2>
-                        <p className="text-gray-400 mb-6 md:mb-8 max-w-2xl mx-auto text-sm md:text-base">
-                            {t('cta_desc')}
-                        </p>
-                        <button
-                            onClick={() => setIsVendorModalOpen(true)}
-                            className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 md:px-8 md:py-4 rounded-xl font-bold shadow-lg shadow-blue-600/50 transition-all transform hover:scale-105 flex items-center gap-2 mx-auto text-sm md:text-base"
-                        >
-                            {t('cta_btn')} <ArrowRight size={20} />
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            <VendorApplicationModal
-                isOpen={isVendorModalOpen}
-                onClose={() => setIsVendorModalOpen(false)}
-            />
         </div>
     );
 }

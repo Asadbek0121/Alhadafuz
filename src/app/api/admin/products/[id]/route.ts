@@ -6,18 +6,24 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+    const session = await auth();
+    const userRole = (session?.user as any)?.role;
+    const userId = session?.user?.id;
+
     const { id } = await context.params;
     try {
-        // Fetch product with raw SQL to ensure we get all columns (categoryId, brand, status, etc)
-        const productRows: any[] = await (prisma as any).$queryRawUnsafe(`
-            SELECT * FROM "Product" WHERE "id" = '${id.replace(/'/g, "''")}'
-        `);
+        const product = await (prisma as any).product.findUnique({
+            where: { id }
+        });
 
-        if (!productRows || productRows.length === 0) {
+        if (!product) {
             return NextResponse.json({ error: 'Product not found' }, { status: 404 });
         }
 
-        const product = productRows[0];
+        // Security check for Vendors
+        if (userRole === "VENDOR" && product.vendorId !== userId) {
+            return NextResponse.json({ error: 'Ruxsat etilmagan' }, { status: 403 });
+        }
 
         // Fetch category relation manually (old single category)
         let categoryRel = null;
@@ -34,8 +40,8 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
         const categoriesRows: any[] = await (prisma as any).$queryRawUnsafe(`
             SELECT c.id, c.name, c.slug 
             FROM "Category" c
-            INNER JOIN "_ProductToCategory" pc ON c.id = pc."B"
-            WHERE pc."A" = '${id.replace(/'/g, "''")}'
+            INNER JOIN "_ProductToCategory" pc ON c.id = pc."A"
+            WHERE pc."B" = '${id.replace(/'/g, "''")}'
         `);
 
         // Fetch reviews manually to get adminReply
@@ -59,8 +65,34 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
             ? mappedReviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewsCount
             : (product.rating || 0);
 
+        // Extract marketing flags from attributes JSON for the edit form
+        let isNew = true; // Default
+        let freeDelivery = false;
+        let hasVideo = false;
+        let hasGift = false;
+        let showLowStock = false;
+        let allowInstallment = false;
+
+        if (product.attributes) {
+            try {
+                const attrs = JSON.parse(product.attributes);
+                if (typeof attrs.isNew !== 'undefined') isNew = attrs.isNew;
+                if (typeof attrs.freeDelivery !== 'undefined') freeDelivery = attrs.freeDelivery;
+                if (typeof attrs.hasVideo !== 'undefined') hasVideo = attrs.hasVideo;
+                if (typeof attrs.hasGift !== 'undefined') hasGift = attrs.hasGift;
+                if (typeof attrs.showLowStock !== 'undefined') showLowStock = attrs.showLowStock;
+                if (typeof attrs.allowInstallment !== 'undefined') allowInstallment = attrs.allowInstallment;
+            } catch (e) { }
+        }
+
         return NextResponse.json({
             ...product,
+            isNew,
+            freeDelivery,
+            hasVideo,
+            hasGift,
+            showLowStock,
+            allowInstallment,
             category: categoryRel ? { id: categoryRel.id, name: categoryRel.name } : product.category,
             categories: categoriesRows, // M-N categories
             reviews: mappedReviews,
@@ -75,7 +107,10 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
 
 export async function PUT(req: Request, props: { params: Promise<{ id: string }> }) {
     const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
+    const userRole = (session?.user as any)?.role;
+    const userId = session?.user?.id;
+
+    if (userRole !== 'ADMIN' && userRole !== 'VENDOR') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -83,6 +118,19 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
     const body = await req.json();
 
     try {
+        // Fetch product to check ownership
+        const currentProduct = await (prisma as any).product.findUnique({
+            where: { id }
+        });
+
+        if (!currentProduct) {
+            return NextResponse.json({ error: 'Mahsulot topilmadi' }, { status: 404 });
+        }
+
+        if (userRole === "VENDOR" && currentProduct.vendorId !== userId) {
+            return NextResponse.json({ error: 'Ruxsat etilmagan' }, { status: 403 });
+        }
+
         const {
             title,
             description,
@@ -97,12 +145,19 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             categoryId,
             categoryIds, // New M-N support
             discountType,
+            isNew,
+            freeDelivery,
+            hasVideo,
+            hasGift,
+            showLowStock,
+            allowInstallment,
             attributes,
             specs,
             mxikCode,
             packageCode,
             vatPercent,
-            brand
+            brand,
+            vendorId // Admin can change vendor
         } = body;
 
         const updateData: any = {
@@ -120,6 +175,31 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             vatPercent: vatPercent !== undefined ? Number(vatPercent) : undefined,
             brand,
         };
+
+        if (userRole === 'ADMIN' && vendorId !== undefined) {
+            updateData.vendorId = vendorId === '' ? null : vendorId;
+        }
+
+        // Handle metadata within attributes since we can't update schema
+        let finalAttributes = attributes;
+        if (isNew !== undefined || freeDelivery !== undefined || hasVideo !== undefined || hasGift !== undefined || showLowStock !== undefined || allowInstallment !== undefined) {
+            let attrsObj: any = {};
+            try {
+                if (typeof attributes === 'string') attrsObj = JSON.parse(attributes);
+                else if (typeof attributes === 'object' && attributes !== null) attrsObj = attributes;
+            } catch (e) {
+                console.error("Error parsing attributes for metadata:", e);
+            }
+
+            if (isNew !== undefined) attrsObj.isNew = Boolean(isNew);
+            if (freeDelivery !== undefined) attrsObj.freeDelivery = Boolean(freeDelivery);
+            if (hasVideo !== undefined) attrsObj.hasVideo = Boolean(hasVideo);
+            if (hasGift !== undefined) attrsObj.hasGift = Boolean(hasGift);
+            if (showLowStock !== undefined) attrsObj.showLowStock = Boolean(showLowStock);
+            if (allowInstallment !== undefined) attrsObj.allowInstallment = Boolean(allowInstallment);
+
+            finalAttributes = attrsObj;
+        }
 
         // Handle M-N categories (new approach)
         if (categoryIds && Array.isArray(categoryIds) && categoryIds.length > 0) {
@@ -149,8 +229,8 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             updateData.images = Array.isArray(images) ? JSON.stringify(images) : images;
         }
 
-        if (attributes) {
-            updateData.attributes = typeof attributes === 'object' ? JSON.stringify(attributes) : attributes;
+        if (finalAttributes) {
+            updateData.attributes = typeof finalAttributes === 'object' ? JSON.stringify(finalAttributes) : finalAttributes;
         }
 
         if (specs && !updateData.attributes) {
@@ -159,6 +239,8 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
 
         // Remove undefined fields
         Object.keys(updateData).forEach(key => updateData[key] === undefined && delete updateData[key]);
+
+        console.log("[PUT /api/admin/products/[id]] UpdateData:", JSON.stringify(updateData, null, 2));
 
         // Use Prisma update for M-N relation support
         const updatedProduct = await (prisma as any).product.update({
@@ -171,23 +253,37 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
 
         return NextResponse.json(updatedProduct);
     } catch (error: any) {
-        console.error("Product update error:", error);
+        console.error("Critical Product update error:", error);
         return NextResponse.json({
             error: 'Failed to update product',
-            details: error.message || String(error)
+            details: error.message || String(error),
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         }, { status: 500 });
     }
 }
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
-    if (session?.user?.role !== 'ADMIN') {
+    const userRole = (session?.user as any)?.role;
+    const userId = session?.user?.id;
+
+    if (userRole !== 'ADMIN' && userRole !== 'VENDOR') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const { id } = await params;
 
     try {
+        const product = await (prisma as any).product.findUnique({
+            where: { id }
+        });
+
+        if (!product) return NextResponse.json({ error: 'Topilmadi' }, { status: 404 });
+
+        if (userRole === "VENDOR" && product.vendorId !== userId) {
+            return NextResponse.json({ error: 'Ruxsat etilmagan' }, { status: 403 });
+        }
+
         // Soft delete logic
         await (prisma as any).product.update({
             where: { id },
@@ -198,7 +294,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         if ((prisma as any).activityLog) {
             await (prisma as any).activityLog.create({
                 data: {
-                    adminId: session.user.id,
+                    adminId: session?.user?.id,
                     action: 'DELETE_PRODUCT',
                     details: `Product ${id} marked as deleted`
                 }

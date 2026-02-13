@@ -10,28 +10,29 @@ import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersH
 import { signOut, useSession } from 'next-auth/react';
 
 const menuItems = [
-    { name: "Boshqaruv Paneli", icon: <Layers size={20} />, path: "/admin" },
-    { name: "Foydalanuvchilar", icon: <Users size={20} />, path: "/admin/users" },
-    { name: "Mahsulotlar", icon: <ShoppingBag size={20} />, path: "/admin/products" },
-    { name: "Kuponlar", icon: <Ticket size={20} />, path: "/admin/coupons" },
-    { name: "Xabarlar", icon: <MessageCircle size={20} />, path: "/admin/chat" },
-    { name: "Bildirishnomalar", icon: <Bell size={20} />, path: "/admin/notifications" },
-    { name: "Buyurtmalar", icon: <FileStack size={20} />, path: "/admin/orders" },
-    { name: "Hisob-fakturalar", icon: <FileText size={20} />, path: "/admin/invoices" },
-    { name: "Kategoriyalar", icon: <LayoutGrid size={20} />, path: "/admin/categories" },
-    { name: "Bannerlar", icon: <Palette size={20} />, path: "/admin/banners" },
-    { name: "Do'konlar", icon: <MapPin size={20} />, path: "/admin/stores" },
-    { name: "Yetkazib berish", icon: <Truck size={20} />, path: "/admin/shipping" },
-    { name: "To'lovlar", icon: <CreditCard size={20} />, path: "/admin/payments" },
-    { name: "Sharhlar", icon: <Star size={20} />, path: "/admin/reviews" },
-    { name: "Sozlamalar", icon: <SlidersHorizontal size={20} />, path: "/admin/settings" },
-    // { name: "Autentifikatsiya", icon: <Lock size={20} />, path: "/admin/auth" }, // Usually not needed in sidebar if already logged in
+    { name: "Boshqaruv Paneli", icon: <Layers size={20} />, path: "/admin", roles: ["ADMIN", "VENDOR"] },
+    { name: "Foydalanuvchilar", icon: <Users size={20} />, path: "/admin/users", roles: ["ADMIN"] },
+    { name: "Mahsulotlar", icon: <ShoppingBag size={20} />, path: "/admin/products", roles: ["ADMIN", "VENDOR"] },
+    { name: "Kuponlar", icon: <Ticket size={20} />, path: "/admin/coupons", roles: ["ADMIN"] },
+    { name: "Xabarlar", icon: <MessageCircle size={20} />, path: "/admin/chat", roles: ["ADMIN", "VENDOR"] },
+    { name: "Bildirishnomalar", icon: <Bell size={20} />, path: "/admin/notifications", roles: ["ADMIN"] },
+    { name: "Buyurtmalar", icon: <FileStack size={20} />, path: "/admin/orders", roles: ["ADMIN", "VENDOR"] },
+    { name: "Hisob-fakturalar", icon: <FileText size={20} />, path: "/admin/invoices", roles: ["ADMIN", "VENDOR"] },
+    { name: "Kategoriyalar", icon: <LayoutGrid size={20} />, path: "/admin/categories", roles: ["ADMIN"] },
+    { name: "Bannerlar", icon: <Palette size={18} />, path: "/admin/banners", roles: ["ADMIN"] },
+    { name: "Do'konlar", icon: <MapPin size={20} />, path: "/admin/stores", roles: ["ADMIN"] },
+    { name: "Yetkazib berish", icon: <Truck size={20} />, path: "/admin/shipping", roles: ["ADMIN"] },
+    { name: "To'lovlar", icon: <CreditCard size={20} />, path: "/admin/payments", roles: ["ADMIN"] },
+    { name: "Sharhlar", icon: <Star size={20} />, path: "/admin/reviews", roles: ["ADMIN", "VENDOR"] },
+    { name: "Sozlamalar", icon: <SlidersHorizontal size={20} />, path: "/admin/settings", roles: ["ADMIN"] },
 ];
 
 export default function AdminSidebar() {
     const pathname = usePathname();
     const { data: session } = useSession();
-    const user = session?.user;
+    const userRole = (session?.user as any)?.role || "USER";
+
+    const filteredItems = menuItems.filter(item => item.roles.includes(userRole));
 
     return (
         <aside style={{
@@ -51,7 +52,9 @@ export default function AdminSidebar() {
             <div style={{ padding: '0 10px 30px 10px', display: 'flex', alignItems: 'center', gap: '0' }}>
                 <img src="/logo.png" alt="Hadaf Logo" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
                 <span className={`${titanOne.className} text-3xl leading-none text-[#0052FF] ml-0 pt-1`}>Hadaf</span>
-                <span className="text-sm font-semibold text-slate-500 ml-2 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">Admin</span>
+                <span className="text-sm font-semibold text-slate-500 ml-2 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
+                    {userRole === "VENDOR" ? "Sotuvchi" : "Admin"}
+                </span>
             </div>
 
             {/* Menu */}
@@ -60,7 +63,7 @@ export default function AdminSidebar() {
                     Asosiy
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                    {menuItems.map((item, index) => {
+                    {filteredItems.map((item, index) => {
                         const isActive = pathname === item.path;
                         return (
                             <li key={index}>
@@ -91,15 +94,15 @@ export default function AdminSidebar() {
             {/* User Profile Mini */}
             <div style={{ marginTop: 'auto', background: '#f2f6fa', borderRadius: '12px', padding: '15px', display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', overflow: 'hidden', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {user?.image ? (
-                        <img src={user.image} alt={user.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    {session?.user?.image ? (
+                        <img src={session.user.image} alt={session.user.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                         <Users size={20} color="#0085db" />
                     )}
                 </div>
                 <div style={{ flex: 1 }}>
-                    <h6 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#2A3547' }}>{user?.name || 'Admin'}</h6>
-                    <span style={{ fontSize: '12px', color: '#5A6A85' }}>{user?.role || 'Boshqaruvchi'}</span>
+                    <h6 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#2A3547' }}>{session?.user?.name || 'Admin'}</h6>
+                    <span style={{ fontSize: '12px', color: '#5A6A85' }}>{(session?.user as any)?.role || 'Boshqaruvchi'}</span>
                 </div>
                 <button onClick={() => signOut()} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#0085db' }}>
                     <LogOut size={20} />

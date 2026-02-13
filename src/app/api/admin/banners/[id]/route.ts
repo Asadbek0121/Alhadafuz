@@ -26,17 +26,28 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     const { id } = await context.params;
     const body = await req.json();
-    const { title, image, link, position, isActive, categoryIds, startDate, endDate, variant } = body;
+    const {
+        title, description, image, link, position, isActive,
+        categoryIds, startDate, endDate, variant, order,
+        price, oldPrice, discount, productId, targetCategoryId
+    } = body;
 
     try {
         await (prisma as any).banner.update({
             where: { id },
             data: {
                 title,
+                description,
                 image,
                 link,
                 position,
                 isActive,
+                order: order || 0,
+                price: price || null,
+                oldPrice: oldPrice || null,
+                discount,
+                productId: productId || null,
+                targetCategoryId: targetCategoryId || null,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
                 variant,

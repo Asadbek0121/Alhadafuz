@@ -7,41 +7,61 @@ export const dynamic = 'force-dynamic';
 
 const profileSchema = z.object({
     name: z.string().min(2),
-    email: z.string().email(),
-    phone: z.string().min(9),
+    username: z.string().min(3).optional().or(z.literal("")),
+    email: z.string().email().optional().or(z.literal("")),
+    phone: z.string().min(9).optional().or(z.literal("")),
     dateOfBirth: z.string().optional().or(z.literal("")),
     gender: z.string().optional().or(z.literal("")),
+    image: z.string().optional().or(z.literal("")),
 });
 
 export async function GET(req: Request) {
     const session = await auth();
-    if (!session?.user?.email) return new NextResponse("Unauthorized", { status: 401 });
+    const userId = session?.user?.id;
+
+    if (!userId) {
+        return new NextResponse("Unauthorized", { status: 401 });
+    }
+
     // Fetch fresh user data to include new fields
-    const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+    const user = await prisma.user.findUnique({
+        where: { id: userId }
+    });
+
     return NextResponse.json(user);
 }
 
 export async function PUT(req: Request) {
     try {
         const session = await auth();
-        if (!session?.user?.email) {
+        const userId = session?.user?.id;
+
+        if (!userId) {
             return new NextResponse("Unauthorized", { status: 401 });
         }
 
         const body = await req.json();
         const validatedData = profileSchema.parse(body);
 
-        const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+        const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return new NextResponse("User not found", { status: 404 });
 
-        // Check if new email/phone is taken by others
-        if (validatedData.email !== user.email) {
+        // Check if new email/phone/username is taken by others
+        if (validatedData.email && validatedData.email !== user.email) {
             const exists = await prisma.user.findFirst({
                 where: { email: validatedData.email, NOT: { id: user.id } }
             });
             if (exists) return new NextResponse("Email already taken", { status: 409 });
         }
-        if (validatedData.phone !== user.phone) {
+
+        if (validatedData.username && validatedData.username !== user.username) {
+            const exists = await prisma.user.findFirst({
+                where: { username: validatedData.username, NOT: { id: user.id } }
+            });
+            if (exists) return new NextResponse("Username already taken", { status: 409 });
+        }
+
+        if (validatedData.phone && validatedData.phone !== user.phone) {
             const exists = await prisma.user.findFirst({
                 where: { phone: validatedData.phone, NOT: { id: user.id } }
             });
@@ -52,8 +72,10 @@ export async function PUT(req: Request) {
             where: { id: user.id },
             data: {
                 name: validatedData.name,
-                email: validatedData.email,
-                phone: validatedData.phone,
+                username: validatedData.username || null,
+                email: validatedData.email || null,
+                phone: validatedData.phone || null,
+                image: validatedData.image || undefined,
                 dateOfBirth: validatedData.dateOfBirth ? new Date(validatedData.dateOfBirth) : null,
                 gender: validatedData.gender || null,
             }

@@ -7,13 +7,70 @@ import { Button } from "@/components/ui/button";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
 import OrderScanner from "@/components/admin/OrderScanner";
 import CancelOrderButton from "./CancelOrderButton";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
-async function getOrders(where: any, skip: number, take: number, search: string) {
-    const finalWhere = {
+async function getOrders(where: any, skip: number, take: number, search: string, userId: string, userRole: string) {
+    const isVendor = userRole === "VENDOR";
+
+    if (isVendor) {
+        const columns: any[] = await (prisma as any).$queryRawUnsafe(`
+            SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
+        `);
+        const hasVendorId = columns.map(c => c.column_name).includes('vendorId');
+        const joinCondition = hasVendorId ? `WHERE p."vendorId" = '${userId}'` : `WHERE 1=0`;
+
+        let sql = `
+            SELECT o.*, 
+                JSON_AGG(oi.*) as items,
+                u.name as "userName", u.email as "userEmail", u.phone as "userPhone"
+            FROM "Order" o
+            JOIN "OrderItem" oi ON o.id = oi."orderId"
+            JOIN "Product" p ON oi."productId" = p.id
+            LEFT JOIN "User" u ON o."userId" = u.id
+            ${joinCondition}
+        `;
+
+        if (where.status) {
+            sql += ` AND o.status = '${where.status}'`;
+        }
+
+        if (search) {
+            sql += ` AND (o.id ILIKE '%${search}%' OR u.name ILIKE '%${search}%' OR u.phone ILIKE '%${search}%')`;
+        }
+
+        sql += ` GROUP BY o.id, u.id ORDER BY o."createdAt" DESC LIMIT ${take} OFFSET ${skip}`;
+
+        let countSql = `
+            SELECT COUNT(DISTINCT o.id)::int as count 
+            FROM "Order" o
+            JOIN "OrderItem" oi ON o.id = oi."orderId"
+            JOIN "Product" p ON oi."productId" = p.id
+            LEFT JOIN "User" u ON o."userId" = u.id
+            ${joinCondition}
+        `;
+        if (where.status) countSql += ` AND o.status = '${where.status}'`;
+        if (search) countSql += ` AND (o.id ILIKE '%${search}%' OR u.name ILIKE '%${search}%' OR u.phone ILIKE '%${search}%')`;
+
+        const [orders, countResult]: [any[], any[]] = await Promise.all([
+            (prisma as any).$queryRawUnsafe(sql),
+            (prisma as any).$queryRawUnsafe(countSql)
+        ]);
+
+        const mappedOrders = orders.map(order => ({
+            ...order,
+            user: { name: (order as any).userName, email: (order as any).userEmail, phone: (order as any).userPhone }
+        }));
+
+        return [mappedOrders, countResult[0]?.count || 0];
+    }
+
+    const baseWhere: any = {};
+    const finalWhere: any = {
         ...where,
+        ...baseWhere,
         ...(search ? {
             OR: [
-                // { deliveryToken: search }, // Temporarily disabled
                 { id: search },
                 ...(search.length < 20 ? [{ id: { endsWith: search } }] : []),
                 { user: { name: { contains: search } } },
@@ -23,14 +80,14 @@ async function getOrders(where: any, skip: number, take: number, search: string)
     };
 
     return await Promise.all([
-        prisma.order.findMany({
+        (prisma as any).order.findMany({
             where: finalWhere,
             include: { user: true, items: true },
             orderBy: { createdAt: "desc" },
             skip,
             take,
         }),
-        prisma.order.count({ where: finalWhere }),
+        (prisma as any).order.count({ where: finalWhere }),
     ]);
 }
 
@@ -39,6 +96,13 @@ export default async function AdminOrdersPage({
 }: {
     searchParams: Promise<{ status?: string; page?: string; search?: string }>;
 }) {
+    const session = await auth();
+    if (!session?.user) redirect('/auth/login');
+
+    const userRole = (session.user as any).role;
+    const userId = session.user.id as string;
+    const isVendor = userRole === "VENDOR";
+
     const params = await searchParams;
     const statusFilter = params.status;
     const search = params.search || "";
@@ -51,7 +115,7 @@ export default async function AdminOrdersPage({
     let orders: any[] = [];
     let total = 0;
     try {
-        [orders, total] = await getOrders(where, skip, limit, search);
+        [orders, total] = await getOrders(where, skip, limit, search, userId, userRole);
     } catch (e) {
         console.error("Error fetching orders:", e);
     }
@@ -61,12 +125,30 @@ export default async function AdminOrdersPage({
     // Sanitize orders for Client Components
     const safeOrders = JSON.parse(JSON.stringify(orders));
 
+    const columns: any[] = await (prisma as any).$queryRawUnsafe(`
+        SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
+    `);
+    const hasVendorId = columns.map(c => c.column_name).includes('vendorId');
+
+    const statsResult: any[] = await (prisma as any).$queryRawUnsafe(`
+        SELECT 
+            COUNT(DISTINCT o.id)::int as "all_count",
+            COUNT(DISTINCT CASE WHEN o.status = 'PENDING' THEN o.id END)::int as "pending_count",
+            COUNT(DISTINCT CASE WHEN o.status = 'PROCESSING' THEN o.id END)::int as "processing_count",
+            COUNT(DISTINCT CASE WHEN o.status = 'SHIPPING' THEN o.id END)::int as "shipping_count",
+            COUNT(DISTINCT CASE WHEN o.status = 'DELIVERED' THEN o.id END)::int as "delivered_count"
+        FROM "Order" o
+        ${isVendor ? 'JOIN "OrderItem" oi ON o.id = oi."orderId" JOIN "Product" p ON oi."productId" = p.id' : ''}
+        ${isVendor ? (hasVendorId ? `WHERE p."vendorId" = '${userId}'` : 'WHERE 1=0') : ''}
+    `);
+
+    const statsData = statsResult[0] || {};
     const stats = [
-        { label: "Barchasi", value: "ALL", count: await prisma.order.count().catch(() => 0) },
-        { label: "Yangi", value: "PENDING", count: await prisma.order.count({ where: { status: "PENDING" } }).catch(() => 0) },
-        { label: "Jarayonda", value: "PROCESSING", count: await prisma.order.count({ where: { status: "PROCESSING" } }).catch(() => 0) },
-        { label: "Yo'lda", value: "SHIPPING", count: await prisma.order.count({ where: { status: "SHIPPING" } }).catch(() => 0) },
-        { label: "Yetkazildi", value: "DELIVERED", count: await prisma.order.count({ where: { status: "DELIVERED" } }).catch(() => 0) },
+        { label: "Barchasi", value: "ALL", count: statsData.all_count || 0 },
+        { label: "Yangi", value: "PENDING", count: statsData.pending_count || 0 },
+        { label: "Jarayonda", value: "PROCESSING", count: statsData.processing_count || 0 },
+        { label: "Yo'lda", value: "SHIPPING", count: statsData.shipping_count || 0 },
+        { label: "Yetkazildi", value: "DELIVERED", count: statsData.delivered_count || 0 },
     ];
 
     return (
@@ -76,7 +158,7 @@ export default async function AdminOrdersPage({
                     <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Buyurtmalar</h1>
                     <p className="text-gray-500 mt-1 flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        Jami {total} ta buyurtma mavjud
+                        {isVendor ? "Faqat sizning mahsulotlaringiz mavjud bo'lgan buyurtmalar" : `Jami ${total} ta buyurtma mavjud`}
                     </p>
                 </div>
 
@@ -167,10 +249,18 @@ export default async function AdminOrdersPage({
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-2 text-gray-600">
                                             <Package size={16} />
-                                            <span>{order.items.length} ta mahsulot</span>
+                                            <span>
+                                                {isVendor
+                                                    ? `${order.items.filter((i: any) => i.vendorId === userId).length} ta mahsulotingiz`
+                                                    : `${order.items.length} ta mahsulot`
+                                                }
+                                            </span>
                                         </div>
                                         <div className="text-xs text-gray-400 mt-1 max-w-[150px] truncate">
-                                            {order.items.map((i: any) => i.title).join(', ')}
+                                            {isVendor
+                                                ? order.items.filter((i: any) => i.vendorId === userId).map((i: any) => i.title).join(', ')
+                                                : order.items.map((i: any) => i.title).join(', ')
+                                            }
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
@@ -197,7 +287,13 @@ export default async function AdminOrdersPage({
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="font-bold text-gray-900">
-                                            {order.total.toLocaleString()} so'm
+                                            {isVendor
+                                                ? order.items
+                                                    .filter((i: any) => i.vendorId === userId)
+                                                    .reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0)
+                                                    .toLocaleString()
+                                                : order.total.toLocaleString()
+                                            } so'm
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">

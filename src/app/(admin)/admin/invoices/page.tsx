@@ -6,47 +6,144 @@ import InvoiceSearch from "./InvoiceSearch";
 import DeleteInvoiceButton from "./DeleteInvoiceButton";
 import ExportInvoicesButton from "./ExportInvoicesButton";
 import StatusFilter from "./StatusFilter";
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function AdminInvoicesPage({
     searchParams,
 }: {
     searchParams: Promise<{ search?: string; status?: string }>;
 }) {
+    const session = await auth();
+    if (!session?.user) redirect('/auth/login');
+
+    const userRole = (session.user as any).role;
+    const userId = session.user.id as string;
+    const isVendor = userRole === "VENDOR";
+
     const { search, status: statusFilter } = await searchParams;
 
-    const totalCount = await prisma.order.count();
-    const shippingCount = await prisma.order.count({ where: { status: 'SHIPPING' } });
-    const deliveredCount = await prisma.order.count({ where: { status: 'DELIVERED' } });
-    const pendingCount = await prisma.order.count({ where: { status: 'PENDING' } });
+    // Build Where Clause & Fetch stats
+    let invoices: any[] = [];
+    let totalCount = 0;
+    let shippingCount = 0;
+    let deliveredCount = 0;
+    let pendingCount = 0;
 
-    // Build Where Clause
-    const where: any = {};
-    if (search) {
-        where.OR = [
-            { id: { contains: search, mode: 'insensitive' } },
-            { user: { name: { contains: search, mode: 'insensitive' } } },
-            { shippingPhone: { contains: search, mode: 'insensitive' } },
-        ];
-    }
-    if (statusFilter && statusFilter !== 'ALL') {
-        where.status = statusFilter;
-    }
+    if (isVendor) {
+        // Safe check for vendorId column existence with dual-DB support
+        let hasVendorId = false;
+        try {
+            const columns: any[] = await (prisma as any).$queryRawUnsafe(`
+                SELECT column_name FROM information_schema.columns WHERE table_name = 'OrderItem'
+            `);
+            hasVendorId = columns.some(c => c.column_name === 'vendorId');
+        } catch (pgError) {
+            try {
+                const tableInfo: any[] = await (prisma as any).$queryRawUnsafe(`PRAGMA table_info("OrderItem")`);
+                hasVendorId = tableInfo.some(c => c.name === 'vendorId');
+            } catch (sqliteError) {
+                hasVendorId = false;
+            }
+        }
 
-    const invoices = await prisma.order.findMany({
-        where,
-        include: {
-            user: { select: { name: true, email: true, image: true, phone: true } }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 100
-    });
+        if (!hasVendorId) {
+            // Safe fallback if column is missing
+            totalCount = 0;
+            invoices = [];
+        } else {
+            try {
+                // Stats for Vendor using Raw SQL
+                const stats: any[] = await (prisma as any).$queryRawUnsafe(`
+                    SELECT 
+                        COUNT(DISTINCT o.id)::int as total,
+                        COUNT(DISTINCT CASE WHEN o.status = 'SHIPPING' THEN o.id END)::int as shipping,
+                        COUNT(DISTINCT CASE WHEN o.status = 'DELIVERED' THEN o.id END)::int as delivered,
+                        COUNT(DISTINCT CASE WHEN o.status = 'PENDING' THEN o.id END)::int as pending
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON o.id = oi."orderId"
+                    WHERE oi."vendorId" = $1
+                `, userId);
+
+                totalCount = stats[0]?.total || 0;
+                shippingCount = stats[0]?.shipping || 0;
+                deliveredCount = stats[0]?.delivered || 0;
+                pendingCount = stats[0]?.pending || 0;
+
+                // Fetch Invoices using Raw SQL
+                let sql = `
+                    SELECT DISTINCT o.* 
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON o.id = oi."orderId"
+                    LEFT JOIN "User" u ON o."userId" = u.id
+                    WHERE oi."vendorId" = $1
+                `;
+                const params: any[] = [userId];
+
+                if (search) {
+                    sql += ` AND (o.id ILIKE $2 OR u.name ILIKE $2 OR o."shippingPhone" ILIKE $2)`;
+                    params.push(`%${search}%`);
+                }
+                if (statusFilter && statusFilter !== 'ALL') {
+                    sql += ` AND o.status = $${params.length + 1}`;
+                    params.push(statusFilter);
+                }
+
+                sql += ` ORDER BY o."createdAt" DESC LIMIT 100`;
+
+                invoices = await (prisma as any).$queryRawUnsafe(sql, ...params);
+            } catch (queryError) {
+                console.error("Vendor invoice query error:", queryError);
+                totalCount = 0;
+                invoices = [];
+            }
+        }
+
+        // Match users for the result
+        invoices = await Promise.all(invoices.map(async inv => {
+            const user = await prisma.user.findUnique({
+                where: { id: inv.userId },
+                select: { name: true, email: true, image: true, phone: true }
+            }).catch(() => null);
+            return { ...inv, user: user || { name: 'Mehmon' } };
+        }));
+
+    } else {
+        // Admin view can use standard Prisma calls
+        const where: any = {};
+        if (search) {
+            where.OR = [
+                { id: { contains: search, mode: 'insensitive' } },
+                { user: { name: { contains: search, mode: 'insensitive' } } },
+                { shippingPhone: { contains: search, mode: 'insensitive' } },
+            ];
+        }
+        if (statusFilter && statusFilter !== 'ALL') {
+            where.status = statusFilter;
+        }
+
+        [totalCount, shippingCount, deliveredCount, pendingCount, invoices] = await Promise.all([
+            prisma.order.count({ where: {} }),
+            prisma.order.count({ where: { status: 'SHIPPING' } }),
+            prisma.order.count({ where: { status: 'DELIVERED' } }),
+            prisma.order.count({ where: { status: 'PENDING' } }),
+            prisma.order.findMany({
+                where,
+                include: { user: { select: { name: true, email: true, image: true, phone: true } } },
+                orderBy: { createdAt: 'desc' },
+                take: 100
+            })
+        ]);
+    }
 
     return (
         <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                 <div>
                     <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Invoyslar</h1>
-                    <p className="text-gray-500 mt-1">Barcha tranzaksiyalar va buyurtma hujjatlari</p>
+                    <p className="text-gray-500 mt-1">
+                        {isVendor ? "Faqat sizning mahsulotlaringiz bo'yicha hujjatlar" : "Barcha tranzaksiyalar va buyurtma hujjatlari"}
+                    </p>
                 </div>
                 <Link href="/admin/orders/create">
                     <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95">
@@ -86,7 +183,7 @@ export default async function AdminInvoicesPage({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {invoices.map((inv) => (
+                            {invoices.map((inv: any) => (
                                 <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">

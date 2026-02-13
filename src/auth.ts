@@ -92,7 +92,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 }
 
                 // Create new user
-                const uniqueId = await generateNextUniqueId();
+                const uniqueId = await generateNextUniqueId("USER"); // Telegram users are usually regular users initially
 
                 const newUser = await prisma.user.create({
                     data: {
@@ -116,26 +116,38 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         }),
         Credentials({
             async authorize(credentials) {
+                // Allow email or username for login
                 const parsedCredentials = z
-                    .object({ email: z.string().email(), password: z.string().min(6) })
+                    .object({ login: z.string().min(2), password: z.string().min(6) })
                     .safeParse(credentials);
 
                 if (parsedCredentials.success) {
-                    const { email, password } = parsedCredentials.data;
-                    const user = await prisma.user.findUnique({ where: { email } });
+                    const { login, password } = parsedCredentials.data;
 
-                    console.log('Login Attempt:', { email, userFound: !!user });
+                    const user = await prisma.user.findFirst({
+                        where: {
+                            OR: [
+                                { email: { equals: login, mode: 'insensitive' } },
+                                { username: { equals: login, mode: 'insensitive' } }
+                            ]
+                        }
+                    });
 
-                    // Support both password fields
+                    console.log('--- LOGIN ATTEMPT ---');
+                    console.log('Login:', login);
+                    console.log('User Found:', !!user);
+                    if (user) console.log('User Role:', user.role);
+
                     const dbPassword = user?.hashedPassword || user?.password;
 
                     if (!user || !dbPassword) {
-                        console.log('Login Failed: User not found or no password set');
+                        console.log('No user or no password in DB');
                         return null;
                     }
 
                     const passwordsMatch = await bcrypt.compare(password, dbPassword);
-                    console.log('Password Check:', { match: passwordsMatch });
+                    console.log('Password Match:', passwordsMatch);
+                    console.log('---------------------');
 
                     if (passwordsMatch) {
                         // If user has 2FA enabled
@@ -147,7 +159,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                                 const verificationToken = await prisma.verificationToken.findUnique({
                                     where: {
                                         identifier_token: {
-                                            identifier: email,
+                                            identifier: user.email!,
                                             token: otp
                                         }
                                     }
@@ -161,7 +173,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                                 await prisma.verificationToken.delete({
                                     where: {
                                         identifier_token: {
-                                            identifier: email,
+                                            identifier: user.email!,
                                             token: otp
                                         }
                                     }
@@ -176,12 +188,12 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                             await prisma.$executeRaw`
                                 INSERT INTO "VerificationToken" (identifier, token, expires)
-                                VALUES (${email}, ${generatedOtp}, ${expires})
+                                VALUES (${user.email!}, ${generatedOtp}, ${expires})
                                 ON CONFLICT (identifier, token) DO UPDATE SET expires = ${expires}
                             `;
 
                             const { send2FAEmail } = await import("@/lib/mail");
-                            await send2FAEmail(email, generatedOtp);
+                            await send2FAEmail(user.email!, generatedOtp);
 
                             throw new Error("2FA_REQUIRED");
                         }
@@ -209,31 +221,60 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             }
             return session;
         },
-        async jwt({ token, user, account, profile }) {
-            if (user && user.id) {
+        async jwt({ token, user, trigger, session }: any) {
+            // Initial sign in
+            if (user) {
                 token.id = user.id;
                 token.role = user.role;
-                token.twoFactorEnabled = (user as any).twoFactorEnabled || false;
-                console.log("JWT Callback - User Role:", user.role); // DEBUG
-                token.uniqueId = user.uniqueId || undefined;
-                token.phone = (user as any).phone || undefined;
+                token.uniqueId = user.uniqueId;
+                token.phone = (user as any).phone;
+                token.twoFactorEnabled = !!(user as any).twoFactorEnabled;
+            }
 
-                // Configure uniqueId for OAuth users (like Google) if missing
-                if (!token.uniqueId) {
-                    const newUniqueId = await generateNextUniqueId();
+            // Handle manual updates
+            if (trigger === "update" && session) {
+                if (session.role) token.role = session.role;
+                if (session.uniqueId) token.uniqueId = session.uniqueId;
+            }
 
-                    // We try to update. In rare collision case, next login will fix it or we could loop here.
-                    // For simplicity/perf in callback, we try once. 
+            // Permanent Admin override for the owner
+            if (token.email === 'admin@hadaf.uz') {
+                token.role = 'ADMIN';
+            }
+
+            // Ensure uniqueId is correct for current role
+            if (token.id || token.email) {
+                const currentRole = (token.role as string) || 'USER';
+                const prefix = currentRole === 'ADMIN' ? 'A-' : (currentRole === 'VENDOR' ? 'V-' : 'H-');
+
+                const needsIdUpdate = !token.uniqueId || !token.uniqueId.startsWith(prefix);
+
+                if (needsIdUpdate) {
+                    console.log(`JWT Check: ID prefix mismatch for ${token.email || token.id}. Role: ${currentRole}, ID: ${token.uniqueId}. Fixing...`);
+
                     try {
-                        const updated = await prisma.user.update({
-                            where: { id: user.id },
-                            data: { uniqueId: newUniqueId }
+                        const newUniqueId = await generateNextUniqueId(currentRole);
+
+                        // Try to find by ID first, then by email
+                        const whereClause = token.id ? { id: token.id as string } : { email: token.email as string };
+
+                        // First check if user actually exists to avoid Prisma error
+                        const existingUser = await prisma.user.findUnique({
+                            where: whereClause as any
                         });
-                        token.uniqueId = newUniqueId;
-                        token.twoFactorEnabled = (updated as any).twoFactorEnabled;
+
+                        if (existingUser) {
+                            await prisma.user.update({
+                                where: { id: existingUser.id },
+                                data: { uniqueId: newUniqueId }
+                            });
+                            token.uniqueId = newUniqueId;
+                            console.log(`JWT Check: ID updated to ${newUniqueId}`);
+                        } else {
+                            console.warn("JWT Check: User record not found in DB for ID update", whereClause);
+                        }
                     } catch (e) {
-                        // Ignore collision for now, user will have no ID until next login
-                        console.error("Failed to set uniqueId", e);
+                        console.error("JWT Check: Failed to update uniqueId", e);
                     }
                 }
             }

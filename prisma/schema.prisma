@@ -11,6 +11,7 @@ model User {
   id                   String         @id @default(cuid())
   name                 String?
   email                String?        @unique
+  username             String?        @unique
   phone                String?        @unique
   password             String?
   hashedPassword       String?
@@ -28,6 +29,8 @@ model User {
   dateOfBirth          DateTime?
   gender               String?
   telegramId           String?        @unique
+  botState             String?        // For telegram bot registration steps
+  tempData             String?        @db.Text // JSON for temp data in registration
   accounts             Account[]
   logs                 ActivityLog[]
   addresses            Address[]
@@ -37,6 +40,7 @@ model User {
   notifications        Notification[]
   orders               Order[]
   reviews              Review[]
+  products             Product[]      @relation("VendorProducts")
   sessions             Session[]
   wishlist             Wishlist?
   telegramLoginTokens  TelegramLoginToken[]
@@ -131,6 +135,8 @@ model Order {
   createdVia       String      @default("WEB_APP") // WEB_APP, ADMIN_PANEL, TELEGRAM_BOT
   user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   items            OrderItem[]
+  storeId          String?
+  store            Store?      @relation(fields: [storeId], references: [id])
 
   @@index([userId])
   @@index([status])
@@ -142,6 +148,7 @@ model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
   productId String
+  vendorId  String? // Store vendor at time of purchase
   title     String
   price     Float
   quantity  Int
@@ -151,10 +158,13 @@ model OrderItem {
 
   @@index([orderId])
   @@index([productId])
+  @@index([vendorId])
 }
 
 model Product {
   id            String         @id @default(cuid())
+  vendorId      String?        // Vendor owner
+  vendor        User?          @relation("VendorProducts", fields: [vendorId], references: [id])
   title         String
   description   String
   price         Float
@@ -184,6 +194,7 @@ model Product {
   categories    Category[]     @relation("ProductToCategory")
   reviews       Review[]
   wishlistItems WishlistItem[]
+  banners       Banner[]
 
   @@index([title])
   @@index([category])
@@ -205,24 +216,30 @@ model Category {
   parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
   children  Category[] @relation("CategoryHierarchy")
   products  Product[]  @relation("ProductToCategory")
-  banners   Banner[]   @relation("BannerToCategory")
-  productsOld Product[] @relation("ProductCategoryOld")
+  banners         Banner[]   @relation("BannerToCategory")
+  bannersAsTarget Banner[]   @relation("BannerTargetCategory")
+  productsOld     Product[]  @relation("ProductCategoryOld")
 }
 
 enum BannerPosition {
-  HOME_TOP
-  CATEGORY_TOP
-  SIDEBAR
-  FOOTER
+  HOME_TOP      // Main Slider (Chap qism)
+  HOME_SIDE     // Side Promo (O'ng qism)
 }
 
 model Banner {
   id              String         @id @default(cuid())
   title           String
+  description     String?        // For Slider/Promo text
   image           String
   link            String?
   position        BannerPosition @default(HOME_TOP)
   isActive        Boolean        @default(true)
+  order           Int            @default(0)
+  
+  // Promotion specific
+  price           Float?
+  oldPrice        Float?
+  discount        String?        // e.g. "-34%"
   
   // Analytics
   clickCount      Int            @default(0)
@@ -234,6 +251,12 @@ model Banner {
   
   // A/B Testing
   variant         String?        // A, B, C, etc.
+
+  // Link to internal content
+  productId       String?
+  product         Product?       @relation(fields: [productId], references: [id])
+  targetCategoryId String?
+  targetCategory  Category?      @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
   
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
@@ -355,6 +378,7 @@ model Store {
   lng          Float?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  orders       Order[]
 }
 
 

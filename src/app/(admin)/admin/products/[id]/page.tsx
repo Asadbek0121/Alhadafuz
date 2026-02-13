@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft, Copy } from "lucide-react";
 import { toast } from "sonner";
@@ -25,6 +25,12 @@ const productSchema = z.object({
     images: z.string().optional(),
     tags: z.string().optional(),
     status: z.enum(["published", "draft", "scheduled", "inactive", "sotuvda_kam_qolgan"]).default("published"),
+    isNew: z.boolean().default(true),
+    freeDelivery: z.boolean().default(false),
+    hasVideo: z.boolean().default(false),
+    hasGift: z.boolean().default(false),
+    showLowStock: z.boolean().default(false),
+    allowInstallment: z.boolean().default(false),
     template: z.string().optional(),
 });
 
@@ -178,6 +184,59 @@ export default function EditProductPage() {
         }
     }, [id, reset]);
 
+    // Auto-calculate price based on discount
+    const watchOldPrice = watch('oldPrice');
+    const watchPrice = watch('price');
+    const watchDiscountValue = watch('discountValue');
+    const watchDiscountType = watch('discountType');
+
+    // Use a ref to prevent infinite loops if we make it bi-directional
+    const isCalculating = useRef(false);
+
+    useEffect(() => {
+        if (isCalculating.current) return;
+
+        if (watchDiscountType === 'no_discount') {
+            return;
+        }
+
+        isCalculating.current = true;
+        const discVal = Number(watchDiscountValue || 0);
+
+        // Case 1: We have Old Price and want to find final Price
+        if (Number(watchOldPrice || 0) > 0) {
+            const oldPriceNum = Number(watchOldPrice);
+            let calculatedPrice = 0;
+
+            if (watchDiscountType === 'percentage') {
+                calculatedPrice = Math.round(oldPriceNum - (oldPriceNum * (discVal / 100)));
+            } else if (watchDiscountType === 'fixed_price') {
+                calculatedPrice = Math.round(oldPriceNum - discVal);
+            }
+
+            if (calculatedPrice !== Number(watchPrice)) {
+                setValue('price', calculatedPrice);
+            }
+        }
+        // Case 2: We have final Price and want to find Old Price
+        else if (Number(watchPrice || 0) > 0 && discVal > 0) {
+            const priceNum = Number(watchPrice);
+            let calculatedOldPrice = 0;
+
+            if (watchDiscountType === 'percentage') {
+                calculatedOldPrice = Math.round(priceNum / (1 - (discVal / 100)));
+            } else if (watchDiscountType === 'fixed_price') {
+                calculatedOldPrice = Math.round(priceNum + discVal);
+            }
+
+            if (calculatedOldPrice !== Number(watchOldPrice)) {
+                setValue('oldPrice', calculatedOldPrice);
+            }
+        }
+
+        isCalculating.current = false;
+    }, [watchOldPrice, watchPrice, watchDiscountValue, watchDiscountType, setValue]);
+
     const addAttribute = () => {
         setAttributes([...attributes, { key: "", value: "" }]);
     };
@@ -251,7 +310,12 @@ export default function EditProductPage() {
             images: imagesList,
             attributes: attrsObject,
             category: data.category,
-            categoryIds
+            categoryIds,
+            freeDelivery: data.freeDelivery,
+            hasVideo: data.hasVideo,
+            hasGift: data.hasGift,
+            showLowStock: data.showLowStock,
+            allowInstallment: data.allowInstallment,
         };
 
         try {
@@ -515,8 +579,40 @@ export default function EditProductPage() {
                             <label className="label">Omborda</label>
                             <input {...register("stock")} type="number" className="input" placeholder="Ombordagi soni" />
                         </div>
-                    </div>
+                        <div className="form-group">
+                            <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
+                                <input type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
+                                <span>"YANGI" belgisi (New Arrival)</span>
+                            </label>
+                            <p className="helper-text">Agar tanlansa, mahsulot kartasida "YANGI" yozuvi paydo bo'ladi.</p>
+                        </div>
 
+                        <div className="form-group">
+                            <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '15px', color: '#2A3547' }}>Marketing belgilari</h3>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
+                                    <span>🚚 Bepul yetkazib berish</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
+                                    <span>🎬 Video-sharh mavjud</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
+                                    <span>🎁 Sovg'asi bor / 1+1</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
+                                    <span>⚠️ "Sotuvda juda kam qoldi" (Stock Alert)</span>
+                                </label>
+                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
+                                    <input type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
+                                    <span>💰 Bo'lib to'lash (Monthly Payment)</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 

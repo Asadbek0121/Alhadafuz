@@ -8,7 +8,7 @@ import Image from "next/image";
 import { useTranslations } from 'next-intl';
 
 export default function CartDrawer() {
-    const { items, isOpen, closeCart, removeFromCart, updateQuantity, total } = useCartStore();
+    const { items, isOpen, closeCart, removeFromCart, updateQuantity, total, isHydrated } = useCartStore();
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
 
@@ -21,13 +21,13 @@ export default function CartDrawer() {
                 <div className={styles.header}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <h3>{tHeader('savatcha')}</h3>
-                        <span style={{ background: '#eee', padding: '2px 8px', borderRadius: '12px', fontSize: '14px', fontWeight: '600' }}>{items.length}</span>
+                        <span style={{ background: '#eee', padding: '2px 8px', borderRadius: '12px', fontSize: '14px', fontWeight: '600' }}>{isHydrated ? items.length : 0}</span>
                     </div>
                     <button onClick={closeCart} className={styles.closeBtn}><X size={24} /></button>
                 </div>
 
                 <div className={styles.items}>
-                    {items.length === 0 ? (
+                    {!isHydrated || items.length === 0 ? (
                         <div className={styles.empty}>
                             <div style={{ marginBottom: '24px' }}>
                                 <ShoppingCart size={100} strokeWidth={0} fill="#3b82f6" style={{ filter: 'drop-shadow(0 10px 20px rgba(59, 130, 246, 0.3))' }} />

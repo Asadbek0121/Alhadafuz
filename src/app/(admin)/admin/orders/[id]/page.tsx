@@ -11,7 +11,12 @@ import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
     const session = await auth();
-    if (session?.user?.role !== 'ADMIN') redirect('/');
+    const userRole = (session?.user as any)?.role;
+    const userId = session?.user?.id;
+
+    if (!session?.user || (userRole !== 'ADMIN' && userRole !== 'VENDOR')) {
+        redirect('/');
+    }
 
     const order = await prisma.order.findUnique({
         where: { id },
@@ -26,6 +31,18 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     });
 
     if (!order) notFound();
+
+    // Check ownership for vendors
+    let vendorSubtotal = 0;
+    if (userRole === 'VENDOR') {
+        const hasVendorProduct = order.items.some((item: any) => item.vendorId === userId);
+        if (!hasVendorProduct) {
+            redirect('/admin/orders');
+        }
+        // Filter items to only show vendor's products
+        order.items = order.items.filter((item: any) => item.vendorId === userId);
+        vendorSubtotal = order.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    }
 
     const safeOrder = JSON.parse(JSON.stringify(order));
 
@@ -78,7 +95,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                             </h3>
                         </div>
                         <div className="divide-y divide-gray-50 max-h-[600px] overflow-y-auto custom-scrollbar">
-                            {order.items.map((item) => (
+                            {order.items.map((item: any) => (
                                 <div key={item.id} className="p-6 flex items-center gap-6 hover:bg-gray-50/30 transition-colors">
                                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 group">
                                         {item.product.image ? (
@@ -103,29 +120,33 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                         </div>
                         <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
                             <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-medium">Mahsulotlar:</span>
-                                <span className="font-bold text-gray-900">{(order.total - ((order as any).deliveryFee || 0) + ((order as any).discountAmount || 0)).toLocaleString()} so'm</span>
+                                <span className="text-gray-500 font-medium">{userRole === 'VENDOR' ? 'Sizning mahsulotlaringiz:' : 'Mahsulotlar:'}</span>
+                                <span className="font-bold text-gray-900">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : (order.total - ((order as any).deliveryFee || 0) + ((order as any).discountAmount || 0)).toLocaleString()} so'm</span>
                             </div>
-                            <div className="flex justify-between items-center text-sm">
-                                <span className="text-gray-500 font-medium">Yetkazib berish:</span>
-                                <span className={((order as any).deliveryFee || 0) === 0 ? "font-bold text-green-600" : "font-bold text-gray-900"}>
-                                    {((order as any).deliveryFee || 0) === 0 ? "Bepul" : `${(order as any).deliveryFee.toLocaleString()} so'm`}
-                                </span>
-                            </div>
-                            {((order as any).discountAmount || 0) > 0 && (
-                                <div className="flex justify-between items-center text-sm text-emerald-600">
-                                    <span className="font-medium flex items-center gap-2">
-                                        <Tag size={14} />
-                                        Chegirma {(order as any).couponCode ? `(${(order as any).couponCode})` : ''}:
-                                    </span>
-                                    <span className="font-black">-{((order as any).discountAmount || 0).toLocaleString()} so'm</span>
-                                </div>
+                            {userRole !== 'VENDOR' && (
+                                <>
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-500 font-medium">Yetkazib berish:</span>
+                                        <span className={((order as any).deliveryFee || 0) === 0 ? "font-bold text-green-600" : "font-bold text-gray-900"}>
+                                            {((order as any).deliveryFee || 0) === 0 ? "Bepul" : `${(order as any).deliveryFee.toLocaleString()} so'm`}
+                                        </span>
+                                    </div>
+                                    {((order as any).discountAmount || 0) > 0 && (
+                                        <div className="flex justify-between items-center text-sm text-emerald-600">
+                                            <span className="font-medium flex items-center gap-2">
+                                                <Tag size={14} />
+                                                Chegirma {(order as any).couponCode ? `(${(order as any).couponCode})` : ''}:
+                                            </span>
+                                            <span className="font-black">-{((order as any).discountAmount || 0).toLocaleString()} so'm</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
                         <div className="p-6 bg-gray-900 text-white">
                             <div className="flex justify-between items-center">
-                                <span className="text-gray-400 font-medium">Jami to'lov miqdori:</span>
-                                <span className="text-2xl font-black text-white">{order.total.toLocaleString()} <span className="text-sm font-bold opacity-60 ml-1">UZS</span></span>
+                                <span className="text-gray-400 font-medium">{userRole === 'VENDOR' ? 'Sizning ulushingiz (taxminiy):' : 'Jami to\'lov miqdori:'}</span>
+                                <span className="text-2xl font-black text-white">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : order.total.toLocaleString()} <span className="text-sm font-bold opacity-60 ml-1">UZS</span></span>
                             </div>
                         </div>
                     </div>

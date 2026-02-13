@@ -31,15 +31,26 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { title, image, link, position, isActive, categoryIds, startDate, endDate, variant } = body;
+        const {
+            title, description, image, link, position, isActive,
+            categoryIds, startDate, endDate, variant, order,
+            price, oldPrice, discount, productId, targetCategoryId
+        } = body;
 
         const banner = await (prisma as any).banner.create({
             data: {
                 title,
+                description,
                 image,
                 link,
                 position,
                 isActive,
+                order: order || 0,
+                price: price || null,
+                oldPrice: oldPrice || null,
+                discount,
+                productId: productId || null,
+                targetCategoryId: targetCategoryId || null,
                 startDate: startDate ? new Date(startDate) : null,
                 endDate: endDate ? new Date(endDate) : null,
                 variant,
@@ -50,7 +61,7 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json(banner);
-    } catch (error) {
-        return NextResponse.json({ error: 'Failed to create' }, { status: 500 });
+    } catch (error: any) {
+        return NextResponse.json({ error: 'Failed to create', details: error.message }, { status: 500 });
     }
 }

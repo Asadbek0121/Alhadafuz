@@ -16,12 +16,25 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        let userMatch = await prisma.user.findFirst({
+            where: {
+                OR: [
+                    { id: userId },
+                    { uniqueId: userId }
+                ]
+            }
+        });
+
+        if (!userMatch) {
+            return NextResponse.json({ error: 'Foydalanuvchi topilmadi' }, { status: 404 });
+        }
+
         // Create message from admin to user
         const message = await prisma.message.create({
             data: {
                 content: content.trim(),
                 senderId: session.user.id,
-                receiverId: userId,
+                receiverId: userMatch.id,
                 source: 'ADMIN_PANEL',
             },
             include: {

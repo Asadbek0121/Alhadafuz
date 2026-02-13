@@ -27,7 +27,8 @@ export default async function AdminLayout({
 }) {
     const session = await auth();
 
-    if (!session || session.user?.role !== 'ADMIN') {
+    const userRole = (session?.user as any)?.role;
+    if (!session || (userRole !== 'ADMIN' && userRole !== 'VENDOR')) {
         // This is a safety check. Unauthorized users should be caught by middleware.
         // But if they reach here, we show nothing or redirect.
         return (

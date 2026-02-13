@@ -13,6 +13,14 @@ export default function Hero() {
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
 
+    const trackImpression = useCallback((id: string) => {
+        fetch(`/api/admin/banners/${id}/impression`, { method: 'POST' }).catch(() => { });
+    }, []);
+
+    const trackClick = useCallback((id: string) => {
+        fetch(`/api/admin/banners/${id}/click`, { method: 'POST' }).catch(() => { });
+    }, []);
+
     useEffect(() => {
         fetch('/api/banners')
             .then(res => res.json())
@@ -23,8 +31,22 @@ export default function Hero() {
             .catch(() => setLoading(false));
     }, []);
 
-    const mainBanners = banners.filter(b => b.type === 'MAIN' && b.isActive !== false);
-    const sideBanner = banners.find(b => b.type === 'SIDE' && b.isActive !== false);
+    const mainBanners = banners.filter(b => b.position === 'HOME_TOP' && b.isActive !== false);
+    const sideBanner = banners.find(b => b.position === 'HOME_SIDE' && b.isActive !== false);
+
+    // Track side banner impression once loaded
+    useEffect(() => {
+        if (sideBanner) {
+            trackImpression(sideBanner.id);
+        }
+    }, [sideBanner, trackImpression]);
+
+    // Track main banner impression when slide changes
+    useEffect(() => {
+        if (mainBanners.length > 0 && mainBanners[currentIndex]) {
+            trackImpression(mainBanners[currentIndex].id);
+        }
+    }, [currentIndex, mainBanners, trackImpression]);
 
     // Auto-play logic
     useEffect(() => {
@@ -40,7 +62,14 @@ export default function Hero() {
     const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % mainBanners.length);
     const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + mainBanners.length) % mainBanners.length);
 
-    if (loading) return <div className={styles.heroWrapper}><div className="container" style={{ height: '400px', background: '#f0f0f0', borderRadius: '20px' }}></div></div>;
+    if (loading) return (
+        <div className={styles.heroWrapper}>
+            <div className={`container ${styles.heroContent}`}>
+                <div style={{ height: '380px', width: '100%', background: '#f5f5f5', borderRadius: '20px', animation: 'heroPulse 2s infinite' }}></div>
+                <div style={{ height: '380px', width: '100%', background: '#f5f5f5', borderRadius: '20px', animation: 'heroPulse 2s infinite' }}></div>
+            </div>
+        </div>
+    );
 
     return (
         <div className={styles.heroWrapper}>
@@ -56,7 +85,7 @@ export default function Hero() {
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={{ duration: 0.5, ease: "easeInOut" }}
                                 className={styles.slider}
-                                style={mainBanners[currentIndex].imageUrl ? { backgroundImage: `url(${mainBanners[currentIndex].imageUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
+                                style={mainBanners[currentIndex].image ? { backgroundImage: `url(${mainBanners[currentIndex].image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
                             >
                                 <div className={styles.sliderContent}>
                                     <motion.div
@@ -80,6 +109,7 @@ export default function Hero() {
                                         animate={{ y: 0, opacity: 1 }}
                                         transition={{ delay: 0.4 }}
                                         href={mainBanners[currentIndex].link || '#'}
+                                        onClick={() => trackClick(mainBanners[currentIndex].id)}
                                         className={styles.sliderBtn}
                                         style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'white' }}
                                     >
@@ -121,13 +151,22 @@ export default function Hero() {
                 </div>
 
                 {/* Yon Banner (Promo Card) */}
-                <div className={styles.promoCard} style={{ cursor: sideBanner?.link ? 'pointer' : 'default' }} onClick={() => sideBanner?.link && window.open(sideBanner.link, '_self')}>
+                <div
+                    className={styles.promoCard}
+                    style={{ cursor: sideBanner?.link ? 'pointer' : 'default' }}
+                    onClick={() => {
+                        if (sideBanner?.link) {
+                            trackClick(sideBanner.id);
+                            window.open(sideBanner.link, '_self');
+                        }
+                    }}
+                >
                     {(sideBanner?.discount || (!sideBanner && "-34%")) && (
                         <div className={styles.promoBadge}>{sideBanner?.discount || "-34%"}</div>
                     )}
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fa', borderRadius: '12px', margin: '16px 0', overflow: 'hidden' }}>
-                        {sideBanner?.imageUrl ? (
-                            <img src={sideBanner.imageUrl} alt={sideBanner.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        {sideBanner?.image ? (
+                            <img src={sideBanner.image} alt={sideBanner.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                         ) : (
                             <span style={{ color: '#ccc' }}>Product Image</span>
                         )}
@@ -137,11 +176,11 @@ export default function Hero() {
                     </div>
                     <div className={styles.promoPrice}>
                         <span className={styles.currentPrice}>
-                            {sideBanner?.price ? `${sideBanner.price.toLocaleString()} ${tCommon('som')}` : (sideBanner?.description || `549 000 ${tCommon('som')}`)}
+                            {sideBanner?.price ? `${sideBanner.price.toLocaleString()} ${tCommon('som')}` : (sideBanner && `549 000 ${tCommon('som')}`)}
                         </span>
-                        {sideBanner?.oldPrice ? (
+                        {sideBanner?.oldPrice && (
                             <span className={styles.oldPrice}>{sideBanner.oldPrice.toLocaleString()} {tCommon('som')}</span>
-                        ) : (!sideBanner && <span className={styles.oldPrice}>819 000 {tCommon('som')}</span>)}
+                        )}
                     </div>
                 </div>
             </div>

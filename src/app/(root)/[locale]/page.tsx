@@ -83,90 +83,6 @@ export default function Home() {
     <main style={{ paddingBottom: '60px' }}>
       <Hero />
 
-      {/* Banners Carousel */}
-      {banners.length > 0 && (
-        <section className="container mx-auto px-4 mt-8">
-          <div className="relative rounded-3xl overflow-hidden shadow-2xl group">
-            <div className="relative h-[200px] md:h-[300px] lg:h-[400px]">
-              {banners.map((banner, index) => {
-                const BannerContent = (
-                  <div
-                    className={`absolute inset-0 transition-opacity duration-700 ${index === currentBanner ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    style={{ pointerEvents: index === currentBanner ? 'auto' : 'none' }}
-                  >
-                    <img
-                      src={banner.image}
-                      alt={banner.title}
-                      className="w-full h-full object-cover"
-                    />
-                    {banner.title && (
-                      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-6 md:p-8">
-                        <h3 className="text-white text-xl md:text-3xl font-bold drop-shadow-lg">
-                          {banner.title}
-                        </h3>
-                      </div>
-                    )}
-                  </div>
-                );
-
-                const handleBannerClick = () => {
-                  if (banner.link) {
-                    fetch(`/api/admin/banners/${banner.id}/click`, { method: 'POST' })
-                      .catch(err => console.error('Failed to track click:', err));
-                  }
-                };
-
-                return banner.link ? (
-                  <Link key={banner.id} href={banner.link} onClick={handleBannerClick}>
-                    {BannerContent}
-                  </Link>
-                ) : (
-                  <div key={banner.id}>{BannerContent}</div>
-                );
-              })}
-            </div>
-
-            {/* Navigation Arrows */}
-            {banners.length > 1 && (
-              <>
-                <button
-                  onClick={prevBanner}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2 md:p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
-                  aria-label="Previous banner"
-                >
-                  <ChevronLeft size={24} />
-                </button>
-                <button
-                  onClick={nextBanner}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-2 md:p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110"
-                  aria-label="Next banner"
-                >
-                  <ChevronRight size={24} />
-                </button>
-              </>
-            )}
-
-            {/* Dots Indicator */}
-            {banners.length > 1 && (
-              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
-                {banners.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentBanner(index)}
-                    className={`w-2 h-2 md:w-3 md:h-3 rounded-full transition-all duration-300 ${index === currentBanner
-                      ? 'bg-white w-6 md:w-8'
-                      : 'bg-white/50 hover:bg-white/75'
-                      }`}
-                    aria-label={`Go to banner ${index + 1}`}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
       <section className="container">
         <h2 className="text-2xl font-bold mb-6 mt-10 text-slate-900">
           {t('ommabop_mahsulotlar')}
@@ -181,6 +97,14 @@ export default function Home() {
               oldPrice={p.oldPrice}
               image={p.image}
               isSale={p.isSale}
+              discountType={p.discountType}
+              isNew={p.isNew}
+              freeDelivery={p.freeDelivery}
+              hasVideo={p.hasVideo}
+              hasGift={p.hasGift}
+              showLowStock={p.showLowStock}
+              allowInstallment={p.allowInstallment}
+              stock={p.stock}
             />
           ))}
         </div>

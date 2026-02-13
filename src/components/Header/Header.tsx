@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@/navigation';
 import { useRouter } from '@/navigation';
+import NextLink from 'next/link';
 import {
     LayoutGrid, Search, ShoppingBag, Heart, UserCircle, Bell, Globe, X, Check,
     Package, Tag, Info, LogOut, LayoutDashboard, Scale, Menu, Sun, Moon
@@ -24,7 +25,7 @@ import LanguageSwitcher from '../LanguageSwitcher';
 
 
 export default function Header() {
-    const { items, openCart } = useCartStore();
+    const { items, openCart, isHydrated } = useCartStore();
     const { wishlist } = useWishlist();
     const t = useTranslations('Header');
     const tProfile = useTranslations('Profile');
@@ -339,12 +340,11 @@ export default function Header() {
                         <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
                                 <ShoppingBag size={24} strokeWidth={2} />
-                                {items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
+                                {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors hidden md:block">{t('savatcha')}</span>
                         </button>
 
-                        {/* Admin Link (Direct /admin access without locale) */}
 
 
                         {/* Profile */}

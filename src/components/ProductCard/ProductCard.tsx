@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import styles from './ProductCard.module.css';
-import { ShoppingBag, Heart, Scale, Star, Loader2 } from 'lucide-react';
+import { ShoppingBag, Heart, Scale, Star, Loader2, Truck, Play, Gift, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore'; // Updated import
 import { useTranslations } from 'next-intl';
 import { useWishlist } from '@/context/WishlistContext';
@@ -17,15 +17,34 @@ interface ProductProps {
     oldPrice?: number;
     isSale?: boolean;
     image: string;
+    discountType?: string;
+    isNew?: boolean;
+    freeDelivery?: boolean;
+    hasVideo?: boolean;
+    hasGift?: boolean;
+    showLowStock?: boolean;
+    allowInstallment?: boolean;
+    stock?: number;
 }
 
 export default function ProductCard(props: ProductProps) {
-    const { id, title, price, oldPrice, isSale, image } = props;
+    const {
+        id, title, price, oldPrice, isSale, image, discountType,
+        isNew = true, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock
+    } = props;
     const { addToCart } = useCartStore(); // Updated hook
     const t = useTranslations('Header');
+    const tMarketing = useTranslations('Marketing');
     const { toggleWishlist, isInWishlist } = useWishlist();
     const router = useRouter();
     const [isBuying, setIsBuying] = useState(false);
+
+    const discountPercentage = oldPrice && price < oldPrice
+        ? Math.round(((oldPrice - price) / oldPrice) * 100)
+        : 0;
+
+    const isLowStock = showLowStock && typeof stock !== 'undefined' && stock > 0 && stock < 10;
+    const monthlyPayment = Math.round(price / 12);
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -33,31 +52,25 @@ export default function ProductCard(props: ProductProps) {
             id,
             title,
             price,
-            image,
-            hasDiscount: !!oldPrice || !!isSale,
-            discountType: (!!oldPrice || !!isSale) ? 'SALE' : undefined
-        }, false); // Don't open drawer
-        toast.success(title + ' - ' + t('savatcha'));
+            image
+        });
+        toast.success(t('savatga_qoshildi'));
     };
 
-    const handleBuyNow = (e: React.MouseEvent) => {
+    const handleBuyNow = async (e: React.MouseEvent) => {
         e.preventDefault();
-        e.stopPropagation();
         setIsBuying(true);
         addToCart({
             id,
             title,
             price,
-            image,
-            hasDiscount: !!oldPrice || !!isSale,
-            discountType: (!!oldPrice || !!isSale) ? 'SALE' : undefined
-        }, false); // Don't open drawer
-        router.push('/checkout');
+            image
+        });
+        router.push(`/${window.location.pathname.split('/')[1]}/checkout`);
     };
 
     const handleToggleWishlist = (e: React.MouseEvent) => {
         e.preventDefault();
-        e.stopPropagation();
         toggleWishlist(id);
     };
 
@@ -65,10 +78,55 @@ export default function ProductCard(props: ProductProps) {
 
     return (
         <Link href={`/product/${id}`} className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-            {/* Badges */}
-            <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
-                {isSale && <span className="bg-red-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">-20%</span>}
-                <span className="bg-emerald-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-md">Yangi</span>
+            {/* Top Left: Promotion Stickers */}
+            <div className={styles.badgeContainer}>
+                {(discountType && discountType !== 'no_discount') || (discountPercentage > 0 && !discountType) ? (
+                    <div className={`${styles.promoSticker} ${discountType === 'HOT' ? styles.hotTheme :
+                        discountType === 'PROMO' ? styles.promoTheme : styles.saleTheme
+                        }`}>
+                        {discountType === 'SALE' || !discountType ? tMarketing('sale') : tMarketing(discountType.toLowerCase())}
+                    </div>
+                ) : null}
+
+                {freeDelivery && (
+                    <div className={`${styles.promoSticker} ${styles.deliveryTheme}`}>
+                        <Truck size={12} className="mr-1" /> {tMarketing('bepul')}
+                    </div>
+                )}
+                {hasGift && (
+                    <div className={`${styles.promoSticker} ${styles.giftTheme}`}>
+                        <Gift size={12} className="mr-1" /> {tMarketing('sovga')}
+                    </div>
+                )}
+            </div>
+
+            {/* Bottom Left: New Arrival */}
+            {isNew !== false && (
+                <div className={styles.newArrival}>
+                    {tMarketing('isNew')}
+                </div>
+            )}
+
+            {/* Top Right: Discount Percentage Tag */}
+            {discountPercentage > 0 && (
+                <div className={styles.discountTag}>
+                    <span>-{discountPercentage}%</span>
+                    {tMarketing('chegirma')}
+                </div>
+            )}
+
+            {/* Bottom Indicators (Video, stock) */}
+            <div className="absolute bottom-1/3 left-2 z-10 flex flex-col gap-1">
+                {hasVideo && (
+                    <div className="bg-white/90 backdrop-blur-sm p-1 rounded-full shadow-sm text-blue-600 border border-blue-100">
+                        <Play size={14} fill="currentColor" />
+                    </div>
+                )}
+                {isLowStock && (
+                    <div className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+                        {tMarketing('kam_qoldi')}
+                    </div>
+                )}
             </div>
 
             {/* Wishlist Button */}
@@ -76,8 +134,8 @@ export default function ProductCard(props: ProductProps) {
                 onClick={handleToggleWishlist}
             >
                 <Heart
-                    size={20}
-                    className={`transition-all duration-300 ${isInWishlist(id) ? 'fill-current scale-110' : 'group-hover/heart:scale-110'}`}
+                    size={18}
+                    className={`${isInWishlist(id) ? 'fill-current' : ''} transition-transform duration-300 group-hover/heart:scale-110`}
                     strokeWidth={isInWishlist(id) ? 0 : 2}
                 />
             </div>
@@ -111,6 +169,11 @@ export default function ProductCard(props: ProductProps) {
 
                 <div className="mt-auto flex flex-col gap-2">
                     <div className="flex flex-col">
+                        {allowInstallment && (
+                            <div className="text-[10px] bg-amber-100 text-amber-700 w-fit px-1.5 py-0.5 rounded font-bold mb-1">
+                                {tMarketing('oyiga')} {monthlyPayment.toLocaleString()} {t('som')} {tMarketing('dan')}
+                            </div>
+                        )}
                         {oldPrice && <div className="text-[10px] text-slate-400 line-through decoration-red-500 decoration-1">{oldPrice.toLocaleString()} {t('som')}</div>}
                         <div className="text-sm md:text-lg font-black text-blue-600">{price.toLocaleString()} <span className="text-xs font-medium">{t('som')}</span></div>
                     </div>

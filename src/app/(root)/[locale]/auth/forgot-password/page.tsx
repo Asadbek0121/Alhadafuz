@@ -183,6 +183,27 @@ export default function ForgotPasswordPage() {
                                 <Button type="submit" disabled={isLoading} className="w-full h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 font-bold text-lg">
                                     {isLoading ? <Loader2 className="animate-spin" /> : "Kod olish"}
                                 </Button>
+
+                                <div className="relative py-4">
+                                    <div className="absolute inset-0 flex items-center">
+                                        <div className="w-full border-t border-gray-100"></div>
+                                    </div>
+                                    <div className="relative flex justify-center text-xs">
+                                        <span className="bg-white px-3 text-gray-400 font-bold tracking-widest uppercase">Yoki</span>
+                                    </div>
+                                </div>
+
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => window.open('https://t.me/Hadaf_supportbot?start=reset_password', '_blank')}
+                                    className="w-full h-14 rounded-2xl border-2 border-blue-50 hover:bg-blue-50 hover:border-blue-100 text-blue-600 font-bold text-lg flex items-center justify-center gap-3 transition-all"
+                                >
+                                    <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">
+                                        <path d="M21.1 4.3L18.7 16.9C18.4 18.2 17.6 18.6 16.6 18.1L11 13.9L8.3 16.5C8 16.8 7.8 17 7.2 17L7.6 11.4L17.8 2.2C18.2 1.8 17.7 1.6 17.1 2L4.5 9.9L-0.9 8.2C-1.3 8.1 -1.3 7.4 -0.8 7.2L20.2 -0.9C21.2 -1.3 22 0.3 21.1 4.3Z" fill="currentColor" />
+                                    </svg>
+                                    Telegram orqali tiklash
+                                </Button>
                             </motion.form>
                         )}
 

@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useCartStore } from '@/store/useCartStore';
 import { useTranslations } from 'next-intl';
-import { Star, ShoppingCart, Share2, User as UserIcon, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Star, ShoppingCart, Share2, User as UserIcon, ChevronDown, ChevronUp, Check, Truck, Play, Gift, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 import styles from './page.module.css';
 
@@ -44,6 +44,7 @@ export default function ProductPage() {
     const [loading, setLoading] = useState(true);
     const tProduct = useTranslations('Product');
     const tHeader = useTranslations('Header');
+    const tMarketing = useTranslations('Marketing');
 
     // Separate selections (arrays) from static specs (strings)
     const [selections, setSelections] = useState<[string, string[]][]>([]);
@@ -144,7 +145,12 @@ export default function ProductPage() {
                         if (parsedSpecs) {
                             const sels: [string, string[]][] = [];
                             const stats: [string, string][] = [];
+                            const marketingKeys = ['isNew', 'freeDelivery', 'hasVideo', 'hasGift', 'showLowStock', 'allowInstallment'];
+
                             Object.entries(parsedSpecs).forEach(([key, value]) => {
+                                // Skip marketing boolean flags from technical specs table
+                                if (marketingKeys.includes(key)) return;
+
                                 if (Array.isArray(value) && value.length > 1) {
                                     sels.push([key, value]);
                                     // Default select first option
@@ -226,7 +232,11 @@ export default function ProductPage() {
     if (loading) return <div className="container" style={{ padding: '80px', textAlign: 'center' }}><div className="loader"></div></div>;
     if (!product) return <div className="container" style={{ padding: '40px' }}>{tProduct('not_found')}</div>;
 
-    const discountPercentage = product.oldPrice ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100) : 0;
+    const discountPercentage = product.oldPrice && product.price < product.oldPrice
+        ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
+        : 0;
+
+    const discountType = (product as any).discountType;
 
     return (
         <div className="container" style={{ paddingBottom: '100px' }}>
@@ -257,8 +267,53 @@ export default function ProductPage() {
                             alt={product.title}
                             className={styles.mainImg}
                         />
-                        {/* Badge examples */}
-                        {product.discount && <div className={styles.discountBadge}>-{discountPercentage}%</div>}
+                        {/* Top Left: Promotion Stickers */}
+                        <div className={styles.badgeContainer}>
+                            {discountType && discountType !== 'no_discount' && (
+                                <div className={`${styles.promoSticker} ${discountType === 'HOT' ? styles.promoHot :
+                                    discountType === 'PROMO' ? styles.promoPromo : styles.promoSale
+                                    }`}>
+                                    {discountType === 'SALE' ? tMarketing('sale') : tMarketing(discountType.toLowerCase())}
+                                </div>
+                            )}
+                            {!discountType && discountPercentage > 0 && (
+                                <div className={`${styles.promoSticker} ${styles.promoSale}`}>
+                                    {tMarketing('sale')}
+                                </div>
+                            )}
+                            {(product as any).freeDelivery && (
+                                <div className={`${styles.promoSticker} ${styles.promoPromo}`}>
+                                    <Truck size={14} className="mr-2" /> {tMarketing('freeDelivery')}
+                                </div>
+                            )}
+                            {(product as any).hasGift && (
+                                <div className={`${styles.promoSticker} ${styles.promoHot}`}>
+                                    <Gift size={14} className="mr-2" /> {tMarketing('hasGift')}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Video Badge */}
+                        {(product as any).hasVideo && (
+                            <div className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-white/90 p-3 rounded-full shadow-lg text-blue-600 cursor-pointer hover:scale-110 transition-transform">
+                                <Play size={24} fill="currentColor" />
+                            </div>
+                        )}
+
+                        {/* Top Right: Discount Tag */}
+                        {discountPercentage > 0 && (
+                            <div className={styles.discountTag}>
+                                <span>-{discountPercentage}%</span>
+                                {tMarketing('chegirma')}
+                            </div>
+                        )}
+
+                        {/* Bottom Left: New Arrival */}
+                        {(product as any).isNew !== false && (
+                            <div className={styles.newArrival}>
+                                {tMarketing('isNew')}
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -266,25 +321,50 @@ export default function ProductPage() {
                 <div className={styles.infoSection}>
                     <div className={styles.headerRow}>
                         <div className={styles.ratingRow}>
-                            <Star size={16} fill="#ffc107" color="#ffc107" />
-                            <span style={{ fontWeight: 600, marginLeft: '4px' }}>{product.rating || 4.9}</span>
-                            <span style={{ color: '#888', marginLeft: '6px' }}>({product.reviewsCount} {tProduct('reviews')})</span>
+                            <div style={{ display: 'flex', gap: '2px', marginRight: '10px' }}>
+                                {[1, 2, 3, 4, 5].map(i => (
+                                    <Star key={i} size={16} className={i <= (product.rating || 0) ? "fill-amber-400 text-amber-400" : "text-slate-200"} />
+                                ))}
+                            </div>
+                            <span style={{ color: '#666' }}>({product.reviewsCount || 0} {tProduct('reviews')})</span>
                         </div>
-                        <button className={styles.shareBtn} onClick={handleShare}>
-                            <Share2 size={20} />
-                        </button>
+                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                            {(product as any).showLowStock && product.stock > 0 && product.stock < 10 && (
+                                <div className="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                                    <AlertTriangle size={14} /> {tMarketing('showLowStock')}
+                                </div>
+                            )}
+                            <button className={styles.shareBtn} onClick={handleShare}>
+                                <Share2 size={20} />
+                            </button>
+                        </div>
                     </div>
 
                     <h1 className={styles.productTitle}>{product.title}</h1>
 
                     <div className={styles.priceSection}>
-                        {product.oldPrice && (
+                        {product.oldPrice && product.oldPrice > product.price && (
                             <div className={styles.oldPriceSect}>
                                 <span className={styles.oldPriceVal}>{product.oldPrice.toLocaleString()} {tHeader('som')}</span>
-                                {product.discount && <span className={styles.saveBadge}>{tProduct('benefit')}: {product.discount.toLocaleString()} {tHeader('som')}</span>}
+                                <span className={styles.saveBadge}>
+                                    {tProduct('benefit') || "Foyda"}: {(product.oldPrice - product.price).toLocaleString()} {tHeader('som')}
+                                </span>
                             </div>
                         )}
                         <div className={styles.mainPrice}>{product.price.toLocaleString()} {tHeader('som')}</div>
+
+                        {(product as any).allowInstallment && (
+                            <div className="mt-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
+                                <div>
+                                    <div className="text-amber-800 text-sm font-bold">{tMarketing('allowInstallment')}</div>
+                                    <div className="text-amber-600 text-xs mt-1">{tMarketing('installment_period')}</div>
+                                </div>
+                                <div className="text-right">
+                                    <div className="text-xl font-black text-amber-700">{Math.round(product.price / 12).toLocaleString()} {tHeader('som')}</div>
+                                    <div className="text-[10px] text-amber-500 font-medium">{tMarketing('oyiga')} / {tMarketing('dan')}</div>
+                                </div>
+                            </div>
+                        )}
                     </div>
 
 
@@ -318,12 +398,12 @@ export default function ProductPage() {
                                 ) : (product.stock > 0 && !['inactive', 'draft'].includes(product.status?.toLowerCase() || '')) ? (
                                     <>
                                         <div className={styles.greenDot}></div>
-                                        Sotuvda mavjud
+                                        {tProduct('in_stock')}
                                     </>
                                 ) : (
                                     <>
                                         <div className={styles.greenDot} style={{ backgroundColor: '#9e9e9e' }}></div>
-                                        Sotuvda mavjud emas
+                                        {tProduct('out_of_stock')}
                                     </>
                                 )}
                             </div>

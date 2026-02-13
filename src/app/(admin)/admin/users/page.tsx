@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, User, Shield, Calendar, Mail } from "lucide-react";
+import CreateUserModal from "./CreateUserModal";
 
 async function getUsers(where: any, skip: number, take: number) {
     return await Promise.all([
@@ -56,16 +57,19 @@ export default async function TopshiriqUsersPage({
                     <p className="text-gray-500 font-medium">Platforma foydalanuvchilarini boshqarish</p>
                 </div>
 
-                {/* Search */}
-                <form className="relative w-full md:w-96 group">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-                    <input
-                        name="q"
-                        defaultValue={query}
-                        placeholder="Email yoki ism orqali qidirish..."
-                        className="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:scale-[1.02] transition-all outline-none font-medium placeholder:text-gray-300"
-                    />
-                </form>
+                <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+                    {/* Search */}
+                    <form className="relative w-full md:w-96 group">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <input
+                            name="q"
+                            defaultValue={query}
+                            placeholder="Email yoki ism orqali qidirish..."
+                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:scale-[1.02] transition-all outline-none font-medium placeholder:text-gray-300"
+                        />
+                    </form>
+                    <CreateUserModal />
+                </div>
             </div>
 
             <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
@@ -80,7 +84,7 @@ export default async function TopshiriqUsersPage({
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
-                            {users.map((user) => (
+                            {users.map((user: any) => (
                                 <tr key={user.id} className="group hover:bg-blue-50/30 transition-colors">
                                     <td className="py-5 px-8">
                                         <div className="flex items-center gap-4">
@@ -104,11 +108,13 @@ export default async function TopshiriqUsersPage({
                                     <td className="py-5 px-8">
                                         <span
                                             className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${user.role === "ADMIN"
-                                                    ? "bg-blue-100 text-blue-700 ring-1 ring-blue-700/10"
+                                                ? "bg-blue-600 text-white shadow-lg shadow-blue-100"
+                                                : user.role === "VENDOR"
+                                                    ? "bg-orange-500 text-white shadow-lg shadow-orange-100"
                                                     : "bg-gray-100 text-gray-600 ring-1 ring-gray-600/10"
                                                 }`}
                                         >
-                                            <Shield size={12} />
+                                            <Shield size={12} strokeWidth={2.5} />
                                             {user.role}
                                         </span>
                                     </td>

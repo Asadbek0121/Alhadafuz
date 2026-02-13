@@ -29,7 +29,7 @@ export default function BottomNav() {
     const { data: session } = useSession();
     const isAuthenticated = !!session?.user;
     const { isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
-    const { items } = useCartStore();
+    const { items, isHydrated } = useCartStore();
     const { wishlist } = useWishlist();
 
     // Hide upon product detail pages
@@ -58,7 +58,7 @@ export default function BottomNav() {
             href: "/cart",
             isActive: pathname === "/cart" && !isCatalogOpen,
             action: () => closeCatalog(),
-            badge: items.length,
+            badge: isHydrated ? items.length : 0,
             fillable: false
         },
         {

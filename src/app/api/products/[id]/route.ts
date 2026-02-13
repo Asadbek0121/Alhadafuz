@@ -9,11 +9,9 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     console.log(`[API] Fetching product id: ${id}`);
 
     try {
-        const productRows: any[] = await (prisma as any).$queryRawUnsafe(`
-            SELECT * FROM "Product" WHERE "id" = '${id}' LIMIT 1
-        `);
-
-        const dbProduct = productRows[0];
+        const dbProduct = await (prisma as any).product.findUnique({
+            where: { id }
+        });
 
         console.log(`[API] DB Result for ${id}:`, dbProduct ? "Found" : "Not Found");
 
@@ -63,6 +61,24 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 }
             }
 
+            // Extract marketing flags from attributes JSON
+            let isNew = true; // Default
+            let freeDelivery = false;
+            let hasVideo = false;
+            let hasGift = false;
+            let showLowStock = false;
+            let allowInstallment = false;
+
+            if (specs) {
+                const s = specs as any;
+                if (typeof s.isNew !== 'undefined') isNew = s.isNew;
+                if (typeof s.freeDelivery !== 'undefined') freeDelivery = s.freeDelivery;
+                if (typeof s.hasVideo !== 'undefined') hasVideo = s.hasVideo;
+                if (typeof s.hasGift !== 'undefined') hasGift = s.hasGift;
+                if (typeof s.showLowStock !== 'undefined') showLowStock = s.showLowStock;
+                if (typeof s.allowInstallment !== 'undefined') allowInstallment = s.allowInstallment;
+            }
+
             // Calculate dynamic rating
             const reviewsCount = reviews.length;
             const rawRating = reviewsCount > 0
@@ -74,6 +90,12 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 ...dbProduct,
                 images,
                 specs,
+                isNew,
+                freeDelivery,
+                hasVideo,
+                hasGift,
+                showLowStock,
+                allowInstallment,
                 rating,
                 reviewsCount,
                 reviews,

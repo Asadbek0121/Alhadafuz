@@ -20,7 +20,8 @@ export default function PersonalInfoPage() {
 
     const profileSchema = z.object({
         name: z.string().min(2, t('name_min')),
-        email: z.string().email(t('email_invalid')),
+        username: z.string().min(3, t('username_invalid')).optional().or(z.literal("")),
+        email: z.string().email(t('email_invalid')).optional().or(z.literal("")),
         phone: z.string().min(9, t('phone_invalid')),
         dateOfBirth: z.string().optional().or(z.literal("")),
         gender: z.string().optional().or(z.literal("")),
@@ -38,6 +39,7 @@ export default function PersonalInfoPage() {
         resolver: zodResolver(profileSchema),
         defaultValues: {
             name: "",
+            username: "",
             email: "",
             phone: "",
             dateOfBirth: "",
@@ -49,13 +51,14 @@ export default function PersonalInfoPage() {
         // Fetch latest user data from API to ensure we have dateOfBirth/gender
         // as they might not be in the session token yet
         const fetchUserData = async () => {
-            if (session?.user?.email) {
+            if (session?.user?.id) {
                 try {
                     const res = await fetch('/api/user/info');
                     if (res.ok) {
                         const userData = await res.json();
                         if (userData) {
                             setValue("name", userData.name || session?.user?.name || "");
+                            setValue("username", userData.username || "");
                             setValue("email", userData.email || session?.user?.email || "");
                             setValue("phone", userData.phone || (session?.user as any)?.phone || "");
 
@@ -79,7 +82,7 @@ export default function PersonalInfoPage() {
         };
 
         fetchUserData();
-    }, [session, setValue]);
+    }, [session?.user?.id, setValue]);
 
     const onSubmit = async (data: ProfileForm) => {
         setIsSaving(true);
@@ -116,6 +119,55 @@ export default function PersonalInfoPage() {
         }
     };
 
+    const [isUploading, setIsUploading] = useState(false);
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Size check (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error(t('image_too_large') || "Rasm hajmi juda katta (max 5MB)");
+            return;
+        }
+
+        setIsUploading(true);
+        const formData = new FormData();
+        formData.append("file", file);
+
+        try {
+            const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+            });
+
+            if (!res.ok) throw new Error("Yuklashda xatolik");
+
+            const { url } = await res.json();
+
+            // Store image in user profile
+            const updateRes = await fetch("/api/user/info", {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: session?.user?.name || "",
+                    image: url
+                }),
+            });
+
+            if (updateRes.ok) {
+                await update({ ...session, user: { ...session?.user, image: url } });
+                toast.success(t('image_updated') || "Rasm yangilandi!");
+                router.refresh();
+            }
+        } catch (error) {
+            console.error("Upload error:", error);
+            toast.error(t('upload_fail') || "Yuklashda xatolik yuz berdi");
+        } finally {
+            setIsUploading(false);
+        }
+    };
+
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-8 border-b border-gray-100 flex items-center justify-between">
@@ -124,18 +176,34 @@ export default function PersonalInfoPage() {
                     <p className="text-text-muted mt-1">{t('personal_dashboard')}</p>
                 </div>
                 <div className="relative group">
+                    <input
+                        type="file"
+                        id="avatar-upload"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                    />
                     <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden relative">
+                        {isUploading ? (
+                            <div className="absolute inset-0 z-10 bg-black/20 flex items-center justify-center">
+                                <Loader2 size={24} className="animate-spin text-white" />
+                            </div>
+                        ) : null}
                         {session?.user?.image ? (
-                            <Image src={session.user.image} alt="Avatar" fill className="object-cover" />
+                            <Image src={session.user.image} alt="Avatar" width={80} height={80} className="object-cover" />
                         ) : (
                             <div className="w-full h-full flex items-center justify-center text-primary bg-primary/10">
                                 <span className="text-2xl font-bold">{session?.user?.name?.[0] || "U"}</span>
                             </div>
                         )}
                     </div>
-                    <button className="absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label
+                        htmlFor="avatar-upload"
+                        className={`absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-primary-hover transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                    >
                         <Camera size={14} />
-                    </button>
+                    </label>
                 </div>
             </div>
 
@@ -150,6 +218,17 @@ export default function PersonalInfoPage() {
                             placeholder={t('fio')}
                         />
                         {errors.name && <p className="text-red-500 text-xs font-medium">{errors.name.message}</p>}
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-semibold text-gray-700">{t('username')}</label>
+                        <input
+                            {...register("username")}
+                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.username ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
+                                }`}
+                            placeholder={t('username')}
+                        />
+                        {errors.username && <p className="text-red-500 text-xs font-medium">{errors.username.message}</p>}
                     </div>
 
                     <div className="space-y-2">

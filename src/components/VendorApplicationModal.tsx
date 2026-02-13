@@ -142,13 +142,13 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
 
                                         <div className="space-y-1.5">
                                             <label className="text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_category')}</label>
-                                            <select name="category" className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 font-medium appearance-none">
-                                                <option>{t('cat_electronics')}</option>
-                                                <option>{t('cat_fashion')}</option>
-                                                <option>{t('cat_appliances')}</option>
-                                                <option>{t('cat_home')}</option>
-                                                <option>{t('cat_other')}</option>
-                                            </select>
+                                            <input
+                                                required
+                                                name="category"
+                                                type="text"
+                                                placeholder={t('placeholder_category')}
+                                                className="w-full px-5 py-4 bg-gray-50 border border-gray-100 rounded-2xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none text-gray-900 font-medium"
+                                            />
                                         </div>
 
                                         <div className="space-y-1.5">

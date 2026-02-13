@@ -14,7 +14,12 @@ export default function SessionSync() {
             // We cast because session user might have extra fields we added
             const sessionUser = session.user as any;
 
-            if (!storeUser || storeUser.id !== sessionUser.id) {
+            const hasChanged = !storeUser ||
+                storeUser.id !== sessionUser.id ||
+                storeUser.uniqueId !== sessionUser.uniqueId ||
+                storeUser.role !== sessionUser.role;
+
+            if (hasChanged) {
                 setUser({
                     id: sessionUser.id,
                     email: sessionUser.email,

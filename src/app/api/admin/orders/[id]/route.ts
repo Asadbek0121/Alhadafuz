@@ -8,18 +8,27 @@ export const dynamic = 'force-dynamic';
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
-    console.log('Admin Order Update Debug:', {
-        userId: session?.user?.id,
-        role: session?.user?.role,
-        email: session?.user?.email,
-        hasSession: !!session
-    });
+    const { id } = await context.params;
+    const userRole = session?.user?.role;
+    const userId = session?.user?.id;
 
-    if (session?.user?.role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Unauthorized', debug: session?.user }, { status: 401 });
+    if (userRole !== 'ADMIN' && userRole !== 'VENDOR') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await context.params;
+    // If VENDOR, check if they own any item in this order
+    if (userRole === 'VENDOR') {
+        const checkResult: any[] = await (prisma as any).$queryRawUnsafe(`
+            SELECT oi.id FROM "OrderItem" oi
+            JOIN "Product" p ON oi."productId" = p.id
+            WHERE oi."orderId" = '${id}' AND p."vendorId" = '${userId}'
+            LIMIT 1
+        `);
+
+        if (!checkResult || checkResult.length === 0) {
+            return NextResponse.json({ error: 'Forbidden: You do not have items in this order' }, { status: 403 });
+        }
+    }
 
     try {
         const body = await req.json();
@@ -79,7 +88,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
         // Log activity
         try {
-            if ((prisma as any).activityLog) {
+            if ((prisma as any).activityLog && session?.user?.id) {
                 await (prisma as any).activityLog.create({
                     data: {
                         adminId: session.user.id,

@@ -53,6 +53,99 @@
     background: white;
 }
 
+/* New Premium Badges System */
+.badgeContainer {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    pointer-events: none;
+}
+
+.promoSticker {
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: white;
+    letter-spacing: 0.5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(4px);
+}
+
+.hotTheme {
+    background: linear-gradient(135deg, #ff4b2b, #ff416c);
+}
+
+.promoTheme {
+    background: linear-gradient(135deg, #2193b0, #6dd5ed);
+}
+
+.saleTheme {
+    background: linear-gradient(135deg, #11998e, #38ef7d);
+}
+
+.deliveryTheme {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+}
+
+.giftTheme {
+    background: linear-gradient(135deg, #f80759, #bc4e9c);
+}
+
+.discountTag {
+    position: absolute;
+    top: 0;
+    right: 12px;
+    background: #1a1a1a;
+    color: #fff;
+    padding: 10px 6px 14px;
+    font-size: 11px;
+    font-weight: 900;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
+    z-index: 20;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    line-height: 1;
+}
+
+.discountTag span {
+    color: #ff4b2b;
+    font-size: 14px;
+    margin-bottom: 2px;
+    display: block;
+}
+
+.newArrival {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(10px);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 900;
+    color: #1a1a1a;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    z-index: 10;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+}
+
 .badges {
     position: absolute;
     top: 12px;
@@ -79,19 +172,97 @@
     background-color: #00c853;
 }
 
+/* Creative Ribbon Badge */
+.creativeRibbon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 100px;
+    height: 100px;
+    overflow: hidden;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.creativeRibbon span {
+    position: absolute;
+    display: block;
+    width: 150px;
+    padding: 8px 0;
+    background: linear-gradient(135deg, #ff416c, #ff4b2b);
+    box-shadow: 0 5px 10px rgba(0, 0, 0, 0.1);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 900;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    text-transform: uppercase;
+    text-align: center;
+    right: -35px;
+    top: 25px;
+    transform: rotate(45deg);
+}
+
+.creativeRibbon span::before,
+.creativeRibbon span::after {
+    content: "";
+    position: absolute;
+    border-top: 3px solid #6e1a10;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    bottom: -3px;
+}
+
+.creativeRibbon span::before {
+    left: 0;
+}
+
+.creativeRibbon span::after {
+    right: 0;
+}
+
+/* Hanging Tag Style */
+.hangingTag {
+    position: absolute;
+    top: -5px;
+    left: 12px;
+    background: #000;
+    color: #fff;
+    padding: 10px 8px 12px;
+    font-size: 10px;
+    font-weight: 900;
+    text-align: center;
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 85%, 0 100%);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    min-width: 35px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.hangingTag.hot {
+    background: linear-gradient(to bottom, #f97316, #ea580c);
+}
+
+.hangingTag.promo {
+    background: linear-gradient(to bottom, #3b82f6, #2563eb);
+}
+
+.hangingTag.sale {
+    background: linear-gradient(to bottom, #ef4444, #991b1b);
+}
+
 .imageWrapper {
     position: relative;
     width: 100%;
-    padding-bottom: 100%;
-    /* 1:1 Aspect Ratio */
-    margin-bottom: 16px;
-    background: #fff;
+    aspect-ratio: 4/5;
+    margin-bottom: 0px;
+    background: #f8fafc;
+    overflow: hidden;
 }
 
 .image {
-    position: absolute;
-    top: 0;
-    left: 0;
     bottom: 0;
     right: 0;
     width: 100%;

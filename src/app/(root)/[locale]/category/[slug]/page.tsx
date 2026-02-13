@@ -20,8 +20,7 @@ export default async function CategoryPage({
             },
             banners: {
                 where: {
-                    isActive: true,
-                    position: 'CATEGORY_TOP'
+                    isActive: true
                 }
             }
         }

@@ -128,7 +128,7 @@ export default function AuthModal() {
         try {
             localStorage.setItem('mergeCartOnLogin', 'true');
             const result = await signIn('credentials', {
-                email,
+                login: email, // We pass the email state as 'login' to authorize
                 password,
                 otp: isVerifying ? otp : undefined,
                 redirect: false,
@@ -141,7 +141,7 @@ export default function AuthModal() {
                 } else if (result.error.includes("OTP_INVALID")) {
                     toast.error("Tasdiqlash kodi noto'g'ri");
                 } else {
-                    toast.error("Email yoki parol noto'g'ri");
+                    toast.error("Email/Login yoki parol noto'g'ri");
                     localStorage.removeItem('mergeCartOnLogin');
                 }
             } else {
@@ -458,8 +458,8 @@ export default function AuthModal() {
                                                 <div className="relative group">
                                                     <Mail className="absolute left-4 top-3.5 md:top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
                                                     <input
-                                                        type="email"
-                                                        placeholder="Elektron pochta"
+                                                        type="text"
+                                                        placeholder="Email yoki Login"
                                                         value={email}
                                                         onChange={(e) => setEmail(e.target.value)}
                                                         required
@@ -580,7 +580,11 @@ export default function AuthModal() {
                                             whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
                                             type="button"
                                             className={`flex items-center justify-center gap-2.5 py-4 px-4 border-2 rounded-2xl transition-all shadow-sm ${termsAccepted ? 'border-slate-100 hover:bg-slate-50 hover:border-slate-200 bg-white cursor-pointer' : 'border-slate-50 bg-slate-50 opacity-60 cursor-not-allowed'}`}
-                                            onClick={() => handleSocialLogin("Telegram")}
+                                            onClick={() => {
+                                                if (termsAccepted) {
+                                                    window.open('https://t.me/Hadaf_supportbot?start=reg', '_blank');
+                                                }
+                                            }}
                                             disabled={!termsAccepted}
                                         >
                                             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none">

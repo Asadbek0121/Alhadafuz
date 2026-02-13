@@ -1,12 +1,19 @@
 
 import { prisma } from "@/lib/prisma";
 
-export async function generateNextUniqueId(): Promise<string> {
-    // 1. Find the most recently created user who has an H- ID
+export async function generateNextUniqueId(role: string = 'USER'): Promise<string> {
+    // 1. Determine prefix based on role
+    let prefix = 'H-';
+    if (role === 'ADMIN') prefix = 'A-';
+    else if (role === 'VENDOR') prefix = 'V-';
+
+    console.log(`DEBUG: generateNextUniqueId - Role: ${role}, Using Prefix: ${prefix}`);
+
+    // 2. Find the most recently created user who has this prefix ID
     const lastUser = await prisma.user.findFirst({
         where: {
             uniqueId: {
-                startsWith: 'H-'
+                startsWith: prefix
             }
         },
         orderBy: {
@@ -17,7 +24,7 @@ export async function generateNextUniqueId(): Promise<string> {
     let nextNum = 1;
 
     if (lastUser?.uniqueId) {
-        // Extract the numeric part after 'H-'
+        // Extract the numeric part after the prefix (e.g., 'A-00001' -> ['A', '00001'])
         const parts = lastUser.uniqueId.split('-');
         if (parts.length === 2) {
             const num = parseInt(parts[1], 10);
@@ -28,18 +35,13 @@ export async function generateNextUniqueId(): Promise<string> {
     }
 
     // Checking for collisions (safety net)
-    // We loop a few times to find a free spot if the sequential one is taken
-    // (e.g. by a manually inserted user or race condition)
     let isUnique = false;
     let candidateId = "";
 
     while (!isUnique) {
-        // Format: H-00001 (5 digits minimal)
-        // If nextNum is 100000, it becomes H-100000 (auto-expands)
-        // This handles the "100.000 oshib ketsa" requirement naturally 
-        // as standard string representation of numbers > 5 digits will just use more digits.
+        // Format: P-00001 (5 digits minimal)
         const suffix = nextNum.toString().padStart(5, '0');
-        candidateId = `H-${suffix}`;
+        candidateId = `${prefix}${suffix}`;
 
         // Quick check if this specific ID exists
         const existing = await prisma.user.findUnique({

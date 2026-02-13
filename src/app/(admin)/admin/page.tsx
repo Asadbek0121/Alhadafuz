@@ -8,96 +8,234 @@ import {
     Settings as SettingsIcon, FileText
 } from 'lucide-react';
 
-async function getData() {
+async function getData(userRole: string, userId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    let userCount = 0;
-    let todayUserCount = 0;
-    let orderCount = 0;
-    let todayOrderCount = 0;
-    let productCount = 0;
-    let totalRevenue = 0;
-    let todayRevenue = 0;
+    const isVendor = userRole === "VENDOR";
+
+    let stats = { userCount: 0, todayUserCount: 0, orderCount: 0, todayOrderCount: 0, productCount: 0, totalRevenue: 0, todayRevenue: 0 };
     let recentOrders: any[] = [];
     let recentMessages: any[] = [];
     let allOrders: any[] = [];
     let topProducts: any[] = [];
 
     try {
-        [userCount, todayUserCount] = await Promise.all([
-            prisma.user.count(),
-            prisma.user.count({ where: { createdAt: { gte: today } } })
-        ]);
-
-        [orderCount, todayOrderCount] = await Promise.all([
-            prisma.order.count({ where: { status: { not: 'CANCELLED' } } }),
-            prisma.order.count({ where: { createdAt: { gte: today }, status: { not: 'CANCELLED' } } })
-        ]);
-
-        productCount = await (prisma as any).product.count({ where: { isDeleted: false } });
-
-        const [revenue, tRevenue] = await Promise.all([
-            prisma.order.aggregate({
-                where: { status: { not: 'CANCELLED' } },
-                _sum: { total: true }
-            }),
-            prisma.order.aggregate({
-                where: { createdAt: { gte: today }, status: { not: 'CANCELLED' } },
-                _sum: { total: true }
-            })
-        ]);
-        totalRevenue = revenue._sum.total || 0;
-        todayRevenue = tRevenue._sum.total || 0;
-
-        recentOrders = await prisma.order.findMany({
-            take: 6,
-            orderBy: { createdAt: 'desc' },
-            include: { user: true }
-        });
-
-        recentMessages = await (prisma as any).message.findMany({
-            take: 5,
-            orderBy: { createdAt: 'desc' },
-            include: { sender: true }
-        });
-
-        allOrders = await prisma.order.findMany({
-            select: { createdAt: true, total: true, status: true },
-            orderBy: { createdAt: 'asc' }
-        });
-
-        // Simplified Top Products (by item count in recent orders)
-        const orderItems = await (prisma as any).orderItem.findMany({
-            take: 50,
-            orderBy: { id: 'desc' },
-            select: { title: true, price: true, quantity: true, productId: true, image: true }
-        });
-
-        const productMap: any = {};
-        orderItems.forEach((item: any) => {
-            if (!productMap[item.productId]) {
-                productMap[item.productId] = { ...item, sales: 0 };
+        // 1. Detect DB and columns
+        let hasVendorId = false;
+        try {
+            const columns: any[] = await (prisma as any).$queryRawUnsafe(`
+                SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
+            `);
+            hasVendorId = columns.some(c => c.column_name === 'vendorId');
+        } catch (pgError) {
+            try {
+                const tableInfo: any[] = await (prisma as any).$queryRawUnsafe(`PRAGMA table_info("Product")`);
+                hasVendorId = tableInfo.some(c => c.name === 'vendorId');
+            } catch (sqliteError) {
+                hasVendorId = false;
             }
-            productMap[item.productId].sales += item.quantity;
-        });
-        topProducts = Object.values(productMap).sort((a: any, b: any) => b.sales - a.sales).slice(0, 5);
+        }
+
+        const joinCondition = isVendor && hasVendorId ? `WHERE p."vendorId" = $1` : `WHERE 1=0`;
+        const params = isVendor && hasVendorId ? [userId] : [];
+
+        // 2. Stats
+        if (isVendor) {
+            if (hasVendorId) {
+                try {
+                    const counts: any[] = await (prisma as any).$queryRawUnsafe(`
+                        SELECT 
+                            COUNT(DISTINCT o.id)::int as "totalOrders",
+                            COUNT(DISTINCT CASE WHEN o."createdAt" >= '${today.toISOString()}' THEN o.id END)::int as "todayOrders"
+                        FROM "Order" o
+                        JOIN "OrderItem" oi ON o.id = oi."orderId"
+                        JOIN "Product" p ON oi."productId" = p.id
+                        WHERE p."vendorId" = $1 AND o.status != 'CANCELLED'
+                    `, userId);
+
+                    stats.orderCount = counts[0]?.totalOrders || 0;
+                    stats.todayOrderCount = counts[0]?.todayOrders || 0;
+
+                    const revenues: any[] = await (prisma as any).$queryRawUnsafe(`
+                        SELECT 
+                            SUM(oi.price * oi.quantity) as "totalRevenue",
+                            SUM(CASE WHEN o."createdAt" >= '${today.toISOString()}' THEN oi.price * oi.quantity ELSE 0 END) as "todayRevenue"
+                        FROM "OrderItem" oi
+                        JOIN "Order" o ON oi."orderId" = o.id
+                        JOIN "Product" p ON oi."productId" = p.id
+                        WHERE p."vendorId" = $1 AND o.status != 'CANCELLED'
+                    `, userId);
+
+                    stats.totalRevenue = Number(revenues[0]?.totalRevenue || 0);
+                    stats.todayRevenue = Number(revenues[0]?.todayRevenue || 0);
+                } catch (e) {
+                    console.error("Vendor stats error:", e);
+                }
+            }
+
+            stats.productCount = await (prisma as any).product.count({
+                where: {
+                    ...(hasVendorId ? { vendorId: userId } : { id: 'none' }),
+                    isDeleted: false
+                }
+            }).catch(() => 0);
+
+        } else {
+            // Admin stats
+            try {
+                const [userCount, todayUserCount] = await Promise.all([
+                    prisma.user.count(),
+                    prisma.user.count({ where: { createdAt: { gte: today } } })
+                ]);
+                stats.userCount = userCount;
+                stats.todayUserCount = todayUserCount;
+
+                const [orderCount, todayOrderCount] = await Promise.all([
+                    prisma.order.count({ where: { status: { not: 'CANCELLED' } } }),
+                    prisma.order.count({ where: { createdAt: { gte: today }, status: { not: 'CANCELLED' } } })
+                ]);
+                stats.orderCount = orderCount;
+                stats.todayOrderCount = todayOrderCount;
+
+                stats.productCount = await (prisma as any).product.count({ where: { isDeleted: false } }).catch(() => 0);
+
+                const [revenue, tRevenue] = await Promise.all([
+                    prisma.order.aggregate({
+                        where: { status: { not: 'CANCELLED' } },
+                        _sum: { total: true }
+                    }),
+                    prisma.order.aggregate({
+                        where: { createdAt: { gte: today }, status: { not: 'CANCELLED' } },
+                        _sum: { total: true }
+                    })
+                ]);
+                stats.totalRevenue = revenue._sum.total || 0;
+                stats.todayRevenue = tRevenue._sum.total || 0;
+            } catch (e) {
+                console.error("Admin stats error:", e);
+            }
+        }
+
+        // 3. Recent Orders
+        try {
+            if (isVendor && hasVendorId) {
+                recentOrders = await (prisma as any).$queryRawUnsafe(`
+                    SELECT o.*, 
+                        JSON_AGG(oi.*) as items,
+                        u.name as "userName", u.email as "userEmail"
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON o.id = oi."orderId"
+                    JOIN "Product" p ON oi."productId" = p.id
+                    LEFT JOIN "User" u ON o."userId" = u.id
+                    WHERE p."vendorId" = $1
+                    GROUP BY o.id, u.id
+                    ORDER BY o."createdAt" DESC
+                    LIMIT 6
+                `, userId);
+
+                recentOrders = recentOrders.map(order => ({
+                    ...order,
+                    user: { name: (order as any).userName, email: (order as any).userEmail },
+                    total: order.items?.reduce((acc: number, item: any) => acc + (item.price * item.quantity), 0) || 0
+                }));
+            } else if (!isVendor) {
+                recentOrders = await prisma.order.findMany({
+                    take: 6,
+                    orderBy: { createdAt: 'desc' },
+                    include: { user: true, items: true }
+                }).catch(() => []);
+            }
+        } catch (e) {
+            console.error("Recent orders error:", e);
+        }
+
+        // 4. Messages
+        try {
+            recentMessages = await (prisma as any).message.findMany({
+                where: isVendor ? { receiverId: userId } : {},
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                include: { sender: true }
+            }).catch(() => []);
+        } catch (e) {
+            recentMessages = [];
+        }
+
+        // 5. Chart Data
+        try {
+            if (isVendor && hasVendorId) {
+                allOrders = await (prisma as any).$queryRawUnsafe(`
+                    SELECT o."createdAt", SUM(oi.price * oi.quantity) as total, o.status
+                    FROM "Order" o
+                    JOIN "OrderItem" oi ON o.id = oi."orderId"
+                    JOIN "Product" p ON oi."productId" = p.id
+                    WHERE p."vendorId" = $1
+                    GROUP BY o.id
+                    ORDER BY o."createdAt" ASC
+                `, userId);
+            } else if (!isVendor) {
+                allOrders = await (prisma as any).order.findMany({
+                    select: { createdAt: true, total: true, status: true },
+                    orderBy: { createdAt: 'asc' }
+                }).catch(() => []);
+            }
+        } catch (e) {
+            allOrders = [];
+        }
+
+        // 6. Top Products
+        try {
+            if (isVendor && hasVendorId) {
+                topProducts = await (prisma as any).$queryRawUnsafe(`
+                    SELECT oi.title, oi.price, SUM(oi.quantity)::int as sales, oi."productId", oi.image
+                    FROM "OrderItem" oi
+                    JOIN "Product" p ON oi."productId" = p.id
+                    WHERE p."vendorId" = $1
+                    GROUP BY oi."productId", oi.title, oi.price, oi.image
+                    ORDER BY sales DESC
+                    LIMIT 5
+                `, userId);
+            } else if (!isVendor) {
+                const orderItems = await (prisma as any).orderItem.findMany({
+                    take: 100,
+                    orderBy: { id: 'desc' },
+                    select: { title: true, price: true, quantity: true, productId: true, image: true }
+                }).catch(() => []);
+
+                const productMap: any = {};
+                orderItems.forEach((item: any) => {
+                    if (!productMap[item.productId]) {
+                        productMap[item.productId] = { ...item, sales: 0 };
+                    }
+                    productMap[item.productId].sales += item.quantity;
+                });
+                topProducts = Object.values(productMap).sort((a: any, b: any) => b.sales - a.sales).slice(0, 5);
+            }
+        } catch (e) {
+            topProducts = [];
+        }
 
     } catch (e) {
-        console.error("Error fetching dashboard data:", e);
+        console.error("Critical error in dashboard getData:", e);
     }
 
-    return {
-        stats: { userCount, todayUserCount, orderCount, todayOrderCount, productCount, totalRevenue, todayRevenue },
-        recentOrders,
-        recentMessages,
-        allOrders,
-        topProducts
-    };
+    return { stats, recentOrders, recentMessages, allOrders, topProducts };
 }
+import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 
 export default async function AdminDashboard() {
-    const data = await getData();
+    const session = await auth();
+    if (!session?.user) redirect('/auth/login');
+
+    const userRole = (session.user as any).role || "USER";
+    if (userRole !== 'ADMIN' && userRole !== 'VENDOR') {
+        redirect('/');
+    }
+    const userId = session.user.id as string;
+
+    const data = await getData(userRole, userId);
 
     // Sanitize data
     const stats = JSON.parse(JSON.stringify(data.stats));
@@ -147,10 +285,12 @@ export default async function AdminDashboard() {
 
     const quickActions = [
         { label: "Yangi Mahsulot", icon: Plus, href: "/admin/products/new", color: "#4361ee" },
-        { label: "Kategoriyalar", icon: Tag, href: "/admin/categories", color: "#3a0ca3" },
-        { label: "Bannerlar", icon: ImageIcon, href: "/admin/banners", color: "#7209b7" },
-        { label: "Hisobotlar", icon: FileText, href: "/admin/invoices", color: "#4cc9f0" },
-        { label: "Sozlamalar", icon: SettingsIcon, href: "/admin/settings", color: "#560bad" },
+        ...(userRole === 'ADMIN' ? [
+            { label: "Kategoriyalar", icon: Tag, href: "/admin/categories", color: "#3a0ca3" },
+            { label: "Bannerlar", icon: ImageIcon, href: "/admin/banners", color: "#7209b7" },
+            { label: "Hisobotlar", icon: FileText, href: "/admin/invoices", color: "#4cc9f0" },
+            { label: "Sozlamalar", icon: SettingsIcon, href: "/admin/settings", color: "#560bad" },
+        ] : []),
         { label: "Xabarlar", icon: MessageSquare, href: "/admin/chat", color: "#f72585" },
     ];
 

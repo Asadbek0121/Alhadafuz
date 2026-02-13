@@ -3,7 +3,7 @@
 
 import { useCartStore } from '@/store/useCartStore';
 import { useUserStore } from '@/store/useUserStore';
-import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle } from 'lucide-react';
+import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle, Store, Building, Clock } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
@@ -23,6 +23,9 @@ export default function CheckoutPage() {
     const router = useRouter();
 
     const [deliveryMethod, setDeliveryMethod] = useState<'courier' | 'pickup'>('courier');
+    const [stores, setStores] = useState<any[]>([]);
+    const [selectedStoreId, setSelectedStoreId] = useState<string | null>(null);
+    const [isLoadingStores, setIsLoadingStores] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<string>('');
     const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
     const [isMethodsLoading, setIsMethodsLoading] = useState(true);
@@ -135,6 +138,30 @@ export default function CheckoutPage() {
         fetchMethods();
         fetchZones();
     }, []);
+
+    // 1.5 Fetch Stores when Olib ketish is selected
+    useEffect(() => {
+        if (deliveryMethod === 'pickup' && stores.length === 0) {
+            const fetchStores = async () => {
+                setIsLoadingStores(true);
+                try {
+                    const res = await fetch('/api/stores');
+                    if (res.ok) {
+                        const data = await res.json();
+                        setStores(data);
+                        if (data.length > 0 && !selectedStoreId) {
+                            setSelectedStoreId(data[0].id);
+                        }
+                    }
+                } catch (err) {
+                    console.error("Failed to fetch stores", err);
+                } finally {
+                    setIsLoadingStores(false);
+                }
+            };
+            fetchStores();
+        }
+    }, [deliveryMethod, stores.length, selectedStoreId]);
 
     // 2. Auth/Cart check and Addresses
     useEffect(() => {
@@ -266,6 +293,7 @@ export default function CheckoutPage() {
                         phone: formData.phone,
                         name: formData.name,
                     },
+                    storeId: deliveryMethod === 'pickup' ? selectedStoreId : null,
                 }),
             });
 
@@ -480,8 +508,64 @@ export default function CheckoutPage() {
                         )}
 
                         {deliveryMethod === 'pickup' && (
-                            <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-slate-600 text-sm animate-fade-in">
-                                {tCheckout('pickup_info')}
+                            <div className="flex flex-col gap-4 animate-fade-in">
+                                <label className="block text-sm font-bold text-slate-900 mb-1">
+                                    {tCheckout('select_store')}
+                                </label>
+                                {isLoadingStores ? (
+                                    <div className="flex justify-center py-6">
+                                        <Loader2 className="animate-spin text-blue-600" />
+                                    </div>
+                                ) : stores.length === 0 ? (
+                                    <div className="p-6 bg-slate-50 rounded-2xl border border-slate-200 text-center text-slate-600 text-sm">
+                                        {tCheckout('pickup_info')}
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 gap-3">
+                                        {stores.map(store => (
+                                            <div
+                                                key={store.id}
+                                                className={`cursor-pointer p-5 rounded-2xl border-2 transition-all relative group ${selectedStoreId === store.id ? 'border-blue-600 bg-blue-50/50 shadow-sm' : 'border-slate-100 hover:border-slate-300 bg-white'}`}
+                                                onClick={() => setSelectedStoreId(store.id)}
+                                            >
+                                                {selectedStoreId === store.id && <div className="absolute top-5 right-5 text-blue-600"><CheckCircle2 size={24} /></div>}
+                                                <div className="flex items-start gap-4">
+                                                    <div className={`w-12 h-12 shrink-0 rounded-2xl flex items-center justify-center transition-colors ${selectedStoreId === store.id ? 'bg-blue-600 text-white' : 'bg-slate-50 text-slate-400 group-hover:bg-slate-100'}`}>
+                                                        <Store size={24} />
+                                                    </div>
+                                                    <div className="flex-1 pr-8">
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <div className="font-black text-slate-900 md:text-lg leading-tight">{store.name}</div>
+                                                            <a
+                                                                href={store.lat && store.lng
+                                                                    ? `https://www.google.com/maps/search/?api=1&query=${store.lat},${store.lng}`
+                                                                    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.address)}`
+                                                                }
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                onClick={(e) => e.stopPropagation()}
+                                                                className="flex items-center gap-1.5 text-blue-600 hover:text-blue-700 font-bold text-xs bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-xl transition-all"
+                                                            >
+                                                                <MapPin size={14} />
+                                                                <span>{tCheckout('show_on_map')}</span>
+                                                            </a>
+                                                        </div>
+                                                        <div className="flex items-start gap-1.5 text-sm text-slate-600 font-medium mb-2">
+                                                            <MapPin size={16} className="mt-0.5 shrink-0 text-slate-400" />
+                                                            <span>{store.address}</span>
+                                                        </div>
+                                                        {store.workingHours && (
+                                                            <div className="flex items-center gap-1.5 text-xs text-slate-400 font-bold uppercase tracking-wider">
+                                                                <Clock size={14} className="shrink-0" />
+                                                                <span>{store.workingHours}</span>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         )}
                     </section>
