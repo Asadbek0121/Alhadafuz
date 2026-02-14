@@ -35,6 +35,8 @@ model User {
   lockedUntil          DateTime?
   dateOfBirth          DateTime?
   gender               String?
+  botState             String?        @default("START")
+  tempData             String?        @db.Text // Optimized for JSON storage as string
   
   // Profiles
   courierProfile       CourierProfile?
