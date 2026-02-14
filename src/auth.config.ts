@@ -41,4 +41,6 @@ export const authConfig = {
         }
     },
     providers: [], // Configured in auth.ts
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    trustHost: true,
 } satisfies NextAuthConfig;
