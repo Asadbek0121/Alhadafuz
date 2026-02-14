@@ -81,6 +81,7 @@ export async function POST(req: Request) {
                 role: "USER",
                 provider: "credentials",
                 emailVerified: new Date(), // Mark as verified!
+                isVerified: true,
             },
         });
 
