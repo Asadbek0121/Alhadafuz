@@ -22,6 +22,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            allowDangerousEmailAccountLinking: true,
         }),
         Credentials({
             id: 'telegram-login',

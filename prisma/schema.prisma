@@ -230,7 +230,7 @@ model VerificationToken {
   token      String
   expires    DateTime
 
-  @@id([identifier, token])
+  @@unique([identifier, token])
 }
 
 model Address {
