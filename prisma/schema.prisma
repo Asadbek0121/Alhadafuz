@@ -42,6 +42,7 @@ model User {
   orders               Order[]        @relation("CustomerOrders")
   assignedOrders       Order[]        @relation("CourierOrders")
   managedOrders        Order[]        @relation("MerchantOrders")
+  createdOrders        Order[]        @relation("CreatedOrders")
   notifications        Notification[]
   reviews              Review[]
   products             Product[]      @relation("VendorProducts")
@@ -117,8 +118,15 @@ model Order {
   shippingName     String?
   shippingPhone    String?
   shippingAddress  String?
+  shippingCity     String?
+  shippingDistrict String?
   lat              Float?
   lng              Float?
+  comment          String?
+  
+  deliveryMethod   String      @default("COURIER") // COURIER, PICKUP
+  creatorId        String?
+  createdVia       String?     @default("USER_APP") // USER_APP, ADMIN_PANEL, TELEGRAM_BOT
   
   deliveryToken    String?     @unique // For QR validation
   tokenExpiresAt   DateTime?
@@ -131,6 +139,7 @@ model Order {
   user             User        @relation("CustomerOrders", fields: [userId], references: [id])
   courier          User?       @relation("CourierOrders", fields: [courierId], references: [id])
   merchant         User?       @relation("MerchantOrders", fields: [merchantId], references: [id])
+  creator          User?       @relation("CreatedOrders", fields: [creatorId], references: [id])
   
   items            OrderItem[]
   dispatchLogs     DispatchLog[]
