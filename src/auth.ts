@@ -309,6 +309,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 session.user.phone = token.phone || null;
                 session.user.deviceId = token.deviceId || null;
                 session.user.isVerified = !!token.isVerified;
+                session.user.hasPin = !!token.hasPin;
                 session.error = token.error;
             }
             return session;
@@ -322,6 +323,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 token.phone = (user as any).phone;
                 token.deviceId = (user as any).currentDeviceId;
                 token.isVerified = !!(user as any).isVerified;
+                token.hasPin = !!(user as any).hasPin || !!(user as any).pinHash;
                 token.lastActivity = Date.now();
             }
 

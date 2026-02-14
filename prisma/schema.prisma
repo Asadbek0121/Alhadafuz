@@ -28,6 +28,12 @@ model User {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   telegramId           String?        @unique
+  pinHash              String?
+  recoveryHash         String?
+  failedAttempts       Int            @default(0)
+  lockedUntil          DateTime?
+  dateOfBirth          DateTime?
+  gender               String?
   
   // Profiles
   courierProfile       CourierProfile?

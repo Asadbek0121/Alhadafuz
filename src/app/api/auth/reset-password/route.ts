@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
+import { checkRateLimit } from "@/lib/ratelimit";
+import { logActivity } from "@/lib/security";
+
 export async function POST(req: Request) {
+    // 1. RATE LIMITING
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await checkRateLimit(`reset_pw_${ip}`);
+    if (!success) {
+        return NextResponse.json({ message: "Juda ko'p so'rov. Iltimos, keyinroq urinib ko'ring." }, { status: 429 });
+    }
+
     try {
         const { token, email, password } = await req.json();
 
@@ -67,6 +77,8 @@ export async function POST(req: Request) {
                 password: null // Clear plain password if exists for security
             },
         });
+
+        await logActivity(user.id, "PASSWORD_RESET", { ip });
 
         // 4. Tokenni o'chirish (bir marta ishlatish uchun)
         await prisma.verificationToken.delete({

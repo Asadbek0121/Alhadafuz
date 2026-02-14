@@ -30,6 +30,7 @@ export default function SessionSync() {
                     phone: sessionUser.phone,
                     twoFactorEnabled: sessionUser.twoFactorEnabled,
                     notificationsEnabled: sessionUser.notificationsEnabled,
+                    hasPin: sessionUser.hasPin,
                 });
             }
         } else if (status === "unauthenticated" && storeUser) {

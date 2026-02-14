@@ -3,8 +3,16 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import argon2 from 'argon2';
+import { checkRateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: Request) {
+    // 1. RATE LIMITING
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await checkRateLimit(`pin_verify_${ip}`);
+    if (!success) {
+        return NextResponse.json({ error: "Too many attempts. Please wait." }, { status: 429 });
+    }
+
     try {
         const session = await auth();
         if (!session?.user?.id) {

@@ -2,7 +2,17 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import crypto from "crypto";
 
+import { checkRateLimit } from "@/lib/ratelimit";
+import { logActivity } from "@/lib/security";
+
 export async function POST(req: Request) {
+    // 1. RATE LIMITING
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await checkRateLimit(`forgot_pw_${ip}`);
+    if (!success) {
+        return NextResponse.json({ message: "Juda ko'p so'rov. Iltimos, keyinroq urinib ko'ring." }, { status: 429 });
+    }
+
     try {
         const { email } = await req.json();
 
