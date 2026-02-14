@@ -9,6 +9,7 @@ const intlMiddleware = createMiddleware(routing);
 const { auth } = NextAuth({
     ...authConfig,
     secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+    trustHost: true,
 });
 
 export default auth((req) => {
