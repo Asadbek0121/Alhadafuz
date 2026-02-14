@@ -337,7 +337,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
             // 4. JWT Rotation & DB Sync (Enterprise Check)
             // We periodically sync with DB to check if user is still active/not blocked
-            const SYNC_INTERVAL = 5 * 60 * 1000; // 5 minutes
+            const SYNC_INTERVAL = process.env.NODE_ENV === 'development' ? 24 * 60 * 60 * 1000 : 15 * 60 * 1000; // 24h in dev, 15m in prod
             if (!token.lastSync || (Date.now() - token.lastSync > SYNC_INTERVAL)) {
                 try {
                     const dbUser = await prisma.user.findUnique({
@@ -345,15 +345,19 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         select: { isVerified: true, role: true, lockedUntil: true } as any
                     }) as any;
 
-                    if (!dbUser || (dbUser.lockedUntil && new Date(dbUser.lockedUntil) > new Date())) {
-                        return { ...token, error: "USER_BLOCKED" };
+                    if (dbUser) {
+                        if (dbUser.lockedUntil && new Date(dbUser.lockedUntil) > new Date()) {
+                            return { ...token, error: "USER_BLOCKED" };
+                        }
+                        token.lastSync = Date.now();
+                        token.role = dbUser.role;
+                        token.isVerified = !!dbUser.isVerified;
                     }
-
+                } catch (e: any) {
+                    console.error("Session sync failed (likely DB connection timeout):", e.message);
+                    // Silently fail and keep existing token data to avoid crashing during transient DB issues
+                    // We'll try again after the next interval
                     token.lastSync = Date.now();
-                    token.role = dbUser.role;
-                    token.isVerified = !!dbUser.isVerified;
-                } catch (e) {
-                    console.error("Session sync failed", e);
                 }
             }
 

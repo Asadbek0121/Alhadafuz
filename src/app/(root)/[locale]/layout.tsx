@@ -18,6 +18,7 @@ import { auth } from "@/auth";
 import AuthModal from "@/components/Auth/AuthModal";
 import Script from "next/script";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
+import PinLock from "@/components/Auth/PinLock";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -81,6 +82,7 @@ export default async function LocaleLayout({
                 <Toaster />
                 <SupportChat />
                 <AuthModal />
+                <PinLock />
               </SessionProviderWrapper>
 
             </WishlistProvider>

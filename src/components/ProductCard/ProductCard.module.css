@@ -102,6 +102,10 @@
     background: linear-gradient(135deg, #f80759, #bc4e9c);
 }
 
+.newTheme {
+    background: linear-gradient(135deg, #6366f1, #a855f7);
+}
+
 .discountTag {
     position: absolute;
     top: 0;

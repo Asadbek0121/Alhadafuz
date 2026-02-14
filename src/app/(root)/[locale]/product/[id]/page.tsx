@@ -382,7 +382,7 @@ export default function ProductPage() {
                         <div className={styles.metaRow}>
                             <span className={styles.metaLabel}>{tProduct('brand')}:</span>
                             <div className={styles.metaDots}></div>
-                            <span className={styles.metaValue}>{product.brand || "UzMarket"}</span>
+                            <span className={styles.metaValue}>{product.brand || "Hadaf Market"}</span>
                         </div>
 
                         {/* Stock */}

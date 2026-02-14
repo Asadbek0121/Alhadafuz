@@ -270,7 +270,7 @@ export default function ProfileOverviewPage() {
                                 <div className="flex items-center gap-3">
                                     <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium border border-white/10 flex items-center gap-2">
                                         <Wallet size={14} />
-                                        {tProfile('balance')}: 0 {tHeader('som')}
+                                        {tProfile('balance')}: {statsData.balance.toLocaleString()} {tHeader('som')}
                                     </span>
                                     <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium border border-white/10">
                                         ID: {user?.uniqueId || '---'}
@@ -341,7 +341,7 @@ export default function ProfileOverviewPage() {
                                 <ArrowRight size={20} className="text-gray-300 group-hover:text-pink-500 transition-colors" />
                             </div>
                             <div className="z-10">
-                                <p className="text-3xl font-bold text-gray-800 mb-1">0</p>
+                                <p className="text-3xl font-bold text-gray-800 mb-1">{statsData.wishlistCount}</p>
                                 <p className="text-sm font-medium text-gray-500">{tProfile('wishlist')}</p>
                             </div>
                         </Link>
@@ -356,7 +356,7 @@ export default function ProfileOverviewPage() {
                             </div>
                             <div className="z-10">
                                 <p className="text-xs font-medium text-white/60 mb-1 uppercase tracking-wider">{tProfile('balance')}</p>
-                                <p className="text-2xl font-bold">0 {tHeader('som')}</p>
+                                <p className="text-2xl font-bold">{statsData.balance.toLocaleString()} {tHeader('som')}</p>
                             </div>
                         </div>
                     </div>

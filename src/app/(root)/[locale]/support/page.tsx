@@ -13,14 +13,22 @@ async function getSettings() {
         try { socialLinks = JSON.parse(settings.socialLinks); } catch (e) { }
     }
 
-    const telegramLink = socialLinks.supportTelegram || socialLinks.telegram || "https://t.me/uzmarket_support";
+    const telegramLink = socialLinks.supportTelegram || socialLinks.telegram || "https://t.me/hadaf_uz";
+
+    const contactInfo = {
+        phone: settings?.phone || "+998 71 200 01 05",
+        email: settings?.email || "info@hadaf.uz",
+        workingHours: "24/7",
+        telegramUsername: telegramLink.split('/').pop() || "@hadaf_uz"
+    };
 
     return {
-        phone: settings?.phone || "+998 71 123-45-67",
-        email: settings?.email || "support@uzmarket.uz",
+        phone: contactInfo.phone,
+        email: contactInfo.email,
         telegram: telegramLink,
         address: settings?.address || "Toshkent shahri",
-        telegramUsername: telegramLink.split('/').pop() || "@uzmarket_support"
+        telegramUsername: contactInfo.telegramUsername,
+        workingHours: contactInfo.workingHours
     };
 }
 

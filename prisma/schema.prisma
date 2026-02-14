@@ -1,11 +1,13 @@
 generator client {
   provider = "prisma-client-js"
+  output   = "../src/generated/client"
 }
 
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 
 model User {
   id                   String         @id @default(cuid())
@@ -16,45 +18,143 @@ model User {
   password             String?
   hashedPassword       String?
   image                String?
-  role                 String         @default("USER")
+  role                 String         @default("USER") // ADMIN, MERCHANT, COURIER, USER
   provider             String?        @default("credentials")
   uniqueId             String?        @unique
   notificationsEnabled Boolean        @default(true)
   twoFactorEnabled     Boolean        @default(false)
   isDarkMode           Boolean        @default(false)
   isDeleted            Boolean        @default(false)
-  emailVerified        DateTime?
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
-  dateOfBirth          DateTime?
-  gender               String?
-  isVerified           Boolean        @default(false)
-  riskScore            Int            @default(0)
-  failedAttempts       Int            @default(0)
-  lockedUntil          DateTime?
-  pinHash              String?        // Argon2 encrypted PIN
-  recoveryHash         String?        // Argon2 encrypted recovery key
   telegramId           String?        @unique
-  botState             String?        // For telegram bot registration steps
-  tempData             String?        @db.Text // JSON for temp data in registration
-  lastLoginAt          DateTime?
-  lastIp               String?
-  accounts             Account[]
+  
+  // Profiles
+  courierProfile       CourierProfile?
+  merchantProfile      MerchantProfile?
+  
+  // Relations
+  orders               Order[]        @relation("CustomerOrders")
+  assignedOrders       Order[]        @relation("CourierOrders")
+  managedOrders        Order[]        @relation("MerchantOrders")
+  notifications        Notification[]
+  reviews              Review[]
+  products             Product[]      @relation("VendorProducts")
   logs                 ActivityLog[]
   addresses            Address[]
   cart                 Cart?
   receivedMessages     Message[]      @relation("ReceivedMessages")
   sentMessages         Message[]      @relation("SentMessages")
-  notifications        Notification[]
-  orders               Order[]
-  reviews              Review[]
-  products             Product[]      @relation("VendorProducts")
+  accounts             Account[]
   sessions             Session[]
   devices              Device[]
   wishlist             Wishlist?
   telegramLoginTokens  TelegramLoginToken[]
   authenticators       Authenticator[]
 }
+
+model CourierProfile {
+  id                String   @id @default(cuid())
+  userId            String   @unique
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status            String   @default("OFFLINE") // ONLINE, BUSY, OFFLINE
+  rating            Float    @default(5.0)
+  totalDeliveries   Int      @default(0)
+  currentLat        Float?
+  currentLng        Float?
+  vehicleType       String?  // CAR, MOTO, BIKE, ON_FOOT
+  balance           Float    @default(0)
+  isVerified        Boolean  @default(false)
+  lastOnlineAt      DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model CourierApplication {
+  id         String   @id @default(cuid())
+  telegramId String   @unique
+  name       String
+  phone      String
+  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model MerchantProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeName   String
+  description String?
+  logo        String?
+  address     String?
+  isVerified  Boolean  @default(false)
+  rating      Float    @default(5.0)
+  balance     Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Order {
+  id               String      @id @default(cuid())
+  userId           String      // Customer
+  courierId        String?     // Assigned Courier
+  merchantId       String?     // Assigned Merchant/Store
+  
+  status           String      @default("CREATED") 
+  // CREATED, ASSIGNED, PICKED_UP, DELIVERING, DELIVERED, PAID, COMPLETED, CANCELLED
+
+  total            Float
+  deliveryFee      Float       @default(0)
+  paymentMethod    String      @default("CASH")
+  paymentStatus    String      @default("PENDING") 
+  
+  shippingName     String?
+  shippingPhone    String?
+  shippingAddress  String?
+  lat              Float?
+  lng              Float?
+  
+  deliveryToken    String?     @unique // For QR validation
+  tokenExpiresAt   DateTime?
+  
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  finishedAt       DateTime?
+  finishedAtRaw    DateTime?   // For historical reasons if any
+  
+  user             User        @relation("CustomerOrders", fields: [userId], references: [id])
+  courier          User?       @relation("CourierOrders", fields: [courierId], references: [id])
+  merchant         User?       @relation("MerchantOrders", fields: [merchantId], references: [id])
+  
+  items            OrderItem[]
+  dispatchLogs     DispatchLog[]
+  earnings         Earning[]
+  storeId          String?
+  store            Store?      @relation(fields: [storeId], references: [id])
+}
+
+model DispatchLog {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  courierId   String
+  status      String   // PENDING, ACCEPTED, REJECTED, TIMEOUT
+  score       Float?   // Dispatch algorithm score
+  createdAt   DateTime @default(now())
+}
+
+model Earning {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id])
+  userId      String   // Courier or Merchant
+  amount      Float
+  type        String   // DELIVERY_FEE, PRODUCT_SALE, BONUS
+  status      String   @default("PENDING") // PENDING, PAID
+  createdAt   DateTime @default(now())
+}
+
 
 model Account {
   id                String  @id @default(cuid())
@@ -74,16 +174,6 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-model TelegramLoginToken {
-  token     String   @id
-  status    String   @default("PENDING") // PENDING, VERIFIED, EXPIRED
-  userId    String? 
-  user      User?    @relation(fields: [userId], references: [id])
-  telegramId String?
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-}
-
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -91,7 +181,7 @@ model Session {
   expires      DateTime
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-  deviceId     String?  // Linked device if applicable
+  deviceId     String?
   device       Device?  @relation(fields: [deviceId], references: [id])
   ipAddress    String?
   userAgent    String?
@@ -101,12 +191,12 @@ model Session {
 model Device {
   id           String   @id @default(cuid())
   userId       String
-  deviceId     String   @unique // Browser fingerprint or App ID
+  deviceId     String   @unique
   deviceName   String
   isTrusted    Boolean  @default(false)
   lastSeen     DateTime @updatedAt
   riskScore    Int      @default(0)
-  fingerprint  String?  // Hardware-based unique hash
+  fingerprint  String?
   createdAt    DateTime @default(now())
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   sessions     Session[]
@@ -130,6 +220,7 @@ model Authenticator {
 }
 
 model VerificationToken {
+  id         String   @id @default(cuid())
   identifier String
   token      String
   expires    DateTime
@@ -152,42 +243,16 @@ model Address {
   @@index([userId])
 }
 
-model Order {
-  id               String      @id @default(cuid())
-  userId           String
-  status           String      @default("PENDING")
-  total            Float
-  deliveryFee      Float       @default(0)
-  paymentMethod    String      @default("CASH")
-  deliveryMethod   String      @default("COURIER")
-  paymentStatus    String      @default("PENDING") // NEW, PAID, CANCELLED
-  paymentProvider  String?     // CLICK, PAYME
-  paymentId        String?     // Transaction ID from Click/Payme
-  shippingCity     String?
-  shippingDistrict String?
-  shippingAddress  String?
-  shippingPhone    String?
-  shippingName     String?
-  comment          String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  deliveryToken    String?     @unique
-  districtCode     String?
-  gpsLogs          String?
-  creatorId        String?     // Admin ID if created by admin
-  couponCode       String?
-  discountAmount   Float?      @default(0)
-  createdVia       String      @default("WEB_APP") // WEB_APP, ADMIN_PANEL, TELEGRAM_BOT
-  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items            OrderItem[]
-  storeId          String?
-  store            Store?      @relation(fields: [storeId], references: [id])
-
-  @@index([userId])
-  @@index([status])
-  @@index([createdAt])
-  @@index([paymentStatus])
+model TelegramLoginToken {
+  token     String   @id
+  status    String   @default("PENDING")
+  userId    String? 
+  user      User?    @relation(fields: [userId], references: [id])
+  telegramId String?
+  createdAt DateTime @default(now())
+  expiresAt DateTime
 }
+
 
 model OrderItem {
   id        String  @id @default(cuid())

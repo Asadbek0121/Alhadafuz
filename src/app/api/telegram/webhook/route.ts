@@ -124,13 +124,29 @@ export async function POST(req: Request) {
 
             await safeSend(chatId, `Xush kelibsiz, ${user.name || 'Foydalanuvchi'}! 👋\n\nHisobingiz himoyalangan.`, {
                 reply_markup: {
-                    inline_keyboard: [[{ text: "🔐 PIN o'zgartirish / Tiklash", callback_data: "start_recovery" }]]
+                    inline_keyboard: [
+                        [{ text: "🔑 Tasdiqlash kodini olish", callback_data: "get_verification_code" }],
+                        [{ text: "🔐 PIN o'zgartirish / Tiklash", callback_data: "start_recovery" }]
+                    ]
                 }
             });
             return NextResponse.json({ ok: true });
         }
 
         // --- Handle Direct Callbacks ---
+        if (callbackData === 'get_verification_code') {
+            const code = Math.floor(100000 + Math.random() * 900000).toString();
+            const recoveryHash = await argon2.hash(code);
+
+            await prisma.user.update({
+                where: { id: user!.id },
+                data: { recoveryHash }
+            });
+
+            await safeSend(chatId, `Sizning tasdiqlash kodingiz: <b>${code}</b>\n\nUni ilovada PIN-kodni tiklash qismiga kiriting.`);
+            return NextResponse.json({ ok: true });
+        }
+
         if (callbackData === 'start_recovery') {
             await prisma.user.update({ where: { id: user!.id }, data: { botState: 'RECOVERY_ASK_PHONE' } });
             await safeSend(chatId, "Hisobni tiklashni boshlaymiz. Iltimos, telefon raqamingizni yuboring:", {

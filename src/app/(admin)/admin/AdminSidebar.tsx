@@ -1,9 +1,9 @@
 "use client";
 
 import { usePathname } from 'next/navigation';
-import { Titan_One } from "next/font/google";
+import { Montserrat } from "next/font/google";
 
-const titanOne = Titan_One({ weight: "400", subsets: ["latin"] });
+const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
 import Link from 'next/link';
 import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck, Star, Ticket } from 'lucide-react';
@@ -48,13 +48,28 @@ export default function AdminSidebar() {
             flexDirection: 'column',
             padding: '20px'
         }}>
-            {/* Logo */}
-            <div style={{ padding: '0 10px 30px 10px', display: 'flex', alignItems: 'center', gap: '0' }}>
-                <img src="/logo.png" alt="Hadaf Logo" style={{ height: '60px', width: 'auto', objectFit: 'contain' }} />
-                <span className={`${titanOne.className} text-3xl leading-none text-[#0052FF] ml-0 pt-1`}>Hadaf</span>
-                <span className="text-sm font-semibold text-slate-500 ml-2 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded">
-                    {userRole === "VENDOR" ? "Sotuvchi" : "Admin"}
-                </span>
+            {/* Logo & Return Link */}
+            <div style={{ padding: '0 10px 20px 10px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <Link href="/" style={{ display: 'flex', alignItems: 'center', gap: '0', textDecoration: 'none' }}>
+                    <img src="/logo.png" alt="Hadaf Logo" style={{ height: '50px', width: 'auto', objectFit: 'contain' }} />
+                    <div className="flex flex-col">
+                        <span className={`${montserrat.className} text-2xl font-black leading-none text-[#0052FF] pt-1 uppercase tracking-tighter`}>Hadaf</span>
+                        <span className="text-[8px] font-bold tracking-[0.2em] text-blue-500/80 uppercase mt-[-2px] ml-0.5">Market</span>
+                    </div>
+                </Link>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-widest bg-slate-100 px-2 py-1 rounded-md">
+                        {userRole === "VENDOR" ? "Sotuvchi" : "Admin"}
+                    </span>
+                    <Link
+                        href="/"
+                        className="flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-700 transition-colors"
+                        style={{ textDecoration: 'none' }}
+                    >
+                        <LayoutGrid size={14} />
+                        <span>Saytga o'tish</span>
+                    </Link>
+                </div>
             </div>
 
             {/* Menu */}

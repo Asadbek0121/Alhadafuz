@@ -154,7 +154,13 @@ export default function EditProductPage() {
                         status: (data.status === "ACTIVE" || data.status === "published") ? "published" :
                             (data.status === "inactive" ? "inactive" :
                                 (data.status === "sotuvda_kam_qolgan" ? "sotuvda_kam_qolgan" :
-                                    (data.status === "draft" || data.status === "DRAFT" ? "draft" : "inactive")))
+                                    (data.status === "draft" || data.status === "DRAFT" ? "draft" : "inactive"))),
+                        isNew: !!data.isNew,
+                        freeDelivery: !!data.freeDelivery,
+                        hasVideo: !!data.hasVideo,
+                        hasGift: !!data.hasGift,
+                        showLowStock: !!data.showLowStock,
+                        allowInstallment: !!data.allowInstallment,
                     });
 
                     // Populate attributes
@@ -169,8 +175,13 @@ export default function EditProductPage() {
 
                         if (parsedAttrs && typeof parsedAttrs === 'object') {
                             const attrs: any[] = [];
+                            const marketingKeys = ['isNew', 'freeDelivery', 'hasVideo', 'hasGift', 'showLowStock', 'allowInstallment'];
+
                             Object.entries(parsedAttrs).forEach(([key, value]) => {
-                                attrs.push({ key, value: Array.isArray(value) ? value.join(',') : String(value) });
+                                // Filter out marketing flags from technical variations
+                                if (!marketingKeys.includes(key)) {
+                                    attrs.push({ key, value: Array.isArray(value) ? value.join(',') : String(value) });
+                                }
                             });
                             setAttributes(attrs);
                         }

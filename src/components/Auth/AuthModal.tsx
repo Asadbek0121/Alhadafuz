@@ -110,23 +110,24 @@ export default function AuthModal() {
 
     const handleSuccess = (message: string) => {
         setIsSuccess(true);
-        toast.success(message);
+        if (message) toast.success(message);
 
-        // Immediately push to home to show it as background
         const params = new URLSearchParams(window.location.search);
         const callbackUrl = params.get('callbackUrl');
+
+        // Push to home if no callback, but don't force if already there
         if (!callbackUrl && window.location.pathname !== '/') {
             router.push('/');
         }
 
-        // Final action after animation
+        // Final action after animation - reduced to 3s for better UX
         redirectTimerRef.current = setTimeout(() => {
             if (callbackUrl) {
                 window.location.href = callbackUrl;
             } else {
                 window.location.reload();
             }
-        }, 5000);
+        }, 3000);
     };
 
     const handleLinkBiometric = async () => {
@@ -354,126 +355,145 @@ export default function AuthModal() {
                         exit={{ y: "100%", opacity: 0 }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
                         style={{ zIndex: 99999 }}
-                        className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:bottom-auto md:-translate-x-1/2 md:-translate-y-1/2 bg-white w-full md:w-[460px] rounded-t-[32px] md:rounded-[40px] shadow-2xl overflow-hidden min-h-[300px] flex flex-col"
+                        className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 bg-white w-full md:w-[440px] rounded-t-[40px] md:rounded-[48px] shadow-2xl overflow-hidden md:min-h-[640px] flex flex-col"
                     >
                         <AnimatePresence mode="wait">
                             {isSuccess ? (
-
-
                                 <motion.div
                                     key="success-view"
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    className="flex-1 flex flex-col items-center justify-center p-10 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white text-center relative overflow-hidden"
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -20 }}
+                                    className="flex-1 flex flex-col items-center justify-center p-8 bg-white/40 backdrop-blur-[40px] text-slate-900 text-center relative overflow-hidden min-h-[450px] w-full border-t border-white/50"
                                 >
-                                    {/* Background Decor */}
-                                    <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-                                        <div className="absolute top-[-10%] right-[-10%] w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
-                                        <div className="absolute bottom-[-10%] left-[-10%] w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl"></div>
-                                    </div>
+                                    {/* Liquid Background Base */}
+                                    <div className="absolute inset-0 -z-10 bg-slate-50/50" />
 
-                                    <div className="relative mb-8 z-10">
-                                        {/* Ripple Effect */}
+                                    {/* Liquid Animated Blobs (Mesh Gradient) */}
+                                    <div className="absolute inset-0 pointer-events-none overflow-hidden h-full w-full">
                                         <motion.div
-                                            initial={{ opacity: 0.5, scale: 0.8 }}
-                                            animate={{ opacity: 0, scale: 2 }}
-                                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-                                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white/20 rounded-full"
-                                        />
-
-                                        <motion.div
-                                            initial={{ opacity: 0.5, scale: 0.8 }}
-                                            animate={{ opacity: 0, scale: 2.5 }}
-                                            transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut", delay: 0.4 }}
-                                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-white/10 rounded-full"
-                                        />
-
-                                        {/* Main Circle */}
-                                        <motion.div
-                                            initial={{ scale: 0 }}
-                                            animate={{ scale: 1 }}
-                                            transition={{
-                                                type: "spring",
-                                                stiffness: 300,
-                                                damping: 20,
-                                                delay: 0.1
+                                            animate={{
+                                                scale: [1, 1.4, 1.2, 1],
+                                                x: [0, 80, -40, 0],
+                                                y: [0, -60, 40, 0],
                                             }}
-                                            className="w-32 h-32 bg-white rounded-full flex items-center justify-center shadow-2xl relative z-10"
-                                        >
-                                            <motion.svg
-                                                width="64"
-                                                height="64"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                className="drop-shadow-sm"
-                                            >
-                                                <motion.path
-                                                    d="M20 6L9 17l-5-5"
-                                                    stroke="#2563EB" // blue-600 to match theme
-                                                    strokeWidth="4" // Thicker stroke
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    initial={{ pathLength: 0, opacity: 0 }}
-                                                    animate={{ pathLength: 1, opacity: 1 }}
-                                                    transition={{ duration: 0.5, delay: 0.3, ease: "easeOut" }}
-                                                />
-                                            </motion.svg>
-                                        </motion.div>
+                                            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+                                            className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-400/30 rounded-full blur-[100px]"
+                                        />
+                                        <motion.div
+                                            animate={{
+                                                scale: [1.2, 1, 1.5, 1.2],
+                                                x: [0, -70, 60, 0],
+                                                y: [0, 80, -50, 0],
+                                            }}
+                                            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+                                            className="absolute bottom-[-15%] right-[-10%] w-[450px] h-[450px] bg-indigo-500/20 rounded-full blur-[120px]"
+                                        />
+                                        <motion.div
+                                            animate={{
+                                                scale: [1, 1.3, 0.9, 1],
+                                                x: [-50, 40, 80, -50],
+                                                y: [60, -80, 20, 60],
+                                            }}
+                                            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+                                            className="absolute top-[20%] right-[-15%] w-[350px] h-[350px] bg-purple-400/15 rounded-full blur-[100px]"
+                                        />
+                                        <motion.div
+                                            animate={{
+                                                scale: [1, 1.2, 1],
+                                                x: [30, -30, 30],
+                                                y: [-20, 20, -20],
+                                            }}
+                                            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                                            className="absolute top-[40%] left-[20%] w-[250px] h-[250px] bg-cyan-300/20 rounded-full blur-[80px]"
+                                        />
                                     </div>
 
-                                    <motion.div
-                                        initial={{ y: 20, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.4 }}
-                                        className="relative z-10"
-                                    >
-                                        <h3 className="text-4xl font-black mb-3 tracking-tight text-white drop-shadow-md">
-                                            {t('success_title') || 'Muvaffaqiyatli!'}
-                                        </h3>
-                                        <p className="text-blue-100 font-medium text-lg leading-relaxed max-w-[280px] mx-auto mb-6">
-                                            {t('success_message') || 'Xush kelibsiz! Tizimga muvaffaqiyatli kirdingiz.'}
-                                        </p>
+                                    {/* Glass Grain Texture Overlay */}
+                                    <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
 
-                                        {isBiometricSupported && !biometricLinked && (
+                                    <div className="relative z-10 flex flex-col items-center w-full">
+                                        <div className="relative w-36 h-36 mb-10">
+                                            {/* Advanced Liquid Ripple */}
+                                            {[1, 2].map((i) => (
+                                                <motion.div
+                                                    key={i}
+                                                    initial={{ opacity: 0.2, scale: 0.5 }}
+                                                    animate={{ opacity: 0, scale: 3 }}
+                                                    transition={{
+                                                        duration: 3,
+                                                        repeat: Infinity,
+                                                        ease: [0.23, 1, 0.32, 1],
+                                                        delay: i * 1
+                                                    }}
+                                                    className="absolute inset-0 bg-blue-600/5 rounded-full ring-1 ring-blue-500/10"
+                                                />
+                                            ))}
+
+                                            {/* Liquid Check Button */}
                                             <motion.div
-                                                initial={{ y: 10, opacity: 0 }}
-                                                animate={{ y: 0, opacity: 1 }}
-                                                transition={{ delay: 0.6 }}
-                                                className="bg-white/10 backdrop-blur-md p-5 rounded-3xl border border-white/20"
+                                                initial={{ scale: 0, rotate: -45 }}
+                                                animate={{ scale: 1, rotate: 0 }}
+                                                transition={{
+                                                    type: "spring",
+                                                    stiffness: 260,
+                                                    damping: 20,
+                                                    delay: 0.2
+                                                }}
+                                                className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-[0_20px_50px_rgba(37,99,235,0.4)] relative"
                                             >
-                                                <h4 className="text-white font-bold mb-1">{tp('biometric_setup_title') || 'Parolsiz kirish'}</h4>
-                                                <p className="text-sm text-white/80 mb-4 font-medium leading-tight">
-                                                    {tp('biometric_setup_desc') || 'Keyingi safar parolsiz kirishni xohlaysizmi? Barmoq izini hoziroq faollashtiring.'}
-                                                </p>
-                                                <button
-                                                    onClick={handleLinkBiometric}
-                                                    disabled={isBiometricLoading}
-                                                    className="w-full h-12 bg-white text-blue-600 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-50 transition-colors shadow-lg disabled:opacity-50"
+                                                {/* Liquid Gloss Reflection */}
+                                                <div className="absolute inset-1 rounded-full bg-gradient-to-tr from-white/20 to-transparent pointer-events-none" />
+
+                                                <motion.svg
+                                                    width="76"
+                                                    height="76"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    className="text-white drop-shadow-md"
                                                 >
-                                                    {isBiometricLoading ? <Loader2 size={20} className="animate-spin" /> : <Fingerprint size={20} />}
-                                                    <span>{tp('biometric_setup_btn') || 'Faollashtirish'}</span>
-                                                </button>
-                                                <button
-                                                    onClick={() => window.location.reload()}
-                                                    className="mt-3 text-xs text-white/50 hover:text-white font-medium transition-colors"
-                                                >
-                                                    {tp('biometric_setup_skip') || 'Hozir emas, keyinroq'}
-                                                </button>
+                                                    <motion.path
+                                                        d="M20 6L9 17l-5-5"
+                                                        stroke="currentColor"
+                                                        strokeWidth="3.5"
+                                                        strokeLinecap="round"
+                                                        strokeLinejoin="round"
+                                                        initial={{ pathLength: 0 }}
+                                                        animate={{ pathLength: 1 }}
+                                                        transition={{ duration: 0.8, delay: 0.5, ease: "circOut" }}
+                                                    />
+                                                </motion.svg>
                                             </motion.div>
-                                        )}
+                                        </div>
+
+                                        <motion.div
+                                            initial={{ y: 20, opacity: 0 }}
+                                            animate={{ y: 0, opacity: 1 }}
+                                            transition={{ delay: 0.6 }}
+                                            className="px-4"
+                                        >
+                                            <h3 className="text-4xl font-black mb-4 tracking-tight leading-tight text-slate-900 drop-shadow-sm">
+                                                {t('success_title')}
+                                            </h3>
+                                            <p className="text-slate-500/90 font-semibold text-lg leading-relaxed max-w-[280px] mx-auto">
+                                                {t('success_message')}
+                                            </p>
+                                        </motion.div>
 
                                         {biometricLinked && (
                                             <motion.div
-                                                initial={{ scale: 0.9, opacity: 0 }}
-                                                animate={{ scale: 1, opacity: 1 }}
-                                                className="bg-green-500/20 backdrop-blur-md p-4 rounded-3xl border border-green-500/30 flex items-center justify-center gap-3 text-white"
+                                                initial={{ scale: 0.9, opacity: 0, y: 15 }}
+                                                animate={{ scale: 1, opacity: 1, y: 0 }}
+                                                transition={{ delay: 1 }}
+                                                className="mt-10 bg-white/40 backdrop-blur-3xl px-6 py-4 rounded-3xl border border-white/50 flex items-center gap-3 shadow-xl ring-1 ring-emerald-500/10"
                                             >
-                                                <CheckCircle2 size={24} className="text-green-400" />
-                                                <span className="font-bold">{tp('biometric_setup_success') || 'Barmoq izi faollashtirildi!'}</span>
+                                                <div className="w-9 h-9 rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-500 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                                                    <CheckCircle2 size={20} className="text-white" />
+                                                </div>
+                                                <span className="text-sm font-black tracking-wide text-emerald-900/80">{tp('biometric_setup_success')}</span>
                                             </motion.div>
                                         )}
-                                    </motion.div>
+                                    </div>
                                 </motion.div>
                             ) : (
                                 <motion.div
@@ -481,33 +501,33 @@ export default function AuthModal() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="p-6 pt-4 md:p-10 md:pt-8 custom-scrollbar overflow-y-auto max-h-[90vh] pb-10"
+                                    className="p-6 pt-8 md:p-12 md:pt-14 custom-scrollbar overflow-y-auto max-h-[90vh] pb-12 flex-1 flex flex-col"
                                 >
                                     {/* Drag Handle */}
-                                    <div className="md:hidden w-16 h-1.5 bg-slate-200 rounded-full mx-auto mb-6"></div>
+                                    <div className="md:hidden w-16 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
 
                                     {/* Close Button */}
                                     <button
                                         onClick={closeAuthModal}
-                                        className="absolute top-4 right-4 p-2 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors z-10"
+                                        className="absolute top-6 right-6 p-2.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors z-10"
                                     >
-                                        <X size={20} />
+                                        <X size={22} />
                                     </button>
 
-                                    <div className="flex flex-col items-center mb-8">
+                                    <div className="flex flex-col items-center mb-12">
                                         <motion.div
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
-                                            className="w-16 h-16 bg-blue-50 rounded-3xl flex items-center justify-center mb-4 border-2 border-blue-100/50"
+                                            className="w-20 h-20 bg-blue-50 rounded-[32px] flex items-center justify-center mb-6 border-2 border-blue-100/50 shadow-sm"
                                         >
                                             <div className="text-blue-600">
-                                                {mode === 'login' ? <Lock size={28} strokeWidth={2.5} /> : <User size={28} strokeWidth={2.5} />}
+                                                {mode === 'login' ? <Lock size={32} strokeWidth={2.5} /> : <User size={32} strokeWidth={2.5} />}
                                             </div>
                                         </motion.div>
-                                        <h3 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">
+                                        <h3 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
                                             {mode === 'login' ? 'Tizimga kirish' : "Ro'yxatdan o'tish"}
                                         </h3>
-                                        <div className="text-sm font-semibold text-slate-400">
+                                        <div className="text-base font-semibold text-slate-400">
                                             {mode === 'login' ? 'Xush kelibsiz!' : "Yangi imkoniyatlar sari"}
                                         </div>
                                     </div>
@@ -671,33 +691,6 @@ export default function AuthModal() {
                                     </div>
 
                                     <div className="flex flex-col gap-4 mb-8">
-                                        {mode === 'login' && !isVerifying && (
-                                            <motion.button
-                                                whileHover={{ y: isBiometricLoading ? 0 : -2 }}
-                                                whileTap={{ scale: isBiometricLoading ? 1 : 0.98 }}
-                                                type="button"
-                                                disabled={isBiometricLoading}
-                                                onClick={async () => {
-                                                    setIsBiometricLoading(true);
-                                                    try {
-                                                        const { startBiometricLogin } = await import("@/components/Auth/BiometricManager");
-                                                        await toast.promise(startBiometricLogin(email), {
-                                                            loading: tp('biometric_checking') || 'Barmoq izi tekshirilmoqda...',
-                                                            success: t('welcome') || 'Xush kelibsiz!',
-                                                            error: tp('biometric_error') || 'Biometrik kirishda xatolik'
-                                                        });
-                                                    } catch (error) {
-                                                        console.error(error);
-                                                    } finally {
-                                                        setIsBiometricLoading(false);
-                                                    }
-                                                }}
-                                                className={`w-full flex items-center justify-center gap-3 py-4 bg-indigo-50 text-indigo-700 rounded-2xl font-bold border border-indigo-100 transition-all ${isBiometricLoading ? 'opacity-70 cursor-not-allowed' : 'hover:bg-indigo-100'}`}
-                                            >
-                                                {isBiometricLoading ? <Loader2 size={22} className="animate-spin" /> : <Fingerprint size={22} />}
-                                                <span>{tp('biometric_login') || 'Barmoq izi orqali kirish'}</span>
-                                            </motion.button>
-                                        )}
 
                                         <div className="grid grid-cols-2 gap-4">
                                             <motion.button

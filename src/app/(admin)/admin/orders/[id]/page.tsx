@@ -3,8 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { notFound, redirect } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, MapPin, User, Package, Calendar, CreditCard, ChevronDown, Tag } from "lucide-react";
+import { ArrowLeft, MapPin, User, Package, Calendar, CreditCard, ChevronDown, Tag, Truck } from "lucide-react";
 import OrderStatusSelect from "../OrderStatusSelect";
+import CourierSelector from "@/components/admin/CourierSelector";
 import { auth } from "@/auth";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
 
@@ -18,30 +19,63 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         redirect('/');
     }
 
-    const order = await prisma.order.findUnique({
-        where: { id },
-        include: {
-            user: true,
-            items: {
-                include: {
-                    product: true
-                }
+    // Fetch order basics using raw SQL to bypass client validation
+    const orders: any[] = await prisma.$queryRawUnsafe(
+        'SELECT * FROM "Order" WHERE id = $1 LIMIT 1',
+        id
+    );
+    const orderBasics = orders[0];
+    if (!orderBasics) notFound();
+
+    // Manually fetch relations
+    const [customer, items] = await Promise.all([
+        prisma.user.findUnique({ where: { id: orderBasics.userId } }),
+        prisma.orderItem.findMany({
+            where: { orderId: id },
+            include: { product: true }
+        }),
+    ]);
+
+    let courier = null;
+    if (orderBasics.courierId) {
+        try {
+            const couriersRaw: any[] = await prisma.$queryRawUnsafe(
+                'SELECT * FROM "User" WHERE id = $1 LIMIT 1',
+                orderBasics.courierId
+            );
+            if (couriersRaw.length > 0) {
+                courier = couriersRaw[0];
+                const profilesRaw: any[] = await prisma.$queryRawUnsafe(
+                    'SELECT * FROM "CourierProfile" WHERE "userId" = $1 LIMIT 1',
+                    courier.id
+                );
+                courier.courierProfile = profilesRaw[0] || null;
             }
+        } catch (e) {
+            console.error("Manual courier fetch error:", e);
         }
-    });
+    }
+
+    const order = {
+        ...orderBasics,
+        user: customer,
+        items: items,
+        courier: courier
+    };
 
     if (!order) notFound();
 
     // Check ownership for vendors
     let vendorSubtotal = 0;
+    const orderItems = (order as any).items || [];
     if (userRole === 'VENDOR') {
-        const hasVendorProduct = order.items.some((item: any) => item.vendorId === userId);
+        const hasVendorProduct = orderItems.some((item: any) => item.vendorId === userId);
         if (!hasVendorProduct) {
             redirect('/admin/orders');
         }
         // Filter items to only show vendor's products
-        order.items = order.items.filter((item: any) => item.vendorId === userId);
-        vendorSubtotal = order.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+        (order as any).items = orderItems.filter((item: any) => item.vendorId === userId);
+        vendorSubtotal = (order as any).items.reduce((acc: any, item: any) => acc + (item.price * item.quantity), 0);
     }
 
     const safeOrder = JSON.parse(JSON.stringify(order));
@@ -66,20 +100,27 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                     </Link>
                     <div>
                         <div className="flex items-center gap-3 flex-wrap">
-                            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Buyurtma <span className="text-blue-600">#{order.id.slice(-6).toUpperCase()}</span></h1>
+                            <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight">Buyurtma <span className="text-blue-600">#{(order as any).id.slice(-6).toUpperCase()}</span></h1>
                             <span className={`px-4 py-1 rounded-full text-xs font-bold border transition-colors ${status.color}`}>
                                 {status.label}
                             </span>
                         </div>
                         <div className="flex gap-4 mt-2 text-sm text-gray-500 font-medium">
-                            <span className="flex items-center gap-1.5"><Calendar size={14} className="text-gray-400" /> {new Date(order.createdAt).toLocaleString('uz-UZ')}</span>
-                            <span className="flex items-center gap-1.5"><CreditCard size={14} className="text-gray-400" /> {order.paymentMethod}</span>
+                            <span className="flex items-center gap-1.5"><Calendar size={14} className="text-gray-400" /> {new Date((order as any).createdAt).toLocaleString('uz-UZ')}</span>
+                            <span className="flex items-center gap-1.5"><CreditCard size={14} className="text-gray-400" /> {(order as any).paymentMethod}</span>
                         </div>
                     </div>
                 </div>
                 <div className="w-full md:w-auto flex items-center gap-3">
                     <BulkLabelPrinter orders={[safeOrder]} />
-                    <OrderStatusSelect orderId={order.id} currentStatus={order.status} />
+                    {userRole === 'ADMIN' && (
+                        <CourierSelector
+                            orderId={(order as any).id}
+                            currentCourierId={(order as any).courierId || undefined}
+                            orderStatus={(order as any).status}
+                        />
+                    )}
+                    <OrderStatusSelect orderId={(order as any).id} currentStatus={(order as any).status} />
                 </div>
             </div>
 
@@ -91,11 +132,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                             <h3 className="font-bold text-gray-900 flex items-center gap-2.5">
                                 <Package size={20} className="text-blue-500" />
                                 Buyurtma tarkibi
-                                <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">{order.items.length} dona</span>
+                                <span className="bg-blue-100 text-blue-700 text-[10px] px-2 py-0.5 rounded-full uppercase tracking-wider">{(order as any).items.length} dona</span>
                             </h3>
                         </div>
                         <div className="divide-y divide-gray-50 max-h-[600px] overflow-y-auto custom-scrollbar">
-                            {order.items.map((item: any) => (
+                            {(order as any).items.map((item: any) => (
                                 <div key={item.id} className="p-6 flex items-center gap-6 hover:bg-gray-50/30 transition-colors">
                                     <div className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 border border-gray-100 flex-shrink-0 group">
                                         {item.product.image ? (
@@ -121,7 +162,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                         <div className="p-6 bg-gray-50/50 space-y-3 border-t border-gray-100">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-500 font-medium">{userRole === 'VENDOR' ? 'Sizning mahsulotlaringiz:' : 'Mahsulotlar:'}</span>
-                                <span className="font-bold text-gray-900">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : (order.total - ((order as any).deliveryFee || 0) + ((order as any).discountAmount || 0)).toLocaleString()} so'm</span>
+                                <span className="font-bold text-gray-900">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : ((order as any).total - ((order as any).deliveryFee || 0) + ((order as any).discountAmount || 0)).toLocaleString()} so'm</span>
                             </div>
                             {userRole !== 'VENDOR' && (
                                 <>
@@ -146,7 +187,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                         <div className="p-6 bg-gray-900 text-white">
                             <div className="flex justify-between items-center">
                                 <span className="text-gray-400 font-medium">{userRole === 'VENDOR' ? 'Sizning ulushingiz (taxminiy):' : 'Jami to\'lov miqdori:'}</span>
-                                <span className="text-2xl font-black text-white">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : order.total.toLocaleString()} <span className="text-sm font-bold opacity-60 ml-1">UZS</span></span>
+                                <span className="text-2xl font-black text-white">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : (order as any).total.toLocaleString()} <span className="text-sm font-bold opacity-60 ml-1">UZS</span></span>
                             </div>
                         </div>
                     </div>
@@ -161,24 +202,24 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                         </h3>
                         <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
                             <div className="w-14 h-14 rounded-full bg-blue-600 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-blue-100 ring-4 ring-white">
-                                {order.user.name?.[0] || 'U'}
+                                {(order as any).user.name?.[0] || 'U'}
                             </div>
                             <div className="min-w-0">
-                                <p className="font-extrabold text-gray-900 truncate">{order.user.name || 'Nomsiz'}</p>
-                                <p className="text-xs text-gray-500 font-medium mt-0.5 truncate">{order.user.email}</p>
+                                <p className="font-extrabold text-gray-900 truncate">{(order as any).user.name || 'Nomsiz'}</p>
+                                <p className="text-xs text-gray-500 font-medium mt-0.5 truncate">{(order as any).user.email}</p>
                             </div>
                         </div>
                         <div className="space-y-3 px-1">
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-400 font-medium flex items-center gap-2">📞 Telefon</span>
-                                <span className="font-bold text-gray-900">{order.user.phone || '---'}</span>
+                                <span className="font-bold text-gray-900">{(order as any).user.phone || '---'}</span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
                                 <span className="text-gray-400 font-medium flex items-center gap-2">🆔 Foydalanuvchi ID</span>
-                                <span className="font-mono text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">{order.user.uniqueId || '---'}</span>
+                                <span className="font-mono text-[10px] text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase">{(order as any).user.uniqueId || '---'}</span>
                             </div>
                         </div>
-                        <Link href={`/admin/users/${order.user.id}`} className="block w-full text-center py-2.5 rounded-xl border border-gray-200 text-blue-600 hover:bg-blue-50 hover:border-blue-200 shadow-sm transition-all text-sm font-bold">
+                        <Link href={`/admin/users/${(order as any).user.id}`} className="block w-full text-center py-2.5 rounded-xl border border-gray-200 text-blue-600 hover:bg-blue-50 hover:border-blue-200 shadow-sm transition-all text-sm font-bold">
                             Profilni ko'rish
                         </Link>
                     </div>
@@ -188,27 +229,27 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                         <h3 className="font-bold text-gray-900 flex items-center gap-2.5">
                             <MapPin size={18} className="text-green-500" /> Yetkazib berish
                         </h3>
-                        {order.shippingAddress || order.shippingCity ? (
+                        {(order as any).shippingAddress || (order as any).shippingCity ? (
                             <div className="space-y-4">
                                 <div className="p-4 bg-green-50/30 rounded-xl border border-green-100 text-sm">
-                                    <p className="font-extrabold text-gray-900">{order.shippingCity}, {order.shippingDistrict}</p>
-                                    <p className="text-gray-600 mt-1 leading-relaxed">{order.shippingAddress}</p>
+                                    <p className="font-extrabold text-gray-900">{(order as any).shippingCity}, {(order as any).shippingDistrict}</p>
+                                    <p className="text-gray-600 mt-1 leading-relaxed">{(order as any).shippingAddress}</p>
                                 </div>
                                 <div className="space-y-2 px-1">
                                     <div className="flex justify-between text-xs">
                                         <span className="text-gray-400 font-medium italic">Qabul qiluvchi:</span>
-                                        <span className="font-bold text-gray-900">{order.shippingName}</span>
+                                        <span className="font-bold text-gray-900">{(order as any).shippingName}</span>
                                     </div>
                                     <div className="flex justify-between text-xs">
                                         <span className="text-gray-400 font-medium italic">Telefon:</span>
-                                        <span className="font-bold text-gray-900 font-mono tracking-tighter">{order.shippingPhone}</span>
+                                        <span className="font-bold text-gray-900 font-mono tracking-tighter">{(order as any).shippingPhone}</span>
                                     </div>
                                 </div>
-                                {order.comment && (
+                                {(order as any).comment && (
                                     <div className="p-4 bg-yellow-50/50 rounded-xl border border-yellow-100/50 relative overflow-hidden group">
                                         <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400"></div>
                                         <span className="text-[10px] uppercase font-black text-yellow-600 block mb-1.5 opacity-70">Mijoz izohi:</span>
-                                        <p className="text-xs text-yellow-900 leading-relaxed font-medium italic">"{order.comment}"</p>
+                                        <p className="text-xs text-yellow-900 leading-relaxed font-medium italic">"{(order as any).comment}"</p>
                                     </div>
                                 )}
                             </div>
@@ -218,6 +259,32 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                             </div>
                         )}
                     </div>
+
+                    {/* Courier Info */}
+                    {(order as any).courier && (
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-6 transition-all hover:shadow-md border-l-4 border-l-blue-500">
+                            <h3 className="font-bold text-gray-900 flex items-center gap-2.5">
+                                <Truck size={18} className="text-blue-500" /> Biriktirilgan Kuryer
+                            </h3>
+                            <div className="flex items-center gap-4 p-4 bg-blue-50/30 rounded-xl border border-blue-100">
+                                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-black">
+                                    {(order as any).courier.name?.[0] || 'K'}
+                                </div>
+                                <div>
+                                    <p className="font-bold text-gray-900">{(order as any).courier.name}</p>
+                                    <p className="text-xs text-gray-500">{(order as any).courier.phone || 'Telefon raqamsiz'}</p>
+                                </div>
+                            </div>
+                            <div className="px-1 py-1">
+                                <div className="flex justify-between items-center text-xs">
+                                    <span className="text-gray-400">Holat:</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-black uppercase">
+                                        {(order as any).courier.courierProfile?.status || 'ONLINE'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

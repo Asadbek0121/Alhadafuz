@@ -83,7 +83,10 @@ export default function Footer() {
                     <div className="lg:col-span-4 space-y-6">
                         <Link href="/" className="flex items-center group w-fit -ml-4">
                             <img src="/logo.png" alt="Hadaf Logo" className="h-16 w-auto object-contain transition-transform group-hover:scale-105" />
-                            <span className={`${montserrat.className} text-4xl font-black tracking-tighter text-blue-500 -ml-2 pt-1`}>Hadaf</span>
+                            <div className="flex flex-col">
+                                <span className={`${montserrat.className} text-3xl font-black tracking-tighter text-blue-500 leading-none uppercase`}>Hadaf</span>
+                                <span className="text-[8px] font-bold tracking-[0.2em] text-blue-500/80 uppercase mt-[-2px] ml-0.5">Market</span>
+                            </div>
                         </Link>
                         <p className="text-gray-400 text-sm leading-relaxed max-w-sm">
                             {t('download_app_desc')}

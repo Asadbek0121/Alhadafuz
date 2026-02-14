@@ -88,6 +88,12 @@ export default function ProductCard(props: ProductProps) {
                     </div>
                 ) : null}
 
+                {isNew !== false && (
+                    <div className={`${styles.promoSticker} ${styles.newTheme}`}>
+                        {tMarketing('isNew')}
+                    </div>
+                )}
+
                 {freeDelivery && (
                     <div className={`${styles.promoSticker} ${styles.deliveryTheme}`}>
                         <Truck size={12} className="mr-1" /> {tMarketing('bepul')}
@@ -99,13 +105,6 @@ export default function ProductCard(props: ProductProps) {
                     </div>
                 )}
             </div>
-
-            {/* Bottom Left: New Arrival */}
-            {isNew !== false && (
-                <div className={styles.newArrival}>
-                    {tMarketing('isNew')}
-                </div>
-            )}
 
             {/* Top Right: Discount Percentage Tag */}
             {discountPercentage > 0 && (

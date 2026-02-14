@@ -29,7 +29,12 @@ export async function GET(req: Request) {
         include: { authenticators: true }
     });
 
-    return NextResponse.json(user);
+    if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+    return NextResponse.json({
+        ...user,
+        hasPin: !!user.pinHash
+    });
 }
 
 export async function PUT(req: Request) {
@@ -38,35 +43,35 @@ export async function PUT(req: Request) {
         const userId = session?.user?.id;
 
         if (!userId) {
-            return new NextResponse("Unauthorized", { status: 401 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
         const body = await req.json();
         const validatedData = profileSchema.parse(body);
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        if (!user) return new NextResponse("User not found", { status: 404 });
+        if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
         // Check if new email/phone/username is taken by others
         if (validatedData.email && validatedData.email !== user.email) {
             const exists = await prisma.user.findFirst({
                 where: { email: validatedData.email, NOT: { id: user.id } }
             });
-            if (exists) return new NextResponse("Email already taken", { status: 409 });
+            if (exists) return NextResponse.json({ error: "Email already taken" }, { status: 409 });
         }
 
         if (validatedData.username && validatedData.username !== user.username) {
             const exists = await prisma.user.findFirst({
                 where: { username: validatedData.username, NOT: { id: user.id } }
             });
-            if (exists) return new NextResponse("Username already taken", { status: 409 });
+            if (exists) return NextResponse.json({ error: "Username already taken" }, { status: 409 });
         }
 
         if (validatedData.phone && validatedData.phone !== user.phone) {
             const exists = await prisma.user.findFirst({
                 where: { phone: validatedData.phone, NOT: { id: user.id } }
             });
-            if (exists) return new NextResponse("Phone already taken", { status: 409 });
+            if (exists) return NextResponse.json({ error: "Phone already taken" }, { status: 409 });
         }
 
         const updatedUser = await prisma.user.update({
@@ -85,10 +90,10 @@ export async function PUT(req: Request) {
         return NextResponse.json({ success: true, user: updatedUser });
     } catch (error) {
         if (error instanceof z.ZodError) {
-            return new NextResponse("Invalid data", { status: 422 });
+            return NextResponse.json({ error: "Invalid data", details: error.issues }, { status: 422 });
         }
         console.error("[USER_INFO_UPDATE]", error);
-        return new NextResponse("Internal Error", { status: 500 });
+        return NextResponse.json({ error: "Internal Error" }, { status: 500 });
     }
 }
 

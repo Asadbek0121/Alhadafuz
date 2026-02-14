@@ -1,0 +1,7 @@
+{
+  "distanceWeight": 0.4,
+  "ratingWeight": 0.25,
+  "workloadWeight": 0.2,
+  "responseWeight": 0.15,
+  "updatedAt": "2026-02-14T10:13:33.287Z"
+}

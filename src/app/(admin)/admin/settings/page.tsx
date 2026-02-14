@@ -122,7 +122,7 @@ export default function AdminSettingsPage() {
                             <input
                                 value={formData.siteName}
                                 onChange={e => setFormData({ ...formData, siteName: e.target.value })}
-                                placeholder="UzMarket"
+                                placeholder="Hadaf Market"
                                 className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 text-lg placeholder:font-medium placeholder:text-gray-300"
                             />
                         </div>
@@ -159,7 +159,7 @@ export default function AdminSettingsPage() {
                                 <input
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="info@uzmarket.uz"
+                                    placeholder="info@hadaf.uz"
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
@@ -182,7 +182,7 @@ export default function AdminSettingsPage() {
                                     <input
                                         value={(formData.socialLinks as any).supportTelegram?.replace('@', '') || ''}
                                         onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, supportTelegram: e.target.value } } as any)}
-                                        placeholder="uzmarketsupport"
+                                        placeholder="hadaf_uz"
                                         className="w-full bg-blue-50/30 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 pl-8 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                     />
                                 </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Kirish | UZMarket",
+    title: "Kirish | Hadaf Market",
     description: "Hisobingizga kiring yoki yangi hisob yarating",
 };
 

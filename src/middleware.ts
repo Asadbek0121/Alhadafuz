@@ -11,9 +11,15 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
     const { pathname } = req.nextUrl;
 
-    // Admin sahifalari [locale] strukturasida emas, shuning uchun ularni
-    // next-intl middleware'dan o'tkazmaymiz (tarjima qilinmaydi va prefix qo'shilmaydi)
-    if (pathname.startsWith('/admin')) {
+    // Admin va Print sahifalari i18n middleware'dan mustasno va prefix bilan kelsa redirect qilamiz
+    const specialPathMatch = pathname.match(/^\/(?:uz|ru|en)?\/?(admin|print)(\/.*)?$/);
+
+    if (specialPathMatch) {
+        const [, type, rest] = specialPathMatch;
+        // Agar prefix bilan kelgan bo'lsa (/uz/admin, /uz/print), prefixsizga redirect qilamiz
+        if (pathname.startsWith('/uz/') || pathname.startsWith('/ru/') || pathname.startsWith('/en/')) {
+            return NextResponse.redirect(new URL(`/${type}${rest || ''}`, req.url));
+        }
         return NextResponse.next();
     }
 

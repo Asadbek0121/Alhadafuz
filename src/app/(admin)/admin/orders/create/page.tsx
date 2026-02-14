@@ -9,7 +9,14 @@ export default async function CreateOrderPage() {
     });
 
     const products = await prisma.product.findMany({
-        where: { isDeleted: false, status: 'ACTIVE' },
+        where: {
+            isDeleted: false,
+            OR: [
+                { status: 'ACTIVE' },
+                { status: 'published' },
+                { status: 'sotuvda_kam_qolgan' }
+            ]
+        },
         select: { id: true, title: true, price: true, image: true, stock: true },
         orderBy: { createdAt: 'desc' }
     });

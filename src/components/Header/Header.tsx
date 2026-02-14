@@ -163,7 +163,10 @@ export default function Header() {
 
                         <Link href="/" className="flex items-center shrink-0 group gap-0 -ml-4 lg:-ml-8">
                             <img src="/logo.png" alt="Hadaf Logo" className="h-[75px] lg:h-[115px] w-auto object-contain transition-transform group-hover:scale-105" />
-                            <span className={`${montserrat.className} text-4xl lg:text-[48px] font-black tracking-tighter leading-none text-[#0052FF] -ml-2 lg:-ml-4 pt-1`}>Hadaf</span>
+                            <div className="flex flex-col -ml-2 lg:-ml-4">
+                                <span className={`${montserrat.className} text-3xl lg:text-[42px] font-black tracking-tighter leading-none text-[#0052FF] pt-1 uppercase`}>Hadaf</span>
+                                <span className="text-[10px] lg:text-[12px] font-bold tracking-[0.2em] text-blue-500/80 uppercase mt-[-2px] lg:mt-[-4px] ml-0.5">Market</span>
+                            </div>
                         </Link>
 
                         <button
@@ -184,6 +187,8 @@ export default function Header() {
                         <div className="relative group">
                             <input
                                 type="text"
+                                name="search-input"
+                                autoComplete="one-time-code"
                                 placeholder={t('search_placeholder')}
                                 className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 px-5 py-3 pr-14 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 transition-all font-medium"
                                 value={searchQuery}
@@ -368,6 +373,8 @@ export default function Header() {
                     <div className="relative flex-1">
                         <input
                             type="text"
+                            name="mobile-search-input"
+                            autoComplete="one-time-code"
                             placeholder={t('search_placeholder')}
                             className="w-full bg-slate-100 border-none px-4 py-2.5 rounded-xl outline-none text-sm placeholder-slate-500"
                             value={searchQuery}

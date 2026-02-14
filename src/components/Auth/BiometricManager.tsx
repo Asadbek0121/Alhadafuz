@@ -21,11 +21,17 @@ export default function BiometricManager() {
 
             // Check if already registered (can check via API)
             fetch('/api/user/info')
-                .then(res => res.json())
+                .then(res => {
+                    if (!res.ok) return null;
+                    return res.json().catch(() => null);
+                })
                 .then(user => {
                     if (user && user.authenticators && user.authenticators.length > 0) {
                         setIsRegistered(true);
                     }
+                })
+                .catch(() => {
+                    // Ignore errors, user just might not be logged in
                 });
         }
     }, []);

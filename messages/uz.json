@@ -128,7 +128,7 @@
         "oyiga": "oyiga",
         "dan": "dan",
         "sale": "AKSIYA",
-        "hot": "ISSIQ",
+        "hot": "QAYNOQ",
         "promo": "PROMO"
     },
     "Wishlist": {
@@ -190,7 +190,9 @@
         "register_btn": "Ro'yxatdan o'tish",
         "have_account": "Allaqachon hisobingiz bormi?",
         "register_loading": "Ro'yxatdan o'tilmoqda...",
-        "system_error": "Tizim xatosi yuz berdi"
+        "system_error": "Tizim xatosi yuz berdi",
+        "success_title": "Muvaffaqiyatli!",
+        "success_message": "Xush kelibsiz! Tizimga muvaffaqiyatli kirdingiz."
     },
     "Favorites": {
         "empty_title": "Sevimli mahsulotlar yo'q",
@@ -283,6 +285,8 @@
         "notif_settings": "Bildirishnomalar sozlamalari",
         "notif_desc": "Xabarlar va aksiyalar haqida bildirishnoma olish",
         "security": "Xavfsizlik",
+        "next": "Keyingisi",
+        "back": "Orqaga",
         "name_placeholder": "Ismingizni kiriting",
         "email_placeholder": "Email manzilingizni kiriting",
         "password_placeholder": "Parolni kiriting",
@@ -330,7 +334,31 @@
         "biometric_setup_desc": "Keyingi safar parolsiz kirishni xohlaysizmi? Barmoq izini hoziroq faollashtiring.",
         "biometric_setup_btn": "Faollashtirish",
         "biometric_setup_skip": "Hozir emas, keyinroq",
-        "biometric_setup_success": "Barmoq izi faollashtirildi!"
+        "biometric_setup_success": "Barmoq izi faollashtirildi!",
+        "pin_setup_title": "PIN-kod sozlamalari",
+        "pin_setup_desc": "Ilovaga kirishda xavfsizlik uchun PIN-kod o'rnating.",
+        "pin_step_1": "1-bosqich: Kuchli parol",
+        "pin_step_2": "2-bosqich: PIN-kod o'rnatish",
+        "pin_step_3": "3-bosqich: PIN-kodni tasdiqlash",
+        "pin_password_placeholder": "Kuchli parol o'ylab toping",
+        "pin_password_hint": "Parol kamida 8 ta belgi, katta va kichik harflar hamda raqamlardan iborat bo'lishi kerak.",
+        "pin_code_placeholder": "4 xonali PIN-kod",
+        "pin_confirm_placeholder": "PIN-kodni qayta kiriting",
+        "pin_success": "PIN-kod muvaffaqiyatli saqlandi!",
+        "pin_error_mismatch": "PIN-kodlar mos kelmadi",
+        "pin_error_length": "PIN-kod 4 ta raqamdan iborat bo'lishi kerak",
+        "pin_forgot": "PIN-kodni unutdingizmi?",
+        "pin_reset_title": "PIN-kodni tiklash",
+        "pin_reset_desc": "PIN-kodni tiklash uchun tasdiqlash kodini Telegram orqali oling.",
+        "pin_get_tg_code": "Telegram orqali kod olish",
+        "pin_tg_code_placeholder": "Tasdiqlash kodini kiriting",
+        "pin_verify_success": "Kod tasdiqlandi. Endi yangi parol va PIN-kod o'rnating.",
+        "pin_enter_title": "PIN-kodni kiriting",
+        "pin_biometric_login": "Barmoq izi bilan ochish",
+        "pin_verify_btn": "Tasdiqlash",
+        "pin_resend_tg": "Kodni qayta yuborish",
+        "pin_set_btn": "PIN-kodni saqlash",
+        "system_error": "Tizim xatosi yuz berdi"
     },
     "BottomNav": {
         "home": "Bosh sahifa",

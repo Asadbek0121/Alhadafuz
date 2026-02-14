@@ -140,12 +140,17 @@ export default function SecurityPage() {
                         </div>
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                            {/* Hidden fields to catch browser autofill */}
+                            <input type="text" name="username" style={{ display: 'none' }} autoComplete="username" />
+                            <input type="password" name="password" style={{ display: 'none' }} autoComplete="current-password" />
+
                             <div className="space-y-2">
                                 <label className="text-sm font-semibold text-gray-700">{t('current_password')}</label>
                                 <div className="relative">
                                     <Key className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
                                     <input
                                         type="password"
+                                        autoComplete="current-password"
                                         {...register("currentPassword")}
                                         className={`w-full h-12 pl-12 pr-4 rounded-xl border transition-all outline-none ${errors.currentPassword ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                             }`}
@@ -162,6 +167,7 @@ export default function SecurityPage() {
                                         <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-text-muted" size={18} />
                                         <input
                                             type="password"
+                                            autoComplete="new-password"
                                             {...register("newPassword")}
                                             className={`w-full h-12 pl-12 pr-4 rounded-xl border transition-all outline-none ${errors.newPassword ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                                 }`}
@@ -175,6 +181,7 @@ export default function SecurityPage() {
                                     <label className="text-sm font-semibold text-gray-700">{t('confirm_password')}</label>
                                     <input
                                         type="password"
+                                        autoComplete="new-password"
                                         {...register("confirmPassword")}
                                         className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.confirmPassword ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
                                             }`}
@@ -218,6 +225,10 @@ export default function SecurityPage() {
                     </div>
 
                     <div className="pt-2">
+                        <PinCodeSettings />
+                    </div>
+
+                    <div className="pt-2">
                         {/* Biometric Management Component */}
                         <BiometricManager />
                     </div>
@@ -228,3 +239,4 @@ export default function SecurityPage() {
 }
 
 import BiometricManager from "@/components/Auth/BiometricManager";
+import PinCodeSettings from "@/components/Auth/PinCodeSettings";

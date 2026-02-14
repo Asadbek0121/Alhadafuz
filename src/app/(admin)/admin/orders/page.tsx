@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import OrderStatusSelect from "./OrderStatusSelect";
 import { format } from 'date-fns';
-import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Search, SlidersHorizontal, Eye, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Package, Truck, CreditCard, Search, SlidersHorizontal, Eye, Plus, MapPin } from "lucide-react";
+import AutoDispatchButton from "./AutoDispatchButton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
@@ -114,33 +115,42 @@ export default async function AdminOrdersPage({
 
     let orders: any[] = [];
     let total = 0;
+    let columns: any[] = [];
+    let statsResult: any[] = [];
+
     try {
-        [orders, total] = await getOrders(where, skip, limit, search, userId, userRole);
+        // Run all independent queries in parallel to speed up page load and release connections faster
+        const results = await Promise.all([
+            getOrders(where, skip, limit, search, userId, userRole),
+            (prisma as any).$queryRawUnsafe(`
+                SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
+            `),
+            (prisma as any).$queryRawUnsafe(`
+                SELECT 
+                    COUNT(DISTINCT o.id)::int as "all_count",
+                    COUNT(DISTINCT CASE WHEN o.status = 'PENDING' THEN o.id END)::int as "pending_count",
+                    COUNT(DISTINCT CASE WHEN o.status = 'PROCESSING' THEN o.id END)::int as "processing_count",
+                    COUNT(DISTINCT CASE WHEN o.status = 'SHIPPING' THEN o.id END)::int as "shipping_count",
+                    COUNT(DISTINCT CASE WHEN o.status = 'DELIVERED' THEN o.id END)::int as "delivered_count"
+                FROM "Order" o
+                ${isVendor ? 'JOIN "OrderItem" oi ON o.id = oi."orderId" JOIN "Product" p ON oi."productId" = p.id' : ''}
+                ${isVendor ? (search ? `LEFT JOIN "User" u ON o."userId" = u.id` : '') : ''}
+                WHERE 1=1
+                ${isVendor ? (search ? `AND (o.id ILIKE '%${search}%' OR u.name ILIKE '%${search}%' OR u.phone ILIKE '%${search}%')` : '') : ''}
+                ${isVendor ? `AND EXISTS (SELECT 1 FROM "OrderItem" oi_v JOIN "Product" p_v ON oi_v."productId" = p_v.id WHERE oi_v."orderId" = o.id AND p_v."vendorId" = '${userId}')` : ''}
+            `)
+        ]);
+
+        [orders, total] = results[0];
+        columns = results[1] as any[];
+        statsResult = results[2] as any[];
     } catch (e) {
-        console.error("Error fetching orders:", e);
+        console.error("Error fetching orders data:", e);
     }
 
-    const totalPages = Math.ceil(total / limit);
-
-    // Sanitize orders for Client Components
-    const safeOrders = JSON.parse(JSON.stringify(orders));
-
-    const columns: any[] = await (prisma as any).$queryRawUnsafe(`
-        SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
-    `);
     const hasVendorId = columns.map(c => c.column_name).includes('vendorId');
-
-    const statsResult: any[] = await (prisma as any).$queryRawUnsafe(`
-        SELECT 
-            COUNT(DISTINCT o.id)::int as "all_count",
-            COUNT(DISTINCT CASE WHEN o.status = 'PENDING' THEN o.id END)::int as "pending_count",
-            COUNT(DISTINCT CASE WHEN o.status = 'PROCESSING' THEN o.id END)::int as "processing_count",
-            COUNT(DISTINCT CASE WHEN o.status = 'SHIPPING' THEN o.id END)::int as "shipping_count",
-            COUNT(DISTINCT CASE WHEN o.status = 'DELIVERED' THEN o.id END)::int as "delivered_count"
-        FROM "Order" o
-        ${isVendor ? 'JOIN "OrderItem" oi ON o.id = oi."orderId" JOIN "Product" p ON oi."productId" = p.id' : ''}
-        ${isVendor ? (hasVendorId ? `WHERE p."vendorId" = '${userId}'` : 'WHERE 1=0') : ''}
-    `);
+    const totalPages = Math.ceil(total / limit);
+    const safeOrders = JSON.parse(JSON.stringify(orders));
 
     const statsData = statsResult[0] || {};
     const stats = [
@@ -301,6 +311,12 @@ export default async function AdminOrdersPage({
                                     </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center items-center gap-1">
+                                            <AutoDispatchButton orderId={order.id} currentStatus={order.status} />
+                                            <Link href={`/track/${order.id}`} target="_blank">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500 hover:bg-emerald-50" title="Tracking Page">
+                                                    <MapPin size={16} />
+                                                </Button>
+                                            </Link>
                                             <Link href={`/admin/orders/${order.id}`}>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50">
                                                     <Eye size={16} />

@@ -70,7 +70,7 @@ export const districts: { [key: string]: string[] } = {
     ],
     "surxondaryo": [
         "Angor", "Boysun", "Denov", "Jarqo‘rg‘on", "Qiziriq", "Qumqo‘rg‘on",
-        "Muzrabot", "Oltinsoy", "Sariosiyo", "Sherobod", "Sho‘rchi", "Termiz", "Uzun"
+        "Muzrabot", "Oltinsoy", "Sariosiyo", "Sherobod", "Sho‘rchi", "Termiz shahri", "Termiz tumani", "Uzun"
     ],
     "xorazm": [
         "Bog‘ot", "Gurlan", "Qo‘shko‘pir", "Shovot", "Urganch", "Xazarasp",

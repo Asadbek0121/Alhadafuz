@@ -13,6 +13,8 @@ interface User {
     twoFactorEnabled?: boolean;
     isDarkMode?: boolean;
     role?: string;
+    hasPin?: boolean;
+    pinHash?: string | null;
 }
 
 interface UserState {

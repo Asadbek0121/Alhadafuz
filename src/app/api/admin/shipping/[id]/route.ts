@@ -16,8 +16,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         const { name, district, price, freeFrom, freeFromQty, freeIfHasDiscount, isActive } = body;
 
         // Validation
-        if (!name || !district) {
-            return NextResponse.json({ error: 'Viloyat va tuman tanlanishi shart' }, { status: 400 });
+        if (!name) {
+            return NextResponse.json({ error: 'Viloyat tanlanishi shart' }, { status: 400 });
         }
 
         const priceNum = Number(price);

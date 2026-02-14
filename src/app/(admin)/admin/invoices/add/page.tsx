@@ -11,7 +11,7 @@ export default function AddInvoicePage() {
     const [dueDate, setDueDate] = useState("");
 
     // Billing Info
-    const [billFrom, setBillFrom] = useState({ name: "UzMarket", address: "Tashkent, Uzbekistan", email: "info@uzmarket.uz", phone: "+998 90 123 45 67" });
+    const [billFrom, setBillFrom] = useState({ name: "Hadaf Market", address: "Termez, Surxondaryo", email: "info@hadaf.uz", phone: "+998 71 200 01 05" });
     const [billTo, setBillTo] = useState({ name: "", address: "", email: "", phone: "" });
 
     // Items

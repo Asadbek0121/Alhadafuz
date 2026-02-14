@@ -37,7 +37,7 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
 
     const filteredProducts = products.filter((p: any) =>
         p.title.toLowerCase().includes(productSearch.toLowerCase())
-    ).slice(0, 5);
+    ).slice(0, 20);
 
     // Handlers
     const addToCart = (product: any) => {
@@ -205,22 +205,28 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                                 />
                             </div>
                             <div className="border rounded-md divide-y max-h-[400px] overflow-y-auto">
-                                {filteredProducts.map((product: any) => (
-                                    <div key={product.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
-                                                <img src={product.image} alt="" className="w-full h-full object-cover rounded" />
-                                            </div>
-                                            <div>
-                                                <p className="text-sm font-medium line-clamp-1">{product.title}</p>
-                                                <p className="text-xs text-blue-600 font-bold">{product.price.toLocaleString()} so'm</p>
-                                            </div>
-                                        </div>
-                                        <Button size="sm" variant="outline" onClick={() => addToCart(product)}>
-                                            <Plus size={16} />
-                                        </Button>
+                                {filteredProducts.length === 0 ? (
+                                    <div className="p-4 text-center text-gray-500 text-sm">
+                                        {productSearch ? "Mahsulot topilmadi" : "Qidirish uchun nomni kiriting"}
                                     </div>
-                                ))}
+                                ) : (
+                                    filteredProducts.map((product: any) => (
+                                        <div key={product.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-gray-100 rounded flex items-center justify-center">
+                                                    <img src={product.image} alt="" className="w-full h-full object-cover rounded" />
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium line-clamp-1">{product.title}</p>
+                                                    <p className="text-xs text-blue-600 font-bold">{product.price.toLocaleString()} so'm</p>
+                                                </div>
+                                            </div>
+                                            <Button size="sm" variant="outline" onClick={() => addToCart(product)}>
+                                                <Plus size={16} />
+                                            </Button>
+                                        </div>
+                                    ))
+                                )}
                             </div>
                         </CardContent>
                     </Card>
