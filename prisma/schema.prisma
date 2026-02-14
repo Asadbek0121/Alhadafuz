@@ -129,6 +129,9 @@ model Order {
   lng              Float?
   comment          String?
   
+  couponCode       String?     // Applied coupon identifier
+  discountAmount   Float       @default(0) // Absolute discount value
+  
   deliveryMethod   String      @default("COURIER") // COURIER, PICKUP
   creatorId        String?
   createdVia       String?     @default("USER_APP") // USER_APP, ADMIN_PANEL, TELEGRAM_BOT
