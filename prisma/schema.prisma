@@ -116,7 +116,8 @@ model Order {
   deliveryFee      Float       @default(0)
   paymentMethod    String      @default("CASH")
   paymentStatus    String      @default("PENDING") 
-  
+  paymentId        String?     // External transaction ID (Click, Payme, etc)
+  paymentProvider  String?     // CLICK, PAYME, HUMO, etc  
   shippingName     String?
   shippingPhone    String?
   shippingAddress  String?
