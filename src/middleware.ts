@@ -6,7 +6,10 @@ import { NextResponse } from "next/server";
 
 const intlMiddleware = createMiddleware(routing);
 
-const { auth } = NextAuth(authConfig);
+const { auth } = NextAuth({
+    ...authConfig,
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET,
+});
 
 export default auth((req) => {
     const { pathname } = req.nextUrl;

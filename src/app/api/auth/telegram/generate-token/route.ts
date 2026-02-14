@@ -3,7 +3,16 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 
-export async function POST() {
+import { checkRateLimit } from '@/lib/ratelimit';
+
+export async function POST(req: Request) {
+    // RATE LIMITING
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await checkRateLimit(`tg_token_${ip}`);
+    if (!success) {
+        return NextResponse.json({ error: "Siz juda ko'p so'rov yubordingiz. Bir ozdan keyin urinib ko'ring." }, { status: 429 });
+    }
+
     try {
         // Generate a random token
         const token = crypto.randomBytes(32).toString('hex');

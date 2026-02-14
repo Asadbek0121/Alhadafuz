@@ -8,7 +8,16 @@ import {
 } from "@/lib/webauthn";
 import { logActivity } from "@/lib/security";
 
+import { checkRateLimit } from "@/lib/ratelimit";
+
 export async function POST(req: Request) {
+    // RATE LIMITING
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await checkRateLimit(`login_verify_${ip}`);
+    if (!success) {
+        return NextResponse.json({ error: "Too many login attempts. Please wait." }, { status: 429 });
+    }
+
     try {
         const body = await req.json();
         const cookieStore = await cookies();

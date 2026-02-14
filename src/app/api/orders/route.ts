@@ -33,7 +33,16 @@ const createOrderSchema = z.object({
     storeId: z.string().optional(),
 });
 
+import { checkRateLimit } from '@/lib/ratelimit';
+
 export async function POST(req: Request) {
+    // 1. RATE LIMITING (Security Layer)
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success } = await checkRateLimit(`order_${ip}`);
+    if (!success) {
+        return NextResponse.json({ error: "Too many orders. Please wait a moment." }, { status: 429 });
+    }
+
     const session = await auth();
     if (!session?.user) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

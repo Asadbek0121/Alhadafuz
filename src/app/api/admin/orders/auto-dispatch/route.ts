@@ -13,17 +13,19 @@ export async function POST(req: Request) {
         const { orderId } = await req.json();
 
         // 1. Get Order details
-        const orderResults: any[] = await prisma.$queryRawUnsafe('SELECT id, lat, lng FROM "Order" WHERE id = $1 LIMIT 1', orderId);
+        const orderResults: any[] = await prisma.$queryRaw`SELECT id, lat, lng FROM "Order" WHERE id = ${orderId} LIMIT 1`;
         if (orderResults.length === 0) return NextResponse.json({ error: "Order not found" }, { status: 404 });
         const order = orderResults[0];
 
         // 2. Find best couriers (Online, OnDuty, and nearest)
-        // For simplicity, we search for online couriers and sort by distance in SQL
-        const couriers: any[] = await prisma.$queryRawUnsafe(`
+        const orderLat = order.lat || 41.2995;
+        const orderLng = order.lng || 69.2401;
+
+        const couriers: any[] = await prisma.$queryRaw`
             SELECT 
                 u.id, u.name, u."telegramId",
                 cp."currentLat", cp."currentLng", cp.rating, cp."courierLevel",
-                (ABS(cp."currentLat" - $1) + ABS(cp."currentLng" - $2)) as distance
+                (ABS(cp."currentLat" - ${orderLat}) + ABS(cp."currentLng" - ${orderLng})) as distance
             FROM "User" u
             JOIN "CourierProfile" cp ON u.id = cp."userId"
             WHERE u.role = 'COURIER' 
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
               AND cp."currentLat" IS NOT NULL
             ORDER BY distance ASC, cp.rating DESC
             LIMIT 1
-        `, order.lat || 41.2995, order.lng || 69.2401);
+        `;
 
         if (couriers.length === 0) {
             return NextResponse.json({ error: "Bo'sh kuryerlar topilmadi. Hamma band yoki offline." }, { status: 404 });
@@ -41,10 +43,14 @@ export async function POST(req: Request) {
         const bestCourier = couriers[0];
 
         // 3. Assign
-        await prisma.$executeRawUnsafe(
-            'UPDATE "Order" SET "courierId" = $1, status = $2, "updatedAt" = $3 WHERE id = $4',
-            bestCourier.id, 'ASSIGNED', new Date(), orderId
-        );
+        await prisma.order.update({
+            where: { id: orderId },
+            data: {
+                courierId: bestCourier.id,
+                status: 'ASSIGNED',
+                updatedAt: new Date()
+            } as any
+        });
 
         // 4. Notify via Bot
         const botToken = process.env.COURIER_BOT_TOKEN;

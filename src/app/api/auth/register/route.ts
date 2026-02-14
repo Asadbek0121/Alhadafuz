@@ -10,7 +10,20 @@ const registerSchema = z.object({
     phone: z.string().optional().or(z.literal('')), // Optional phone
 });
 
+import { checkRateLimit } from "@/lib/ratelimit";
+
 export async function POST(req: Request) {
+    // 1. RATE LIMITING (Security Layer)
+    const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+    const { success, reset } = await checkRateLimit(`register_${ip}`);
+
+    if (!success) {
+        return NextResponse.json(
+            { message: "Hushyor bo'ling! Juda ko'p urinish. Iltimos, bir ozdan keyin qayta urinib ko'ring.", retryAfter: reset },
+            { status: 429 }
+        );
+    }
+
     try {
         const body = await req.json();
 
