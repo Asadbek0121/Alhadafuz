@@ -130,6 +130,8 @@ model Order {
   creatorId        String?
   createdVia       String?     @default("USER_APP") // USER_APP, ADMIN_PANEL, TELEGRAM_BOT
   
+  gpsLogs          String?     @db.Text // JSON history of delivery locations
+  
   deliveryToken    String?     @unique // For QR validation
   tokenExpiresAt   DateTime?
   
