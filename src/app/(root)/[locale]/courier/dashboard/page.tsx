@@ -29,7 +29,7 @@ export default function CourierDashboard() {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 8000);
+        const interval = setInterval(fetchData, 5000); // Har 5 soniyada yangilash
         return () => clearInterval(interval);
     }, [session]);
 

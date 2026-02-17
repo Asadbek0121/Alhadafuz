@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Search, Bell, X, Check, User as UserIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
+import { LiveRefreshTrigger } from '@/components/admin/LiveRefreshTrigger';
 
 interface Notification {
     id: string;
@@ -78,6 +79,9 @@ export default function AdminHeader() {
         <header className="fixed top-0 right-0 h-[70px] bg-white/80 backdrop-blur-md z-[90] flex items-center justify-end px-8 border-b border-gray-100 transition-all duration-300 left-[270px]">
 
             <div className="flex items-center gap-6" ref={dropdownRef}>
+                {/* Live Mode Toggle */}
+                <LiveRefreshTrigger />
+
                 {/* Bell Icon */}
                 <div
                     className="relative cursor-pointer"

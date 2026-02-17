@@ -70,8 +70,9 @@ export default function OrderHistoryPage() {
             }
         };
 
-        const timer = setTimeout(fetchOrders, 800);
-        return () => clearTimeout(timer);
+        fetchOrders();
+        const interval = setInterval(fetchOrders, 10000); // 10 soniyada bir yangilash
+        return () => clearInterval(interval);
     }, [user, isAuthenticated]);
 
     const handleReorder = (item: OrderItem) => {
