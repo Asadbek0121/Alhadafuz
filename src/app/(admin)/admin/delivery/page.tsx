@@ -16,6 +16,21 @@ export default function AdminDeliveryMonitor() {
         const fetchData = async () => {
             try {
                 const res = await fetch('/api/admin/couriers/live');
+                if (!res.ok) {
+                    const text = await res.text();
+                    if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                        console.warn('Monitor API returned HTML (likely session expired):', res.status);
+                        return;
+                    }
+                    throw new Error(`HTTP ${res.status}`);
+                }
+
+                const contentType = res.headers.get("content-type");
+                if (!contentType || !contentType.includes("application/json")) {
+                    console.warn('Monitor API did not return JSON:', contentType);
+                    return;
+                }
+
                 const data = await res.json();
 
                 if (data.couriers) setCouriers(data.couriers);

@@ -44,6 +44,21 @@ export async function POST(req: Request) {
                 'UPDATE "CourierApplication" SET status = $1, "updatedAt" = $2 WHERE id = $3',
                 'REJECTED', new Date(), id
             );
+
+            // Notify via Telegram
+            try {
+                const { sendTelegramMessage } = await import("@/lib/telegram-bot");
+                const courierToken = process.env.COURIER_BOT_TOKEN;
+                await sendTelegramMessage(app.telegramId,
+                    `❌ <b>Afsuski, sizning kuryerlik arizangiz rad etildi.</b>\n\n` +
+                    `Ma'lumotlaringizni qayta tekshirib, ma'lum muddatdan so'ng yana ariza topshirishingiz mumkin.`,
+                    {},
+                    courierToken
+                );
+            } catch (botError) {
+                console.error("Failed to notify rejected courier:", botError);
+            }
+
             return NextResponse.json({ success: true });
         }
 
@@ -94,6 +109,34 @@ export async function POST(req: Request) {
             'UPDATE "CourierApplication" SET status = $1, "updatedAt" = $2 WHERE id = $3',
             'APPROVED', new Date(), id
         );
+
+        // Notify via Telegram
+        try {
+            const { sendTelegramMessage } = await import("@/lib/telegram-bot");
+            const courierToken = process.env.COURIER_BOT_TOKEN;
+
+            await sendTelegramMessage(app.telegramId,
+                `🎉 <b>Tabriklaymiz! Sizning kuryerlik arizangiz tasdiqlandi.</b>\n\n` +
+                `Endi siz Hadaf Logistics tizimida rasmiy kuryer sifatida ish boshlashingiz mumkin.\n\n` +
+                `🔄 <b>Ishni boshlash uchun:</b>\n` +
+                `1. Bot menyusidan "🔄 Holat" tugmasini bosing\n` +
+                `2. "Ishda ✅" holatiga o'ting\n` +
+                `3. Telefoningizdan "Live Location" (jonli lokatsiya) yuboring\n\n` +
+                `Omad yor bo'lsin! 🚀`,
+                {
+                    reply_markup: {
+                        keyboard: [
+                            [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
+                            [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]
+                        ],
+                        resize_keyboard: true
+                    }
+                },
+                courierToken
+            );
+        } catch (botError) {
+            console.error("Failed to notify approved courier:", botError);
+        }
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

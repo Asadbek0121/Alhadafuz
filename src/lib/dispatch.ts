@@ -65,13 +65,16 @@ export async function autoDispatchOrder(orderId: string) {
 
         if (telegramId) {
             await sendTelegramMessage(telegramId,
-                `🚀 <b>Yangi buyurtma avtomatik biriktirildi!</b>\n\n` +
-                `🆔 ID: #${orderId.slice(-6).toUpperCase()}\n` +
-                `📍 Manzil: <code>Buyurtma tafsilotlarini ko'rish uchun pastdagi tugmani bosing.</code>`,
+                `🚀 <b>YANGI BUYURTMA BIRIKTIRILDI!</b>\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+                `🆔 <b>ID:</b> #${orderId.slice(-6).toUpperCase()}\n` +
+                `📌 <b>Holat:</b> Sizga tayinlandi\n` +
+                `📦 <b>Tafsilotlar:</b> Ko'rish uchun quyidagi tugmani bosing.\n` +
+                `━━━━━━━━━━━━━━━━━━━━━━━━`,
                 {
                     reply_markup: {
                         inline_keyboard: [
-                            [{ text: "📦 Buyurtmani ochish", callback_data: `view_order:${orderId}` }]
+                            [{ text: "📦 Buyurtmani ko'rish", callback_data: `view_order:${orderId}` }]
                         ]
                     }
                 }

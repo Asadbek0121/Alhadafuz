@@ -52,12 +52,12 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 }
 
                 const message = `
-<b>📅 SIZGA BUYURTMA TAYINLANDI!</b>
-━━━━━━━━━━━━━━━━━━━━━
+📦 <b>SIZGA BUYURTMA TAYINLANDI!</b>
+━━━━━━━━━━━━━━━━━━━━━━━━
+🆔 <b>ID:</b> #${id.slice(-6).toUpperCase()}
 📍 <b>Manzil:</b> <code>${order?.shippingAddress || '---'}</code>
 💰 <b>Summa:</b> <code>${(order?.total || 0).toLocaleString()} SO'M</code>
-🆔 <b>ID:</b> #${id.slice(-6).toUpperCase()}
-━━━━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━━━
 Buyurtmani qabul qilasizmi?
 `;
 

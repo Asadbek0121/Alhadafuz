@@ -298,7 +298,7 @@ export default function AdminShippingPage() {
                                                 <div className="text-[10px] text-gray-400">📍 {c.currentLat?.toFixed(4)}, {c.currentLng?.toFixed(4)}</div>
                                             </div>
                                         </div>
-                                        <button className="text-blue-600 font-bold text-xs hover:underline">Xaritada ko'rish</button>
+                                        <Link href={`/admin/shipping/map?courierId=${c.userId}`} className="text-blue-600 font-bold text-xs hover:underline">Xaritada ko'rish</Link>
                                     </div>
                                 )) : (
                                     <div className="text-center py-10 text-gray-400">Hozirda online kuryerlar yo'q</div>

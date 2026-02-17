@@ -14,17 +14,32 @@ export async function GET() {
         const couriers = await prisma.$queryRawUnsafe(`
             SELECT 
                 u.id, u.name, u.phone,
-                cp.status, cp."currentLat", cp."currentLng", cp."vehicleType", cp."lastOnlineAt"
+                cp.status, cp."currentLat", cp."currentLng", cp."vehicleType", cp."lastOnlineAt", cp."courierLevel"
             FROM "User" u
             JOIN "CourierProfile" cp ON u.id = cp."userId"
             WHERE cp."currentLat" IS NOT NULL
         `);
 
-        // Fetch active orders with locations to show on map too
+        // Fetch active orders with detailed info
         const activeOrders = await prisma.$queryRawUnsafe(`
-            SELECT id, status, lat, lng, "shippingAddress"
-            FROM "Order"
-            WHERE status IN ('ASSIGNED', 'PICKED_UP', 'DELIVERING') AND lat IS NOT NULL
+            SELECT 
+                o.id, 
+                o.status, 
+                o.lat,
+                o.lng,
+                o.lat as "customerLat", 
+                o.lng as "customerLng", 
+                o."shippingAddress",
+                o.total as price,
+                u.name as "customerName",
+                s.name as "storeName",
+                o."courierId",
+                c.name as "courierName"
+            FROM "Order" o
+            LEFT JOIN "User" u ON o."userId" = u.id
+            LEFT JOIN "Store" s ON o."storeId" = s.id
+            LEFT JOIN "User" c ON o."courierId" = c.id
+            WHERE o.status IN ('ASSIGNED', 'PICKED_UP', 'DELIVERING') AND o.lat IS NOT NULL
         `);
 
         return NextResponse.json({ couriers, orders: activeOrders });

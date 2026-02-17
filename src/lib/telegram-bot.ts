@@ -1,7 +1,7 @@
 import { prisma } from './prisma';
 
-export async function sendTelegramMessage(chatId: string, text: string, options?: any) {
-    let token = process.env.TELEGRAM_BOT_TOKEN;
+export async function sendTelegramMessage(chatId: string, text: string, options?: any, overrideToken?: string) {
+    let token = overrideToken || process.env.TELEGRAM_BOT_TOKEN;
 
     if (!token) {
         try {

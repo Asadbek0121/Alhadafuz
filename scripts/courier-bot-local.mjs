@@ -18,6 +18,7 @@ console.log("🚀 Hadaf Logistics Production Bot ishga tushdi...");
 
 const STATUS_EMOJIS = {
     'CREATED': '🆕',
+    'AWAITING_PAYMENT': '💳',
     'ASSIGNED': '📅',
     'PROCESSING': '⏳',
     'PICKED_UP': '📦',
@@ -30,14 +31,15 @@ const STATUS_EMOJIS = {
 
 const STATUS_TEXTS = {
     'CREATED': 'Yangi',
-    'ASSIGNED': 'Tayinlangan',
-    'PROCESSING': 'Yig\'ilyabdi',
+    'AWAITING_PAYMENT': 'To\'lov kutilmoqda',
+    'ASSIGNED': 'Sizga biriktirildi',
+    'PROCESSING': 'Tayyorlanmoqda',
     'PICKED_UP': 'Qabul qilindi',
-    'DELIVERING': 'Yo\'lda',
-    'DELIVERED': 'Yetkazildi',
-    'PAID': 'To\'landi',
+    'DELIVERING': 'Yetkazish yo\'lida',
+    'DELIVERED': 'Manzilga yetdi',
+    'PAID': 'To\'lov olindi',
     'COMPLETED': 'Yakunlandi',
-    'CANCELLED': 'Bekor qilindi'
+    'CANCELLED': 'Bekor qilingan'
 };
 
 async function getCourierFee() {
@@ -69,38 +71,43 @@ async function getOrderMessage(orderId) {
         WHERE oi."orderId" = $1
     `, orderId);
 
-    const itemsText = items.map(i => `• ${i.productTitle} x${i.quantity}`).join('\n');
+    const itemsText = items.map(i => `▫️ <b>${i.productTitle}</b> (x${i.quantity})`).join('\n');
+
+    const statusEmoji = STATUS_EMOJIS[order.status] || '🔸';
+    const statusText = STATUS_TEXTS[order.status] || order.status;
+
     const text = `
-<b>📦 YANGI BUYURTMA #${order.id.slice(-6).toUpperCase()}</b>
-━━━━━━━━━━━━━━━━━
-<b>📍 Manzil:</b> <code>${order.shippingAddress || 'Belgilanmagan'}</code>
-<b>🏙 Shaxar:</b> ${order.shippingCity || '---'}
-<b>👤 Mijoz:</b> ${order.shippingName || 'Nomsiz'}
-<b>📞 Tel:</b> <code>${order.shippingPhone || '---'}</code>
-━━━━━━━━━━━━━━━━━
-<b>🛍 Mahsulotlar:</b>
+📦 <b>BUYURTMA: #${order.id.slice(-6).toUpperCase()}</b>
+━━━━━━━━━━━━━━━━━━━━━━━━
+📍 <b>Manzil:</b> <code>${order.shippingAddress || 'Belgilanmagan'}</code>
+🏙 <b>Shahar:</b> ${order.shippingCity || '---'}
+👤 <b>Mijoz:</b> ${order.shippingName || 'Nomsiz'}
+📞 <b>Tel:</b> <code>${order.shippingPhone || '---'}</code>
+━━━━━━━━━━━━━━━━━━━━━━━━
+🛍 <b>Mahsulotlar:</b>
 ${itemsText}
-━━━━━━━━━━━━━━━━━
-<b>💰 Jami:</b> <code>${order.total.toLocaleString()} SO'M</code>
-<b>💳 To'lov:</b> ${order.paymentMethod === 'CASH' ? '💵 Naqd' : '💳 Karta'}
-<b>📌 Holat:</b> 🟠 ${order.status}
-━━━━━━━━━━━━━━━━━
-${order.comment ? `<b>💬 Izoh:</b> <i>"${order.comment}"</i>\n━━━━━━━━━━━━━━━━━` : ''}
+━━━━━━━━━━━━━━━━━━━━━━━━
+💰 <b>Jami summa:</b> <code>${order.total.toLocaleString()} SO'M</code>
+💳 <b>To'lov turi:</b> ${order.paymentMethod === 'CASH' ? '💵 Naqd' : '💳 Karta'}
+📌 <b>Holat:</b> ${statusEmoji} ${statusText}
+━━━━━━━━━━━━━━━━━━━━━━━━
+${order.comment ? `💬 <b>Izoh:</b> <i>"${order.comment}"</i>\n━━━━━━━━━━━━━━━━━━━━━━━━` : ''}
 `;
 
     const buttons = [];
     if (order.status === 'ASSIGNED') {
-        buttons.push([{ text: "✅ Tasdiqlash (Accept)", callback_data: `pick_up:${orderId}` }]);
+        buttons.push([{ text: "✅ Qabul qilish (Accept)", callback_data: `pick_up:${orderId}` }]);
+        buttons.push([{ text: "❌ Rad etish (Reject)", callback_data: `reject_assign:${orderId}` }]);
     } else if (order.status === 'PROCESSING') {
         buttons.push([{ text: "📦 Yukni oldim (Pick Up)", callback_data: `delivering:${orderId}` }]);
     } else if (order.status === 'DELIVERING') {
-        buttons.push([{ text: "🏁 Yetkazildi (Delivered)", callback_data: `delivered:${orderId}` }]);
+        buttons.push([{ text: "🏁 Yetkazdim (Delivered)", callback_data: `delivered:${orderId}` }]);
     } else if (order.status === 'DELIVERED') {
-        buttons.push([{ text: "✅ Yakunlash (Complete)", callback_data: `completed:${orderId}` }]);
+        buttons.push([{ text: "🏁 Yakunlash (Complete)", callback_data: `completed:${orderId}` }]);
     }
 
     if (order.paymentStatus !== 'PAID') {
-        buttons.push([{ text: "💰 To'lov qilindi", callback_data: `paid:${orderId}` }]);
+        buttons.push([{ text: "💵 To'lov olindi", callback_data: `paid:${orderId}` }]);
     }
 
     // Navigation links with better accuracy (Preventing Atlantic Ocean 0,0 issue)
@@ -216,29 +223,6 @@ async function initDb() {
 }
 initDb();
 
-bot.on('location', async (msg) => {
-    const chatId = msg.chat.id;
-    const telegramId = msg.from.id.toString();
-    const { latitude, longitude } = msg.location;
-
-    try {
-        const user = await prisma.user.findUnique({ where: { telegramId } });
-        if (user && user.role === 'COURIER') {
-            await prisma.courierProfile.update({
-                where: { userId: user.id },
-                data: {
-                    currentLat: latitude,
-                    currentLng: longitude,
-                    lastOnlineAt: new Date(),
-                    status: 'ONLINE'
-                }
-            });
-            bot.sendMessage(chatId, "📍 Joylashuvingiz yangilandi. Endi sizga yaqin atrofdagi buyurtmalar keladi.");
-        }
-    } catch (e) {
-        console.error("Location update error:", e);
-    }
-});
 
 // Update error handling for the bot
 bot.on('polling_error', (error) => {
@@ -249,99 +233,92 @@ const userState = new Map(); // For registration wizard
 
 // --- Bot Commands ---
 
-bot.onText(/\/start/, async (msg) => {
+// Consolidated message handler
+bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
+    const text = msg.text;
     const telegramId = msg.from.id.toString();
+    const state = userState.get(chatId);
 
-    // Check if user is a courier using raw SQL
-    // We join User and CourierProfile explicitly
-    let user = null;
-    try {
-        const results = await prisma.$queryRawUnsafe(`
-            SELECT u.*, cp.status as cp_status, cp.balance, cp."totalDeliveries"
-            FROM "User" u
-            LEFT JOIN "CourierProfile" cp ON u.id = cp."userId"
-            WHERE u."telegramId" = $1
-            LIMIT 1
-        `, telegramId);
+    // 1. Handle Commands (regardless of state)
+    if (text === '/start') {
+        userState.delete(chatId); // Clear any old state
 
-        if (results && results.length > 0) {
-            user = results[0];
-            // Normalize for the template below
-            user.courierProfile = {
-                status: user.cp_status,
-                balance: user.balance || 0,
-                totalDeliveries: user.totalDeliveries || 0
-            };
+        // Check if user is a courier
+        let user = null;
+        try {
+            const results = await prisma.$queryRawUnsafe(`
+                SELECT u.*, cp.status as cp_status, cp.balance, cp."totalDeliveries"
+                FROM "User" u
+                LEFT JOIN "CourierProfile" cp ON u.id = cp."userId"
+                WHERE u."telegramId" = $1
+                LIMIT 1
+            `, telegramId);
+
+            if (results && results.length > 0) {
+                user = results[0];
+            }
+        } catch (e) {
+            console.error("User check error:", e);
         }
-    } catch (e) {
-        console.error("User check error:", e);
-    }
 
-    if (user && user.role === 'COURIER') {
-        const welcomeMsg = `
+        if (user && user.role === 'COURIER') {
+            const welcomeMsg = `
 👋 <b>Xush kelibsiz, ${user.name || 'Kuryer'}!</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
 📊 <b>Sizning balansingiz:</b> <code>${(user.balance || 0).toLocaleString()} SO'M</code>
 🚚 <b>Umumiy yetkazmalar:</b> <code>${user.totalDeliveries || 0} ta</code>
-🕒 <b>Holat:</b> ${user.cp_status === 'ONLINE' ? '✅ Online (Ishda)' : '💤 Offline (Tanaffusda)'}
+🕒 <b>Hozirgi holat:</b> ${user.cp_status === 'ONLINE' ? '✅ Ishda (On Duty)' : '💤 Tanaffusda (Offline)'}
 ━━━━━━━━━━━━━━━━━━━━━━━━
-Tanlang:`;
-
-        const buttons = {
-            reply_markup: {
-                keyboard: [
-                    [{ text: "💰 Hamyon" }, { text: "🔄 Holatni o'zgartirish" }],
-                    [{ text: "📦 Faol buyurtmalar" }, { text: "📊 Statistika" }],
-                    [{ text: "📞 Bog'lanish" }]
-                ],
-                resize_keyboard: true
-            }
-        };
-
-        return bot.sendMessage(chatId, welcomeMsg, { parse_mode: 'HTML', ...buttons });
-    }
-
-    // Not a courier, check if already applied
-    let app = null;
-    try {
-        const apps = await prisma.$queryRawUnsafe(
-            'SELECT * FROM "CourierApplication" WHERE "telegramId" = $1 LIMIT 1',
-            telegramId
-        );
-        if (apps && apps.length > 0) app = apps[0];
-    } catch (e) {
-        console.error("App check error:", e);
-    }
-
-    if (app) {
-        if (app.status === 'PENDING') {
-            return bot.sendMessage(chatId, "⏳ Sizning so'rovingiz ko'rib chiqilmoqda. Admin javobini kuting.");
-        } else if (app.status === 'REJECTED') {
-            const rejectedMsg = "❌ Afsuski, sizning so'rovingiz rad etilgan. Agar ma'lumotlarni yangilab qayta topshirmoqchi bo'lsangiz, quyidagi tugmani bosing:";
-            return bot.sendMessage(chatId, rejectedMsg, {
+Quyidagi menyudan foydalaning:`;
+            const buttons = {
                 reply_markup: {
-                    inline_keyboard: [[{ text: "🔄 Qayta ariza berish", callback_data: "reapply" }]]
+                    keyboard: [
+                        [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
+                        [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }],
+                        [{ text: "🆘 Bog'lanish" }]
+                    ],
+                    resize_keyboard: true
                 }
-            });
+            };
+            return bot.sendMessage(chatId, welcomeMsg, { parse_mode: 'HTML', ...buttons });
         }
+
+        // Not a courier, check if already applied
+        let app = null;
+        try {
+            const apps = await prisma.$queryRawUnsafe(
+                'SELECT * FROM "CourierApplication" WHERE "telegramId" = $1 LIMIT 1',
+                telegramId
+            );
+            if (apps && apps.length > 0) app = apps[0];
+        } catch (e) { }
+
+        if (app) {
+            if (app.status === 'PENDING') {
+                return bot.sendMessage(chatId, "⏳ Sizning so'rovingiz ko'rib chiqilmoqda. Admin javobini kuting.");
+            } else if (app.status === 'REJECTED') {
+                const rejectedMsg = "❌ Afsuski, sizning so'rovingiz rad etilgan. Agar ma'lumotlarni yangilab qayta topshirmoqchi bo'lsangiz, quyidagi tugmani bosing:";
+                return bot.sendMessage(chatId, rejectedMsg, {
+                    reply_markup: {
+                        inline_keyboard: [[{ text: "🔄 Qayta ariza berish", callback_data: "reapply" }]]
+                    }
+                });
+            }
+        }
+
+        // Start registration wizard
+        bot.sendMessage(chatId, "👋 Assalomu alaykum! Hadaf Logistics tizimiga kuryer sifatida ro'yxatdan o'tish uchun quyidagi ma'lumotlarni yuboring:\n\n1. To'liq ismingiz:");
+        userState.set(chatId, { step: 'NAME' });
+        return;
     }
 
-    // Start registration
-    bot.sendMessage(chatId, "👋 Assalomu alaykum! Hadaf Logistics tizimiga kuryer sifatida ro'yxatdan o'tish uchun quyidagi ma'lumotlarni yuboring:\n\n1. To'liq ismingiz:");
-    userState.set(chatId, { step: 'NAME' });
-});
+    // 2. Handle Menu Buttons (if no wizard state)
+    if (!state) {
+        console.log(`[BOT] Received: "${text}" from ${telegramId}`);
+        const cleanText = text?.trim();
 
-bot.on('message', async (msg) => {
-    const chatId = msg.chat.id;
-    const state = userState.get(chatId);
-
-    if (!state || (msg.text && msg.text.startsWith('/'))) {
-        // Handle Menu Buttons
-        const text = msg.text;
-        const telegramId = msg.from.id.toString();
-
-        if (text === "💰 Hamyon") {
+        if (cleanText === "💰 Hamyon") {
             const profiles = await prisma.$queryRawUnsafe(`
                 SELECT balance FROM "CourierProfile" 
                 WHERE "userId" = (SELECT id FROM "User" WHERE "telegramId" = $1 LIMIT 1)
@@ -351,7 +328,7 @@ bot.on('message', async (msg) => {
             return bot.sendMessage(chatId, `💰 <b>Sizning balansingiz:</b>\n\n<code>${balance.toLocaleString()} SO'M</code>\n\nTo'lovlar bo'yicha admin bilan aloqaga chiqing.`, { parse_mode: 'HTML' });
         }
 
-        if (text === "🔄 Holatni o'zgartirish") {
+        if (cleanText === "🔄 Holatni o'zgartirish" || cleanText === "🔄 Holat") {
             const results = await prisma.$queryRawUnsafe(`
                 SELECT u.id, cp."onDuty", cp."courierLevel"
                 FROM "User" u 
@@ -369,13 +346,13 @@ bot.on('message', async (msg) => {
             );
 
             const msgText = newOnDuty
-                ? "✅ <b>Ish boshlandi!</b>\nEndi sizga yangi buyurtmalar kelishi mumkin. Omad!"
-                : "💤 <b>Ish yakunlandi.</b>\nHordiqingiz xayrli bo'lsin.";
+                ? "🚀 <b>Ish boshlandi!</b>\nEndi sizga yangi buyurtmalar keladi. Omad yor bo'lsin!"
+                : "💤 <b>Ish yakunlandi.</b>\nTanaffusingiz xayrli o'tsin!";
 
             return bot.sendMessage(chatId, msgText, { parse_mode: 'HTML' });
         }
 
-        if (text === "📦 Faol buyurtmalar") {
+        if (cleanText === "📦 Faol buyurtmalar" || cleanText === "📦 Buyurtmalar") {
             const userResults = await prisma.$queryRawUnsafe('SELECT id FROM "User" WHERE "telegramId" = $1 LIMIT 1', telegramId);
             if (userResults.length === 0) return;
 
@@ -395,18 +372,17 @@ bot.on('message', async (msg) => {
             return;
         }
 
-        if (text === "📊 Statistika") {
+        if (cleanText === "📊 Statistika") {
             try {
                 const userResults = await prisma.$queryRawUnsafe('SELECT id FROM "User" WHERE "telegramId" = $1 LIMIT 1', telegramId);
                 if (userResults.length === 0) return;
                 const courierId = userResults[0].id;
 
                 const profiles = await prisma.$queryRawUnsafe(`
-                    SELECT rating, "totalDeliveries", "courierLevel" FROM "CourierProfile" 
+                    SELECT rating, "totalDeliveries", "courierLevel", balance FROM "CourierProfile" 
                     WHERE "userId" = $1 LIMIT 1
                 `, courierId);
 
-                // Get today's completed orders
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
                 const todayOrders = await prisma.$queryRawUnsafe(`
@@ -417,16 +393,16 @@ bot.on('message', async (msg) => {
                 const profile = profiles[0];
                 const completedCount = Number(todayOrders[0]?.count || 0);
                 const currentFee = await getCourierFee();
-
                 const levelEmojis = { 'BRONZE': '🥉', 'SILVER': '🥈', 'GOLD': '🥇' };
 
                 const statsMsg = `
-📊 <b>SIZNING KO'RSATKICHLARINGIZ</b>
+📊 <b>SIZNING NATIJALARINGIZ</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
 🏆 <b>Daraja:</b> ${levelEmojis[profile?.courierLevel] || '🥉'} ${profile?.courierLevel || 'BRONZE'}
 ⭐ <b>Reyting:</b> ${Number(profile?.rating || 5).toFixed(1)} / 5.0
 📦 <b>Jami yetkazmalar:</b> ${profile?.totalDeliveries || 0} ta
-
+💰 <b>Hozirgi balans:</b> ${Number(profile?.balance || 0).toLocaleString()} SO'M
+━━━━━━━━━━━━━━━━━━━━━━━━
 <b>📅 BUGUNGI NATIJA:</b>
 ✅ Yetkazildi: <b>${completedCount} ta</b>
 💰 Daromad: <b>${(completedCount * currentFee).toLocaleString()} SO'M</b>
@@ -439,15 +415,36 @@ bot.on('message', async (msg) => {
             }
         }
 
-        if (text === "📞 Bog'lanish") {
-            return bot.sendMessage(chatId, "<b>🆘 ADMINISTRATSIYA BILAN ALOQA</b>\n\nMuammo yoki savollar bo'yicha admin bilan bog'laning:\n\n👤 @hadaf_admin\n📞 +998 (90) 123-45-67", { parse_mode: 'HTML' });
+        if (cleanText === "📞 Bog'lanish" || cleanText === "🆘 Bog'lanish") {
+            try {
+                const settings = await prisma.$queryRawUnsafe('SELECT phone, "socialLinks" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default');
+                const s = settings[0] || {};
+
+                let adminUser = "@hadaf_admin";
+                try {
+                    if (s.socialLinks) {
+                        const links = JSON.parse(s.socialLinks);
+                        const tg = links.find(l => l.platform === 'telegram' || l.platform === 'Telegram');
+                        if (tg) adminUser = tg.url.split('/').pop() || adminUser;
+                        if (!adminUser.startsWith('@')) adminUser = '@' + adminUser;
+                    }
+                } catch (e) { }
+
+                const phone = s.phone || "+998 (90) 123-45-67";
+                const contactMsg = `<b>🆘 ADMINISTRATSIYA BILAN ALOQA</b>\n\nMuammo yoki savollar bo'yicha admin bilan bog'laning:\n\n👤 ${adminUser}\n📞 ${phone}`;
+                return bot.sendMessage(chatId, contactMsg, { parse_mode: 'HTML' });
+            } catch (err) {
+                return bot.sendMessage(chatId, "<b>🆘 ADMINISTRATSIYA BILAN ALOQA</b>\n\nMuammo yoki savollar bo'yicha admin bilan bog'laning:\n\n👤 @hadaf_admin\n📞 +998 (90) 123-45-67", { parse_mode: 'HTML' });
+            }
         }
 
-        if (!state) return;
+        return; // No state and not a command/button
     }
 
+    // 3. Handle Registration Wizard
     if (state.step === 'NAME') {
-        state.name = msg.text;
+        if (!text || text.startsWith('/')) return; // Ignore commands as names
+        state.name = text;
         state.step = 'PHONE';
         bot.sendMessage(chatId, "✅ Ismingiz qabul qilindi.\n\n2. Telefon raqamingizni yuboring (yoki pastdagi tugmani bosing):", {
             reply_markup: {
@@ -457,17 +454,24 @@ bot.on('message', async (msg) => {
             }
         });
     } else if (state.step === 'PHONE') {
-        const phone = msg.contact ? msg.contact.phone_number : msg.text;
-        if (!phone) return;
+        const phone = msg.contact ? msg.contact.phone_number : text;
+        if (!phone || (text && text.startsWith('/'))) return;
 
         state.phone = phone;
 
-        // Save Application
+        // Save or Update Application (UPSERT)
         try {
-            await prisma.$executeRawUnsafe(
-                'INSERT INTO "CourierApplication" (id, "telegramId", name, phone, status, "updatedAt") VALUES ($1, $2, $3, $4, $5, $6)',
+            await prisma.$executeRawUnsafe(`
+                INSERT INTO "CourierApplication" (id, "telegramId", name, phone, status, "updatedAt") 
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ON CONFLICT ("telegramId") DO UPDATE SET 
+                    name = EXCLUDED.name, 
+                    phone = EXCLUDED.phone, 
+                    status = 'PENDING', 
+                    "updatedAt" = EXCLUDED."updatedAt"
+            `,
                 `app_${Date.now()}`,
-                msg.from.id.toString(),
+                telegramId,
                 state.name,
                 phone,
                 'PENDING',
@@ -478,7 +482,8 @@ bot.on('message', async (msg) => {
             });
             userState.delete(chatId);
         } catch (e) {
-            bot.sendMessage(chatId, "❌ Xatolik yuz berdi. Balki siz allaqachon ro'yxatdan o'tgandirsiz?");
+            console.error("Registration Error:", e);
+            bot.sendMessage(chatId, `❌ Xatolik yuz berdi: ${e.message || 'Noma\'lum xato'}. Iltimos qaytadan urinib ko'ring.`);
             userState.delete(chatId);
         }
     }

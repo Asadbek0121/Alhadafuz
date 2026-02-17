@@ -28,11 +28,25 @@ export default function AdminHeader() {
     const fetchNotifications = async () => {
         try {
             const res = await fetch('/api/admin/notifications');
-            if (res.ok) {
-                const data = await res.json();
-                setNotifications(data.notifications);
-                setUnreadCount(data.unreadCount);
+            if (!res.ok) {
+                const text = await res.text();
+                // If we get HTML instead of JSON (e.g. redirect to login), don't try to parse as JSON
+                if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
+                    console.warn('Notification API returned HTML (likely session expired or redirect):', res.status);
+                    return;
+                }
+                throw new Error(`API Error: ${res.status}`);
             }
+
+            const contentType = res.headers.get("content-type");
+            if (!contentType || !contentType.includes("application/json")) {
+                console.warn('Notification API did not return JSON:', contentType);
+                return;
+            }
+
+            const data = await res.json();
+            setNotifications(data.notifications || []);
+            setUnreadCount(data.unreadCount || 0);
         } catch (error) {
             console.warn('Xabarnomalarni olishda xatolik:', error);
         }

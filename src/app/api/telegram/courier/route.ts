@@ -3,12 +3,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import TelegramBot from 'node-telegram-bot-api';
 
-const token = process.env.COURIER_BOT_TOKEN;
-const bot = token ? new TelegramBot(token, { polling: false }) : null;
+const COURIER_TOKEN = process.env.COURIER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 
-// --- Helpers from local script ---
+async function getBot() {
+    let activeToken = COURIER_TOKEN;
+    if (!activeToken) {
+        try {
+            const settings: any = await prisma.$queryRawUnsafe('SELECT "telegramBotToken" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default');
+            activeToken = settings[0]?.telegramBotToken;
+        } catch (e) {
+            console.error("Error fetching token from DB:", e);
+        }
+    }
+    if (!activeToken) return null;
+    return new TelegramBot(activeToken, { polling: false });
+}
 
-const STATUS_EMOJIS = {
+const STATUS_EMOJIS: Record<string, string> = {
     'CREATED': '🆕',
     'ASSIGNED': '📅',
     'PROCESSING': '⏳',
@@ -118,6 +129,7 @@ async function getOrderMessage(orderId: string) {
 // --- Main Webhook Handler ---
 
 export async function POST(req: Request) {
+    const bot = await getBot();
     if (!bot) return NextResponse.json({ error: "Bot not configured" }, { status: 500 });
 
     try {
@@ -299,7 +311,17 @@ export async function POST(req: Request) {
                 });
             } else if (user?.botState === 'REG_PHONE' || msg.contact) {
                 const phone = msg.contact ? msg.contact.phone_number : text;
-                await prisma.$executeRawUnsafe('INSERT INTO "CourierApplication" (id, "telegramId", name, phone, "updatedAt") VALUES ($1, $2, $3, $4, NOW())', `app_${Date.now()}`, telegramId, user?.name, phone);
+
+                await prisma.$executeRawUnsafe(`
+                    INSERT INTO "CourierApplication" (id, "telegramId", name, phone, "updatedAt") 
+                    VALUES ($1, $2, $3, $4, NOW())
+                    ON CONFLICT ("telegramId") DO UPDATE SET 
+                        name = EXCLUDED.name, 
+                        phone = EXCLUDED.phone, 
+                        status = 'PENDING', 
+                        "updatedAt" = NOW()
+                `, `app_${Date.now()}`, telegramId, user?.name, phone);
+
                 await prisma.user.update({ where: { id: user?.id }, data: { botState: 'IDLE' } });
                 await bot.sendMessage(chatId, "🎉 Arizangiz qabul qilindi! Admin tasdiqlashini kuting.", { reply_markup: { remove_keyboard: true } });
             }
