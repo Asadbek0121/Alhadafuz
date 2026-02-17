@@ -188,6 +188,11 @@ export async function POST(req: Request) {
             }
 
             // Commands
+            if (text?.startsWith('/ping')) {
+                await bot.sendMessage(chatId, "🏓 Pong! Webhook ishlayapti.");
+                return NextResponse.json({ ok: true });
+            }
+
             if (text?.startsWith('/start')) {
                 const deepLink = text.split(' ')[1];
                 if (deepLink) {
@@ -262,8 +267,16 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ ok: true });
-    } catch (e) {
-        console.error("Webhook Error:", e);
+    } catch (error: any) {
+        console.error("Webhook Error:", error);
+        // If there's an error, try to at least report it if bot exists
+        if (bot && (error.message || error.description)) {
+            try {
+                const body = await req.clone().json();
+                const chatId = body.message?.chat?.id || body.callback_query?.message?.chat?.id;
+                if (chatId) await bot.sendMessage(chatId, `❌ Xatolik: ${error.message}`);
+            } catch (e) { }
+        }
         return NextResponse.json({ ok: true });
     }
 }
