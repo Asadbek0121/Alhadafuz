@@ -3,8 +3,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
+
 export async function GET() {
     try {
+        // Ensure column exists (Raw SQL for safety)
+        try {
+            await (prisma as any).$executeRawUnsafe(`
+                DO $$ 
+                BEGIN 
+                    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='StoreSettings' AND column_name='courierFeePerOrder') THEN
+                        ALTER TABLE "StoreSettings" ADD COLUMN "courierFeePerOrder" DOUBLE PRECISION DEFAULT 12000;
+                    END IF;
+                END $$;
+            `);
+        } catch (err) {
+            console.error("Migration error in settings:", err);
+        }
+
         let settings = await (prisma as any).storeSettings.findUnique({ where: { id: 'default' } });
         if (!settings) {
             settings = await (prisma as any).storeSettings.create({ data: { id: 'default' } });
@@ -22,7 +37,6 @@ export async function POST(req: Request) {
     try {
         const body = await req.json();
 
-        // Use fields from Prisma schema and frontend payload
         const {
             siteName,
             phone,
@@ -30,15 +44,14 @@ export async function POST(req: Request) {
             address,
             socialLinks,
             telegramBotToken,
-            telegramAdminIds
+            telegramAdminIds,
+            courierFeePerOrder
         } = body;
 
         const updateData: any = {
             updatedAt: new Date()
         };
 
-        // Mapping from payload to Prisma fields if necessary, 
-        // but here they mostly match now.
         if (siteName !== undefined) updateData.siteName = siteName;
         if (phone !== undefined) updateData.phone = phone;
         if (email !== undefined) updateData.email = email;
@@ -46,6 +59,7 @@ export async function POST(req: Request) {
         if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
         if (telegramBotToken !== undefined) updateData.telegramBotToken = telegramBotToken;
         if (telegramAdminIds !== undefined) updateData.telegramAdminIds = telegramAdminIds;
+        if (courierFeePerOrder !== undefined) updateData.courierFeePerOrder = Number(courierFeePerOrder);
 
         const settings = await (prisma as any).storeSettings.upsert({
             where: { id: 'default' },

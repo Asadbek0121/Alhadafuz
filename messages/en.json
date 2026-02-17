@@ -28,7 +28,9 @@
         "bildirishnomalarni_boshqarish": "Manage notifications",
         "loading": "Loading...",
         "not_found": "Not found",
-        "kabinet": "Profile"
+        "kabinet": "Profile",
+        "yetkazib_berish_manzili": "Delivery Address",
+        "joylashuvni_aniqlash": "Detect Location"
     },
     "Hero": {
         "slider_title": "Huge discounts started!",
@@ -1013,6 +1015,7 @@
         "cat_other": "Other..."
     },
     "Chat": {
+        "title": "Hadaf Support",
         "welcome": "Hello! 👋",
         "subtitle": "Have questions? Choose one of the sections below",
         "live_chat": "Live chat",
@@ -1031,7 +1034,8 @@
         "error_image": "Error uploading image",
         "error_mic": "Microphone permission denied or error",
         "voice_empty": "Voice not recorded (empty)",
-        "only_images": "Only images can be uploaded"
+        "only_images": "Only images can be uploaded",
+        "operator": "Operator"
     },
     "AdminMessages": {
         "title": "Messages",

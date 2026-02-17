@@ -11,6 +11,8 @@ import CancelOrderButton from "./CancelOrderButton";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 
+export const dynamic = 'force-dynamic';
+
 async function getOrders(where: any, skip: number, take: number, search: string, userId: string, userRole: string) {
     const isVendor = userRole === "VENDOR";
 

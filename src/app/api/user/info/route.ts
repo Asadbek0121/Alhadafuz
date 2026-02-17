@@ -33,6 +33,11 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
         ...user,
+        authenticators: user.authenticators.map(a => ({
+            ...a,
+            counter: a.counter.toString(),
+            credentialPublicKey: Buffer.from(a.credentialPublicKey).toString('base64')
+        })),
         hasPin: !!user.pinHash
     });
 }

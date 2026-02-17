@@ -1,0 +1,18 @@
+[
+    {
+        "id": 1,
+        "name": "Aliyev Jamshid",
+        "phone": "+998 90 123 45 67",
+        "status": "active",
+        "currentLat": 37.2285,
+        "currentLng": 67.2801
+    },
+    {
+        "id": 2,
+        "name": "Karimov Sardor",
+        "phone": "+998 90 987 65 43",
+        "status": "active",
+        "currentLat": 37.2310,
+        "currentLng": 67.2720
+    }
+]

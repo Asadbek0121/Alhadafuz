@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -39,7 +40,26 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
         if (courier?.telegramId) {
             const botToken = process.env.COURIER_BOT_TOKEN;
             if (botToken) {
-                const message = `<b>Yangi buyurtma tayinlandi!</b>\n\n🆔 ID: #${id.slice(-6).toUpperCase()}\n📍 Manzil: ${order?.shippingAddress || '---'}\n💰 Summa: ${order?.total?.toLocaleString()} SO'M\n\nBatafsil ma'lumot olish uchun botga kiring.`;
+                let botUsername = "hadaf_market_bot"; // Fallback
+                try {
+                    const botRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
+                    const botData = await botRes.json();
+                    if (botData.ok && botData.result.username) {
+                        botUsername = botData.result.username;
+                    }
+                } catch (err) {
+                    console.error("Failed to get bot info in manual assign:", err);
+                }
+
+                const message = `
+<b>📅 SIZGA BUYURTMA TAYINLANDI!</b>
+━━━━━━━━━━━━━━━━━━━━━
+📍 <b>Manzil:</b> <code>${order?.shippingAddress || '---'}</code>
+💰 <b>Summa:</b> <code>${(order?.total || 0).toLocaleString()} SO'M</code>
+🆔 <b>ID:</b> #${id.slice(-6).toUpperCase()}
+━━━━━━━━━━━━━━━━━━━━━
+Buyurtmani qabul qilasizmi?
+`;
 
                 try {
                     await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
@@ -51,7 +71,11 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                             parse_mode: 'HTML',
                             reply_markup: {
                                 inline_keyboard: [
-                                    [{ text: "📦 Botni ochish", url: `https://t.me/hadaf_market_bot?start=${id}` }]
+                                    [
+                                        { text: "✅ Tasdiqlash", callback_data: `pick_up:${id}` },
+                                        { text: "❌ Rad etish", callback_data: `reject_assign:${id}` }
+                                    ],
+                                    [{ text: "📦 Batafsil botda", url: `https://t.me/${botUsername}?start=${id}` }]
                                 ]
                             }
                         })
@@ -61,6 +85,8 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 }
             }
         }
+
+        revalidatePath('/admin/orders');
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

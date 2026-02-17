@@ -1,4 +1,5 @@
 "use client";
+// Force recompile due to Turbopack error
 
 import { useEffect, useState } from 'react';
 import Hero from "@/components/Hero/Hero";

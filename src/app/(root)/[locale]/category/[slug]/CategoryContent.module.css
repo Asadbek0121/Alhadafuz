@@ -1,10 +1,8 @@
 .mobileWrapper {
     display: none;
-    /* Hidden on desktop by default */
-    background: #fff;
+    background: #fafafb;
     min-height: 100vh;
-    padding-bottom: 80px;
-    /* Space for bottom nav */
+    padding-bottom: 90px;
 }
 
 @media (max-width: 992px) {
@@ -20,86 +18,119 @@
 .mobileHeader {
     display: flex;
     align-items: center;
-    padding: 15px;
-    background: #fff;
-    border-bottom: 1px solid #f0f0f0;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 50;
 }
 
 .backBtn {
-    background: none;
-    border: none;
-    padding: 5px;
-    margin-right: 15px;
+    background: white;
+    border: 1px solid #f0f0f2;
+    padding: 7px;
+    border-radius: 12px;
+    margin-right: 12px;
     cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+    transition: all 0.2s;
+}
+
+.backBtn:active {
+    scale: 0.95;
+    background: #f8f8fa;
 }
 
 .headerTitle {
     flex: 1;
-    text-align: center;
-    font-size: 18px;
-    font-weight: 600;
-    margin-right: 30px;
-    /* Balance back button */
+    font-size: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .tabBar {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 15px;
-    background: #fff;
+    padding: 12px 16px;
+    margin-top: 4px;
 }
 
 .tabItem {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    font-weight: 600;
-    color: #0066cc;
+    gap: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 8px 14px;
+    border-radius: 20px;
 }
 
 .list {
-    padding: 0 15px;
+    padding: 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .item {
     display: flex;
     align-items: center;
-    padding: 12px 0;
+    padding: 10px;
     text-decoration: none;
-    border-bottom: 1px solid #f5f5f5;
-    color: #000;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+    border: 1px solid #f1f1f4;
+    color: #1a1a1a;
+    transition: all 0.2s;
+}
+
+.item:active {
+    scale: 0.98;
+    background: #fcfcfd;
 }
 
 .allItem {
-    justify-content: space-between;
-    font-weight: 500;
-    padding: 15px 0;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    color: white;
+    border: none;
+    margin-bottom: 4px;
+}
+
+.allText {
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
 }
 
 .itemContent {
     flex: 1;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .iconWrapper {
-    width: 60px;
-    height: 60px;
-    background: #23b6f2;
-    /* Light Blue from image */
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #3b82f6, #1d4ed8);
     border-radius: 12px;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     overflow: hidden;
-    padding: 8px;
+    padding: 6px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 
 .iconWrapper img {
@@ -109,17 +140,17 @@
 }
 
 .itemName {
-    font-size: 15px;
-    font-weight: 500;
-    line-height: 1.4;
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.2;
+    color: #1f2937;
 }
 
 .arrow {
-    color: #ccc;
+    color: #94a3b8;
     flex-shrink: 0;
 }
 
-.allText {
-    font-weight: 600;
-    font-size: 15px;
+.allItem .arrow {
+    color: rgba(255, 255, 255, 0.6);
 }

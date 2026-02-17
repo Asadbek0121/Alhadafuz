@@ -16,6 +16,7 @@ import SupportChat from "@/components/SupportChat/SupportChat";
 import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
 import AuthModal from "@/components/Auth/AuthModal";
+import MapModal from "@/components/LocationPicker/MapModal";
 import Script from "next/script";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
 import PinLock from "@/components/Auth/PinLock";
@@ -63,8 +64,8 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning={true}>
-      <body className={inter.className} suppressHydrationWarning={true}>
+    <html lang={locale} suppressHydrationWarning>
+      <body className={inter.className} suppressHydrationWarning>
         <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Tashkent">
           <Providers>
             <WishlistProvider>
@@ -83,6 +84,7 @@ export default async function LocaleLayout({
                 <SupportChat />
                 <AuthModal />
                 <PinLock />
+                <MapModal />
               </SessionProviderWrapper>
 
             </WishlistProvider>

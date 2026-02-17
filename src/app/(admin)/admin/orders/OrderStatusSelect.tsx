@@ -7,10 +7,12 @@ import { toast } from "sonner";
 import { Loader2, ChevronDown } from "lucide-react";
 
 const ORDER_STATUSES = [
-    { value: "PENDING", label: "Kutilmoqda", color: "text-yellow-600 bg-yellow-50 border-yellow-200" },
-    { value: "PROCESSING", label: "Jarayonda", color: "text-blue-600 bg-blue-50 border-blue-200" },
-    { value: "SHIPPING", label: "Yetkazilmoqda", color: "text-purple-600 bg-purple-50 border-purple-200" },
+    { value: "CREATED", label: "Kutilmoqda", color: "text-amber-600 bg-amber-50 border-amber-200" },
+    { value: "ASSIGNED", label: "Tayinlangan", color: "text-blue-600 bg-blue-50 border-blue-200" },
+    { value: "PROCESSING", label: "Yig'ilyabdi", color: "text-indigo-600 bg-indigo-50 border-indigo-200" },
+    { value: "DELIVERING", label: "Yetkazilmoqda", color: "text-purple-600 bg-purple-50 border-purple-200" },
     { value: "DELIVERED", label: "Yetkazildi", color: "text-green-600 bg-green-50 border-green-200" },
+    { value: "COMPLETED", label: "Yakunlandi", color: "text-emerald-600 bg-emerald-50 border-emerald-200" },
     { value: "CANCELLED", label: "Bekor qilindi", color: "text-red-600 bg-red-50 border-red-200" },
 ];
 

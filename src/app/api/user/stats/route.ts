@@ -12,29 +12,51 @@ export async function GET() {
     const userId = session.user.id;
 
     try {
-        const [totalOrders, pending, processing, delivered, cancelled] = await Promise.all([
-            prisma.order.count({ where: { userId } }),
-            prisma.order.count({ where: { userId, status: 'PENDING' } }),
-            prisma.order.count({ where: { userId, status: 'PROCESSING' } }),
-            prisma.order.count({ where: { userId, status: 'DELIVERED' } }),
-            prisma.order.count({ where: { userId, status: 'CANCELLED' } }),
+        // Optimize: Use groupBy to get counts in a single query instead of 5 separate queries
+        const [orderStats, wishlist] = await Promise.all([
+            prisma.order.groupBy({
+                by: ['status'],
+                where: { userId },
+                _count: { status: true }
+            }),
+            prisma.wishlist.findUnique({
+                where: { userId },
+                include: { _count: { select: { items: true } } }
+            })
         ]);
 
-        const wishlist = await prisma.wishlist.findUnique({
-            where: { userId },
-            include: { _count: { select: { items: true } } }
+        // Initialize counters
+        let totalOrders = 0;
+        const statusCounts = {
+            pending: 0,
+            processing: 0,
+            delivered: 0,
+            cancelled: 0
+        };
+
+        // Aggregating results in memory
+        orderStats.forEach((group: any) => {
+            const count = group._count.status;
+            totalOrders += count;
+
+            const status = group.status;
+            if (status === 'PENDING') statusCounts.pending = count;
+            else if (status === 'PROCESSING') statusCounts.processing = count;
+            else if (status === 'DELIVERED') statusCounts.delivered = count;
+            else if (status === 'CANCELLED') statusCounts.cancelled = count;
         });
 
-        // Balance logic (if implemented in future)
+        // Balance logic (placeholder)
         const balance = 0;
 
         return NextResponse.json({
             ordersCount: totalOrders,
-            ordersByStatus: { pending, processing, delivered, cancelled },
+            ordersByStatus: statusCounts,
             wishlistCount: wishlist?._count.items || 0,
             balance
         });
     } catch (error) {
+        console.error("Stats API Error:", error);
         return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 });
     }
 }

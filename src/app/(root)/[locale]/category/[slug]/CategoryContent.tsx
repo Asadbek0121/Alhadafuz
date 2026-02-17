@@ -149,22 +149,22 @@ export default function CategoryContent({ category, banners = [], products = [] 
                 {/* Header */}
                 <div className={styles.mobileHeader}>
                     <button className={styles.backBtn} onClick={() => router.back()}>
-                        <ChevronLeft size={24} />
+                        <ChevronLeft size={20} />
                     </button>
                     <h1 className={styles.headerTitle}>{category.name}</h1>
                 </div>
 
                 {/* Banners Section */}
                 {banners.length > 0 && (
-                    <div style={{ padding: '0 16px', marginBottom: '16px' }}>
-                        <div style={{ overflowX: 'auto', display: 'flex', gap: '12px', scrollSnapType: 'x mandatory' }}>
+                    <div className="px-4 mb-4 mt-2">
+                        <div className="flex gap-3 overflow-x-auto snap-x no-scrollbar pb-2">
                             {banners.map(banner => {
                                 const BannerContent = (
-                                    <div key={banner.id} style={{ minWidth: '100%', scrollSnapAlign: 'start', borderRadius: '16px', overflow: 'hidden', position: 'relative', height: '180px', cursor: banner.link ? 'pointer' : 'default' }}>
-                                        <img src={banner.image} alt={banner.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div key={banner.id} className="min-w-[85%] snap-start rounded-2xl overflow-hidden relative h-40 shadow-sm border border-gray-100">
+                                        <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
                                         {banner.title && (
-                                            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: 'linear-gradient(transparent, rgba(0,0,0,0.7))', padding: '20px 16px 12px', color: 'white', fontWeight: 600 }}>
-                                                {banner.title}
+                                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
+                                                <span className="text-white text-sm font-bold line-clamp-1">{banner.title}</span>
                                             </div>
                                         )}
                                     </div>
@@ -194,7 +194,7 @@ export default function CategoryContent({ category, banners = [], products = [] 
                 {/* Tab / Breadcrumb Indicator */}
                 <div className={styles.tabBar}>
                     <div className={styles.tabItem}>
-                        <LayoutGrid size={18} />
+                        <LayoutGrid size={16} />
                         <span>{category.name}</span>
                     </div>
                 </div>
@@ -204,7 +204,10 @@ export default function CategoryContent({ category, banners = [], products = [] 
                     {/* All Products Link (Only if there are subcategories) */}
                     {category.children && category.children.length > 0 && (
                         <div className={`${styles.item} ${styles.allItem}`}>
-                            <span className={styles.allText}>Barcha bo'limlar</span>
+                            <div className="flex items-center gap-3">
+                                <span className={styles.allText}>Barcha bo'limlar</span>
+                            </div>
+                            <ChevronRight size={18} className={styles.arrow} />
                         </div>
                     )}
 
@@ -216,17 +219,17 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                     {sub.image ? (
                                         <img src={sub.image} alt={sub.name} onError={(e) => {
                                             e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement!.style.background = '#ccc';
+                                            e.currentTarget.parentElement!.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
                                         }} />
                                     ) : (
-                                        <span style={{ color: 'white', fontSize: '24px', fontWeight: 'bold' }}>
+                                        <span className="text-white text-xl font-bold">
                                             {sub.name.charAt(0)}
                                         </span>
                                     )}
                                 </div>
                                 <span className={styles.itemName}>{sub.name}</span>
                             </div>
-                            <ChevronRight size={20} className={styles.arrow} />
+                            <ChevronRight size={18} className={styles.arrow} />
                         </Link>
                     ))}
                 </div>

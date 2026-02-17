@@ -31,6 +31,8 @@ export default function ProfileOverviewPage() {
         }
     });
 
+    const [hasFetched, setHasFetched] = useState(false);
+
     useEffect(() => {
         if (status === 'unauthenticated') {
             openAuthModal();
@@ -38,7 +40,8 @@ export default function ProfileOverviewPage() {
     }, [status, openAuthModal]);
 
     useEffect(() => {
-        if (session?.user) {
+        if (session?.user && !hasFetched) {
+            setHasFetched(true);
             // 1. Fetch Stats
             fetch('/api/user/stats')
                 .then(res => res.json())
@@ -47,7 +50,7 @@ export default function ProfileOverviewPage() {
                 })
                 .catch(err => console.error(err));
 
-            // 2. Fetch Fresh User Info to sync session if role/ID changed
+            // 2. Fetch Fresh User Info
             fetch('/api/user/info')
                 .then(res => res.ok ? res.json() : null)
                 .then(dbUser => {
@@ -60,41 +63,15 @@ export default function ProfileOverviewPage() {
                     const idMismatch = dbUser.uniqueId !== sessionId;
 
                     if (roleMismatch || idMismatch) {
-                        console.log("Session out of sync with DB. Syncing...");
                         updateSession({
                             role: dbUser.role,
                             uniqueId: dbUser.uniqueId
-                        }).then(() => {
-                            // After sync, check if ID prefix itself needs fixing for the new role
-                            const expectedPrefix = dbUser.role === 'ADMIN' ? 'A-' : (dbUser.role === 'VENDOR' ? 'V-' : 'H-');
-                            if (dbUser.uniqueId && !dbUser.uniqueId.startsWith(expectedPrefix)) {
-                                fetch('/api/user/fix-my-id', { method: 'POST' })
-                                    .then(res => res.json())
-                                    .then(data => {
-                                        if (data.success) {
-                                            updateSession({ uniqueId: data.uniqueId }).then(() => window.location.reload());
-                                        }
-                                    });
-                            }
                         });
-                    } else {
-                        // Role matches session, but check if ID prefix itself is wrong for this role
-                        const expectedPrefix = dbUser.role === 'ADMIN' ? 'A-' : (dbUser.role === 'VENDOR' ? 'V-' : 'H-');
-                        if (dbUser.uniqueId && !dbUser.uniqueId.startsWith(expectedPrefix)) {
-                            console.log("Fixing ID prefix for role:", dbUser.role);
-                            fetch('/api/user/fix-my-id', { method: 'POST' })
-                                .then(res => res.json())
-                                .then(data => {
-                                    if (data.success) {
-                                        updateSession({ uniqueId: data.uniqueId }).then(() => window.location.reload());
-                                    }
-                                });
-                        }
                     }
                 })
                 .catch(err => console.error("Session sync failed:", err));
         }
-    }, [session]);
+    }, [session, hasFetched, updateSession]);
 
     // Check for panel access (Admin or Vendor)
     const isAdmin = (user as any)?.role === 'ADMIN' || (session?.user as any)?.role === 'ADMIN';
@@ -118,131 +95,111 @@ export default function ProfileOverviewPage() {
     return (
         <div>
             {/* MOBILE VIEW */}
-            <div className="lg:hidden flex flex-col gap-6">
-                {/* User Header Card */}
-                <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center text-gray-400 overflow-hidden">
-                        {user?.image ? (
-                            <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
-                        ) : (
-                            <User size={32} />
-                        )}
-                    </div>
-                    <div className="flex-1">
-                        <h2 className="text-xl font-bold text-gray-900">{user?.name || tProfile('user_default')}</h2>
-                        <p className="text-sm text-gray-500">{user?.email || user?.phone || "---"}</p>
-                        <p className="text-xs text-blue-500 font-bold mt-1 max-w-fit px-2 py-0.5 bg-blue-50 rounded-md">{tProfile('id')}: {user?.uniqueId || '---'}</p>
-                    </div>
-                    <Link href="/profile/settings" className="p-2 bg-gray-50 rounded-xl text-gray-600">
-                        <Settings size={20} />
-                    </Link>
-                </div>
-
-                {/* Shaxsiy ma'lumotlar Section (Personal Info) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-gray-900">{tProfile('personal_info')}</h3>
-                        <Link href="/profile/info" className="text-sm font-bold text-blue-600 px-3 py-1 bg-blue-50 rounded-lg">
-                            {tProfile('edit')}
-                        </Link>
-                    </div>
-                    <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">{tProfile('fio')}</span>
-                            <span className="font-semibold text-gray-900">{user?.name || "---"}</span>
+            <div className="lg:hidden flex flex-col gap-3">
+                {/* 1. Compact User Header Card */}
+                <div className="bg-white p-3.5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                    <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl flex items-center justify-center text-blue-600 overflow-hidden shrink-0 border border-blue-100 shadow-sm transition-transform active:scale-95">
+                            {user?.image ? (
+                                <img src={user.image} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                                <User size={24} strokeWidth={1.5} />
+                            )}
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">{tProfile('phone')}</span>
-                            <span className="font-semibold text-gray-900">{user?.phone || "---"}</span>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                                <h2 className="text-[15px] font-bold text-gray-900 leading-tight">
+                                    {user?.name || tProfile('user_default')}
+                                </h2>
+                                {user?.uniqueId && (
+                                    <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded-full border border-blue-100 uppercase tracking-tight">
+                                        {user.uniqueId}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-[11px] font-medium text-gray-500 truncate opacity-70">{user?.phone || user?.email || "---"}</p>
                         </div>
-                        <div className="flex justify-between items-center text-sm">
-                            <span className="text-gray-500">Email</span>
-                            <span className="font-semibold text-gray-900">{user?.email || "---"}</span>
+                        <div className="flex items-center gap-1.5">
+                            <Link href="/profile/info" className="p-2.5 bg-blue-50 rounded-xl text-blue-600 hover:bg-blue-100 active:scale-90 transition-all border border-blue-100/50">
+                                <User size={20} strokeWidth={2} />
+                            </Link>
                         </div>
                     </div>
                 </div>
 
-                {/* Buyurtmalar statusi (Order History Breakdown) */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+                {/* 2. Compact Order Status Bar */}
+                <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 p-4">
                     <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-bold text-gray-900">{tProfile('order_history')}</h3>
-                        <Link href="/profile/orders" className="text-sm font-bold text-blue-600">
+                        <div className="flex items-center gap-2">
+                            <div className="w-1 h-5 bg-blue-600 rounded-full"></div>
+                            <h3 className="text-[15px] font-bold text-gray-900 tracking-tight">{tProfile('order_history')}</h3>
+                        </div>
+                        <Link href="/profile/orders" className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full flex items-center gap-1 transition-all active:scale-95">
                             {tProfile('view_all')}
+                            <ChevronRight size={12} strokeWidth={3} />
                         </Link>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-4 gap-2">
                         {[
-                            { label: tProfile('pending'), count: statsData.ordersByStatus.pending, icon: Clock, color: "text-orange-500", bg: "bg-orange-50" },
-                            { label: tProfile('processing'), count: statsData.ordersByStatus.processing, icon: Package, color: "text-blue-500", bg: "bg-blue-50" },
-                            { label: tProfile('delivered'), count: statsData.ordersByStatus.delivered, icon: CheckCircle2, color: "text-green-500", bg: "bg-green-50" },
-                            { label: tProfile('cancelled'), count: statsData.ordersByStatus.cancelled, icon: LogOut, color: "text-red-500", bg: "bg-red-50" }
+                            { count: statsData.ordersByStatus.pending, icon: Clock, color: "text-orange-500", bg: "bg-orange-50", label: tProfile('pending') },
+                            { count: statsData.ordersByStatus.processing, icon: Package, color: "text-blue-500", bg: "bg-blue-50", label: tProfile('processing') },
+                            { count: statsData.ordersByStatus.delivered, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50", label: tProfile('delivered') },
+                            { count: statsData.ordersByStatus.cancelled, icon: LogOut, color: "text-rose-500", bg: "bg-rose-50", label: tProfile('cancelled') }
                         ].map((item, idx) => (
-                            <Link key={idx} href="/profile/orders" className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                                <div className={`w-9 h-9 rounded-full ${item.bg} ${item.color} flex items-center justify-center shrink-0 shadow-sm ring-1 ring-white`}>
-                                    <item.icon size={16} strokeWidth={2.5} />
+                            <Link key={idx} href="/profile/orders" className="flex flex-col items-center justify-center gap-1.5 transition-all active:scale-90">
+                                <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center shadow-sm border border-white/50 relative`}>
+                                    <item.icon size={18} strokeWidth={2.2} />
+                                    {item.count > 0 && (
+                                        <span className={`absolute -top-1 -right-1 w-4.5 h-4.5 flex items-center justify-center rounded-full text-[9px] font-bold text-white shadow-sm border-2 border-white ${item.color.replace('text-', 'bg-')}`}>
+                                            {item.count}
+                                        </span>
+                                    )}
                                 </div>
-                                <div className="min-w-0">
-                                    <p className="text-sm font-bold text-gray-900 leading-tight">{item.count}</p>
-                                    <p className="text-[10px] font-medium text-gray-500 truncate">{item.label}</p>
-                                </div>
+                                <span className="text-[9px] font-bold text-gray-500 text-center uppercase tracking-tight opacity-70">{item.label}</span>
                             </Link>
                         ))}
                     </div>
                 </div>
 
-                {/* Menu List */}
-                <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden px-2">
+                {/* 3. Compact Menu List */}
+                <div className="bg-white rounded-[1.5rem] shadow-sm border border-gray-100 overflow-hidden py-1.5 px-1.5">
                     {mobileMenu.map((item: any, index: number) => {
                         const isAction = !!item.action;
                         const LinkComponent = item.href === '/admin' ? NextLink : Link;
-
                         const content = (
                             <>
-                                {/* Hover Gradient Background */}
-                                <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-white opacity-0 group-hover:opacity-100 rounded-2xl transition-opacity duration-300 -z-10" />
-
-                                <div className={`relative w-11 h-11 rounded-2xl flex items-center justify-center bg-gray-50 ${item.color} group-hover:scale-110 group-hover:rotate-3 transition-all duration-300 shadow-sm group-hover:shadow-md group-hover:bg-white ring-1 ring-gray-100 group-hover:ring-gray-200`}>
-                                    <item.icon size={22} className="transition-transform duration-300" />
+                                <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-gray-50 ${item.color} group-hover:bg-white group-hover:shadow-sm transition-all border border-transparent group-active:scale-90`}>
+                                    <item.icon size={18} strokeWidth={2} />
                                 </div>
-                                <div className="flex-1 flex items-center justify-between z-10">
-                                    <span className="font-semibold text-gray-700 group-hover:text-gray-900 text-[15px] transition-colors">{item.label}</span>
-                                    <div className="flex items-center gap-2">
-                                        {item.value && <span className="text-[11px] font-bold text-gray-400 bg-gray-100 px-2.5 py-1 rounded-lg group-hover:bg-white group-hover:text-gray-600 transition-colors shadow-sm">{item.value}</span>}
-                                        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-white text-gray-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all duration-300 shadow-sm opacity-0 group-hover:opacity-100">
-                                            <ChevronRight size={18} strokeWidth={2.5} />
-                                        </div>
+                                <span className="flex-1 font-bold text-gray-700 text-sm group-hover:text-gray-900">{item.label}</span>
+                                <div className="flex items-center gap-2">
+                                    {item.value && <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full uppercase tracking-tight">{item.value}</span>}
+                                    <div className="w-7 h-7 rounded-full flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                        <ChevronRight size={16} strokeWidth={2.5} className="text-gray-300 group-hover:text-blue-600" />
                                     </div>
                                 </div>
                             </>
                         );
 
-                        if (isAction) {
-                            return (
-                                <button
-                                    key={index}
-                                    onClick={item.action}
-                                    className="w-full group relative flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_0_10px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out active:scale-[0.98]"
-                                >
-                                    {content}
-                                </button>
-                            );
-                        }
+                        const className = "group w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-50 transition-all border border-transparent active:bg-blue-50/30 mb-0.5 last:mb-0";
 
-                        return (
-                            <LinkComponent key={index} href={item.href || '#'} className="group relative flex items-center gap-4 p-4 rounded-2xl border border-transparent hover:border-gray-100 hover:bg-white hover:shadow-[0_8px_25px_-5px_rgba(0,0,0,0.1),0_0_10px_-5px_rgba(0,0,0,0.05)] transition-all duration-300 ease-out active:scale-[0.98]">
-                                {content}
-                            </LinkComponent>
+                        return isAction ? (
+                            <button key={index} onClick={item.action} className={className}>{content}</button>
+                        ) : (
+                            <LinkComponent key={index} href={item.href || '#'} className={className}>{content}</LinkComponent>
                         );
                     })}
                 </div>
 
-                {/* Logout Button */}
+                {/* 4. Compact Logout */}
                 <button
                     onClick={() => signOut()}
-                    className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center justify-center gap-2 text-red-500 font-bold hover:bg-red-50 transition-colors mb-4"
+                    className="group w-full bg-rose-50/50 p-3.5 rounded-[1.25rem] border border-rose-100/30 flex items-center justify-center gap-2.5 text-rose-500 text-sm font-bold hover:bg-rose-50 active:scale-[0.98] transition-all mb-4"
                 >
-                    <LogOut size={20} />
-                    {tProfile('logout')}
+                    <div className="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center text-white group-hover:rotate-12 transition-transform shadow-lg shadow-rose-500/20">
+                        <LogOut size={14} strokeWidth={3} />
+                    </div>
+                    {tProfile('logout').toUpperCase()}
                 </button>
             </div>
 

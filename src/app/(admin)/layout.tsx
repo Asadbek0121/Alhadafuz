@@ -42,7 +42,8 @@ export default async function AdminLayout({
         );
     }
 
-    const { locale = 'uz' } = (await params) || {};
+    const resolvedParams = await params;
+    const locale = resolvedParams?.locale || 'uz';
 
     let messages;
     try {
@@ -52,8 +53,8 @@ export default async function AdminLayout({
     }
 
     return (
-        <html lang={locale} suppressHydrationWarning={true}>
-            <body className={inter.className} style={{ display: 'flex', minHeight: '100vh', background: '#F2F6FA' }} suppressHydrationWarning={true}>
+        <html lang={locale} suppressHydrationWarning>
+            <body className={inter.className} style={{ display: 'flex', minHeight: '100vh', background: '#F2F6FA' }} suppressHydrationWarning>
                 <SessionProviderWrapper session={session}>
                     <QueryProvider>
                         <NextIntlClientProvider messages={messages} locale={locale}>

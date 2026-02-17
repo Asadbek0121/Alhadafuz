@@ -19,6 +19,7 @@ console.log("🚀 Hadaf Logistics Production Bot ishga tushdi...");
 const STATUS_EMOJIS = {
     'CREATED': '🆕',
     'ASSIGNED': '📅',
+    'PROCESSING': '⏳',
     'PICKED_UP': '📦',
     'DELIVERING': '🚚',
     'DELIVERED': '✅',
@@ -30,6 +31,7 @@ const STATUS_EMOJIS = {
 const STATUS_TEXTS = {
     'CREATED': 'Yangi',
     'ASSIGNED': 'Tayinlangan',
+    'PROCESSING': 'Yig\'ilyabdi',
     'PICKED_UP': 'Qabul qilindi',
     'DELIVERING': 'Yo\'lda',
     'DELIVERED': 'Yetkazildi',
@@ -37,6 +39,15 @@ const STATUS_TEXTS = {
     'COMPLETED': 'Yakunlandi',
     'CANCELLED': 'Bekor qilindi'
 };
+
+async function getCourierFee() {
+    try {
+        const settings = await prisma.$queryRawUnsafe('SELECT "courierFeePerOrder" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default');
+        return Number(settings[0]?.courierFeePerOrder || 12000);
+    } catch (e) {
+        return 12000;
+    }
+}
 
 async function getOrderMessage(orderId) {
     // We use raw SQL for everything to bypass outdated client validation
@@ -79,9 +90,9 @@ ${order.comment ? `<b>💬 Izoh:</b> <i>"${order.comment}"</i>\n━━━━━�
 
     const buttons = [];
     if (order.status === 'ASSIGNED') {
-        buttons.push([{ text: "✅ Qabul qilish (Pick Up)", callback_data: `pick_up:${orderId}` }]);
-    } else if (order.status === 'PICKED_UP') {
-        buttons.push([{ text: "🚚 Yetkazishni boshlash", callback_data: `delivering:${orderId}` }]);
+        buttons.push([{ text: "✅ Tasdiqlash (Accept)", callback_data: `pick_up:${orderId}` }]);
+    } else if (order.status === 'PROCESSING') {
+        buttons.push([{ text: "📦 Yukni oldim (Pick Up)", callback_data: `delivering:${orderId}` }]);
     } else if (order.status === 'DELIVERING') {
         buttons.push([{ text: "🏁 Yetkazildi (Delivered)", callback_data: `delivered:${orderId}` }]);
     } else if (order.status === 'DELIVERED') {
@@ -92,10 +103,25 @@ ${order.comment ? `<b>💬 Izoh:</b> <i>"${order.comment}"</i>\n━━━━━�
         buttons.push([{ text: "💰 To'lov qilindi", callback_data: `paid:${orderId}` }]);
     }
 
-    // Professional utility buttons
+    // Navigation links with better accuracy (Preventing Atlantic Ocean 0,0 issue)
+    const lat = order.lat || order.deliveryLat;
+    const lng = order.lng || order.deliveryLng;
+    const address = order.shippingAddress || '';
+
+    // Check if we have valid coordinates (Uzbekistan is around lat 37-45)
+    const hasValidCoords = lat && lng && Math.abs(lat) > 1 && Math.abs(lng) > 1;
+
+    const googleUrl = hasValidCoords
+        ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
+
+    const yandexUrl = hasValidCoords
+        ? `https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto`
+        : `https://yandex.uz/maps/?rtext=~${encodeURIComponent(address)}`;
+
     buttons.push([
-        { text: "🗺 Xarita (Google)", url: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(order.shippingAddress || '')}` },
-        { text: "🚕 Yandex.Navi", url: `https://yandex.com/maps/?rtext=~${order.lat || 0},${order.lng || 0}&rtt=auto` }
+        { text: "🗺 Google Maps", url: googleUrl },
+        { text: "🚕 Yandex.Navi", url: yandexUrl }
     ]);
 
     return {
@@ -390,6 +416,7 @@ bot.on('message', async (msg) => {
 
                 const profile = profiles[0];
                 const completedCount = Number(todayOrders[0]?.count || 0);
+                const currentFee = await getCourierFee();
 
                 const levelEmojis = { 'BRONZE': '🥉', 'SILVER': '🥈', 'GOLD': '🥇' };
 
@@ -402,7 +429,7 @@ bot.on('message', async (msg) => {
 
 <b>📅 BUGUNGI NATIJA:</b>
 ✅ Yetkazildi: <b>${completedCount} ta</b>
-💰 Daromad: <b>${(completedCount * 12000).toLocaleString()} SO'M</b>
+💰 Daromad: <b>${(completedCount * currentFee).toLocaleString()} SO'M</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
 `;
                 return bot.sendMessage(chatId, statsMsg, { parse_mode: 'HTML' });
@@ -508,17 +535,27 @@ bot.on('callback_query', async (query) => {
         const [action, orderId] = data.split(':');
 
         // Use raw SQL update to avoid include/field errors
+        if (action === 'reject_assign') {
+            await prisma.$executeRawUnsafe('UPDATE "Order" SET "courierId" = NULL, "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'CREATED', orderId);
+            bot.answerCallbackQuery(query.id, { text: "Buyurtma rad etildi." });
+            return bot.editMessageText(`❌ Siz ushbu buyurtmani (#${orderId.slice(-6).toUpperCase()}) rad etdingiz.`, {
+                chat_id: chatId,
+                message_id: messageId,
+                parse_mode: 'HTML'
+            });
+        }
+
         if (action === 'pick_up') {
-            await prisma.$executeRawUnsafe('UPDATE "Order" SET status = $1 WHERE id = $2', 'PICKED_UP', orderId);
+            await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'PROCESSING', orderId);
         } else if (action === 'delivering') {
-            await prisma.$executeRawUnsafe('UPDATE "Order" SET status = $1 WHERE id = $2', 'DELIVERING', orderId);
+            await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'DELIVERING', orderId);
         } else if (action === 'delivered') {
             // Ask for photo proof instead of marking delivered directly
             userState.set(chatId, { step: 'WAITING_FOR_PHOTO', orderId });
             return bot.sendMessage(chatId, "📸 <b>Yetkazib berishni tasdiqlash uchun rasm yuboring.</b>\n\nIltimos, mahsulot topshirilganini tasdiqlovchi suratni (mijoz qo'lida yoki eshik oldida) yuboring.", { parse_mode: 'HTML' });
         } else if (action === 'completed') {
             // Update order status
-            await prisma.$executeRawUnsafe('UPDATE "Order" SET status = $1, "finishedAt" = $2 WHERE id = $3', 'COMPLETED', new Date(), orderId);
+            await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "finishedAt" = $2, "updatedAt" = NOW() WHERE "id" = $3', 'COMPLETED', new Date(), orderId);
 
             // Update courier stats and level-up logic
             const telegramId = query.from.id.toString();
@@ -530,17 +567,19 @@ bot.on('callback_query', async (query) => {
             if (newTotalDeliveries >= 100) newLevel = 'GOLD';
             else if (newTotalDeliveries >= 50) newLevel = 'SILVER';
 
+            const currentFee = await getCourierFee();
+
             await prisma.$executeRawUnsafe(`
                 UPDATE "CourierProfile" 
                 SET "totalDeliveries" = $1,
                     "courierLevel" = $2,
-                    balance = balance + 12000
+                    balance = balance + $4
                 WHERE id = $3
-            `, newTotalDeliveries, newLevel, profile.id);
+            `, newTotalDeliveries, newLevel, profile.id, currentFee);
 
             bot.answerCallbackQuery(query.id, { text: "Buyurtma muvaffaqiyatli yakunlandi!" });
         } else if (action === 'paid') {
-            await prisma.$executeRawUnsafe('UPDATE "Order" SET "paymentStatus" = $1 WHERE id = $2', 'PAID', orderId);
+            await prisma.$executeRawUnsafe('UPDATE "Order" SET "paymentStatus" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'PAID', orderId);
         }
 
         const { text, reply_markup } = await getOrderMessage(orderId);
@@ -569,7 +608,7 @@ bot.on('photo', async (msg) => {
         try {
             // Save photo fileId to order
             await prisma.$executeRawUnsafe(
-                'UPDATE "Order" SET status = $1, "deliveryPhoto" = $2, "updatedAt" = $3 WHERE id = $4',
+                'UPDATE "Order" SET "status" = $1, "deliveryPhoto" = $2, "updatedAt" = $3 WHERE "id" = $4',
                 'DELIVERED', photo.file_id, new Date(), orderId
             );
 

@@ -32,8 +32,8 @@ export default function BottomNav() {
     const { items, isHydrated } = useCartStore();
     const { wishlist } = useWishlist();
 
-    // Hide upon product detail pages
-    if (pathname.includes('/product/')) return null;
+    // Hide upon product or checkout pages
+    if (pathname.includes('/product/') || pathname === '/checkout') return null;
 
     const navItems = [
         {
@@ -87,29 +87,34 @@ export default function BottomNav() {
     ];
 
     return (
-        <nav className="lg:hidden fixed bottom-4 left-4 right-4 bg-white/90 backdrop-blur-2xl border border-white/40 shadow-2xl shadow-blue-900/10 flex items-center justify-between px-2 h-[72px] z-[100] rounded-3xl transition-all duration-300">
+        <nav className="lg:hidden fixed bottom-4 left-3 right-3 bg-white/85 backdrop-blur-2xl border border-white/30 shadow-[0_8px_25px_rgba(0,0,0,0.08)] grid grid-cols-5 items-center justify-items-center px-1 h-[60px] z-[100] rounded-[22px] transition-all duration-300">
             {navItems.map((item, idx) => {
                 const Icon = item.icon;
                 const active = item.isActive;
 
                 const content = (
-                    <div className={cn("flex flex-col items-center justify-center w-full h-full py-1 relative group")}>
-                        {/* Active Glow Background */}
-                        {active && (
-                            <div className="absolute inset-0 bg-gradient-to-tr from-blue-50 to-indigo-50 rounded-2xl -z-10 animate-fade-in opacity-70" />
-                        )}
+                    <div className={cn("flex flex-col items-center justify-center w-full h-full relative group transition-all duration-300")}>
+                        <div className={cn(
+                            "p-2 rounded-2xl relative transition-all duration-500 mb-0.5 flex items-center justify-center",
+                            active ? "text-blue-600 -translate-y-1" : "text-slate-400 opacity-70 group-hover:opacity-100"
+                        )}>
+                            {/* Premium Glow Effect */}
+                            {active && (
+                                <div className="absolute inset-0 bg-blue-600/10 rounded-2xl blur-md -z-10 animate-pulse" />
+                            )}
+                            {active && (
+                                <div className="absolute inset-0 bg-blue-50 rounded-xl -z-20 opacity-80" />
+                            )}
 
-                        <div className={cn("p-1.5 rounded-2xl transition-all duration-300 mb-0.5 relative", active ? "text-blue-600 -translate-y-1" : "text-slate-400 group-hover:text-slate-600")}>
-                            {active && <div className="absolute inset-0 bg-blue-50 rounded-xl blur-sm animate-pulse"></div>}
                             <Icon
-                                size={active ? 26 : 24}
-                                className={cn("relative z-10 transition-all", active ? "stroke-[2.5px]" : "stroke-[1.5px]")}
+                                size={active ? 22 : 21}
+                                className={cn("relative z-10 transition-all", active ? "stroke-[2.5px]" : "stroke-[2px]")}
                                 fill={active && item.fillable ? "currentColor" : "none"}
                             />
-                            {/* Badge for Cart */}
+                            {/* Badge */}
                             {(item.badge || 0) > 0 && (
                                 <span className={cn(
-                                    "absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-[#ff6b00] text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white",
+                                    "absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-[#ff3b30] text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white shadow-sm z-20",
                                     active ? "scale-110" : ""
                                 )}>
                                     {item.badge}
@@ -117,11 +122,12 @@ export default function BottomNav() {
                             )}
                         </div>
 
-                        <span className={cn("text-[10px] tracking-wide transition-all duration-300", active ? "font-bold text-blue-600" : "font-medium text-slate-400 scale-90 opacity-80")}>
+                        <span className={cn(
+                            "text-[9px] leading-tight transition-all duration-300 text-center",
+                            active ? "font-bold text-blue-600 scale-100" : "font-medium text-slate-500 scale-95 opacity-80"
+                        )}>
                             {item.label}
                         </span>
-
-
                     </div>
                 );
 

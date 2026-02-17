@@ -28,7 +28,10 @@
         "bildirishnomalarni_boshqarish": "Bildirishnomalarni boshqarish",
         "loading": "Yuklanmoqda...",
         "not_found": "Topilmadi",
-        "kabinet": "Kabinet"
+        "kabinet": "Kabinet",
+        "yetkazib_berish_manzili": "Yetkazib berish manzili",
+        "joylashuvni_aniqlash": "Joylashuvni aniqlash",
+        "tanlash": "Tanlash"
     },
     "Hero": {
         "slider_title": "Katta chegirmalar boshlandi!",
@@ -53,14 +56,14 @@
     "Checkout": {
         "contact_info": "Aloqa ma'lumotlari",
         "phone": "Telefon raqami",
-        "fio": "F.I.O",
+        "name_label": "Ism-familiya",
+        "name_placeholder": "Ismingizni kiriting",
         "delivery_method": "Yetkazib berish usuli",
         "courier": "Kuryer orqali",
         "pickup": "Olib ketish",
         "city_tashkent": "Toshkent shahri",
         "address_placeholder": "Manzil (Ko'cha, uy, xonadon)",
         "phone_label": "Telefon raqam",
-        "fio_label": "Ism-familiya",
         "city_label": "Viloyat / Shahar",
         "district_label": "Tuman",
         "district_select": "Tumanni tanlang",
@@ -71,6 +74,7 @@
         "map_label": "Xaritadan belgilash (Tez kunda)",
         "payment_type": "To'lov turi",
         "cash": "Naqd pul",
+        "card": "Karta orqali",
         "your_order": "Buyurtmangiz",
         "edit": "O'zgartirish",
         "terms": "Tugmani bosish orqali siz ommaviy oferta shartlariga rozilik bildirasiz",
@@ -246,7 +250,7 @@
         "order": "Buyurtma",
         "status": "Holat",
         "delivery": "Yetkazib berish",
-        "processing": "Jarayonda",
+        "processing": "Yig'ilyabdi",
         "delivered": "Yetkazib berildi",
         "cancelled": "Bekor qilindi",
         "pending": "Kutilmoqda",
@@ -789,6 +793,7 @@
         }
     },
     "Chat": {
+        "title": "Hadaf Yordam",
         "welcome": "Assalomu alaykum! 👋",
         "subtitle": "Savollaringiz bormi? Quyidagi bo'limlardan birini tanlang",
         "live_chat": "Jonli chat",
@@ -807,7 +812,8 @@
         "error_image": "Rasm yuklashda xatolik",
         "error_mic": "Mikrofonga ruxsat berilmagan yoki xatolik",
         "voice_empty": "Ovoz yozilmadi (bo'sh)",
-        "only_images": "Faqat rasm yuklash mumkin"
+        "only_images": "Faqat rasm yuklash mumkin",
+        "operator": "Operator"
     },
     "AdminMessages": {
         "title": "Xabarlar",

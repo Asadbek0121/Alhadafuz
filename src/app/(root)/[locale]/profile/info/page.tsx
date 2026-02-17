@@ -170,12 +170,12 @@ export default function PersonalInfoPage() {
 
     return (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-8 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                    <h1 className="text-2xl font-bold">{t('personal_info')}</h1>
-                    <p className="text-text-muted mt-1">{t('personal_dashboard')}</p>
+            <div className="p-4 md:p-8 border-b border-gray-100 flex items-center justify-between gap-4">
+                <div className="min-w-0">
+                    <h1 className="text-base md:text-2xl font-black text-gray-900 leading-tight">{t('personal_info')}</h1>
+                    <p className="text-[11px] md:text-sm text-text-muted mt-0.5 line-clamp-1">{t('personal_dashboard')}</p>
                 </div>
-                <div className="relative group">
+                <div className="relative shrink-0">
                     <input
                         type="file"
                         id="avatar-upload"
@@ -184,66 +184,66 @@ export default function PersonalInfoPage() {
                         onChange={handleImageUpload}
                         disabled={isUploading}
                     />
-                    <div className="w-20 h-20 rounded-full bg-gray-100 border-2 border-white shadow-sm overflow-hidden relative">
+                    <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-gray-50 border-2 border-white shadow-sm overflow-hidden relative">
                         {isUploading ? (
                             <div className="absolute inset-0 z-10 bg-black/20 flex items-center justify-center">
-                                <Loader2 size={24} className="animate-spin text-white" />
+                                <Loader2 size={20} className="animate-spin text-white" />
                             </div>
                         ) : null}
                         {session?.user?.image ? (
-                            <Image src={session.user.image} alt="Avatar" width={80} height={80} className="object-cover" />
+                            <Image src={session.user.image} alt="Avatar" width={80} height={80} className="object-cover w-full h-full" />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center text-primary bg-primary/10">
-                                <span className="text-2xl font-bold">{session?.user?.name?.[0] || "U"}</span>
+                            <div className="w-full h-full flex items-center justify-center text-primary bg-blue-50/50">
+                                <span className="text-lg md:text-2xl font-black">{session?.user?.name?.[0] || "U"}</span>
                             </div>
                         )}
                     </div>
                     <label
                         htmlFor="avatar-upload"
-                        className={`absolute bottom-0 right-0 bg-primary text-white p-1.5 rounded-full shadow-lg cursor-pointer hover:bg-primary-hover transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                        className={`absolute -bottom-1 -right-1 bg-blue-600 text-white p-1 rounded-full shadow-lg cursor-pointer hover:bg-blue-700 transition-colors ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
                     >
-                        <Camera size={14} />
+                        <Camera size={12} className="md:w-4 md:h-4" />
                     </label>
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">{t('fio')}</label>
+            <form onSubmit={handleSubmit(onSubmit)} className="p-4 md:p-8 space-y-3 md:space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
+                    <div className="space-y-1 md:space-y-2">
+                        <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('fio')}</label>
                         <input
                             {...register("name")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.name ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
+                            className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.name ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
                             placeholder={t('fio')}
                         />
-                        {errors.name && <p className="text-red-500 text-xs font-medium">{errors.name.message}</p>}
+                        {errors.name && <p className="text-red-500 text-[10px] md:text-xs font-medium">{errors.name.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">{t('username')}</label>
+                    <div className="space-y-1 md:space-y-2">
+                        <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('username')}</label>
                         <input
                             {...register("username")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.username ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
+                            className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.username ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
                             placeholder={t('username')}
                         />
-                        {errors.username && <p className="text-red-500 text-xs font-medium">{errors.username.message}</p>}
+                        {errors.username && <p className="text-red-500 text-[10px] md:text-xs font-medium">{errors.username.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">{t('email')}</label>
+                    <div className="space-y-1 md:space-y-2">
+                        <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('email')}</label>
                         <input
                             {...register("email")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.email ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
+                            className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.email ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
                             placeholder={t('email')}
                         />
-                        {errors.email && <p className="text-red-500 text-xs font-medium">{errors.email.message}</p>}
+                        {errors.email && <p className="text-red-500 text-[10px] md:text-xs font-medium">{errors.email.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">{t('phone')}</label>
+                    <div className="space-y-1 md:space-y-2">
+                        <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('phone')}</label>
                         <Controller
                             control={control}
                             name="phone"
@@ -251,31 +251,31 @@ export default function PersonalInfoPage() {
                                 <PhoneInput
                                     value={field.value}
                                     onChange={field.onChange}
-                                    className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.phone ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
+                                    className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.phone ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                         }`}
                                     placeholder="+998 (90) 123-45-67"
                                 />
                             )}
                         />
-                        {errors.phone && <p className="text-red-500 text-xs font-medium">{errors.phone.message}</p>}
+                        {errors.phone && <p className="text-red-500 text-[10px] md:text-xs font-medium">{errors.phone.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">{t('date_of_birth')}</label>
+                    <div className="space-y-1 md:space-y-2">
+                        <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('date_of_birth')}</label>
                         <input
                             type="date"
                             {...register("dateOfBirth")}
-                            className={`w-full h-12 px-4 rounded-xl border transition-all outline-none ${errors.dateOfBirth ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5"
+                            className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.dateOfBirth ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
                         />
-                        {errors.dateOfBirth && <p className="text-red-500 text-xs font-medium">{errors.dateOfBirth.message}</p>}
+                        {errors.dateOfBirth && <p className="text-red-500 text-[10px] md:text-xs font-medium">{errors.dateOfBirth.message}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                        <label className="text-sm font-semibold text-gray-700">{t('gender')}</label>
+                    <div className="space-y-1 md:space-y-2">
+                        <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('gender')}</label>
                         <select
                             {...register("gender")}
-                            className="w-full h-12 px-4 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all cursor-pointer"
+                            className="w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all cursor-pointer bg-white font-medium"
                         >
                             <option value="">{t('select_gender')}</option>
                             <option value="MALE">{t('male')}</option>
@@ -284,14 +284,14 @@ export default function PersonalInfoPage() {
                     </div>
                 </div>
 
-                <div className="pt-6 border-t border-gray-100 flex justify-end">
+                <div className="pt-4 md:pt-6 border-t border-gray-100 flex justify-end">
                     <button
                         type="submit"
                         disabled={isSaving}
-                        className="bg-primary text-white h-12 px-8 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-colors disabled:opacity-50 shadow-lg shadow-primary/20"
+                        className="w-full md:w-auto bg-blue-600 text-white h-10 md:h-12 px-6 md:px-8 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20 text-sm md:text-base mb-2"
                     >
-                        {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
-                        <span>{t('save')}</span>
+                        {isSaving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
+                        <span>{t('save').toUpperCase()}</span>
                     </button>
                 </div>
             </form>

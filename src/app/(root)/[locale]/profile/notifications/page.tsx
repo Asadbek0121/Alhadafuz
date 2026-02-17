@@ -45,30 +45,30 @@ export default function NotificationsPage() {
     }, []);
 
     return (
-        <div className="max-w-3xl mx-auto py-8 px-4">
-            <div className="flex items-center justify-between mb-8">
-                <div>
-                    <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
-                    <p className="text-gray-500">{t('subtitle')}</p>
+        <div className="max-w-3xl mx-auto py-4 md:py-8 px-4">
+            <div className="flex items-center justify-between mb-4 md:mb-8 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="min-w-0">
+                    <h1 className="text-base md:text-2xl font-black text-gray-900 leading-tight">{t('title')}</h1>
+                    <p className="text-[11px] md:text-sm text-text-muted mt-0.5 line-clamp-1">{t('subtitle')}</p>
                 </div>
                 {notifications.some(n => !n.isRead) && (
                     <button
                         onClick={markAllRead}
-                        className="text-sm font-medium text-blue-600 hover:bg-blue-50 px-3 py-2 rounded-lg transition-colors"
+                        className="shrink-0 text-[10px] md:text-sm font-black text-blue-600 bg-blue-50 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full transition-all active:scale-95 border border-blue-100/50"
                     >
-                        {t('mark_all_read')}
+                        {t('mark_all_read').toUpperCase()}
                     </button>
                 )}
             </div>
 
             {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-2.5 md:space-y-4">
                     {[1, 2, 3].map(i => (
-                        <div key={i} className="h-24 bg-gray-100 rounded-2xl animate-pulse"></div>
+                        <div key={i} className="h-16 md:h-24 bg-gray-50 rounded-2xl animate-pulse border border-gray-100"></div>
                     ))}
                 </div>
             ) : notifications.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-2.5 md:space-y-4">
                     {notifications.map((notif) => {
                         const getLocalized = (n: Notification) => {
                             let title = n.title;
@@ -113,17 +113,17 @@ export default function NotificationsPage() {
                         const localized = getLocalized(notif);
 
                         return (
-                            <div key={notif.id} className={`p-5 rounded-2xl border transition-all ${notif.isRead ? 'bg-white border-gray-100' : 'bg-blue-50/50 border-blue-100 shadow-sm'}`}>
-                                <div className="flex gap-4">
-                                    <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${notif.isRead ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}>
-                                        <Bell size={20} />
+                            <div key={notif.id} className={`group p-3 md:p-5 rounded-2xl border transition-all ${notif.isRead ? 'bg-white border-gray-100 shadow-sm' : 'bg-blue-50/40 border-blue-100 shadow-md shadow-blue-900/5'}`}>
+                                <div className="flex gap-3 md:gap-4">
+                                    <div className={`w-9 h-9 md:w-12 md:h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-active:scale-95 ${notif.isRead ? 'bg-slate-50 text-slate-400' : 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'}`}>
+                                        <Bell size={16} className="md:w-5 md:h-5" />
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-1">
-                                            <h3 className={`font-semibold ${notif.isRead ? 'text-gray-700' : 'text-gray-900'}`}>{localized.title}</h3>
-                                            <span className="text-xs text-gray-400">{new Date(notif.createdAt).toLocaleDateString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US')}</span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-start mb-0.5 md:mb-1">
+                                            <h3 className={`font-bold text-[13px] md:text-base leading-tight ${notif.isRead ? 'text-gray-700' : 'text-gray-900'}`}>{localized.title}</h3>
+                                            <span className="text-[9px] md:text-xs font-bold text-slate-400 whitespace-nowrap ml-2 opacity-60 uppercase tracking-tighter">{new Date(notif.createdAt).toLocaleDateString(locale === 'uz' ? 'uz-UZ' : locale === 'ru' ? 'ru-RU' : 'en-US')}</span>
                                         </div>
-                                        <p className="text-sm text-gray-600 leading-relaxed">{localized.message}</p>
+                                        <p className={`text-[11px] md:text-sm leading-relaxed line-clamp-2 md:line-clamp-none ${notif.isRead ? 'text-gray-500' : 'text-gray-700 font-medium'}`}>{localized.message}</p>
                                     </div>
                                 </div>
                             </div>
@@ -131,12 +131,12 @@ export default function NotificationsPage() {
                     })}
                 </div>
             ) : (
-                <div className="text-center py-20 bg-gray-50 rounded-3xl border border-dashed border-gray-200">
-                    <div className="w-16 h-16 bg-gray-100 text-gray-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Bell size={28} />
+                <div className="text-center py-12 md:py-20 bg-gray-50/50 rounded-[2rem] border border-dashed border-gray-200">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-white text-slate-300 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-gray-100">
+                        <Bell size={28} className="md:w-8 md:h-8" />
                     </div>
-                    <h3 className="text-lg font-bold text-gray-900">{t('empty_title')}</h3>
-                    <p className="text-gray-500 mt-1">{t('empty_desc')}</p>
+                    <h3 className="text-sm md:text-lg font-black text-gray-900">{t('empty_title')}</h3>
+                    <p className="text-[11px] md:text-sm text-gray-500 mt-1 max-w-[160px] md:max-w-none mx-auto opacity-70">{t('empty_desc')}</p>
                 </div>
             )}
         </div>

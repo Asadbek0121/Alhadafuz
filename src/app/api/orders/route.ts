@@ -30,7 +30,9 @@ const createOrderSchema = z.object({
     deliveryMethod: z.string().optional().default('COURIER'),
     total: z.number().nonnegative().optional(),
     couponCode: z.string().optional(),
-    storeId: z.string().optional(),
+    storeId: z.string().nullable().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
 });
 
 import { checkRateLimit } from '@/lib/ratelimit';
@@ -57,7 +59,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
         }
 
-        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode, storeId } = result.data;
+        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode, storeId, lat, lng } = result.data;
 
         // 2. Fetch products to prevent price tampering
         let dbProducts: any[] = [];
@@ -177,7 +179,8 @@ export async function POST(req: Request) {
         const method = paymentMethod.toLowerCase();
         const initialStatus = method === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
 
-        // 4. Create Order Transaction
+        // 4. Create Order using Raw SQL for the main table to avoid "Unknown argument lat" errors
+        // but keeping it inside a transaction for data integrity.
         const order = await prisma.$transaction(async (tx: any) => {
             // Update coupon usage count if used
             if (validatedCoupon && discountAmount > 0) {
@@ -187,42 +190,53 @@ export async function POST(req: Request) {
                 });
             }
 
-            const newOrder = await (tx as any).order.create({
-                data: {
-                    userId: session.user.id,
-                    total: finalTotal,
-                    deliveryFee: deliveryFee,
-                    status: initialStatus,
-                    paymentMethod: paymentMethod,
-                    deliveryMethod: deliveryMethod || 'COURIER',
-                    storeId: storeId || null,
+            // Generate a random ID for the order (Prisma uses cuid)
+            const orderId = `order_${Math.random().toString(36).slice(2, 11)}`;
 
-                    shippingCity: deliveryAddress?.city || 'Toshkent',
-                    shippingDistrict: deliveryAddress?.district || '',
-                    shippingAddress: deliveryAddress?.address || '',
-                    comment: deliveryAddress?.comment || '',
-                    shippingPhone: deliveryAddress?.phone || session.user?.phone || '',
-                    shippingName: deliveryAddress?.name || session.user?.name || '',
+            // USE RAW SQL to bypass Prisma client limitations with lat/lng
+            await tx.$executeRawUnsafe(`
+                INSERT INTO "Order" (
+                    "id", "userId", "total", "deliveryFee", "status", "paymentMethod", 
+                    "deliveryMethod", "storeId", "shippingCity", "shippingDistrict", 
+                    "shippingAddress", "comment", "shippingPhone", "shippingName", 
+                    "lat", "lng", "couponCode", "discountAmount", "updatedAt"
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
+            `,
+                orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
+                deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Toshkent',
+                deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
+                deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
+                lat || null, lng || null, validatedCoupon?.code || null, discountAmount
+            );
 
-                    couponCode: validatedCoupon?.code || null,
-                    discountAmount: discountAmount,
-
-                    items: {
-                        create: finalOrderItems.map(i => ({
-                            productId: i.productId,
-                            title: i.title,
-                            price: i.price,
-                            quantity: i.quantity,
-                            image: i.image,
-                        }))
+            // Create items using the standard ORM (this usually works fine)
+            for (const item of finalOrderItems) {
+                await tx.orderItem.create({
+                    data: {
+                        orderId: orderId,
+                        productId: item.productId,
+                        title: item.title,
+                        price: item.price,
+                        quantity: item.quantity,
+                        image: item.image,
                     }
-                },
-                include: {
-                    items: true
-                }
+                });
+            }
+
+            // Fetch the created order to return it using Raw SQL to bypass any Client schema mismatch
+            const orderResults = await tx.$queryRawUnsafe(`
+                SELECT o.* FROM "Order" o WHERE o.id = $1 LIMIT 1
+            `, orderId);
+
+            const fetchedOrder = orderResults[0];
+            if (!fetchedOrder) throw new Error("Order creation failed - could not fetch back");
+
+            // Fetch items for the response
+            const items = await tx.orderItem.findMany({
+                where: { orderId: orderId }
             });
 
-            return newOrder;
+            return { ...fetchedOrder, items };
         });
 
         // Notify Admins

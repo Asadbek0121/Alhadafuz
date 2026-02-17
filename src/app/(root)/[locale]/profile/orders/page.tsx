@@ -105,89 +105,99 @@ export default function OrderHistoryPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <div>
-                    <h1 className="text-2xl font-bold">{t('order_history')}</h1>
-                    <p className="text-text-muted mt-1">{t('my_orders')}</p>
+        <div className="space-y-3 md:space-y-6">
+            <div className="flex items-center justify-between gap-4 bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="min-w-0">
+                    <h1 className="text-base md:text-2xl font-black text-gray-900 leading-tight">{t('order_history')}</h1>
+                    <p className="text-[11px] md:text-sm text-text-muted mt-0.5">{t('my_orders')}</p>
                 </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-2.5 md:space-y-4">
                 {isLoading ? (
-                    [1, 2].map((n) => (
-                        <div key={n} className="bg-white h-32 rounded-2xl border border-gray-100 animate-pulse" />
-                    ))
+                    <div className="space-y-2.5">
+                        {[1, 2].map((n) => (
+                            <div key={n} className="bg-white h-20 md:h-32 rounded-2xl border border-gray-100 animate-pulse" />
+                        ))}
+                    </div>
                 ) : orders.length > 0 ? (
                     orders.map((order) => (
-                        <div key={order.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+                        <div key={order.id} className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                             <div
-                                className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
+                                className="p-3.5 md:p-6 flex flex-col md:flex-row md:items-center justify-between gap-2.5 md:gap-4 cursor-pointer hover:bg-gray-50/50 transition-colors"
                                 onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                                        <Package size={24} />
+                                <div className="flex items-center gap-3 md:gap-4">
+                                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-50/50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100/50">
+                                        <Package size={18} className="md:w-6 md:h-6" />
                                     </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="font-bold">#{order.id.slice(-8).toUpperCase()}</span>
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border uppercase tracking-wider ${getStatusColor(order.status)}`}>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
+                                            <span className="font-bold text-[13px] md:text-base text-gray-900">#{order.id.slice(-6).toUpperCase()}</span>
+                                            <span className={`text-[8px] md:text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-tight ${getStatusColor(order.status)}`}>
                                                 {t(order.status.toLowerCase())}
                                             </span>
                                         </div>
-                                        <p className="text-sm text-text-muted mt-0.5">{formatDate(order.createdAt)} • {order.items.length} {t('items')}</p>
+                                        <p className="text-[10px] md:text-sm text-text-muted font-medium">{formatDate(order.createdAt)} • {order.items.length} {t('items')}</p>
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-3">
-                                    <div className="text-right">
-                                        <p className="text-xs text-text-muted uppercase font-bold tracking-widest">{t('total')}</p>
-                                        <p className="text-lg font-bold text-primary">{order.total.toLocaleString()} {tHeader('som')}</p>
+                                <div className="flex items-center justify-between md:justify-end gap-3 md:mt-0 pl-[52px] md:pl-0">
+                                    <div className="text-left md:text-right">
+                                        <p className="text-[9px] md:text-xs text-text-muted uppercase font-bold tracking-tight opacity-70">{t('total')}</p>
+                                        <p className="text-[14px] md:text-lg font-black text-blue-600">{order.total.toLocaleString()} {tHeader('som')}</p>
                                     </div>
-                                    {order.status === 'AWAITING_PAYMENT' && order.paymentUrl && (
-                                        <Button
-                                            size="sm"
-                                            className="bg-amber-500 hover:bg-amber-600 text-white font-bold h-9 px-4 rounded-xl"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                window.location.href = order.paymentUrl!;
-                                            }}
-                                        >
-                                            {t('pay_now')}
-                                        </Button>
-                                    )}
-                                    <div className="text-text-muted">
-                                        {expandedOrder === order.id ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                                    <div className="flex items-center gap-2">
+                                        {order.status === 'AWAITING_PAYMENT' && order.paymentUrl && (
+                                            <Button
+                                                size="sm"
+                                                className="bg-amber-500 hover:bg-amber-600 text-white font-black h-7 md:h-9 px-2.5 md:px-4 rounded-lg text-[10px] md:text-sm"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    window.location.href = order.paymentUrl!;
+                                                }}
+                                            >
+                                                {t('pay_now').toUpperCase()}
+                                            </Button>
+                                        )}
+                                        <div className="text-slate-400 p-1 bg-slate-50 rounded-lg group-hover:bg-white transition-colors">
+                                            {expandedOrder === order.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
                             {expandedOrder === order.id && (
-                                <div className="border-t border-gray-100 bg-gray-50/50 p-6 space-y-4">
-                                    <h3 className="font-bold text-sm text-text-muted uppercase tracking-wider mb-2">{t('order_content')}</h3>
-                                    <div className="grid gap-4">
+                                <div className="border-t border-gray-100 bg-gray-50/30 p-3.5 md:p-6 space-y-3">
+                                    <h3 className="font-bold text-[10px] md:text-xs text-text-muted uppercase tracking-wider mb-0.5">{t('order_content')}</h3>
+                                    <div className="grid gap-2 md:gap-4">
                                         {order.items.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between bg-white p-3 rounded-xl border border-gray-100">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100">
-                                                        <Image src={item.image} alt={item.title} fill className="object-cover" />
+                                            <div key={item.id} className="flex items-center justify-between bg-white p-2 md:p-3 rounded-xl border border-gray-100 shadow-sm">
+                                                <div className="flex items-center gap-2.5 md:gap-4 flex-1 min-w-0">
+                                                    <div className="relative w-9 h-9 md:w-12 md:h-12 rounded-lg overflow-hidden bg-white border border-slate-100 shrink-0">
+                                                        <Image src={item.image} alt={item.title} fill className="object-contain p-1" />
                                                     </div>
-                                                    <div>
-                                                        <p className="font-bold text-sm line-clamp-1">{item.title}</p>
-                                                        <p className="text-xs text-text-muted">{item.quantity} x {item.price.toLocaleString()} {tHeader('som')}</p>
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="font-bold text-[11px] md:text-sm text-gray-900 line-clamp-1">{item.title}</p>
+                                                        <p className="text-[9px] md:text-xs text-text-muted font-medium mt-0.5">{item.quantity} x {item.price.toLocaleString()} {tHeader('som')}</p>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 shrink-0 pl-2">
                                                     {item.product ? (
-                                                        <Link href={`/product/${item.product.id}`} className="p-2 text-text-muted hover:text-primary transition-colors">
-                                                            <ExternalLink size={16} />
+                                                        <Link href={`/product/${item.product.id}`} className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors bg-slate-50 rounded-lg">
+                                                            <ExternalLink size={12} />
                                                         </Link>
                                                     ) : (
-                                                        <span className="text-xs text-red-400 px-2" title="Product deleted">{t('unavailable')}</span>
+                                                        <span className="text-[9px] text-red-400 font-bold px-1">{t('unavailable')}</span>
                                                     )}
-                                                    <Button variant="outline" size="sm" onClick={() => handleReorder(item)} className="h-8 text-xs gap-1">
-                                                        <ShoppingCart size={14} /> {t('buy_again')}
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={() => handleReorder(item)}
+                                                        className="h-7 md:h-8 text-[10px] md:text-xs font-bold gap-1 px-2 border-slate-200"
+                                                    >
+                                                        <ShoppingCart size={11} />
+                                                        <span className="hidden xs:inline">{t('buy_again')}</span>
                                                     </Button>
                                                 </div>
                                             </div>
@@ -195,20 +205,20 @@ export default function OrderHistoryPage() {
                                     </div>
 
                                     {/* Order Summary in Expanded View */}
-                                    <div className="mt-6 pt-6 border-t border-gray-100 space-y-2">
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-text-muted">{tHeader('mahsulotlar')}:</span>
-                                            <span className="font-semibold">{(order.total - (order.deliveryFee || 0)).toLocaleString()} {tHeader('som')}</span>
+                                    <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+                                        <div className="flex justify-between text-[11px] md:text-sm">
+                                            <span className="text-text-muted font-medium">{tHeader('mahsulotlar')}:</span>
+                                            <span className="font-bold text-gray-900">{(order.total - (order.deliveryFee || 0)).toLocaleString()} {tHeader('som')}</span>
                                         </div>
-                                        <div className="flex justify-between text-sm">
-                                            <span className="text-text-muted">{tHeader('yetkazib_berish')}:</span>
-                                            <span className={(order.deliveryFee || 0) === 0 ? "text-green-600 font-bold" : "font-semibold"}>
+                                        <div className="flex justify-between text-[11px] md:text-sm">
+                                            <span className="text-text-muted font-medium">{tHeader('yetkazib_berish')}:</span>
+                                            <span className={(order.deliveryFee || 0) === 0 ? "text-emerald-600 font-bold" : "font-bold text-gray-900"}>
                                                 {(order.deliveryFee || 0) === 0 ? tCart('free') : `${order.deliveryFee?.toLocaleString()} ${tHeader('som')}`}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between text-base font-bold pt-2">
-                                            <span>{t('total')}:</span>
-                                            <span className="text-primary">{order.total.toLocaleString()} {tHeader('som')}</span>
+                                        <div className="flex justify-between text-[13px] md:text-base font-black pt-2 border-t border-gray-100 mt-2">
+                                            <span className="text-gray-900">{t('total')}:</span>
+                                            <span className="text-blue-600">{order.total.toLocaleString()} {tHeader('som')}</span>
                                         </div>
                                     </div>
                                 </div>
@@ -216,9 +226,11 @@ export default function OrderHistoryPage() {
                         </div>
                     ))
                 ) : (
-                    <div className="text-center py-12">
-                        <Package className="mx-auto h-12 w-12 text-gray-300 mb-3" />
-                        <p className="text-text-muted text-lg font-medium">{t('no_orders')}</p>
+                    <div className="text-center py-10 md:py-20 bg-gray-50/50 rounded-3xl border border-dashed border-gray-200">
+                        <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 border border-gray-100 shadow-sm">
+                            <Package className="h-8 w-8 text-gray-300" />
+                        </div>
+                        <p className="text-gray-400 text-sm md:text-lg font-bold">{t('no_orders')}</p>
                     </div>
                 )}
             </div>

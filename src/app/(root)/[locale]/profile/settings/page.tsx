@@ -58,27 +58,34 @@ export default function SettingsPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-                <h1 className="text-2xl font-bold">{tProfile('settings')}</h1>
-                <p className="text-text-muted mt-1">{tProfile('settings_desc')}</p>
+        <div className="space-y-3.5 md:space-y-6 max-w-2xl mx-auto pb-10">
+            <div className="bg-white p-4 md:p-6 rounded-2xl shadow-sm border border-gray-100">
+                <div className="flex items-center gap-3.5">
+                    <div className="w-10 h-10 md:w-12 md:h-12 rounded-xl bg-blue-50/50 flex items-center justify-center text-blue-600 shrink-0 border border-blue-100/50">
+                        <Globe size={18} className="md:w-6 md:h-6" />
+                    </div>
+                    <div className="min-w-0">
+                        <h1 className="text-base md:text-2xl font-black text-gray-900 leading-tight">{tProfile('settings')}</h1>
+                        <p className="text-[11px] md:text-sm text-text-muted mt-0.5 line-clamp-1">{tProfile('settings_desc')}</p>
+                    </div>
+                </div>
             </div>
 
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 space-y-6">
-                <div className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-                            <Globe size={20} />
+            <div className="bg-white p-4 md:p-6 rounded-2xl border border-gray-100 space-y-4 md:space-y-6">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                            <Globe size={16} />
                         </div>
-                        <div>
-                            <p className="font-semibold">{tProfile('change_language')}</p>
-                            <p className="text-sm text-text-muted">{tProfile('choose_language')}</p>
+                        <div className="min-w-0">
+                            <p className="text-[13px] md:text-base font-bold text-gray-900 leading-tight">{tProfile('change_language')}</p>
+                            <p className="text-[10px] md:text-sm text-text-muted mt-0.5 truncate">{tProfile('choose_language')}</p>
                         </div>
                     </div>
                     <select
                         value={language}
                         onChange={(e) => handleLanguageChange(e.target.value)}
-                        className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                        className="bg-blue-50/50 border border-blue-100 text-blue-600 rounded-xl px-3 h-8 md:h-10 text-[11px] md:text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer appearance-none min-w-[100px] text-center uppercase tracking-tighter"
                     >
                         <option value="uz">{tProfile('uz')}</option>
                         <option value="ru">{tProfile('ru')}</option>
@@ -86,37 +93,35 @@ export default function SettingsPage() {
                     </select>
                 </div>
 
-                <div className="border-t border-gray-100" />
+                <div className="border-t border-gray-50" />
 
-                <div className="flex items-center justify-between py-2">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-yellow-50 flex items-center justify-center text-yellow-600">
-                            <Bell size={20} />
+                <div className="flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-3 min-w-0">
+                        <div className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400">
+                            <Bell size={16} />
                         </div>
-                        <div>
-                            <p className="font-semibold">{tProfile('notifications')}</p>
-                            <p className="text-sm text-text-muted">{tProfile('notif_desc')}</p>
+                        <div className="min-w-0">
+                            <p className="text-[13px] md:text-base font-bold text-gray-900 leading-tight">{tProfile('notifications')}</p>
+                            <p className="text-[10px] md:text-sm text-text-muted mt-0.5 truncate">{tProfile('notif_desc')}</p>
                         </div>
                     </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
+                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
                         <input
                             type="checkbox"
                             checked={notifications}
                             onChange={() => setNotifications(!notifications)}
                             className="sr-only peer"
                         />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                        <div className="w-10 h-5 md:w-11 md:h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 md:after:h-5 md:after:w-5 after:transition-all peer-checked:bg-blue-600 shadow-inner"></div>
                     </label>
                 </div>
 
-
-
-                <div className="pt-4">
+                <div className="pt-2 md:pt-4 border-t border-gray-50 flex justify-end">
                     <button
                         onClick={handleSave}
-                        className="bg-primary text-white px-6 py-2.5 rounded-xl font-bold hover:bg-primary-hover transition-colors shadow-lg shadow-primary/20"
+                        className="w-full md:w-auto bg-blue-600 text-white h-10 md:h-12 px-8 rounded-xl font-black shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-[0.98] text-[13px] md:text-base"
                     >
-                        {tProfile('save')}
+                        {tProfile('save').toUpperCase()}
                     </button>
                 </div>
             </div>

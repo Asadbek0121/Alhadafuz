@@ -384,3 +384,83 @@
     background-color: var(--primary);
     color: white;
 }
+
+@media (max-width: 480px) {
+    .card {
+        padding: 6px;
+        border-radius: 12px;
+    }
+
+    .actionsHover {
+        display: none !important;
+    }
+
+    .badgeContainer {
+        top: 6px;
+        left: 6px;
+        gap: 4px;
+    }
+
+    .promoSticker {
+        padding: 2px 6px;
+        font-size: 8px;
+        border-radius: 4px;
+    }
+
+    .discountTag {
+        right: 6px;
+        padding: 6px 4px 10px;
+        font-size: 9px;
+    }
+
+    .discountTag span {
+        font-size: 11px;
+    }
+
+    .title {
+        font-size: 12px;
+        height: 34px;
+        margin-bottom: 4px;
+    }
+
+    .rating {
+        margin-bottom: 6px;
+    }
+
+    .star {
+        width: 10px;
+        height: 10px;
+    }
+
+    .reviews {
+        font-size: 10px;
+    }
+
+    .installment {
+        font-size: 9px;
+        padding: 2px 4px;
+        margin-bottom: 8px;
+    }
+
+    .oldPrice {
+        font-size: 10px;
+        height: 14px;
+    }
+
+    .price {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .btnBuy {
+        height: 32px;
+        font-size: 11px;
+        border-radius: 8px;
+    }
+
+    .btnCart {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+    }
+}

@@ -16,6 +16,8 @@ const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 export default function Footer() {
     const t = useTranslations('Footer');
     const pathname = usePathname();
+    const isCheckout = pathname === '/checkout' || pathname?.includes('/checkout');
+
     const [socials, setSocials] = useState({
         telegram: 'https://t.me',
         instagram: 'https://instagram.com',
@@ -48,6 +50,8 @@ export default function Footer() {
             })
             .catch(err => console.error("Footer settings error", err));
     }, []);
+
+    if (isCheckout) return null;
 
     return (
         <footer className={`bg-[#111827] text-gray-300 border-t border-gray-800 ${!isHome ? 'hidden lg:block' : ''}`}>
@@ -99,26 +103,27 @@ export default function Footer() {
                         </div>
                     </div>
 
-                    {/* Links Column 1 (Col 2 - spans 2 on LG) */}
-                    <div className="lg:col-span-2">
-                        <h3 className="text-white font-bold text-lg mb-6">{t('info')}</h3>
-                        <ul className="space-y-3 text-sm">
-                            <FooterLink href="/about">{t('about_us')}</FooterLink>
-                            <FooterLink href="/terms">{t('public_offer')}</FooterLink>
-                            <FooterLink href="/privacy">{t('privacy_policy')}</FooterLink>
-                            <FooterLink href="/delivery">{t('fast_delivery')}</FooterLink>
-                        </ul>
-                    </div>
+                    {/* Links Column 1 & 2 (Combined for Mobile 2-col layout) */}
+                    <div className="lg:col-span-4 grid grid-cols-2 gap-8">
+                        <div>
+                            <h3 className="text-white font-bold text-lg mb-6">{t('info')}</h3>
+                            <ul className="space-y-3 text-sm">
+                                <FooterLink href="/about">{t('about_us')}</FooterLink>
+                                <FooterLink href="/terms">{t('public_offer')}</FooterLink>
+                                <FooterLink href="/privacy">{t('privacy_policy')}</FooterLink>
+                                <FooterLink href="/delivery">{t('fast_delivery')}</FooterLink>
+                            </ul>
+                        </div>
 
-                    {/* Links Column 2 (Col 3 - spans 2 on LG) */}
-                    <div className="lg:col-span-2">
-                        <h3 className="text-white font-bold text-lg mb-6">{t('for_customers')}</h3>
-                        <ul className="space-y-3 text-sm">
-                            <FooterLink href="/profile">{t('order_status')}</FooterLink>
-                            <FooterLink href="/faq">{t('faq')}</FooterLink>
-                            <FooterLink href="/returns">{t('return_policy')}</FooterLink>
-                            <FooterLink href="/stores">{t('our_stores')}</FooterLink>
-                        </ul>
+                        <div>
+                            <h3 className="text-white font-bold text-lg mb-6">{t('for_customers')}</h3>
+                            <ul className="space-y-3 text-sm">
+                                <FooterLink href="/profile">{t('order_status')}</FooterLink>
+                                <FooterLink href="/faq">{t('faq')}</FooterLink>
+                                <FooterLink href="/returns">{t('return_policy')}</FooterLink>
+                                <FooterLink href="/stores">{t('our_stores')}</FooterLink>
+                            </ul>
+                        </div>
                     </div>
 
                     {/* Contact & App (Col 4 - spans 4 on LG) */}

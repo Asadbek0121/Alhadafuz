@@ -192,6 +192,16 @@ button {
   max-width: 100%;
 }
 
+@media (max-width: 480px) {
+  .container {
+    width: 100vw;
+    max-width: 100vw;
+    padding-left: 12px;
+    padding-right: 12px;
+    overflow-x: hidden;
+  }
+}
+
 @media (min-width: 640px) {
   .container {
     max-width: 640px;

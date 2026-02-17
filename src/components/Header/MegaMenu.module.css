@@ -200,17 +200,17 @@
 @media (max-width: 992px) {
     .megaMenu {
         position: fixed;
-        top: 144px;
-        /* Adjusted to sit right below the search bar */
-        bottom: 0;
+        top: 152px;
+        /* Adjusted to sit exactly below the full mobile header (96px + ~56px) */
+        bottom: 72px;
+        /* Space for bottom nav */
         height: auto;
         left: 0;
         right: 0;
         z-index: 41;
         overflow-y: auto;
         background: #f8f9fa;
-        padding-bottom: 80px;
-        /* Space for bottom nav */
+        padding-bottom: 20px;
     }
 
     .overlay {
@@ -219,7 +219,7 @@
 
     .megaMenu :global(.container) {
         width: 100%;
-        min-height: 100%;
+        min-height: auto;
         padding: 12px;
         margin: 0;
         max-width: none;
@@ -228,7 +228,7 @@
     .menuGrid {
         display: block;
         height: auto;
-        padding-bottom: 90px;
+        padding-bottom: 20px;
     }
 
     .leftCol {
@@ -240,30 +240,33 @@
         overflow: visible;
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
+        /* 3 cols for tablets/large phones */
+        gap: 12px;
     }
 
     .catItem {
         display: block;
+        /* Changed from flex to block for absolute positioning context */
         width: 100%;
         aspect-ratio: 1 / 1;
-        background: var(--cat-gradient, #eee);
-        border-radius: 12px;
-        padding: 10px;
+        background: #fff;
+        border-radius: 20px;
+        /* Softer corners */
         position: relative;
         overflow: hidden;
-        border: none;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-        color: #fff;
-        text-align: left;
-        cursor: pointer;
-        flex-direction: column;
+        border: 1px solid rgba(0, 0, 0, 0.04);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+        color: #333;
+        transition: transform 0.2s;
+    }
+
+    .catItem:active {
+        transform: scale(0.96);
     }
 
     .activeCat {
-        background: var(--cat-gradient);
-        border: none;
-        box-shadow: none;
+        border: 2px solid var(--primary);
+        box-shadow: 0 8px 20px rgba(0, 82, 255, 0.15);
     }
 
     .activeCat::before {
@@ -271,19 +274,25 @@
     }
 
     .catName {
-        font-size: 11px;
-        font-weight: 700;
-        line-height: 1.3;
-        display: -webkit-box;
-        -webkit-line-clamp: 3;
-        line-clamp: 3;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-        position: relative;
-        z-index: 2;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-        width: 100%;
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10;
+        padding: 40px 12px 12px 12px;
+        /* Top padding for gradient space */
+        background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
         color: #fff;
+        font-size: 13px;
+        font-weight: 700;
+        text-align: center;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        border-radius: 0 0 20px 20px;
+        width: 100%;
+        box-sizing: border-box;
     }
 
     .mobileCatImage {
@@ -293,16 +302,38 @@
         left: 0;
         width: 100%;
         height: 100%;
+        /* Take full height */
         align-items: center;
         justify-content: center;
         z-index: 1;
+        padding: 20px;
+        padding-bottom: 30px;
+        /* Push image up slightly */
     }
 
     .mobileCatImage img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        object-position: center;
+        object-fit: contain;
+        transition: transform 0.3s;
+    }
+
+    /* Animation for image */
+    .catItem:active .mobileCatImage img {
+        transform: scale(1.1);
+    }
+
+    /* Style for the fallback icon div */
+    .mobileCatImage>div {
+        opacity: 0.8 !important;
+        /* Increase visibility */
+        transform: scale(1.5);
+        /* Make icon bigger */
+        color: #94a3b8;
+    }
+
+    .activeCat .mobileCatImage>div {
+        color: var(--primary);
     }
 
     .icon {
@@ -318,8 +349,15 @@
     }
 }
 
-@media (max-width: 400px) {
+@media (max-width: 576px) {
     .leftCol {
         grid-template-columns: repeat(2, 1fr);
+        /* 2 cols for mobile */
+        gap: 10px;
+    }
+
+    .catName {
+        font-size: 12px;
+        padding: 3px 6px;
     }
 }

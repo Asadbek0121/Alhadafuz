@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hadaf Delivery | Premium Orders</title>
+    <link rel="stylesheet" href="style.css">
+    <script
+        src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong"
+        type="text/javascript"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">HADAF <span style="font-weight: 300;">DELIVERY</span></div>
+        <div class="nav-links">
+            <a href="index.html" style="color: #2563eb;">ORDER</a>
+            <a href="admin.html">TRACKING</a>
+            <a href="dashboard.html">COURIER</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="map"></div>
+        <div class="sidebar">
+            <h2>Buyurtma berish</h2>
+            <p class="subtitle">Yetkazib berish manzilini tanlang</p>
+
+            <div class="card">
+                <h3>DO'KONNI TANLASH</h3>
+                <div class="select-wrapper">
+                    <select id="storeSelect"></select>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>YETKAZIB BERISH MANZILI</h3>
+                <p id="addressText" style="font-weight: 600;">Xaritada kerakli nuqtani bosing...</p>
+            </div>
+
+            <div id="routeInfo" class="card" style="display: none; background: #fff; border-color: #2563eb;">
+                <h3>MARSHRUT MA'LUMOTLARI</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span>MASOFA</span>
+                        <div id="distance">0 km</div>
+                    </div>
+                    <div class="info-item">
+                        <span>VAQT</span>
+                        <div id="duration">0 min</div>
+                    </div>
+                </div>
+                <div style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #e2e8f0;">
+                    <span style="font-size: 0.75rem; color: #64748b; font-weight: 800;">JAMI NARX</span>
+                    <div style="font-size: 1.8rem; font-weight: 800; color: #2563eb;">
+                        <span id="price">0</span> <small style="font-size: 0.9rem;">uzs</small>
+                    </div>
+                </div>
+            </div>
+
+            <button id="orderBtn" class="btn" disabled>BUYURTMANI TASDIQLASH</button>
+            <div id="orderStatus"></div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>ymaps.ready(initCustomerMap);</script>
+</body>
+
+</html>

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hadaf Delivery - Courier</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script
+        src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong"
+        type="text/javascript"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">Kuryer Kabineti</div>
+        <div class="nav-links">
+            <a href="index.html">Sotib olish</a>
+            <a href="dashboard.html" style="color: #2563eb;">Buyurtmalarim</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="map"></div>
+        <div class="sidebar">
+            <h2 style="margin-bottom: 1rem;">Mening Buyurtmam</h2>
+            <div id="activeOrderContent">
+                <p style="color: #64748b;">Hozircha buyurtma yo'q</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        ymaps.ready(initCourierMap);
+        setInterval(refreshCourierData, 5000);
+    </script>
+</body>
+
+</html>

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 export default function TelegramSettings() {
     const [token, setToken] = useState('');
     const [adminIds, setAdminIds] = useState('');
+    const [fee, setFee] = useState('12000');
     const [loading, setLoading] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
 
@@ -17,6 +18,7 @@ export default function TelegramSettings() {
             .then(data => {
                 if (data.telegramBotToken) setToken(data.telegramBotToken);
                 if (data.telegramAdminIds) setAdminIds(data.telegramAdminIds);
+                if (data.courierFeePerOrder) setFee(data.courierFeePerOrder.toString());
             })
             .catch(err => console.error(err));
     }, []);
@@ -31,7 +33,8 @@ export default function TelegramSettings() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     telegramBotToken: token,
-                    telegramAdminIds: adminIds
+                    telegramAdminIds: adminIds,
+                    courierFeePerOrder: Number(fee)
                 })
             });
 
@@ -70,75 +73,96 @@ export default function TelegramSettings() {
     };
 
     return (
-        <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full -mr-16 -mt-16 opacity-50 group-hover:scale-150 transition-transform duration-700" />
-
-            <div className="flex items-center gap-4 mb-8">
-                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-inner">
-                    <Bot size={24} />
-                </div>
-                <div>
-                    <h3 className="text-xl font-black text-gray-900 tracking-tight">Telegram Bot</h3>
-                    <p className="text-sm font-medium text-gray-400">Bildirishnomalar uchun integratsiya</p>
+        <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/20 overflow-hidden relative group transition-all hover:shadow-2xl hover:shadow-gray-300/30">
+            {/* Header with decorative background */}
+            <div className="p-6 pb-0 relative">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full -mr-12 -mt-12 blur-3xl" />
+                <div className="flex items-center gap-4 relative z-10">
+                    <div className="w-11 h-11 rounded-2xl bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-200">
+                        <Bot size={22} strokeWidth={2.5} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-black text-gray-900 tracking-tight">Telegram Bot</h3>
+                        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Integratsiya sozlamalari</p>
+                    </div>
                 </div>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-6 relative z-10">
+            <form onSubmit={handleSave} className="p-6 pt-8 space-y-5 relative z-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Bot Token */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between px-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bot Token</label>
+                            <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-[10px] font-black text-indigo-500 hover:text-indigo-600">@BotFather</a>
+                        </div>
+                        <input
+                            type="password"
+                            autoComplete="new-password"
+                            value={token}
+                            onChange={e => setToken(e.target.value)}
+                            placeholder="6821...ABC"
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white px-4 py-3 rounded-2xl outline-none transition-all font-mono text-sm text-gray-900 placeholder:text-gray-300 shadow-inner"
+                        />
+                    </div>
+
+                    {/* Admin IDs */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between px-1">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Admin IDlar</label>
+                            <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-[10px] font-black text-indigo-500 hover:text-indigo-600">@userinfobot</a>
+                        </div>
+                        <input
+                            value={adminIds}
+                            onChange={e => setAdminIds(e.target.value)}
+                            placeholder="1234, 5678"
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white px-4 py-3 rounded-2xl outline-none transition-all font-mono text-sm text-gray-900 placeholder:text-gray-300 shadow-inner"
+                        />
+                    </div>
+                </div>
+
+                {/* Delivery Fee */}
                 <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bot Token</label>
-                    <input
-                        type="password"
-                        autoComplete="new-password"
-                        value={token}
-                        onChange={e => setToken(e.target.value)}
-                        placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-                        className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-mono text-sm text-gray-900 placeholder:text-gray-300"
-                    />
-                    <p className="text-xs text-blue-500/80 font-medium ml-1">
-                        @BotFather orqali olingan token
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Har bir yetkazib berish haqi</label>
+                    <div className="relative">
+                        <input
+                            type="number"
+                            value={fee}
+                            onChange={e => setFee(e.target.value)}
+                            placeholder="12000"
+                            className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white px-4 py-3.5 rounded-2xl outline-none transition-all font-black text-gray-900 shadow-inner"
+                        />
+                        <span className="absolute right-5 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-400 bg-white px-2 py-1 rounded-lg border border-gray-100 shadow-sm">SO'M</span>
+                    </div>
+                </div>
+
+                {/* Notice Card */}
+                <div className="bg-amber-50/50 p-4 rounded-2xl border border-amber-100/50 flex gap-3 text-amber-700">
+                    <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                    <p className="text-[11px] font-bold leading-relaxed">
+                        Botdan xabar olish uchun barcha adminlar botga kirib <span className="text-indigo-600 font-black">/start</span> tugmasini bosishlari shart.
                     </p>
                 </div>
 
-                <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Admin ID (Chat ID)</label>
-                    <input
-                        value={adminIds}
-                        onChange={e => setAdminIds(e.target.value)}
-                        placeholder="12345678, 87654321"
-                        className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-mono text-sm text-gray-900 placeholder:text-gray-300"
-                    />
-                    <p className="text-xs text-blue-500/80 font-medium ml-1">
-                        Vergul bilan ajratilgan IDlar. @userinfobot orqali oling.
-                    </p>
-                </div>
-
-                <div className="bg-blue-50/50 p-4 rounded-2xl flex gap-3 text-blue-600">
-                    <AlertCircle size={20} className="shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium leading-relaxed">
-                        <span className="font-bold block mb-1">Muhim eslatma:</span>
-                        Botdan xabar olish uchun barcha adminlar botga kirib <span className="font-mono bg-blue-100 px-1 rounded">/start</span> tugmasini bosishlari shart.
-                    </p>
-                </div>
-
-                <div className="flex gap-4 pt-2">
-                    <Button
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-2">
+                    <button
                         type="submit"
                         disabled={loading}
-                        className={`flex-1 h-14 rounded-2xl font-black text-base uppercase tracking-tight gap-2 transition-all ${isSaved ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-blue-600 hover:bg-blue-700'} text-white shadow-xl shadow-blue-200/20`}
+                        className={`flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${isSaved ? 'bg-emerald-500 text-white shadow-emerald-200/50' : 'bg-indigo-600 text-white shadow-indigo-200/50 hover:bg-indigo-700 hover:-translate-y-0.5'}`}
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : (isSaved ? <CheckCircle2 size={20} /> : <Save size={20} />)}
+                        {loading ? <Loader2 className="animate-spin" /> : (isSaved ? <CheckCircle2 size={16} /> : <Save size={16} />)}
                         {isSaved ? 'SAQLANDI' : 'SAQLASH'}
-                    </Button>
+                    </button>
 
-                    <Button
+                    <button
                         type="button"
                         onClick={handleTest}
-                        variant="outline"
-                        className="h-14 px-6 rounded-2xl border-2 border-blue-100 text-blue-600 hover:bg-blue-50 hover:border-blue-200 font-black gap-2"
+                        className="h-12 px-5 rounded-xl border-2 border-gray-100 text-gray-600 hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2"
                     >
-                        <Send size={18} />
-                        <span className="hidden sm:inline">TEST XABAR</span>
-                    </Button>
+                        <Send size={16} />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Test</span>
+                    </button>
                 </div>
             </form>
         </div>

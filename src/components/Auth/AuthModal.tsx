@@ -514,20 +514,20 @@ export default function AuthModal() {
                                         <X size={22} />
                                     </button>
 
-                                    <div className="flex flex-col items-center mb-12">
+                                    <div className="flex flex-col items-center mb-6 md:mb-10">
                                         <motion.div
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
-                                            className="w-20 h-20 bg-blue-50 rounded-[32px] flex items-center justify-center mb-6 border-2 border-blue-100/50 shadow-sm"
+                                            className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 rounded-[24px] md:rounded-[32px] flex items-center justify-center mb-4 md:mb-6 border-2 border-blue-100/50 shadow-sm"
                                         >
                                             <div className="text-blue-600">
-                                                {mode === 'login' ? <Lock size={32} strokeWidth={2.5} /> : <User size={32} strokeWidth={2.5} />}
+                                                {mode === 'login' ? <Lock size={24} className="md:w-8 md:h-8" strokeWidth={2.5} /> : <User size={24} className="md:w-8 md:h-8" strokeWidth={2.5} />}
                                             </div>
                                         </motion.div>
-                                        <h3 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">
+                                        <h3 className="text-2xl md:text-4xl font-black text-slate-900 mb-2 md:mb-3 tracking-tight">
                                             {mode === 'login' ? 'Tizimga kirish' : "Ro'yxatdan o'tish"}
                                         </h3>
-                                        <div className="text-base font-semibold text-slate-400">
+                                        <div className="text-sm md:text-base font-semibold text-slate-400">
                                             {mode === 'login' ? 'Xush kelibsiz!' : "Yangi imkoniyatlar sari"}
                                         </div>
                                     </div>

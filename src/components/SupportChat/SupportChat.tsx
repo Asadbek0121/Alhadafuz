@@ -19,12 +19,13 @@ type Message = {
 
 type ViewState = 'menu' | 'chat';
 
+import { useChatStore } from '@/store/useChatStore';
+
 export default function SupportChat() {
     const t = useTranslations('Chat');
     const { data: session } = useSession();
     const router = useRouter();
-    const [isOpen, setIsOpen] = useState(false);
-    const [view, setView] = useState<ViewState>('menu');
+    const { isOpen, view, openChat, openMenu, closeChat, toggleChat } = useChatStore();
     const [admin, setAdmin] = useState<{ id: string, name: string, image: string } | null>(null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [inputValue, setInputValue] = useState("");
@@ -81,6 +82,7 @@ export default function SupportChat() {
             return () => clearInterval(interval);
         }
     }, [isOpen, view, session, fetchMessages]);
+
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -271,10 +273,9 @@ export default function SupportChat() {
         }
     };
 
-
     const handleStartChat = () => {
         if (session) {
-            setView('chat');
+            openChat();
         } else {
             toast.info(t('login_required'));
             router.push('/?auth=login');
@@ -282,9 +283,9 @@ export default function SupportChat() {
     };
 
     const toggleOpen = () => {
-        setIsOpen(!isOpen);
-        if (!isOpen) setView('menu'); // Reset to menu when opening
+        toggleChat();
     };
+
 
     return (
         <>
@@ -296,97 +297,105 @@ export default function SupportChat() {
                 }
 
                 @keyframes slide-up {
-                    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+                    from { opacity: 0; transform: translateY(40px) scale(0.9); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
                 }
 
                 .support-fab {
                     position: fixed !important;
-                    bottom: 30px !important;
-                    right: 30px !important;
-                    width: 64px;
-                    height: 64px;
-                    border-radius: 50%;
-                    background: linear-gradient(135deg, #0052FF 0%, #0033CC 100%);
+                    bottom: 25px !important;
+                    right: 25px !important;
+                    width: 56px;
+                    height: 56px;
+                    border-radius: 20px;
+                    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                     color: #fff;
                     border: none;
-                    box-shadow: 0 8px 25px rgba(0, 82, 255, 0.4);
+                    box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 9999;
-                    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 }
 
                 .support-fab::before {
                     content: '';
                     position: absolute;
-                    width: 100%;
-                    height: 100%;
+                    inset: -4px;
                     background: inherit;
-                    border-radius: 50%;
+                    border-radius: inherit;
                     z-index: -1;
+                    opacity: 0.4;
                     animation: pulse-ring 2s infinite;
                 }
 
                 .menu-item-hover:hover {
                     background-color: #f8fafc;
-                    transform: translateY(-2px);
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+                    transform: translateX(4px);
+                    border-color: #2563eb33;
                 }
-
-                @media (max-width: 992px) {
-                    .support-fab {
-                        bottom: 90px !important;
-                    }
+                
+                .active-scale:active {
+                    transform: scale(0.96);
                 }
 
                 @media (max-width: 768px) {
                     .support-fab {
-                        width: 48px !important;
-                        height: 48px !important;
-                        bottom: 80px !important;
-                        right: 20px !important;
+                        width: 50px !important;
+                        height: 50px !important;
+                        bottom: 90px !important;
+                        right: 16px !important;
+                        border-radius: 16px !important;
                     }
                     .support-fab svg {
                         width: 24px !important;
                         height: 24px !important;
                     }
                     .support-window {
-                        width: calc(100vw - 40px) !important;
-                        max-width: 360px !important;
-                        height: 500px !important;
-                        max-height: 70vh !important;
+                        width: calc(100vw - 32px) !important;
+                        max-width: 320px !important;
+                        height: 480px !important;
                         bottom: 150px !important;
-                        right: 20px !important;
-                        border-radius: 20px !important;
+                        right: 16px !important;
+                        border-radius: 24px !important;
+                        border: 1px solid rgba(255,255,255,0.8) !important;
                     }
                     .support-header {
-                        padding: 12px 16px !important;
-                        min-height: 60px !important;
+                        padding: 12px 14px !important;
+                        min-height: 56px !important;
                     }
                     .support-header h4 {
-                        font-size: 15px !important;
+                        font-size: 13px !important;
                     }
                     .support-avatar {
-                        width: 40px !important;
-                        height: 40px !important;
+                        width: 34px !important;
+                        height: 34px !important;
+                        border-radius: 10px !important;
                     }
                     .support-menu-content {
-                        padding: 20px !important;
+                        padding: 16px !important;
                     }
                     .support-menu-item {
-                        padding: 12px !important;
-                        gap: 12px !important;
+                        padding: 10px !important;
+                        gap: 10px !important;
+                        border-radius: 14px !important;
                     }
                     .support-icon-box {
-                        width: 40px !important;
-                        height: 40px !important;
+                        width: 36px !important;
+                        height: 36px !important;
+                        border-radius: 10px !important;
                     }
                     .support-icon-box svg {
-                        width: 20px !important;
-                        height: 20px !important;
+                        width: 18px !important;
+                        height: 18px !important;
+                    }
+                    .welcome-title {
+                        font-size: 14px !important;
+                    }
+                    .welcome-desc {
+                        font-size: 11px !important;
                     }
                 }
                 `
@@ -397,44 +406,44 @@ export default function SupportChat() {
                 className="support-fab"
                 style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
             >
-                <Headset size={32} strokeWidth={2} />
+                <Headset size={28} strokeWidth={2.5} />
             </button>
 
             {/* Window */}
             {isOpen && (
                 <div style={styles.container} className="support-window">
-                    {/* Header - Premium Redesign */}
+                    {/* Header - Modern Redesign */}
                     <div style={styles.header} className="support-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                             {view === 'chat' && (
-                                <button onClick={() => setView('menu')} style={styles.headerBackBtn}>
-                                    <ChevronLeft size={24} />
+                                <button onClick={openMenu} style={styles.headerBackBtn}>
+                                    <ChevronLeft size={20} strokeWidth={3} />
                                 </button>
                             )}
 
                             <div style={styles.avatarContainer} className="support-avatar">
                                 {view === 'menu' ? (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.2)' }}>
-                                        <Headset size={22} color="#0052FF" />
-                                    </div>
+                                    <img src="/logo.png" alt="Hadaf Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                                 ) : (
-                                    <img src="/team/asadbek.jpg" alt="Admin" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
+                                        <Headset size={20} color="#2563eb" strokeWidth={2.5} />
+                                    </div>
                                 )}
                             </div>
 
-                            <div>
-                                <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#fff', letterSpacing: '0.3px', lineHeight: '1.2' }}>
-                                    {view === 'menu' ? "Hadaf Yordam" : "Asadbek Davronov"}
+                            <div className="min-w-0">
+                                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', lineHeight: '1.2' }} className="truncate">
+                                    {view === 'menu' ? t('title') : (t('operator') || "Operator")}
                                 </h4>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
-                                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 5px #4ade80' }}></span>
-                                    <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.95)', fontWeight: 500 }}>{t('online')}</span>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '1px' }}>
+                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', animation: 'pulse 2s infinite' }}></span>
+                                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('online')}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <button onClick={() => setIsOpen(false)} style={styles.headerCloseBtn}>
-                            <X size={18} strokeWidth={2.5} />
+                        <button onClick={closeChat} style={styles.headerCloseBtn} className="active-scale">
+                            <X size={16} strokeWidth={3} />
                         </button>
                     </div>
 
@@ -442,105 +451,100 @@ export default function SupportChat() {
                     <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff' }}>
                         {view === 'menu' ? (
                             <div style={styles.menuContent} className="support-menu-content">
-                                <div style={{ textAlign: 'center', marginBottom: '25px', marginTop: '10px' }}>
-                                    <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#1e293b', marginBottom: '8px' }}>{t('welcome')}</h3>
-                                    <p style={{ color: '#64748b', fontSize: '14px', lineHeight: '1.5' }}>
-                                        {t('subtitle')}
+                                <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '4px' }}>
+                                    <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0f172a', marginBottom: '6px', letterSpacing: '-0.2px' }} className="welcome-title">{t('welcome')}</h3>
+                                    <p style={{ color: '#64748b', fontSize: '12px', lineHeight: '1.4', fontWeight: 600 }} className="welcome-desc px-4">
+                                        {t('subtitle') || "Savollaringiz bormi? Bizga yozing"}
                                     </p>
                                 </div>
 
                                 <div style={styles.menuOptions}>
-                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover support-menu-item">
-                                        <div style={{ ...styles.iconBox, background: '#e0f2fe', color: '#0284c7' }} className="support-icon-box">
-                                            <MessageSquareText size={24} />
+                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover active-scale support-menu-item">
+                                        <div style={{ ...styles.iconBox, background: '#eff6ff', color: '#2563eb' }} className="support-icon-box">
+                                            <MessageSquareText size={20} strokeWidth={2.5} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>{t('live_chat')}</div>
-                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>{t('live_chat_desc')}</div>
+                                            <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '13px', letterSpacing: '-0.1px' }}>{t('live_chat')}</div>
+                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{t('live_chat_desc') || "Jonli muloqot"}</div>
                                         </div>
-                                        <ChevronRight size={18} color="#cbd5e1" />
+                                        <ChevronRight size={14} className="opacity-30" strokeWidth={3} />
                                     </button>
 
-                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover support-menu-item">
-                                        <div style={{ ...styles.iconBox, background: '#dcfce7', color: '#16a34a' }} className="support-icon-box">
-                                            <Send size={24} />
+                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover active-scale support-menu-item">
+                                        <div style={{ ...styles.iconBox, background: '#f0fdf4', color: '#16a34a' }} className="support-icon-box">
+                                            <Send size={20} strokeWidth={2.5} />
                                         </div>
                                         <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 600, color: '#334155', fontSize: '15px' }}>{t('telegram_bot')}</div>
-                                            <div style={{ fontSize: '13px', color: '#94a3b8' }}>{t('telegram_bot_desc')}</div>
+                                            <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '13px', letterSpacing: '-0.1px' }}>{t('telegram_bot')}</div>
+                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{t('telegram_bot_desc') || "Telegram orqali"}</div>
                                         </div>
-                                        <ChevronRight size={18} color="#cbd5e1" />
+                                        <ChevronRight size={14} className="opacity-30" strokeWidth={3} />
                                     </a>
-
-
+                                </div>
+                                <div style={{ marginTop: 'auto', textAlign: 'center', paddingBottom: '10px' }}>
+                                    <p style={{ fontSize: '9px', fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '1px' }}>Hadaf Market Support</p>
                                 </div>
                             </div>
                         ) : (
                             <>
-                                {/* Chat Area - Styled like Image 1 */}
+                                {/* Chat Area - Styled like previous premium chat */}
                                 <div ref={scrollRef} style={styles.messagesArea}>
                                     {loading && messages.length === 0 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8' }}>
-                                            <Loader2 className="animate-spin" size={32} style={{ marginBottom: '10px', color: '#0052FF' }} />
-                                            <span style={{ fontSize: '14px', fontWeight: 500 }}>{t('loading')}</span>
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                            <div className="w-5 h-5 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
                                         </div>
                                     ) : messages.length === 0 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#94a3b8', textAlign: 'center' }}>
-                                            <div style={{ width: '80px', height: '80px', background: '#e0f2fe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '15px' }}>
-                                                <MessageSquare size={36} color="#0052FF" />
+                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#cbd5e1', textAlign: 'center', padding: '0 30px' }}>
+                                            <div style={{ width: '56px', height: '56px', background: '#fff', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+                                                <MessageSquare size={24} strokeWidth={2.5} />
                                             </div>
-                                            <h4 style={{ margin: '0 0 5px 0', color: '#334155' }}>{t('no_messages')}</h4>
-                                            <p style={{ fontSize: '13px' }}>{t('no_messages_desc')}</p>
+                                            <h4 style={{ margin: '0 0 4px 0', color: '#1e293b', fontSize: '13px', fontWeight: 900 }}>{t('no_messages') || "Xabarlar yo'q"}</h4>
+                                            <p style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>{t('no_messages_desc') || "Savolingizni yo'llang"}</p>
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                             {messages.map(msg => {
                                                 const isMe = msg.senderId === session?.user?.id;
                                                 return (
-                                                    <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
+                                                    <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
                                                         <div style={{
-                                                            maxWidth: '75%',
-                                                            padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.content.includes('blob.vercel-storage.com') || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp|webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? '4px' : '12px 18px',
-                                                            borderRadius: isMe ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                                                            background: isMe ? 'linear-gradient(135deg, #0052FF 0%, #0040DD 100%)' : '#fff',
-                                                            color: isMe ? '#fff' : '#1e293b',
-                                                            fontSize: '14px',
-                                                            lineHeight: '1.5',
+                                                            maxWidth: '85%',
+                                                            padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.content.includes('blob.vercel-storage.com')) ? '4px' : '8px 13px',
+                                                            borderRadius: isMe ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
+                                                            background: isMe ? '#2563eb' : '#fff',
+                                                            color: isMe ? '#fff' : '#0f172a',
+                                                            fontSize: '11px',
+                                                            lineHeight: '1.4',
+                                                            fontWeight: 700,
                                                             wordBreak: 'break-word',
-                                                            boxShadow: isMe ? '0 4px 15px rgba(0, 82, 255, 0.2)' : '0 2px 4px rgba(0,0,0,0.05)',
-                                                            border: isMe ? 'none' : '1px solid #e2e8f0',
-                                                            overflow: 'hidden'
+                                                            boxShadow: isMe ? '0 4px 12px rgba(37, 99, 235, 0.15)' : '0 2px 5px rgba(0,0,0,0.03)',
+                                                            border: isMe ? 'none' : '1px solid #f1f5f9',
                                                         }}>
-                                                            {msg.type === 'IMAGE' || (msg.content.includes('blob.vercel-storage.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
+                                                            {msg.type === 'IMAGE' || (msg.content.includes('blob.vercel-storage.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
                                                                 <img
                                                                     src={msg.content}
                                                                     alt="Chat image"
-                                                                    style={{ width: '100%', borderRadius: '14px', display: 'block' }}
+                                                                    style={{ width: '100%', borderRadius: '10px', display: 'block' }}
                                                                     onClick={() => window.open(msg.content, '_blank')}
                                                                 />
-                                                            ) : (msg.type === 'AUDIO' || (msg.content.includes('blob.vercel-storage.com') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content)) || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
-                                                                <div style={{ minWidth: '220px', padding: '6px' }}>
-                                                                    <audio
-                                                                        controls
-                                                                        style={{ width: '100%', height: '40px' }}
-                                                                        preload="metadata"
-                                                                    >
+                                                            ) : msg.type === 'AUDIO' || (msg.content.includes('blob.vercel-storage.com') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content)) ? (
+                                                                <div style={{ minWidth: '180px', padding: '4px' }}>
+                                                                    <audio controls style={{ width: '100%', height: '32px' }} preload="metadata">
                                                                         <source src={msg.content} />
-                                                                        Sizning brauzeringiz audioni qo'llab-quvvatlamaydi.
                                                                     </audio>
                                                                 </div>
                                                             ) : (
                                                                 msg.content
                                                             )}
                                                         </div>
-                                                        <span style={{ fontSize: '10px', color: '#94a3b8', alignSelf: 'flex-end', marginLeft: '8px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '0 4px' }}>
+                                                            <span style={{ fontSize: '7px', color: '#cbd5e1', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                                {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </span>
                                                             {isMe && (
-                                                                msg.isRead ?
-                                                                    <CheckCheck size={14} color="#4ade80" /> :
-                                                                    <Check size={14} color="#94a3b8" />
+                                                                msg.isRead ? <CheckCheck size={10} color="#4ade80" strokeWidth={3} /> : <Check size={10} color="#cbd5e1" strokeWidth={3} />
                                                             )}
-                                                        </span>
+                                                        </div>
                                                     </div>
                                                 )
                                             })}
@@ -548,108 +552,56 @@ export default function SupportChat() {
                                     )}
                                 </div>
 
-                                {/* Input - Styled like Image 1 */}
+                                {/* Input - Ultra Compact and Premium */}
                                 <form onSubmit={handleSend} style={styles.inputArea}>
-                                    <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center' }}>
+                                    <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         {isRecording ? (
                                             <div style={{
                                                 flex: 1,
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'space-between',
-                                                padding: '10px 20px',
-                                                background: '#f1f5f9',
-                                                borderRadius: '25px',
-                                                border: '1px solid #e2e8f0'
+                                                padding: '6px 12px',
+                                                background: '#fef2f2',
+                                                borderRadius: '12px',
+                                                border: '1px solid #fee2e2'
                                             }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#ef4444' }}>
-                                                    <span style={{
-                                                        width: '10px',
-                                                        height: '10px',
-                                                        background: '#ef4444',
-                                                        borderRadius: '50%',
-                                                        boxShadow: '0 0 8px #ef4444'
-                                                    }}></span>
-                                                    <span style={{ fontWeight: 600, fontSize: '15px' }}>{formatTime(recordingTime)}</span>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}>
+                                                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                                                    <span style={{ fontWeight: 900, fontSize: '13px' }}>{formatTime(recordingTime)}</span>
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={stopRecording}
-                                                    style={{
-                                                        color: '#0052FF',
-                                                        fontWeight: 700,
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        fontSize: '14px'
-                                                    }}
-                                                >
-                                                    {t('stop_and_send')}
+                                                <button type="button" onClick={stopRecording} style={{ color: '#2563eb', fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
+                                                    {t('stop_and_send') || "Yuborish"}
                                                 </button>
                                             </div>
                                         ) : (
-                                            <>
-                                                <label style={{
-                                                    position: 'absolute',
-                                                    left: '12px',
-                                                    cursor: 'pointer',
-                                                    color: '#64748b',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    padding: '4px',
-                                                    zIndex: 2
-                                                }}>
-                                                    <Paperclip size={20} />
-                                                    <input
-                                                        type="file"
-                                                        accept="image/*"
-                                                        onChange={handleImageUpload}
-                                                        style={{ display: 'none' }}
-                                                    />
+                                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', padding: '0 4px' }}>
+                                                <label style={{ cursor: 'pointer', color: '#94a3b8', padding: '6px' }}>
+                                                    <Paperclip size={16} strokeWidth={2.5} />
+                                                    <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                                                 </label>
-
                                                 <input
-                                                    placeholder={t('input_placeholder')}
+                                                    placeholder={t('input_placeholder') || "Xabar..."}
                                                     value={inputValue}
                                                     onChange={e => setInputValue(e.target.value)}
                                                     style={styles.input}
                                                 />
-
                                                 {!inputValue.trim() ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={startRecording}
-                                                        style={{
-                                                            ...styles.sendBtn,
-                                                            background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                                                            position: 'absolute',
-                                                            right: '6px',
-                                                            zIndex: 3,
-                                                            boxShadow: '0 0 10px rgba(16, 185, 129, 0.3)'
-                                                        }}
-                                                    >
-                                                        <Mic size={18} />
+                                                    <button type="button" onClick={startRecording} style={{ ...styles.actionBtn, background: '#f0fdf4', color: '#16a34a' }}>
+                                                        <Mic size={16} strokeWidth={2.5} />
                                                     </button>
                                                 ) : (
-                                                    <button
-                                                        type="submit"
-                                                        style={{
-                                                            ...styles.sendBtn,
-                                                            position: 'absolute',
-                                                            right: '6px',
-                                                            zIndex: 3
-                                                        }}
-                                                    >
-                                                        <Send size={18} />
+                                                    <button type="submit" style={{ ...styles.actionBtn, background: '#2563eb', color: '#fff' }}>
+                                                        <Send size={15} strokeWidth={3} className="ml-0.5" />
                                                     </button>
                                                 )}
-                                            </>
+                                            </div>
                                         )}
                                     </div>
                                 </form>
                             </>
                         )}
+
                     </div>
                 </div>
             )}
@@ -659,145 +611,128 @@ export default function SupportChat() {
 
 const styles: Record<string, React.CSSProperties> = {
     container: {
-        position: 'fixed' as 'fixed',
+        position: 'fixed',
         bottom: '100px',
         right: '25px',
-        width: '380px',
-        height: '600px',
-        maxHeight: 'calc(100vh - 120px)',
+        width: '320px',
+        height: '460px',
+        maxHeight: 'calc(100vh - 140px)',
         background: '#fff',
         borderRadius: '24px',
-        boxShadow: '0 20px 60px rgba(0,40,100,0.25)',
+        boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
         display: 'flex',
         flexDirection: 'column',
         zIndex: 9999,
         overflow: 'hidden',
-        border: '1px solid rgba(255,255,255,0.5)',
+        border: '1px solid #f1f5f9',
         transformOrigin: 'bottom right',
-        animation: 'slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        animation: 'slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
         fontFamily: 'inherit'
     },
     header: {
-        padding: '16px 20px',
-        background: 'linear-gradient(135deg, #0052FF 0%, #0033CC 100%)',
+        padding: '12px 16px',
+        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
         color: '#fff',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        height: 'auto',
-        minHeight: '80px',
-        boxShadow: '0 4px 15px rgba(0, 82, 255, 0.25)',
+        minHeight: '64px',
         zIndex: 10
     },
     headerBackBtn: {
-        background: 'transparent',
+        background: 'rgba(255,255,255,0.15)',
         border: 'none',
         color: '#fff',
         cursor: 'pointer',
-        padding: '8px',
-        marginRight: '0px',
-        marginLeft: '-8px',
+        padding: '6px',
         display: 'flex',
-        borderRadius: '50%',
-        transition: 'background 0.2s',
+        borderRadius: '8px',
+        backdropFilter: 'blur(4px)'
     },
     headerCloseBtn: {
         background: 'rgba(255,255,255,0.15)',
         border: 'none',
-        borderRadius: '50%',
-        width: '32px',
-        height: '32px',
+        borderRadius: '8px',
+        width: '28px',
+        height: '28px',
         color: '#fff',
         cursor: 'pointer',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        transition: 'all 0.2s',
         backdropFilter: 'blur(4px)'
     },
     avatarContainer: {
-        width: '44px',
-        height: '44px',
-        borderRadius: '50%',
+        width: '38px',
+        height: '38px',
+        borderRadius: '12px',
         overflow: 'hidden',
-        border: '2px solid rgba(255,255,255,0.3)',
-        boxShadow: '0 4px 10px rgba(0,0,0,0.1)',
+        border: '1.5px solid rgba(255,255,255,0.3)',
         background: '#fff'
     },
     menuContent: {
-        padding: '24px',
+        padding: '20px',
         flex: 1,
         display: 'flex',
         flexDirection: 'column',
-        background: '#fcfcfc'
+        background: '#fff'
     },
     menuOptions: {
         display: 'flex',
         flexDirection: 'column',
-        gap: '12px'
+        gap: '10px'
     },
     menuItem: {
         display: 'flex',
         alignItems: 'center',
-        gap: '16px',
-        padding: '16px',
+        gap: '12px',
+        padding: '12px',
         borderRadius: '16px',
         background: '#fff',
-        border: '1px solid #e2e8f0',
+        border: '1px solid #f1f5f9',
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        boxShadow: '0 2px 4px rgba(0,0,0,0.01)',
-        position: 'relative',
-        overflow: 'hidden'
+        transition: 'all 0.3s ease',
     },
     iconBox: {
-        width: '50px',
-        height: '50px',
-        borderRadius: '14px',
+        width: '40px',
+        height: '40px',
+        borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        fontSize: '24px'
     },
     messagesArea: {
         flex: 1,
-        background: '#f8fafc',
-        padding: '20px',
+        background: '#fcfdfe',
+        padding: '14px',
         overflowY: 'auto',
-        backgroundImage: 'radial-gradient(#cbd5e1 1px, transparent 1px)',
-        backgroundSize: '24px 24px'
     },
     inputArea: {
-        padding: '16px',
+        padding: '12px',
         background: '#fff',
         borderTop: '1px solid #f1f5f9',
-        boxShadow: '0 -4px 20px rgba(0,0,0,0.02)'
     },
     input: {
-        width: '100%',
-        padding: '14px 55px 14px 45px', // Left padding increased to 45px for paperclip
-        borderRadius: '25px',
-        border: '1px solid #E2E8F0',
-        outline: 'none',
-        fontSize: '15px',
-        background: '#fff',
-        color: '#334155',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.03)',
-        transition: 'border 0.2s',
-        zIndex: 1
-    },
-    sendBtn: {
-        background: 'linear-gradient(135deg, #0052FF 0%, #0033CC 100%)',
-        color: '#fff',
+        flex: 1,
+        padding: '10px 12px',
+        borderRadius: '10px',
         border: 'none',
-        width: '40px',
-        height: '40px',
-        borderRadius: '50%',
+        outline: 'none',
+        fontSize: '12px',
+        background: 'transparent',
+        color: '#0f172a',
+        fontWeight: 700,
+    },
+    actionBtn: {
+        width: '32px',
+        height: '32px',
+        borderRadius: '8px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
+        border: 'none',
         transition: 'all 0.2s',
-        boxShadow: '0 4px 12px rgba(0, 82, 255, 0.3)'
+        margin: '3px'
     }
 };

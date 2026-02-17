@@ -14,10 +14,10 @@ export async function GET() {
         const couriers = await prisma.$queryRawUnsafe(`
             SELECT 
                 u.id, u.name, u.phone,
-                cp.status, cp."currentLat", cp."currentLng", cp."vehicleType", cp."courierLevel", cp."lastOnlineAt"
+                cp.status, cp."currentLat", cp."currentLng", cp."vehicleType", cp."lastOnlineAt"
             FROM "User" u
             JOIN "CourierProfile" cp ON u.id = cp."userId"
-            WHERE u.role = 'COURIER' AND cp."currentLat" IS NOT NULL
+            WHERE cp."currentLat" IS NOT NULL
         `);
 
         // Fetch active orders with locations to show on map too

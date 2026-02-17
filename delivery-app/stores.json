@@ -1,0 +1,16 @@
+[
+    {
+        "id": 1,
+        "name": "Termez Markaziy Do'koni",
+        "address": "Termiz, Al-Hakim At-Termiziy ko'chasi, 24",
+        "lat": 37.2272,
+        "lng": 67.2752
+    },
+    {
+        "id": 2,
+        "name": "Surxon Market",
+        "address": "Termiz, Ibn Sino ko'chasi",
+        "lat": 37.2345,
+        "lng": 67.2890
+    }
+]

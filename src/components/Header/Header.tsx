@@ -2,14 +2,17 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@/navigation';
-import { useRouter } from '@/navigation';
+import { useRouter, usePathname } from '@/navigation';
 import NextLink from 'next/link';
 import {
     LayoutGrid, Search, ShoppingBag, Heart, UserCircle, Bell, Globe, X, Check,
-    Package, Tag, Info, LogOut, LayoutDashboard, Scale, Menu, Sun, Moon
+    Package, Tag, Info, LogOut, LayoutDashboard, Scale, Menu, Sun, Moon,
+    ChevronRight, MapPin, Loader2
 } from 'lucide-react';
 import styles from './Header.module.css';
 import { useCartStore } from '@/store/useCartStore';
+import { useLocationStore } from '@/store/useLocationStore';
+import { useMapStore } from '@/store/useMapStore';
 import { useWishlist } from '@/context/WishlistContext';
 import { Montserrat } from "next/font/google";
 
@@ -32,7 +35,68 @@ export default function Header() {
     const tNotif = useTranslations('Notifications');
 
     const { openAuthModal, user: storeUser, setUser, logout } = useUserStore();
+    const { address, city, district, setLocation, setLoading: setLocationLoading, isLoading: isLocationLoading } = useLocationStore();
+    const { openMap } = useMapStore();
     const { data: session, status } = useSession();
+
+    const [isClient, setIsClient] = useState(false);
+    useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    // Auto-detect location on load
+    useEffect(() => {
+        if (!isClient) return;
+        // Only if location is not set
+        if (!address && !city && !district) {
+            const handleSuccess = (pos: GeolocationPosition) => {
+                const { latitude, longitude } = pos.coords;
+                // Fetch details
+                fetch(`/api/geocode?lat=${latitude}&lon=${longitude}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data && data.address) {
+                            setLocation({
+                                address: data.address,
+                                city: data.city,
+                                district: data.district,
+                                lat: latitude,
+                                lng: longitude
+                            });
+                        }
+                    })
+                    .catch(e => console.warn("Auto-geo error:", e));
+            };
+
+            const handleError = () => {
+                // Fallback to IP
+                fetch('https://ipapi.co/json/')
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.latitude && data.longitude) {
+                            setLocation({
+                                address: data.city || "Unknown",
+                                city: data.region,
+                                district: data.city,
+                                lat: data.latitude,
+                                lng: data.longitude
+                            });
+                        }
+                    })
+                    .catch(() => { });
+            };
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    handleSuccess,
+                    handleError,
+                    { enableHighAccuracy: true, timeout: 5000, maximumAge: 60000 }
+                );
+            } else {
+                handleError();
+            }
+        }
+    }, [isClient, address, city, district, setLocation]);
 
     const isAuthenticated = status === "authenticated";
 
@@ -145,6 +209,86 @@ export default function Header() {
         }
     };
 
+    const handleGetLocation = () => {
+        if (!navigator.geolocation) {
+            alert("Brauzeringiz geolokatsiyani qo'llab-quvvatlamaydi");
+            return;
+        }
+
+        setLocationLoading(true);
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const { latitude, longitude } = position.coords;
+
+                try {
+                    const response = await fetch(`/api/geocode?lat=${latitude}&lon=${longitude}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        setLocation({
+                            address: data.address,
+                            city: data.city,
+                            district: data.district,
+                            lat: latitude,
+                            lng: longitude
+                        });
+                    } else {
+                        throw new Error("Geocoding failed");
+                    }
+                } catch (error) {
+                    console.error("Geocoding error:", error);
+                    alert("Manzilni aniqlashda xatolik yuz berdi. Iltimos, keyinroq urinib ko'ring.");
+                } finally {
+                    setLocationLoading(false);
+                }
+            },
+            (error) => {
+                // Code 2 (Unavailable) and 3 (Timeout) are common on desktops, handle gracefully
+                if (error.code === 2 || error.code === 3) {
+                    console.warn(`Geolocation fallback triggered (Code ${error.code}): ${error.message}`);
+                    getIPLocation();
+                } else {
+                    console.error("Geolocation error:", error.code, error.message);
+                    setLocationLoading(false);
+                    if (error.code === 1) { // PERMISSION_DENIED
+                        alert("Joylashuvni aniqlash uchun ruxsat berilmadi. Iltimos, brauzer sozlamalarida ruxsat bering yoki xaritadan tanlang.");
+                    } else {
+                        alert("Joylashuvni aniqlashda noma'lum xatolik yuz berdi.");
+                    }
+                }
+            },
+            {
+                enableHighAccuracy: false,
+                timeout: 15000,
+                maximumAge: 60000
+            }
+        );
+    };
+
+    const getIPLocation = async () => {
+        try {
+            const response = await fetch('/api/geocode'); // Call without lat/lng to trigger IP logic
+            if (response.ok) {
+                const data = await response.json();
+                setLocation({
+                    address: data.address,
+                    city: data.city,
+                    district: data.district,
+                    lat: data.lat,
+                    lng: data.lng
+                });
+            } else {
+                throw new Error("IP geocoding failed");
+            }
+        } catch (error) {
+            console.error("IP Geocoding error:", error);
+            if (confirm("Avtomatik aniqlash imkoni bo'lmadi. Xaritadan o'zingiz belgilashni xohlaysizmi?")) {
+                openMap();
+            }
+        } finally {
+            setLocationLoading(false);
+        }
+    };
+
     const handleProfileClick = (e: React.MouseEvent) => {
         if (!isAuthenticated) {
             e.preventDefault();
@@ -152,9 +296,38 @@ export default function Header() {
         }
     };
 
+    const pathname = usePathname();
+    const isCheckoutPage = pathname === '/checkout';
+
+    if (isCheckoutPage) return null;
+
     return (
         <>
             <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300">
+                {/* Desktop Top Bar (Location) */}
+                <div className="hidden xl:block w-full bg-slate-50 border-b border-slate-200 py-2 z-[51]">
+                    <div className="container flex items-center justify-between">
+                        <div
+                            className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity"
+                            onClick={openMap}
+                        >
+                            <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm shrink-0 group-hover:border-blue-300 transition-colors">
+                                {isLocationLoading ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-black text-slate-800 truncate max-w-[200px] sm:max-w-[300px] md:max-w-[400px] leading-none border-b border-slate-300 border-dashed pb-0.5">
+                                    {isClient && (city || district) ? [city, district].filter(Boolean).join(', ') : (isClient && address ? address : (t('joylashuvni_aniqlash') || "Joylashuvni aniqlash"))}
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Optional Right Side Content for Top Bar */}
+                        <div className="flex items-center gap-4">
+                            {/* Add top bar links here if needed */}
+                        </div>
+                    </div>
+                </div>
+
                 <div className="container h-24 lg:h-28 flex items-center justify-between gap-4 lg:gap-8">
 
                     {/* Left Section: Logo & Catalog */}
@@ -169,6 +342,13 @@ export default function Header() {
                             </div>
                         </Link>
 
+                        {/* Mobile/Tablet Location Selector (Visible < xl) */}
+                        {/* Mobile/Tablet Location Selector (Visible < xl) */}
+                        {/* Mobile/Tablet Location Selector (Visible < xl) */}
+
+
+                        {/* Old Location Selector REMOVED */}
+
                         <button
                             id="category-btn-trigger"
                             className={`hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${isCatalogOpen
@@ -180,6 +360,22 @@ export default function Header() {
                             {isCatalogOpen ? <X size={20} strokeWidth={2.5} /> : <LayoutGrid size={20} strokeWidth={2.5} />}
                             <span>{t('katalog')}</span>
                         </button>
+                    </div>
+
+                    {/* Mobile/Tablet Location Selector (Visible < xl) - Moved to Right */}
+                    <div
+                        className="xl:hidden flex items-center justify-center h-10 cursor-pointer active:opacity-60 transition-opacity min-w-0 shrink"
+                        onClick={openMap}
+                    >
+                        <MapPin size={16} className="text-blue-600 shrink-0 mr-1.5" strokeWidth={2.5} />
+                        <div className="flex flex-col justify-center leading-tight min-w-0">
+                            <span className="text-[10px] font-black text-slate-800 truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[140px] text-right">
+                                {isClient && address ? address.replace(/^O['ʻ‘]zbekiston,?\s*/, '').split(',')[0] : (t('joylashuvni_aniqlash') || "Manzilni")}
+                            </span>
+                            <span className="text-[9px] font-bold text-slate-500 truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[140px] text-right">
+                                {isClient && address ? (address.replace(/^O['ʻ‘]zbekiston,?\s*/, '').split(',')[1] || "").trim() : (t('tanlash') || "Tanlash")}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Center Section: Search Bar */}
@@ -368,60 +564,77 @@ export default function Header() {
                     </nav>
                 </div>
 
-                {/* Mobile Search Bar (Only visible on mobile) */}
-                <div className="lg:hidden container pb-3 flex items-center gap-3 relative" ref={mobileSearchRef}>
-                    <div className="relative flex-1">
-                        <input
-                            type="text"
-                            name="mobile-search-input"
-                            autoComplete="one-time-code"
-                            placeholder={t('search_placeholder')}
-                            className="w-full bg-slate-100 border-none px-4 py-2.5 rounded-xl outline-none text-sm placeholder-slate-500"
-                            value={searchQuery}
-                            onChange={(e) => handleSearch(e.target.value)}
-                        />
-                        <button className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-500">
-                            <Search size={18} />
-                        </button>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-2">
-                        <LanguageSwitcher minimal={true} />
-                    </div>
+                {/* Mobile Search & Location Bar (Only visible on mobile) */}
+                <div className="lg:hidden container pb-3 flex flex-col gap-2">
 
-                    {/* Mobile Search Dropdown */}
-                    {searchQuery.length > 0 && (
-                        <div className="absolute top-full left-4 right-4 mt-1 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden py-2 z-[70] animate-fade-in-up">
-                            {isSearching ? (
-                                <div className="p-6 text-center text-slate-500">
-                                    <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-                                    {t('loading')}
-                                </div>
-                            ) : searchResults.length > 0 ? (
-                                <div className="max-h-[60vh] overflow-y-auto">
-                                    {searchResults.map((product) => (
-                                        <Link
-                                            key={product.id}
-                                            href={`/product/${product.id}`}
-                                            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors border-b border-slate-50 last:border-0"
-                                            onClick={() => { setSearchResults([]); setSearchQuery(''); }}
-                                        >
-                                            <img src={product.image} alt={product.title} className="w-10 h-10 object-contain rounded-lg bg-white p-1 border border-slate-100" />
-                                            <div className="min-w-0">
-                                                <div className="font-medium text-slate-900 line-clamp-1 text-sm">{product.title}</div>
-                                                <div className="text-blue-600 font-bold text-xs">{product.price.toLocaleString()} {t('som')}</div>
-                                            </div>
-                                        </Link>
-                                    ))}
-                                </div>
-                            ) : (
-                                <div className="p-6 text-center text-slate-500">
-                                    <Search size={20} className="mx-auto mb-2 opacity-50" />
-                                    <span className="text-sm">{t('not_found')}</span>
-                                </div>
+
+                    <div className="flex items-center gap-2 relative" ref={mobileSearchRef}>
+                        <div className="relative flex-1 group">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <Search size={16} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                            </div>
+                            <input
+                                type="text"
+                                name="mobile-search-input"
+                                autoComplete="one-time-code"
+                                placeholder={t('search_placeholder')}
+                                className="w-full bg-slate-100/80 border-2 border-transparent focus:border-blue-500/20 focus:bg-white px-10 py-2 rounded-2xl outline-none text-sm font-medium placeholder-slate-500 transition-all shadow-sm"
+                                value={searchQuery}
+                                onChange={(e) => handleSearch(e.target.value)}
+                            />
+                            {searchQuery && (
+                                <button
+                                    onClick={() => setSearchQuery('')}
+                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200/50 rounded-full text-slate-500"
+                                >
+                                    <X size={14} />
+                                </button>
                             )}
                         </div>
-                    )}
+                        <div className="shrink-0">
+                            <LanguageSwitcher minimal={true} />
+                        </div>
+                    </div>
                 </div>
+
+                {/* Mobile Search Dropdown */}
+                {searchQuery.length > 0 && (
+                    <div className="absolute top-full left-4 right-4 mt-2 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden py-3 z-[70] animate-fade-in-up">
+                        {isSearching ? (
+                            <div className="p-10 text-center text-slate-500">
+                                <div className="w-8 h-8 border-[3px] border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+                                <span className="text-sm font-medium">{t('loading')}</span>
+                            </div>
+                        ) : searchResults.length > 0 ? (
+                            <div className="max-h-[60vh] overflow-y-auto px-2">
+                                {searchResults.map((product) => (
+                                    <Link
+                                        key={product.id}
+                                        href={`/product/${product.id}`}
+                                        className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 active:bg-slate-100/50 rounded-2xl transition-all border-b border-slate-50 last:border-0"
+                                        onClick={() => { setSearchResults([]); setSearchQuery(''); }}
+                                    >
+                                        <div className="shrink-0 w-12 h-12 rounded-xl bg-white border border-slate-100 p-1 flex items-center justify-center">
+                                            <img src={product.image} alt={product.title} className="w-full h-full object-contain" />
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <div className="font-bold text-slate-900 line-clamp-1 text-[15px] mb-0.5">{product.title}</div>
+                                            <div className="text-blue-600 font-black text-sm">{product.price.toLocaleString()} {t('som')}</div>
+                                        </div>
+                                        <ChevronRight size={16} className="text-slate-300" />
+                                    </Link>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="p-10 text-center text-slate-500">
+                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Search size={28} className="opacity-20" />
+                                </div>
+                                <span className="text-sm font-semibold">{t('not_found')}</span>
+                            </div>
+                        )}
+                    </div>
+                )}
             </header>
             <MegaMenu isOpen={isCatalogOpen} close={closeCatalog} menuMode={menuMode} />
             <CartDrawer />

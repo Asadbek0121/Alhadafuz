@@ -11,8 +11,8 @@ export default function AutoDispatchButton({ orderId, currentStatus }: { orderId
     const router = useRouter();
 
     const handleAutoDispatch = async () => {
-        if (currentStatus !== 'CREATED' && currentStatus !== 'PENDING' && currentStatus !== 'PROCESSING') {
-            toast.error("Ushbu holatdagi buyurtmani avtomatik biriktirib bo'lmaydi.");
+        if (currentStatus === 'DELIVERED' || currentStatus === 'COMPLETED' || currentStatus === 'CANCELLED') {
+            toast.error("Yakunlangan buyurtmani qayta biriktirib bo'lmaydi.");
             return;
         }
 

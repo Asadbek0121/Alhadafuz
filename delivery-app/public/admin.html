@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="uz">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hadaf Delivery - Admin</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script
+        src="https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong"
+        type="text/javascript"></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="logo">Admin Panel</div>
+        <div class="nav-links">
+            <a href="index.html">Buyurtma</a>
+            <a href="admin.html" style="color: #2563eb;">Live Monitor</a>
+            <a href="dashboard.html">Kuryer</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div id="map"></div>
+        <div class="sidebar">
+            <h2 style="margin-bottom: 1.5rem;">Barcha Buyurtmalar</h2>
+            <div id="ordersList">
+                <p style="color: #64748b;">Yuklanmoqda...</p>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>
+        ymaps.ready(initAdminMap);
+        setInterval(refreshAdminData, 5000); // Auto refresh
+    </script>
+</body>
+
+</html>
