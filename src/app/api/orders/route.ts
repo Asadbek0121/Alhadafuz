@@ -36,6 +36,7 @@ const createOrderSchema = z.object({
 });
 
 import { checkRateLimit } from '@/lib/ratelimit';
+import { autoDispatchOrder } from '@/lib/dispatch';
 
 export async function POST(req: Request) {
     // 1. RATE LIMITING (Security Layer)
@@ -255,6 +256,15 @@ export async function POST(req: Request) {
             // Updated to the link requested by the user
             // We append amount and order ID (transaction_param) for better user experience
             paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
+        }
+
+        // Try Auto-Assignment if it's a courier delivery
+        if (deliveryMethod === 'COURIER') {
+            try {
+                await autoDispatchOrder(order.id);
+            } catch (dispatchError) {
+                console.error("Auto dispatch failed:", dispatchError);
+            }
         }
 
         return NextResponse.json({ success: true, order, paymentUrl });

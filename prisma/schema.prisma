@@ -433,6 +433,7 @@ model StoreSettings {
   telegramBotToken String?
   telegramAdminIds String?
   courierFeePerOrder Float?  @default(12000)
+  autoDispatchEnabled Boolean @default(false)
   updatedAt        DateTime @updatedAt
 }
 

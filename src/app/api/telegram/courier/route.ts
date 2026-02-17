@@ -47,45 +47,45 @@ async function getOrderMessage(orderId: string) {
         WHERE oi."orderId" = $1
     `, orderId);
 
-    const itemsText = items.map((i: any) => `• ${i.productTitle} x${i.quantity}`).join('\n');
-    const text = `
-<b>📦 BUYURTMA #${order.id.slice(-6).toUpperCase()}</b>
-━━━━━━━━━━━━━━━━━
-<b>📍 Manzil:</b> <code>${order.shippingAddress || 'Belgilanmagan'}</code>
-<b>🏙 Shaxar:</b> ${order.shippingCity || '---'}
-<b>👤 Mijoz:</b> ${order.shippingName || 'Nomsiz'}
-<b>📞 Tel:</b> <code>${order.shippingPhone || '---'}</code>
-━━━━━━━━━━━━━━━━━
-<b>🛍 Mahsulotlar:</b>
-${itemsText}
-━━━━━━━━━━━━━━━━━
-<b>💰 Jami:</b> <code>${order.total.toLocaleString()} SO'M</code>
-<b>💳 To'lov:</b> ${order.paymentMethod === 'CASH' ? '💵 Naqd' : '💳 Karta'}
-<b>📌 Holat:</b> ${STATUS_EMOJIS[order.status as keyof typeof STATUS_EMOJIS] || '🟠'} ${order.status}
-━━━━━━━━━━━━━━━━━
-${order.comment ? `<b>💬 Izoh:</b> <i>"${order.comment}"</i>\n━━━━━━━━━━━━━━━━━` : ''}
-`;
-
-    const buttons = [];
-    if (order.status === 'ASSIGNED') {
-        buttons.push([{ text: "✅ Tasdiqlash (Accept)", callback_data: `pick_up:${orderId}` }]);
-        buttons.push([{ text: "❌ Rad etish", callback_data: `reject_assign:${orderId}` }]);
-    } else if (order.status === 'PROCESSING') {
-        buttons.push([{ text: "📦 Yukni oldim (Pick Up)", callback_data: `delivering:${orderId}` }]);
-    } else if (order.status === 'DELIVERING') {
-        buttons.push([{ text: "🏁 Yetkazildi (Delivered)", callback_data: `delivered:${orderId}` }]);
-    } else if (order.status === 'DELIVERED') {
-        buttons.push([{ text: "✅ Yakunlash (Complete)", callback_data: `completed:${orderId}` }]);
-    }
-
-    if (order.paymentStatus !== 'PAID') {
-        buttons.push([{ text: "💰 To'lov qilindi", callback_data: `paid:${orderId}` }]);
-    }
+    const itemsText = items.map((i: any) => `  ▪️ ${i.productTitle} x${i.quantity}`).join('\n');
 
     const lat = order.lat || order.deliveryLat;
     const lng = order.lng || order.deliveryLng;
     const address = order.shippingAddress || '';
     const hasValidCoords = lat && lng && Math.abs(lat) > 1 && Math.abs(lng) > 1;
+
+    let text = `<b>🆔 BUYURTMA #${order.id.slice(-6).toUpperCase()}</b>\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖\n`;
+    text += `<b>📍 Manzil:</b> <code>${order.shippingAddress || 'Belgilanmagan'}</code>\n`;
+    text += `<b>👤 Mijoz:</b> ${order.shippingName || '---'}\n`;
+    text += `<b>📞 Tel:</b> <code>${order.shippingPhone || '---'}</code>\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖\n`;
+    text += `<b>🛍 Mahsulotlar:</b>\n${itemsText}\n`;
+    text += `➖➖➖➖➖➖➖➖➖➖\n`;
+    text += `<b>💰 Jami:</b> <code>${order.total.toLocaleString()} SO'M</code>\n`;
+    text += `<b>💳 To'lov:</b> ${order.paymentMethod === 'CASH' ? '💵 Naqd' : '💳 Karta'}\n`;
+    text += `<b>📌 Holat:</b> ${STATUS_EMOJIS[order.status as keyof typeof STATUS_EMOJIS] || '🟠'} <b>${order.status}</b>\n`;
+
+    if (order.comment) {
+        text += `➖➖➖➖➖➖➖➖➖➖\n<b>💬 Izoh:</b> <i>"${order.comment}"</i>\n`;
+    }
+    text += `➖➖➖➖➖➖➖➖➖➖`;
+
+    const buttons: any[] = [];
+    if (order.status === 'ASSIGNED') {
+        buttons.push([{ text: "✅ TASDIQLASH (Accept)", callback_data: `pick_up:${orderId}` }]);
+        buttons.push([{ text: "❌ RAD ETISH", callback_data: `reject_assign:${orderId}` }]);
+    } else if (order.status === 'PROCESSING') {
+        buttons.push([{ text: "📦 YUKNI OLDIM (Pick Up)", callback_data: `delivering:${orderId}` }]);
+    } else if (order.status === 'DELIVERING') {
+        buttons.push([{ text: "🏁 YETKAZILDI (Delivered)", callback_data: `delivered:${orderId}` }]);
+    } else if (order.status === 'DELIVERED') {
+        buttons.push([{ text: "✅ YAKUNLASH (Complete)", callback_data: `completed:${orderId}` }]);
+    }
+
+    if (order.paymentStatus !== 'PAID') {
+        buttons.push([{ text: "💰 TO'LOV QALININDI", callback_data: `paid:${orderId}` }]);
+    }
 
     const googleUrl = hasValidCoords
         ? `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
@@ -95,12 +95,24 @@ ${order.comment ? `<b>💬 Izoh:</b> <i>"${order.comment}"</i>\n━━━━━�
         ? `https://yandex.uz/maps/?rtext=~${lat},${lng}&rtt=auto`
         : `https://yandex.uz/maps/?rtext=~${encodeURIComponent(address)}`;
 
-    buttons.push([
-        { text: "🗺 Google Maps", url: googleUrl },
-        { text: "🚕 Yandex.Navi", url: yandexUrl }
-    ]);
+    const navButtons = [
+        { text: "🗺 Google", url: googleUrl },
+        { text: "🚕 Yandex", url: yandexUrl }
+    ];
 
-    return { text, reply_markup: { inline_keyboard: buttons } };
+    if (hasValidCoords) {
+        navButtons.push({ text: "📍 Lokatsiya", callback_data: `send_loc:${orderId}` } as any);
+    }
+
+    buttons.push(navButtons);
+
+    // Static Map URL
+    let photoUrl = null;
+    if (hasValidCoords && process.env.GOOGLE_MAPS_API_KEY) {
+        photoUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=15&size=600x300&maptype=roadmap&markers=color:red%7C${lat},${lng}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+    }
+
+    return { text, reply_markup: { inline_keyboard: buttons }, photo: photoUrl, lat, lng };
 }
 
 // --- Main Webhook Handler ---
@@ -131,6 +143,27 @@ export async function POST(req: Request) {
 
             const [action, orderId] = data.split(':');
 
+            if (action === 'view_order') {
+                const { text, reply_markup, photo } = await getOrderMessage(orderId);
+                if (photo) {
+                    await bot.sendPhoto(chatId, photo, { caption: text, parse_mode: 'HTML', reply_markup });
+                } else {
+                    await bot.sendMessage(chatId, text, { parse_mode: 'HTML', reply_markup });
+                }
+                await bot.answerCallbackQuery(query.id);
+                return NextResponse.json({ ok: true });
+            }
+
+            if (action === 'send_loc') {
+                const { lat, lng } = await getOrderMessage(orderId);
+                if (lat && lng) {
+                    await bot.sendLocation(chatId, lat, lng);
+                } else {
+                    await bot.answerCallbackQuery(query.id, { text: "Koordinatalar topilmadi", show_alert: true });
+                }
+                return NextResponse.json({ ok: true });
+            }
+
             if (action === 'reject_assign') {
                 await prisma.$executeRawUnsafe('UPDATE "Order" SET "courierId" = NULL, "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'CREATED', orderId);
                 await bot.answerCallbackQuery(query.id, { text: "Buyurtma rad etildi." });
@@ -147,12 +180,14 @@ export async function POST(req: Request) {
             } else if (action === 'completed') {
                 await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "finishedAt" = NOW(), "updatedAt" = NOW() WHERE "id" = $2', 'COMPLETED', orderId);
 
-                const profile: any = await prisma.$queryRawUnsafe('SELECT id, "totalDeliveries" FROM "CourierProfile" WHERE "userId" = (SELECT id FROM "User" WHERE "telegramId" = $1 LIMIT 1)', telegramId);
-                if (profile[0]) {
-                    const newTotal = profile[0].totalDeliveries + 1;
-                    const fee = await getCourierFee();
-                    await prisma.$executeRawUnsafe(`UPDATE "CourierProfile" SET "totalDeliveries" = $1, balance = balance + $2 WHERE id = $3`, newTotal, fee, profile[0].id);
-                }
+                const fee = await getCourierFee();
+                await prisma.$executeRawUnsafe(`
+                    UPDATE "CourierProfile" 
+                    SET "totalDeliveries" = "totalDeliveries" + 1, 
+                        balance = balance + $1,
+                        "updatedAt" = NOW()
+                    WHERE "userId" = (SELECT id FROM "User" WHERE "telegramId" = $2 LIMIT 1)
+                `, fee, telegramId);
             } else if (action === 'paid') {
                 await prisma.$executeRawUnsafe('UPDATE "Order" SET "paymentStatus" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'PAID', orderId);
             }
@@ -187,6 +222,20 @@ export async function POST(req: Request) {
                 }
             }
 
+            // Handle Live Location Update
+            if (msg.location) {
+                const { latitude, longitude } = msg.location;
+                // Update courier's current location in profile
+                await prisma.$executeRawUnsafe(`
+                    UPDATE "CourierProfile" 
+                    SET "currentLat" = $1, "currentLng" = $2, "lastLocationAt" = NOW(), "updatedAt" = NOW()
+                    WHERE "userId" = (SELECT id FROM "User" WHERE "telegramId" = $3 LIMIT 1)
+                `, latitude, longitude, telegramId);
+
+                // If kuryer has active orders, we could also log it there or just rely on CourierProfile
+                return NextResponse.json({ ok: true });
+            }
+
             // Commands
             if (text?.startsWith('/ping')) {
                 await bot.sendMessage(chatId, "🏓 Pong! Webhook ishlayapti.");
@@ -196,8 +245,12 @@ export async function POST(req: Request) {
             if (text?.startsWith('/start')) {
                 const deepLink = text.split(' ')[1];
                 if (deepLink) {
-                    const { text: orderText, reply_markup } = await getOrderMessage(deepLink);
-                    await bot.sendMessage(chatId, orderText, { parse_mode: 'HTML', reply_markup });
+                    const { text: orderText, reply_markup, photo } = await getOrderMessage(deepLink);
+                    if (photo) {
+                        await bot.sendPhoto(chatId, photo, { caption: orderText, parse_mode: 'HTML', reply_markup });
+                    } else {
+                        await bot.sendMessage(chatId, orderText, { parse_mode: 'HTML', reply_markup });
+                    }
                     return NextResponse.json({ ok: true });
                 }
 
@@ -212,7 +265,11 @@ export async function POST(req: Request) {
                     await bot.sendMessage(chatId, welcome, {
                         parse_mode: 'HTML',
                         reply_markup: {
-                            keyboard: [[{ text: "💰 Hamyon" }, { text: "🔄 Holat" }], [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]],
+                            keyboard: [
+                                [{ text: "🚀 Dashbord (Open Dashboard)", web_app: { url: `https://alhadafuz.vercel.app/uz/courier/dashboard` } }],
+                                [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
+                                [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]
+                            ],
                             resize_keyboard: true
                         }
                     });
@@ -252,17 +309,55 @@ export async function POST(req: Request) {
                 const cp: any = await prisma.$queryRawUnsafe('SELECT balance FROM "CourierProfile" WHERE "userId" = $1', user?.id);
                 await bot.sendMessage(chatId, `💰 Balans: <b>${(cp[0]?.balance || 0).toLocaleString()} SO'M</b>`, { parse_mode: 'HTML' });
             } else if (text === "🔄 Holat") {
-                const cp: any = await (prisma as any).courierProfile.findUnique({ where: { userId: user?.id } });
-                const newStatus = cp?.status === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
-                await (prisma as any).courierProfile.update({ where: { userId: user?.id }, data: { status: newStatus } });
-                await bot.sendMessage(chatId, `🕒 Holatingiz o'zgardi: <b>${newStatus}</b>`, { parse_mode: 'HTML' });
+                const results: any = await prisma.$queryRawUnsafe('SELECT status FROM "CourierProfile" WHERE "userId" = $1 LIMIT 1', user?.id);
+                const currentStatus = results[0]?.status || 'OFFLINE';
+                const newStatus = currentStatus === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
+
+                await prisma.$executeRawUnsafe('UPDATE "CourierProfile" SET "status" = $1, "updatedAt" = NOW() WHERE "userId" = $2', newStatus, user?.id);
+                await bot.sendMessage(chatId, `🕒 Holatingiz o'zgardi: <b>${newStatus === 'ONLINE' ? 'Ishda ✅' : 'Tanaffusda 💤'}</b>`, { parse_mode: 'HTML' });
             } else if (text === "📦 Buyurtmalar") {
                 const active: any = await prisma.$queryRawUnsafe('SELECT id FROM "Order" WHERE "courierId" = $1 AND status NOT IN (\'COMPLETED\', \'CANCELLED\')', user?.id);
-                if (active.length === 0) await bot.sendMessage(chatId, "📭 Faol buyurtmalar yo'q.");
-                for (const o of active) {
-                    const { text: ot, reply_markup } = await getOrderMessage(o.id);
-                    await bot.sendMessage(chatId, ot, { parse_mode: 'HTML', reply_markup });
+                if (active.length === 0) {
+                    await bot.sendMessage(chatId, "📭 Faol buyurtmalar yo'q.");
+                } else {
+                    for (const o of active) {
+                        const { text: ot, reply_markup } = await getOrderMessage(o.id);
+                        await bot.sendMessage(chatId, ot, { parse_mode: 'HTML', reply_markup });
+                    }
                 }
+            } else if (text === "📊 Statistika") {
+                const now = new Date();
+                const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+
+                const stats: any = await prisma.$queryRawUnsafe(`
+                    SELECT 
+                        COUNT(id)::int as count,
+                        SUM(total) as revenue
+                    FROM "Order" 
+                    WHERE "courierId" = $1 AND "status" = 'COMPLETED' 
+                    AND "finishedAt" >= $2::timestamp
+                `, user?.id, todayStart);
+
+                const courierFee = await getCourierFee();
+                const todayCount = stats[0]?.count || 0;
+                const todayEarnings = todayCount * courierFee;
+
+                let statsText = `<b>📊 BUGUNGI STATISTIKA</b>\n`;
+                statsText += `➖➖➖➖➖➖➖➖➖➖\n`;
+                statsText += `✅ Yakunlangan: <b>${todayCount} ta</b>\n`;
+                statsText += `💰 Daromad: <b>${todayEarnings.toLocaleString()} SO'M</b>\n`;
+                statsText += `➖➖➖➖➖➖➖➖➖➖\n`;
+                statsText += `⭐ Reyting: <b>${(user as any).courierProfile?.rating || '5.0'}</b>\n`;
+                statsText += `🚀 Keyingi daraja: <b>${(user as any).courierProfile?.courierLevel || 'BRONZE'}</b>\n`;
+                statsText += `➖➖➖➖➖➖➖➖➖➖\n`;
+                statsText += `<i>Siz ushbu hisobotni PDF variantini yuklab olishingiz mumkin.</i>`;
+
+                await bot.sendMessage(chatId, statsText, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [[{ text: "📄 PDF Hisobotni yuklash", url: `https://alhadafuz.vercel.app/uz/courier/report?userId=${user?.id}` }]]
+                    }
+                });
             }
         }
 

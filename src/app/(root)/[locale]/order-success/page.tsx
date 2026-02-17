@@ -58,10 +58,24 @@ export default function OrderSuccessPage() {
                 }}>
                     {t('btn_home')}
                 </Link>
+                <Link href={`/track/${orderId}`} style={{
+                    padding: '12px 24px',
+                    borderRadius: '12px',
+                    background: '#0052FF',
+                    color: '#fff',
+                    fontWeight: '800',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    boxShadow: '0 10px 15px -3px rgba(0, 82, 255, 0.2)'
+                }}>
+                    🚚 BUYURTMANI KUZATISH
+                </Link>
                 <Link href="/profile" style={{
                     padding: '12px 24px',
                     borderRadius: '12px',
-                    background: '#000',
+                    background: '#0a0a0b',
                     color: '#fff',
                     fontWeight: '600',
                     textDecoration: 'none',

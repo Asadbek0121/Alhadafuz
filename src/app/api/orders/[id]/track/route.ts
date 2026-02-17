@@ -4,14 +4,14 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request, context: { params: Promise<{ orderId: string }> }) {
-    const { orderId } = await context.params;
+export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
+    const { id } = await context.params;
 
     try {
-        console.log("Tracking request for orderId:", orderId);
+        console.log("Tracking request for id:", id);
 
         // 1. Get Order (Raw SQL backup due to Prisma Client sync issues)
-        const orders: any[] = await prisma.$queryRaw`SELECT * FROM "Order" WHERE "id" = ${orderId}`;
+        const orders: any[] = await prisma.$queryRaw`SELECT * FROM "Order" WHERE "id" = ${id}`;
         const order = orders[0];
 
         if (!order) {
@@ -49,14 +49,12 @@ export async function GET(req: Request, context: { params: Promise<{ orderId: st
             courierPhone: courierData?.phone,
             courierLat: courierData?.courierProfile?.currentLat,
             courierLng: courierData?.courierProfile?.currentLng,
-            courierLevel: courierData?.courierProfile?.courierLevel
+            courierLevel: courierData?.courierProfile?.courierLevel,
+            lastLocationAt: courierData?.courierProfile?.lastLocationAt
         };
 
         // Only return courier location if order status is active
-        const isActive = ['ASSIGNED', 'PROCESSING', 'PICKED_UP', 'DELIVERING'].includes(data.status);
-
-        // Debug
-        console.log("IsActive:", isActive, "Final Status:", data.status);
+        const isActive = ['ASSIGNED', 'PROCESSING', 'PICKED_UP', 'DELIVERING', 'DELIVERED'].includes(data.status);
 
         if (!isActive) {
             return NextResponse.json({

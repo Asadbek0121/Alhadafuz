@@ -94,6 +94,15 @@ export async function POST(req: Request) {
         revalidatePath('/admin/orders');
         revalidatePath('/admin'); // For dashboard stats
 
+        if (order && order.deliveryMethod === 'COURIER') {
+            try {
+                const { autoDispatchOrder } = await import('@/lib/dispatch');
+                await autoDispatchOrder(order.id);
+            } catch (dispatchError) {
+                console.error("Auto dispatch failed:", dispatchError);
+            }
+        }
+
         return NextResponse.json(order);
     } catch (error: any) {
         console.error("Admin Create Order Error:", error);
