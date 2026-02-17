@@ -196,7 +196,7 @@ export async function POST(req: Request) {
                     return NextResponse.json({ ok: true });
                 }
 
-                const user: any = await prisma.user.findUnique({
+                const user: any = await (prisma as any).user.findUnique({
                     where: { telegramId },
                     include: { courierProfile: true }
                 });
@@ -233,7 +233,7 @@ export async function POST(req: Request) {
             if (user?.botState === 'REG_NAME') {
                 await prisma.user.update({ where: { id: user.id }, data: { name: text, botState: 'REG_PHONE' } });
                 await bot.sendMessage(chatId, "📞 Telefon raqamingizni yuboring:", {
-                    reply_markup: { keyboard: [[{ text: "📞 Raqamni yuborish", contact: true }]], resize_keyboard: true, one_time_keyboard: true }
+                    reply_markup: { keyboard: [[{ text: "📞 Raqamni yuborish", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true }
                 });
             } else if (user?.botState === 'REG_PHONE' || msg.contact) {
                 const phone = msg.contact ? msg.contact.phone_number : text;
@@ -247,9 +247,9 @@ export async function POST(req: Request) {
                 const cp: any = await prisma.$queryRawUnsafe('SELECT balance FROM "CourierProfile" WHERE "userId" = $1', user?.id);
                 await bot.sendMessage(chatId, `💰 Balans: <b>${(cp[0]?.balance || 0).toLocaleString()} SO'M</b>`, { parse_mode: 'HTML' });
             } else if (text === "🔄 Holat") {
-                const cp: any = await prisma.courierProfile.findUnique({ where: { userId: user?.id } });
+                const cp: any = await (prisma as any).courierProfile.findUnique({ where: { userId: user?.id } });
                 const newStatus = cp?.status === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
-                await prisma.courierProfile.update({ where: { userId: user?.id }, data: { status: newStatus } });
+                await (prisma as any).courierProfile.update({ where: { userId: user?.id }, data: { status: newStatus } });
                 await bot.sendMessage(chatId, `🕒 Holatingiz o'zgardi: <b>${newStatus}</b>`, { parse_mode: 'HTML' });
             } else if (text === "📦 Buyurtmalar") {
                 const active: any = await prisma.$queryRawUnsafe('SELECT id FROM "Order" WHERE "courierId" = $1 AND status NOT IN (\'COMPLETED\', \'CANCELLED\')', user?.id);

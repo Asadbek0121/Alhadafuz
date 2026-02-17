@@ -451,7 +451,7 @@ bot.on('message', async (msg) => {
         state.step = 'PHONE';
         bot.sendMessage(chatId, "✅ Ismingiz qabul qilindi.\n\n2. Telefon raqamingizni yuboring (yoki pastdagi tugmani bosing):", {
             reply_markup: {
-                keyboard: [[{ text: "📞 Raqamni yuborish", contact: true }]],
+                keyboard: [[{ text: "📞 Raqamni yuborish", request_contact: true }]],
                 one_time_keyboard: true,
                 resize_keyboard: true
             }
