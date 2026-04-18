@@ -105,6 +105,7 @@ export default function ProductCard(props: ProductProps) {
                     <div className={`${styles.promoSticker} ${styles.giftTheme}`}>
                         <Gift size={12} className="mr-1" /> {tMarketing('sovga')}
                     </div>
+                )}
                 {isOutOfStock && (
                     <div className={`${styles.promoSticker} bg-red-600 text-white`}>
                         {tMarketing('tugagan') || 'Tugagan'}
