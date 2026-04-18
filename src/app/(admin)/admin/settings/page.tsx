@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import {
     Save, Loader2, Store, Phone, Mail, MapPin,
     Globe, Facebook, Instagram, Youtube, Send,
-    Settings, LayoutDashboard, MessageCircle
+    Settings, LayoutDashboard, MessageCircle, CreditCard
 } from 'lucide-react';
 import TelegramSettings from '@/components/admin/TelegramSettings';
 import { Button } from '@/components/ui/button';
