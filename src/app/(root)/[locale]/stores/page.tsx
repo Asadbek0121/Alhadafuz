@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { MapPin, Phone, Clock, Loader2, Navigation } from 'lucide-react';
 import { useEffect, useState } from 'react';

@@ -1,4 +1,5 @@
 "use client"
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Toaster as Sonner } from "sonner"
 

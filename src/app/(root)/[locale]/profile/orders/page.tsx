@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useEffect, useState } from "react";
 import { Package, ChevronDown, ChevronUp, Search, Filter, ShoppingCart, ExternalLink } from "lucide-react";

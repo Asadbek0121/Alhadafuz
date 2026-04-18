@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Bell, Globe } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -82,7 +83,7 @@ export default function SettingsPage() {
                             <p className="text-[10px] md:text-sm text-text-muted mt-0.5 truncate">{tProfile('choose_language')}</p>
                         </div>
                     </div>
-                    <select
+                    <select title="Tanlash"
                         value={language}
                         onChange={(e) => handleLanguageChange(e.target.value)}
                         className="bg-blue-50/50 border border-blue-100 text-blue-600 rounded-xl px-3 h-8 md:h-10 text-[11px] md:text-sm font-black outline-none focus:ring-4 focus:ring-blue-500/10 cursor-pointer appearance-none min-w-[100px] text-center uppercase tracking-tighter"
@@ -106,7 +107,7 @@ export default function SettingsPage() {
                         </div>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
-                        <input
+                        <input title="Kiritish maydoni"
                             type="checkbox"
                             checked={notifications}
                             onChange={() => setNotifications(!notifications)}
@@ -117,7 +118,7 @@ export default function SettingsPage() {
                 </div>
 
                 <div className="pt-2 md:pt-4 border-t border-gray-50 flex justify-end">
-                    <button
+                    <button title="Tugma"
                         onClick={handleSave}
                         className="w-full md:w-auto bg-blue-600 text-white h-10 md:h-12 px-8 rounded-xl font-black shadow-lg shadow-blue-500/20 hover:bg-blue-700 transition-all active:scale-[0.98] text-[13px] md:text-base"
                     >

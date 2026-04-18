@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { useEffect } from "react";
 
 export default function PrintTrigger() {

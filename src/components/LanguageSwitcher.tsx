@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useRef, useEffect } from "react";
 import { useLocale } from "next-intl";
@@ -38,7 +39,7 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
 
     return (
         <div className="relative" ref={ref} style={{ zIndex: 50 }}>
-            <button
+            <button title="Tugma"
                 onClick={() => setIsOpen(!isOpen)}
                 style={{
                     display: 'flex',
@@ -118,7 +119,7 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                         }}
                     >
                         {languages.map((lang) => (
-                            <button
+                            <button title="Tugma"
                                 key={lang.code}
                                 onClick={() => handleSwitch(lang.code)}
                                 style={{

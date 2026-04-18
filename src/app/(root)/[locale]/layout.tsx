@@ -1,17 +1,13 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../../globals.css";
-import { NextIntlClientProvider } from 'next-intl';
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import BottomNav from "@/components/BottomNav/BottomNav";
 import { Toaster } from "@/components/ui/sonner";
-
-import { WishlistProvider } from "@/context/WishlistContext";
-import Providers from "@/providers/QueryProvider";
-import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 import SupportChat from "@/components/SupportChat/SupportChat";
 import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
@@ -20,6 +16,9 @@ import MapModal from "@/components/LocationPicker/MapModal";
 import Script from "next/script";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
 import PinLock from "@/components/Auth/PinLock";
+import OfflineOverlay from "@/components/OfflineOverlay";
+
+import { ClientProviders } from "@/providers/ClientProviders";
 
 const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
@@ -59,38 +58,28 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  if (!messages) {
-    console.error("NextIntl Messages are missing for locale:", locale);
-  }
-
   return (
     <html lang={locale} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <NextIntlClientProvider messages={messages} locale={locale} timeZone="Asia/Tashkent">
-          <Providers>
-            <WishlistProvider>
-
-              <SessionProviderWrapper session={session}>
-                <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
-                <SessionSync />
-                <TelegramAuthSync />
-                <Header />
-                <main className="min-h-screen">
-                  {children}
-                </main>
-                <Footer />
-                <BottomNav />
-                <Toaster />
-                <SupportChat />
-                <AuthModal />
-                <PinLock />
-                <MapModal />
-              </SessionProviderWrapper>
-
-            </WishlistProvider>
-          </Providers>
-        </NextIntlClientProvider>
+        <ClientProviders messages={messages} locale={locale} session={session}>
+          <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+          <SessionSync />
+          <TelegramAuthSync />
+          <Header />
+          <div className="min-h-screen flex flex-col">
+            {children}
+          </div>
+          <Footer />
+          <BottomNav />
+          <Toaster />
+          <SupportChat />
+          <AuthModal />
+          <PinLock />
+          <MapModal />
+          <OfflineOverlay />
+        </ClientProviders>
       </body>
     </html>
   );
 }
+

@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect } from "react";
 import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
@@ -85,7 +86,7 @@ export default function BiometricManager() {
                 <p className="text-sm text-indigo-800/80 leading-relaxed">
                     {t('biometric_desc')}
                 </p>
-                <button
+                <button title="Tugma"
                     onClick={handleRegister}
                     disabled={isLoading}
                     className={`mt-3 flex items-center gap-2 font-bold text-sm px-4 py-2 rounded-xl border transition-all ${isRegistered

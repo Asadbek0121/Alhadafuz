@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Link, usePathname } from "@/navigation";
 import { signOut } from "next-auth/react";
@@ -81,7 +82,7 @@ export default function ProfileSidebar() {
                 </div>
 
                 <div className="p-4 border-t border-gray-50 mt-2">
-                    <button
+                    <button title="Tugma"
                         onClick={handleLogout}
                         className="flex items-center gap-3.5 px-4 py-3.5 w-full text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium text-[15px] group"
                     >

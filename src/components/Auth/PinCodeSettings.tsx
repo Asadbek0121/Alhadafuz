@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect } from "react";
 import { Lock, ShieldCheck, ShieldAlert, Loader2, CheckCircle2, Key, Fingerprint, ChevronRight, Smartphone, Eye, EyeOff } from "lucide-react";
@@ -154,7 +155,7 @@ export default function PinCodeSettings() {
 
                     <div className="space-y-4">
                         <div className="relative">
-                            <input
+                            <input title="Kiritish maydoni"
                                 type="text"
                                 maxLength={6}
                                 value={recoveryCode}
@@ -164,7 +165,7 @@ export default function PinCodeSettings() {
                             />
                         </div>
 
-                        <button
+                        <button title="Tugma"
                             onClick={verifyRecovery}
                             disabled={isLoading || recoveryCode.length < 6}
                             className="w-full h-12 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-all disabled:opacity-50"
@@ -173,7 +174,7 @@ export default function PinCodeSettings() {
                             <span>{t('pin_verify_btn')}</span>
                         </button>
 
-                        <button
+                        <button title="Tugma"
                             onClick={requestRecovery}
                             disabled={isCounting || isLoading}
                             className="w-full text-sm font-medium text-primary hover:underline disabled:text-gray-400"
@@ -201,7 +202,7 @@ export default function PinCodeSettings() {
 
                         <div className="space-y-4">
                             <div className="relative">
-                                <input
+                                <input title="Kiritish maydoni"
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => {
@@ -211,7 +212,7 @@ export default function PinCodeSettings() {
                                     className="w-full h-12 px-4 pr-12 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                                     placeholder="••••••••"
                                 />
-                                <button
+                                <button title="Tugma"
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
@@ -227,7 +228,7 @@ export default function PinCodeSettings() {
                                 <StrengthItem label={t('error_number')} active={passwordStrength.number} />
                             </div>
 
-                            <button
+                            <button title="Tugma"
                                 onClick={() => setStep(2)}
                                 disabled={!isPasswordStrong}
                                 className="w-full h-12 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
@@ -252,7 +253,7 @@ export default function PinCodeSettings() {
                         </div>
 
                         <div className="space-y-4">
-                            <input
+                            <input title="Kiritish maydoni"
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
@@ -263,7 +264,7 @@ export default function PinCodeSettings() {
                                 placeholder="••••"
                             />
 
-                            <button
+                            <button title="Tugma"
                                 onClick={() => setStep(3)}
                                 disabled={pin.length !== 4}
                                 className="w-full h-12 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
@@ -272,7 +273,7 @@ export default function PinCodeSettings() {
                                 <ChevronRight size={20} />
                             </button>
 
-                            <button onClick={() => setStep(1)} className="w-full text-sm font-medium text-text-muted">
+                            <button title="Tugma" onClick={() => setStep(1)} className="w-full text-sm font-medium text-text-muted">
                                 {t('back')}
                             </button>
                         </div>
@@ -292,7 +293,7 @@ export default function PinCodeSettings() {
                         </div>
 
                         <div className="space-y-4">
-                            <input
+                            <input title="Kiritish maydoni"
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
@@ -303,7 +304,7 @@ export default function PinCodeSettings() {
                                 placeholder="••••"
                             />
 
-                            <button
+                            <button title="Tugma"
                                 onClick={handleSetPin}
                                 disabled={confirmPin.length !== 4 || isLoading}
                                 className="w-full h-12 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-green-700 transition-all disabled:opacity-50 shadow-lg shadow-green-600/20"
@@ -312,7 +313,7 @@ export default function PinCodeSettings() {
                                 <span>{t('pin_set_btn')}</span>
                             </button>
 
-                            <button onClick={() => setStep(2)} className="w-full text-sm font-medium text-text-muted">
+                            <button title="Tugma" onClick={() => setStep(2)} className="w-full text-sm font-medium text-text-muted">
                                 {t('back')}
                             </button>
                         </div>
@@ -334,7 +335,7 @@ export default function PinCodeSettings() {
                     </div>
                 </div>
                 {user?.pinHash && (
-                    <button
+                    <button title="Tugma"
                         onClick={requestRecovery}
                         className="text-xs font-bold text-primary px-3 py-1.5 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors"
                     >

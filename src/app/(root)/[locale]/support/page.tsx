@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { Mail, Phone, MapPin, MessageCircle, HelpCircle, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";

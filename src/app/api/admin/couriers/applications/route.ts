@@ -98,7 +98,7 @@ export async function POST(req: Request) {
                 userId,
                 "OFFLINE",
                 0,
-                "CAR",
+                app.vehicleType || "CAR",
                 new Date(),
                 new Date()
             );

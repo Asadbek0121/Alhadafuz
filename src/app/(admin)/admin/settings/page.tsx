@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
@@ -19,7 +20,9 @@ export default function AdminSettingsPage() {
         phone: '',
         email: '',
         address: '',
-        socialLinks: { telegram: '', instagram: '', facebook: '', youtube: '', supportTelegram: '' }
+        socialLinks: { telegram: '', instagram: '', facebook: '', youtube: '', supportTelegram: '' },
+        cardNumber: '',
+        cardHolderName: ''
     });
 
     useEffect(() => {
@@ -40,7 +43,9 @@ export default function AdminSettingsPage() {
                     phone: data.phone || '',
                     email: data.email || '',
                     address: data.address || '',
-                    socialLinks: social
+                    socialLinks: social,
+                    cardNumber: data.cardNumber || '',
+                    cardHolderName: data.cardHolderName || ''
                 });
             }
         } catch (e) {
@@ -119,7 +124,7 @@ export default function AdminSettingsPage() {
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sayt Nomi</label>
-                            <input
+                            <input title="Kiritish maydoni"
                                 value={formData.siteName}
                                 onChange={e => setFormData({ ...formData, siteName: e.target.value })}
                                 placeholder="Hadaf Market"
@@ -145,7 +150,7 @@ export default function AdminSettingsPage() {
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                                     <Phone size={10} /> Telefon Raqam
                                 </label>
-                                <input
+                                <input title="Kiritish maydoni"
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="+998 71 123 45 67"
@@ -156,7 +161,7 @@ export default function AdminSettingsPage() {
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                                     <Mail size={10} /> Email
                                 </label>
-                                <input
+                                <input title="Kiritish maydoni"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="info@hadaf.uz"
@@ -165,7 +170,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="col-span-1 md:col-span-2 space-y-2">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Manzil</label>
-                                <textarea
+                                <textarea title="Matn maydoni"
                                     value={formData.address}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                                     placeholder="Toshkent shahri, ..."
@@ -179,7 +184,7 @@ export default function AdminSettingsPage() {
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">@</span>
-                                    <input
+                                    <input title="Kiritish maydoni"
                                         value={(formData.socialLinks as any).supportTelegram?.replace('@', '') || ''}
                                         onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, supportTelegram: e.target.value } } as any)}
                                         placeholder="hadaf_uz"
@@ -187,6 +192,40 @@ export default function AdminSettingsPage() {
                                     />
                                 </div>
                                 <p className="text-[10px] text-gray-400 ml-1 font-medium">Agar bo'sh qoldirilsa, asosiy kanal havolasi ishlatiladi.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Payment Info Card */}
+                    <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
+                        <div className="flex items-center gap-4 mb-8">
+                            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-inner">
+                                <CreditCard size={24} />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-black text-gray-900 tracking-tight">To'lov Ma'lumotlari (P2P)</h3>
+                                <p className="text-sm font-medium text-gray-400">Haridorlar kartadan to'lov qilishlari uchun</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Karta Raqami</label>
+                                <input title="Kiritish maydoni"
+                                    value={formData.cardNumber}
+                                    onChange={e => setFormData({ ...formData, cardNumber: e.target.value })}
+                                    placeholder="8600 0000 0000 0000"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Karta Egasi (F.I.SH)</label>
+                                <input title="Kiritish maydoni"
+                                    value={formData.cardHolderName}
+                                    onChange={e => setFormData({ ...formData, cardHolderName: e.target.value })}
+                                    placeholder="FALONCHIYEV FALONCHI"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                />
                             </div>
                         </div>
                     </div>
@@ -211,7 +250,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                                     <Send size={18} />
                                 </div>
-                                <input
+                                <input title="Kiritish maydoni"
                                     value={formData.socialLinks.telegram}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, telegram: e.target.value } })}
                                     placeholder="t.me/kanal"
@@ -222,7 +261,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
                                     <Instagram size={18} />
                                 </div>
-                                <input
+                                <input title="Kiritish maydoni"
                                     value={formData.socialLinks.instagram}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, instagram: e.target.value } })}
                                     placeholder="instagram.com/profile"
@@ -233,7 +272,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                                     <Facebook size={18} />
                                 </div>
-                                <input
+                                <input title="Kiritish maydoni"
                                     value={formData.socialLinks.facebook}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, facebook: e.target.value } })}
                                     placeholder="facebook.com/page"
@@ -244,7 +283,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
                                     <Youtube size={18} />
                                 </div>
-                                <input
+                                <input title="Kiritish maydoni"
                                     value={formData.socialLinks.youtube}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, youtube: e.target.value } })}
                                     placeholder="youtube.com/channel"

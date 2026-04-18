@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -128,25 +129,68 @@ export default function LiveMap() {
         // Add Couriers
         data.couriers.forEach(c => {
             const isSelected = c.id === selectedCourierId;
+            const vType = (c.vehicleType || '').toUpperCase();
+            
+            const icon = vType.includes('MASHINA') || vType.includes('CAR') ? '🚗' : 
+                         vType.includes('MOTO') ? '🛵' : 
+                         vType.includes('VELO') ? '🚴' : '🚶';
 
-            // Custom Layout for Placemark
-            const courierPlacemark = new ymaps.Placemark([c.currentLat, c.currentLng], {
-                balloonContentHeader: `<div style="font-family: 'Inter', sans-serif; font-weight:900; color:#0052FF; font-size:14px; padding-bottom:5px; border-bottom:1px solid #eee;">${c.name}</div>`,
-                balloonContentBody: `
-                    <div style="font-family: 'Inter', sans-serif; padding:10px 0;">
-                        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
-                           <span style="background:#EEF2FF; color:#4F46E5; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:900; text-transform:uppercase;">${c.courierLevel || 'PRO'}</span>
-                           <span style="background:#ECFDF5; color:#059669; padding:2px 8px; border-radius:6px; font-size:10px; font-weight:900; text-transform:uppercase;">ONLAYN</span>
+            // Premium Balloon Layout
+            const balloonContent = `
+                <div style="font-family: 'Inter', -apple-system, sans-serif; padding: 12px; min-width: 220px; color: #1e293b;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <span style="font-size: 16px; font-weight: 800; color: #0f172a;">${c.name}</span>
+                        <div style="display: flex; align-items: center; gap: 4px; background: #fffbeb; padding: 2px 6px; border-radius: 6px;">
+                            <span style="color: #f59e0b; font-size: 10px;">★</span>
+                            <span style="color: #b45309; font-size: 10px; font-weight: 900;">5.0</span>
                         </div>
-                        <p style="margin:4px 0; font-size:12px; color:#64748b;"><b>Ulov:</b> ${c.vehicleType === 'CAR' ? 'Avtomobil 🚗' : 'Skuter 🛵'}</p>
-                        <p style="margin:4px 0; font-size:12px; color:#64748b;"><b>ID:</b> #${c.id.slice(-6).toUpperCase()}</p>
-                        <a href="tel:${c.phone}" style="display:block; text-align:center; margin-top:10px; padding:10px; background:#0052FF; color:white; border-radius:12px; font-size:10px; font-weight:900; text-decoration:none; text-transform:uppercase; letter-spacing:1px;">Qo'ng'iroq qilish</a>
                     </div>
-                `,
+                    
+                    <div style="display: flex; gap: 8px; margin-bottom: 12px;">
+                        <span style="background: #e0e7ff; color: #4338ca; padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.5px;">${c.courierLevel || 'BRONZE'}</span>
+                        <span style="background: #dcfce7; color: #15803d; padding: 4px 10px; border-radius: 8px; font-size: 9px; font-weight: 900; text-transform: uppercase;">ONLINE</span>
+                    </div>
+
+                    <div style="background: #f8fafc; padding: 10px; border-radius: 12px; margin-bottom: 16px; border: 1px solid #f1f5f9;">
+                        <div style="font-size: 11px; margin-bottom: 4px;">
+                            <span style="color: #64748b; font-weight: 600;">Ulov:</span> 
+                            <span style="color: #334155; font-weight: 700; margin-left: 4px;">${vType} ${icon}</span>
+                        </div>
+                        <div style="font-size: 11px;">
+                            <span style="color: #64748b; font-weight: 600;">ID:</span> 
+                            <span style="color: #334155; font-weight: 700; margin-left: 4px;">#${c.id.slice(-6).toUpperCase()}</span>
+                        </div>
+                    </div>
+
+                    <a href="tel:${c.phone}" style="display: block; width: 100%; text-align: center; padding: 12px; background: #0052FF; color: white; border-radius: 12px; font-size: 11px; font-weight: 900; text-decoration: none; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 4px 12px rgba(0, 82, 255, 0.2); transition: all 0.2s;">
+                        📞 QO'NG'IROQ QILISH
+                    </a>
+                </div>
+            `;
+
+            const courierPlacemark = new ymaps.Placemark([c.currentLat, c.currentLng], {
+                balloonContent: balloonContent,
                 hintContent: c.name
             }, {
-                preset: c.vehicleType === 'CAR' ? 'islands#blueAutoCircleIcon' : 'islands#bluePostCircleIcon',
-                iconColor: isSelected ? '#F59E0B' : '#0052FF',
+                // Custom Layout for Marker
+                iconLayout: 'default#imageWithContent',
+                iconImageHref: '', // Transparent or empty as we use content
+                iconImageSize: [40, 40],
+                iconImageOffset: [-20, -20],
+                iconContentLayout: ymaps.templateLayoutFactory.createClass(
+                    `<div style="
+                        width: 40px; height: 40px; 
+                        background: ${isSelected ? '#F59E0B' : '#0052FF'}; 
+                        border: 3px solid white; 
+                        border-radius: 14px; 
+                        display: flex; align-items: center; justify-content: center; 
+                        font-size: 20px; 
+                        box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+                        transform: rotate(-10deg);
+                    ">
+                        ${icon}
+                    </div>`
+                ),
                 hasBalloon: true,
                 hideIconOnBalloonOpen: false
             });
@@ -200,7 +244,7 @@ export default function LiveMap() {
             />
 
             {/* Premium Sidebar */}
-            <div className="w-full xl:w-[440px] flex flex-col gap-6 h-full">
+            <div className="w-full xl:w-[320px] flex flex-col gap-6 h-full shrink-0">
                 {/* Stats Summary Card */}
                 <div className="bg-slate-900 rounded-[32px] p-6 shadow-2xl relative overflow-hidden shrink-0">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/20 rounded-full -mr-20 -mt-20 blur-3xl"></div>
@@ -232,7 +276,7 @@ export default function LiveMap() {
                     <div className="p-8 border-b border-slate-50 bg-slate-50/30 shrink-0">
                         <div className="relative group">
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-blue-500 transition-colors" size={20} />
-                            <input
+                            <input title="Kiritish maydoni"
                                 type="text"
                                 placeholder="Kuryer ismini kiriting..."
                                 value={searchQuery}
@@ -253,7 +297,7 @@ export default function LiveMap() {
                             </div>
                         ) : (
                             filteredCouriers.map(c => (
-                                <button
+                                <button title="Tugma"
                                     key={c.id}
                                     onClick={() => focusCourier(c)}
                                     className={`w-full p-6 text-left hover:bg-slate-50/80 transition-all flex items-center gap-5 group relative ${selectedCourierId === c.id ? 'bg-blue-50/50 after:absolute after:left-0 after:top-6 after:bottom-6 after:w-1.5 after:bg-blue-600 after:rounded-r-full' : ''}`}
@@ -349,6 +393,20 @@ export default function LiveMap() {
                                     <div>
                                         <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Skuter / Moto</p>
                                         <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Tezkor Ekspress</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-5">
+                                    <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-xl shadow-emerald-600/20 transform -rotate-3">🚴</div>
+                                    <div>
+                                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Velosiped</p>
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Ekologik</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-5">
+                                    <div className="w-12 h-12 bg-slate-700 rounded-2xl flex items-center justify-center text-xl shadow-xl shadow-slate-700/20 transform rotate-3">🚶</div>
+                                    <div>
+                                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Piyoda</p>
+                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Yaqin masofa</p>
                                     </div>
                                 </div>
                             </div>

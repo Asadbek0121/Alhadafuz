@@ -12,7 +12,7 @@ async function main() {
     console.log(`Checking for user: ${email}`);
 
     try {
-        let user = await prisma.user.findUnique({
+        const user = await prisma.user.findUnique({
             where: { email }
         });
 

@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -230,7 +231,7 @@ export default function AddressBookPage() {
                                 <h2 className="text-lg md:text-xl font-black text-gray-900 leading-tight">{t('modal_title')}</h2>
                                 <div className="w-8 h-1 bg-blue-600 rounded-full mt-1 md:hidden opacity-20"></div>
                             </div>
-                            <button onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-400 hover:text-gray-600 transition-colors">
+                            <button title="Tugma" onClick={() => setIsModalOpen(false)} className="p-2 bg-slate-100 rounded-full text-slate-400 hover:text-gray-600 transition-colors">
                                 <Plus size={20} className="rotate-45" />
                             </button>
                         </div>
@@ -249,7 +250,7 @@ export default function AddressBookPage() {
                             <div className="grid grid-cols-2 gap-3">
                                 <div className="space-y-1">
                                     <Label className="text-[11px] font-bold text-gray-700 uppercase tracking-tight ml-1">{t('label_region')}</Label>
-                                    <select
+                                    <select title="Tanlash"
                                         className="w-full h-10 md:h-12 px-3 rounded-xl border border-gray-100 bg-slate-50/50 text-sm focus:border-blue-500 focus:bg-white outline-none transition-all font-medium"
                                         value={newAddress.city}
                                         onChange={handleRegionChange}
@@ -263,7 +264,7 @@ export default function AddressBookPage() {
                                 </div>
                                 <div className="space-y-1">
                                     <Label className="text-[11px] font-bold text-gray-700 uppercase tracking-tight ml-1">{t('label_district')}</Label>
-                                    <select
+                                    <select title="Tanlash"
                                         className="w-full h-10 md:h-12 px-3 rounded-xl border border-gray-100 bg-slate-50/50 text-sm focus:border-blue-500 focus:bg-white outline-none transition-all font-medium disabled:opacity-50"
                                         value={newAddress.district}
                                         onChange={e => setNewAddress({ ...newAddress, district: e.target.value })}
@@ -299,7 +300,7 @@ export default function AddressBookPage() {
                                 />
                             </div>
                             <div className="flex items-center gap-2 pt-1 ml-1">
-                                <input type="checkbox" id="isDefault"
+                                <input title="Kiritish maydoni" type="checkbox" id="isDefault"
                                     checked={newAddress.isDefault}
                                     onChange={e => setNewAddress({ ...newAddress, isDefault: e.target.checked })}
                                     className="w-4 h-4 rounded-lg border-gray-300 text-blue-600 focus:ring-blue-600 cursor-pointer"

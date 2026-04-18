@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './MegaMenu.module.css';

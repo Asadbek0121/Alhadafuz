@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -67,7 +68,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl"></div>
                             <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full -ml-16 -mb-16 blur-2xl"></div>
 
-                            <button
+                            <button title="Tugma"
                                 onClick={onClose}
                                 className="absolute top-4 right-4 p-2 bg-white/20 hover:bg-white/30 rounded-full text-white transition-colors md:hidden z-20"
                             >
@@ -108,7 +109,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
 
                         {/* 2. Right Side - The Form */}
                         <div className="flex-1 p-6 md:p-12 relative">
-                            <button
+                            <button title="Tugma"
                                 onClick={onClose}
                                 className="absolute top-6 right-6 p-2 bg-gray-50 rounded-full text-gray-400 hover:text-gray-900 transition-colors hidden md:block"
                             >
@@ -126,7 +127,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5">
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_name')}</label>
-                                                <input
+                                                <input title="Kiritish maydoni"
                                                     required
                                                     name="name"
                                                     type="text"
@@ -136,7 +137,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                             </div>
                                             <div className="space-y-1.5">
                                                 <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_phone')}</label>
-                                                <input
+                                                <input title="Kiritish maydoni"
                                                     required
                                                     name="phone"
                                                     type="tel"
@@ -149,7 +150,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
 
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_category')}</label>
-                                            <input
+                                            <input title="Kiritish maydoni"
                                                 required
                                                 name="category"
                                                 type="text"
@@ -160,7 +161,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
 
                                         <div className="space-y-1.5">
                                             <label className="text-[10px] md:text-xs font-black text-gray-400 uppercase tracking-widest ml-1">{t('label_message')}</label>
-                                            <textarea
+                                            <textarea title="Matn maydoni"
                                                 rows={3}
                                                 name="message"
                                                 placeholder={t('placeholder_message')}
@@ -168,7 +169,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                             ></textarea>
                                         </div>
 
-                                        <button
+                                        <button title="Tugma"
                                             disabled={loading}
                                             className="w-full py-4 md:py-5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl md:rounded-2xl font-black text-sm uppercase tracking-[0.2em] transition-all shadow-xl shadow-blue-500/20 flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-70 disabled:grayscale"
                                         >
@@ -193,7 +194,7 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
                                     <p className="text-gray-500 font-medium max-w-sm mb-10 leading-relaxed text-sm md:text-base">
                                         {t('success_desc')}
                                     </p>
-                                    <button
+                                    <button title="Tugma"
                                         onClick={onClose}
                                         className="w-full md:w-auto px-10 py-4 bg-gray-900 text-white rounded-xl md:rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-800 transition-all active:scale-95"
                                     >

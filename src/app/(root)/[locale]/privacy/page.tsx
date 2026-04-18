@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Shield, Lock, FileText, Eye, ShieldCheck, Database, Share2, Bell, Smartphone, Server } from 'lucide-react';
 import { motion } from 'framer-motion';

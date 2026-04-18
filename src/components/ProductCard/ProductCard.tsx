@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,6 +39,7 @@ export default function ProductCard(props: ProductProps) {
     const { toggleWishlist, isInWishlist } = useWishlist();
     const router = useRouter();
     const [isBuying, setIsBuying] = useState(false);
+    const isOutOfStock = typeof stock !== 'undefined' && stock <= 0;
 
     const discountPercentage = oldPrice && price < oldPrice
         ? Math.round(((oldPrice - price) / oldPrice) * 100)
@@ -103,6 +105,10 @@ export default function ProductCard(props: ProductProps) {
                     <div className={`${styles.promoSticker} ${styles.giftTheme}`}>
                         <Gift size={12} className="mr-1" /> {tMarketing('sovga')}
                     </div>
+                {isOutOfStock && (
+                    <div className={`${styles.promoSticker} bg-red-600 text-white`}>
+                        {tMarketing('tugagan') || 'Tugagan'}
+                    </div>
                 )}
             </div>
 
@@ -145,7 +151,7 @@ export default function ProductCard(props: ProductProps) {
                     <img
                         src={image || "https://placehold.co/400"}
                         alt={title}
-                        className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply"
+                        className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
                         onError={(e) => {
                             (e.target as HTMLImageElement).src = "https://placehold.co/400?text=No+Image";
                         }}
@@ -178,17 +184,18 @@ export default function ProductCard(props: ProductProps) {
                     </div>
 
                     <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-                        <button
-                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-[10px] md:text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1 shadow-md shadow-blue-600/20 active:scale-95"
+                        <button title="Tugma"
+                            className={`flex-1 text-white text-[10px] md:text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1 shadow-md active:scale-95 ${isOutOfStock ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'}`}
                             onClick={handleBuyNow}
-                            disabled={isBuying}
+                            disabled={isBuying || isOutOfStock}
                         >
-                            {isBuying ? <Loader2 size={14} className="animate-spin" /> : t('sotib_olish')}
+                            {isBuying ? <Loader2 size={14} className="animate-spin" /> : isOutOfStock ? 'Tugagan' : t('sotib_olish')}
                         </button>
-                        <button
-                            className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-xl transition-colors active:scale-95"
+                        <button title="Savat"
+                            className={`p-2 rounded-xl transition-colors active:scale-95 ${isOutOfStock ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
                             aria-label="Savatga qo'shish"
                             onClick={handleAddToCart}
+                            disabled={isOutOfStock}
                         >
                             <ShoppingBag size={18} strokeWidth={2.5} />
                         </button>

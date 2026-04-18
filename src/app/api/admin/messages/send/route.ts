@@ -16,7 +16,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
-        let userMatch = await prisma.user.findFirst({
+        const userMatch = await prisma.user.findFirst({
             where: {
                 OR: [
                     { id: userId },

@@ -1,9 +1,10 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import AdminCharts from "./AdminCharts";
 import RecentOrdersTable from "./RecentOrdersTable";
 import Link from "next/link";
 import {
-    Circle, UserCircle, ShoppingCart, Users, DollarSign,
+    UserCircle, ShoppingCart, Users, DollarSign,
     Package, Plus, TrendingUp, MessageSquare, Tag, Image as ImageIcon,
     Settings as SettingsIcon, FileText
 } from 'lucide-react';
@@ -14,7 +15,7 @@ async function getData(userRole: string, userId: string) {
 
     const isVendor = userRole === "VENDOR";
 
-    let stats = { userCount: 0, todayUserCount: 0, orderCount: 0, todayOrderCount: 0, productCount: 0, totalRevenue: 0, todayRevenue: 0 };
+    const stats = { userCount: 0, todayUserCount: 0, orderCount: 0, todayOrderCount: 0, productCount: 0, totalRevenue: 0, todayRevenue: 0 };
     let recentOrders: any[] = [];
     let recentMessages: any[] = [];
     let allOrders: any[] = [];
@@ -28,17 +29,16 @@ async function getData(userRole: string, userId: string) {
                 SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
             `);
             hasVendorId = columns.some(c => c.column_name === 'vendorId');
-        } catch (pgError) {
+        } catch {
             try {
                 const tableInfo: any[] = await (prisma as any).$queryRawUnsafe(`PRAGMA table_info("Product")`);
                 hasVendorId = tableInfo.some(c => c.name === 'vendorId');
-            } catch (sqliteError) {
+            } catch {
                 hasVendorId = false;
             }
         }
 
-        const joinCondition = isVendor && hasVendorId ? `WHERE p."vendorId" = $1` : `WHERE 1=0`;
-        const params = isVendor && hasVendorId ? [userId] : [];
+        // Condition variables removed for testing
 
         // 2. Stats
         if (isVendor) {

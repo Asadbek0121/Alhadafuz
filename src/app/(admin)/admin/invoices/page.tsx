@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import { Plus, Eye, FileText, CheckCircle, Truck, Clock, Search } from 'lucide-react';
 import Link from "next/link";

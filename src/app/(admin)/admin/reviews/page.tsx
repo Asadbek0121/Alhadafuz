@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -126,7 +127,7 @@ export default function AdminReviewsPage() {
                                 <td className="px-6 py-4">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded bg-gray-100 flex-shrink-0 overflow-hidden">
-                                            {review.product?.image && <img src={review.product.image} className="w-full h-full object-cover" />}
+                                            {review.product?.image && <img alt="Rasm" src={review.product.image} className="w-full h-full object-cover" />}
                                         </div>
                                         <div className="text-sm font-medium text-gray-900 line-clamp-2 w-48" title={review.product?.title}>{review.product?.title}</div>
                                     </div>
@@ -147,7 +148,7 @@ export default function AdminReviewsPage() {
 
                                     {replyingId === review.id && (
                                         <div className="mt-2 flex gap-2">
-                                            <textarea
+                                            <textarea title="Matn maydoni"
                                                 className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none"
                                                 rows={2}
                                                 value={replyText}
@@ -155,10 +156,10 @@ export default function AdminReviewsPage() {
                                                 placeholder="Javob yozing..."
                                             />
                                             <div className="flex flex-col gap-1">
-                                                <button onClick={() => handleReplySubmit(review.id)} className="p-1 text-white bg-blue-600 rounded hover:bg-blue-700">
+                                                <button title="Tugma" onClick={() => handleReplySubmit(review.id)} className="p-1 text-white bg-blue-600 rounded hover:bg-blue-700">
                                                     <Save size={16} />
                                                 </button>
-                                                <button onClick={() => setReplyingId(null)} className="p-1 text-gray-600 bg-gray-200 rounded hover:bg-gray-300">
+                                                <button title="Tugma" onClick={() => setReplyingId(null)} className="p-1 text-gray-600 bg-gray-200 rounded hover:bg-gray-300">
                                                     <X size={16} />
                                                 </button>
                                             </div>

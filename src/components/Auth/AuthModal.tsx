@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
@@ -10,6 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PhoneInput } from '@/components/ui/phone-input';
 import Image from 'next/image';
 import { useTranslations } from 'next-intl';
+import Lottie from 'lottie-react';
+import successAnimation from '@/components/success-animation.json';
 
 export default function AuthModal() {
     const t = useTranslations('Auth');
@@ -71,15 +74,30 @@ export default function AuthModal() {
 
     // Form states
     const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
+    const [surname, setSurname] = useState('');
     const [phone, setPhone] = useState('');
-    const [password, setPassword] = useState('');
     const [isVerifying, setIsVerifying] = useState(false);
     const [otp, setOtp] = useState('');
+    const [timeLeft, setTimeLeft] = useState(120); // 2 minutes timer
 
     const [isSuccess, setIsSuccess] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [showTermsWarning, setShowTermsWarning] = useState(false);
+    const [lockAnimationData, setLockAnimationData] = useState(null);
+
+    useEffect(() => {
+        fetch('https://lottie.host/57aade87-a0a9-462d-a009-d61c31c649f7/jQGgTt7tQc.json')
+            .then(res => res.json())
+            .then(data => setLockAnimationData(data))
+            .catch(() => {});
+    }, []);
+
+    // Timer logic
+    useEffect(() => {
+        if (!isVerifying || timeLeft <= 0) return;
+        const timerId = setInterval(() => setTimeLeft((prev) => prev - 1), 1000);
+        return () => clearInterval(timerId);
+    }, [isVerifying, timeLeft]);
 
     // Prevent body scroll when modal is open
     useEffect(() => {
@@ -104,9 +122,6 @@ export default function AuthModal() {
         }
     }, [session, isModalOpen, closeAuthModal, isSuccess]);
 
-    // Handle Google Login Success Animation
-    // Handle Google Login Success Animation
-
 
     const handleSuccess = (message: string) => {
         setIsSuccess(true);
@@ -115,12 +130,10 @@ export default function AuthModal() {
         const params = new URLSearchParams(window.location.search);
         const callbackUrl = params.get('callbackUrl');
 
-        // Push to home if no callback, but don't force if already there
         if (!callbackUrl && window.location.pathname !== '/') {
             router.push('/');
         }
 
-        // Final action after animation - reduced to 3s for better UX
         redirectTimerRef.current = setTimeout(() => {
             if (callbackUrl) {
                 window.location.href = callbackUrl;
@@ -130,49 +143,7 @@ export default function AuthModal() {
         }, 3000);
     };
 
-    const handleLinkBiometric = async () => {
-        if (redirectTimerRef.current) {
-            clearTimeout(redirectTimerRef.current);
-        }
-        setIsBiometricLoading(true);
-        try {
-            const { startRegistration } = await import("@simplewebauthn/browser");
-            const optionsRes = await fetch('/api/auth/webauthn/register-options');
-            if (!optionsRes.ok) throw new Error("Sozlamalarni olishda xatolik");
-            const options = await optionsRes.json();
-
-            const credential = await startRegistration(options);
-
-            const verifyRes = await fetch('/api/auth/webauthn/register-verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(credential),
-            });
-
-            if (verifyRes.ok) {
-                const result = await verifyRes.json();
-                if (result.verified) {
-                    toast.success(tp('biometric_success') || "Barmoq izi muvaffaqiyatli bog'landi!");
-                    setBiometricLinked(true);
-                    // Redirect after success
-                    setTimeout(() => {
-                        window.location.reload();
-                    }, 2000);
-                }
-            }
-        } catch (error: any) {
-            console.error(error);
-            if (error.name !== 'NotAllowedError') {
-                toast.error(tp('biometric_error') || "Biometrik bog'lashda xatolik");
-            }
-            // Resume redirect if failed or cancelled
-            handleSuccess("Muvaffaqiyatli kirdingiz");
-        } finally {
-            setIsBiometricLoading(false);
-        }
-    };
-
-    const handleLogin = async (e: React.FormEvent) => {
+    const handleSendOTP = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!termsAccepted) {
             setShowTermsWarning(true);
@@ -180,6 +151,38 @@ export default function AuthModal() {
             toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
             return;
         }
+        if (!phone || phone.length < 9) {
+            toast.error("Telefon raqamni to'g'ri kiriting");
+            return;
+        }
+        setIsLoading(true);
+
+        try {
+            const res = await fetch('/api/auth/send-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, isRegister: mode === 'register' }),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                toast.error(data.message || "Xatolik yuz berdi");
+                return;
+            }
+
+            setTimeLeft(120);
+            setIsVerifying(true);
+            toast.success("Tasdiqlash kodi telefoningizga yuborildi");
+        } catch (error) {
+            toast.error("Server xatosi");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleVerifyOTP = async (e: React.FormEvent) => {
+        e.preventDefault();
         setIsLoading(true);
 
         try {
@@ -194,112 +197,36 @@ export default function AuthModal() {
             const fingerprint = getBrowserFingerprint();
 
             localStorage.setItem('mergeCartOnLogin', 'true');
+            
+            const fullName = mode === 'register' ? `${name} ${surname}`.trim() : undefined;
+
             const result = await signIn('credentials', {
-                login: email,
-                password,
+                login: phone,
+                otp,
+                name: fullName,
                 deviceId: dId || undefined,
                 deviceName: dName,
-                fingerprint, // Added fingerprint
-                otp: isVerifying ? otp : undefined,
+                fingerprint,
                 redirect: false,
             });
 
             if (result?.error) {
-                if (result.error.includes("2FA_REQUIRED")) {
-                    setIsVerifying(true);
-                    toast.info("Ikki bosqichli autentifikatsiya kodi yuborildi");
+                if (result.error.includes("ACCOUNT_LOCKED")) {
+                    toast.error("Xavfsizlik: Hisobingiz bloklandi!");
                 } else if (result.error.includes("OTP_INVALID")) {
-                    toast.error("Tasdiqlash kodi noto'g'ri");
-                } else if (result.error.includes("ACCOUNT_LOCKED")) {
-                    toast.error("Xavfsizlik: Hisobingiz 30 daqiqaga bloklandi! (Ketma-ket xato urinishlar)", {
-                        duration: 5000,
-                    });
+                    toast.error("Tasdiqlash kodi noto'g'ri yoki vaqti tugagan");
+                } else if (result.error.includes("USER_NOT_FOUND")) {
+                    toast.error("Hisob topilmadi. Iltimos ro'yxatdan o'ting.");
                 } else {
-                    toast.error("Email/Login yoki parol noto'g'ri");
-                    localStorage.removeItem('mergeCartOnLogin');
+                    toast.error("Kirishda xatolik yuz berdi");
                 }
+                localStorage.removeItem('mergeCartOnLogin');
             } else {
-                handleSuccess("Xush kelibsiz!");
-            }
-        } catch (error) {
-            toast.error("Tizim xatosi");
-            localStorage.removeItem('mergeCartOnLogin');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleRegister = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!termsAccepted) {
-            setShowTermsWarning(true);
-            setTimeout(() => setShowTermsWarning(false), 2000);
-            toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
-            return;
-        }
-        setIsLoading(true);
-
-        try {
-            const res = await fetch('/api/auth/register', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, phone, password }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                toast.error(data.message || "Ro'yxatdan o'tishda xatolik");
-                return;
-            }
-
-            if (data.requiresVerification) {
-                setIsVerifying(true);
-                toast.success("Tasdiqlash kodi emailingizga yuborildi");
-            } else {
-                handleSuccess("Muvaffaqiyatli ro'yxatdan o'tdingiz!");
-            }
-        } catch (error) {
-            toast.error("Server xatosi");
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const handleVerifyOTP = async (e: React.FormEvent) => {
-        if (mode === 'login') {
-            return handleLogin(e);
-        }
-
-        e.preventDefault();
-        setIsLoading(true);
-
-        try {
-            localStorage.setItem('mergeCartOnLogin', 'true');
-            const res = await fetch('/api/auth/register/verify', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, phone, password, otp }),
-            });
-
-            const data = await res.json();
-
-            if (!res.ok) {
-                toast.error(data.message || "Kod noto'g'ri");
-                return;
-            }
-
-            const result = await signIn('credentials', {
-                email,
-                password,
-                redirect: false,
-            });
-
-            if (result?.ok) {
-                handleSuccess(`Xush kelibsiz, ${name}!`);
+                handleSuccess(mode === 'login' ? "Xush kelibsiz!" : "Muvaffaqiyatli ro'yxatdan o'tdingiz!");
             }
         } catch (error) {
             toast.error("Tasdiqlashda xatolik");
+            localStorage.removeItem('mergeCartOnLogin');
         } finally {
             setIsLoading(false);
         }
@@ -355,7 +282,7 @@ export default function AuthModal() {
                         exit={{ y: "100%", opacity: 0 }}
                         transition={{ type: "spring", damping: 30, stiffness: 300 }}
                         style={{ zIndex: 99999 }}
-                        className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 bg-white w-full md:w-[440px] rounded-t-[40px] md:rounded-[48px] shadow-2xl overflow-hidden md:min-h-[640px] flex flex-col"
+                        className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 bg-white w-full md:w-[440px] rounded-t-[40px] md:rounded-[32px] shadow-2xl overflow-hidden md:min-h-[640px] flex flex-col"
                     >
                         <AnimatePresence mode="wait">
                             {isSuccess ? (
@@ -366,104 +293,18 @@ export default function AuthModal() {
                                     exit={{ opacity: 0, y: -20 }}
                                     className="flex-1 flex flex-col items-center justify-center p-8 bg-white/40 backdrop-blur-[40px] text-slate-900 text-center relative overflow-hidden min-h-[450px] w-full border-t border-white/50"
                                 >
-                                    {/* Liquid Background Base */}
-                                    <div className="absolute inset-0 -z-10 bg-slate-50/50" />
-
-                                    {/* Liquid Animated Blobs (Mesh Gradient) */}
-                                    <div className="absolute inset-0 pointer-events-none overflow-hidden h-full w-full">
-                                        <motion.div
-                                            animate={{
-                                                scale: [1, 1.4, 1.2, 1],
-                                                x: [0, 80, -40, 0],
-                                                y: [0, -60, 40, 0],
-                                            }}
-                                            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-                                            className="absolute top-[-10%] left-[-10%] w-[400px] h-[400px] bg-blue-400/30 rounded-full blur-[100px]"
-                                        />
-                                        <motion.div
-                                            animate={{
-                                                scale: [1.2, 1, 1.5, 1.2],
-                                                x: [0, -70, 60, 0],
-                                                y: [0, 80, -50, 0],
-                                            }}
-                                            transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-                                            className="absolute bottom-[-15%] right-[-10%] w-[450px] h-[450px] bg-indigo-500/20 rounded-full blur-[120px]"
-                                        />
-                                        <motion.div
-                                            animate={{
-                                                scale: [1, 1.3, 0.9, 1],
-                                                x: [-50, 40, 80, -50],
-                                                y: [60, -80, 20, 60],
-                                            }}
-                                            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-                                            className="absolute top-[20%] right-[-15%] w-[350px] h-[350px] bg-purple-400/15 rounded-full blur-[100px]"
-                                        />
-                                        <motion.div
-                                            animate={{
-                                                scale: [1, 1.2, 1],
-                                                x: [30, -30, 30],
-                                                y: [-20, 20, -20],
-                                            }}
-                                            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-                                            className="absolute top-[40%] left-[20%] w-[250px] h-[250px] bg-cyan-300/20 rounded-full blur-[80px]"
-                                        />
-                                    </div>
-
                                     {/* Glass Grain Texture Overlay */}
                                     <div className="absolute inset-0 pointer-events-none opacity-[0.03] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay" />
 
                                     <div className="relative z-10 flex flex-col items-center w-full">
-                                        <div className="relative w-36 h-36 mb-10">
-                                            {/* Advanced Liquid Ripple */}
-                                            {[1, 2].map((i) => (
-                                                <motion.div
-                                                    key={i}
-                                                    initial={{ opacity: 0.2, scale: 0.5 }}
-                                                    animate={{ opacity: 0, scale: 3 }}
-                                                    transition={{
-                                                        duration: 3,
-                                                        repeat: Infinity,
-                                                        ease: [0.23, 1, 0.32, 1],
-                                                        delay: i * 1
-                                                    }}
-                                                    className="absolute inset-0 bg-blue-600/5 rounded-full ring-1 ring-blue-500/10"
-                                                />
-                                            ))}
-
-                                            {/* Liquid Check Button */}
-                                            <motion.div
-                                                initial={{ scale: 0, rotate: -45 }}
-                                                animate={{ scale: 1, rotate: 0 }}
-                                                transition={{
-                                                    type: "spring",
-                                                    stiffness: 260,
-                                                    damping: 20,
-                                                    delay: 0.2
-                                                }}
-                                                className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-[0_20px_50px_rgba(37,99,235,0.4)] relative"
-                                            >
-                                                {/* Liquid Gloss Reflection */}
-                                                <div className="absolute inset-1 rounded-full bg-gradient-to-tr from-white/20 to-transparent pointer-events-none" />
-
-                                                <motion.svg
-                                                    width="76"
-                                                    height="76"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    className="text-white drop-shadow-md"
-                                                >
-                                                    <motion.path
-                                                        d="M20 6L9 17l-5-5"
-                                                        stroke="currentColor"
-                                                        strokeWidth="3.5"
-                                                        strokeLinecap="round"
-                                                        strokeLinejoin="round"
-                                                        initial={{ pathLength: 0 }}
-                                                        animate={{ pathLength: 1 }}
-                                                        transition={{ duration: 0.8, delay: 0.5, ease: "circOut" }}
-                                                    />
-                                                </motion.svg>
-                                            </motion.div>
+                                        <div className="relative w-48 h-48 mb-6">
+                                            {/* Lottie Success Animation */}
+                                            <Lottie 
+                                                animationData={successAnimation} 
+                                                loop={false} 
+                                                autoplay={true} 
+                                                style={{ width: '100%', height: '100%' }}
+                                            />
                                         </div>
 
                                         <motion.div
@@ -501,147 +342,147 @@ export default function AuthModal() {
                                     initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     exit={{ opacity: 0 }}
-                                    className="p-6 pt-8 md:p-12 md:pt-14 custom-scrollbar overflow-y-auto max-h-[90vh] pb-12 flex-1 flex flex-col"
+                                    className="p-6 pt-8 md:p-10 md:pt-12 custom-scrollbar overflow-y-auto max-h-[90vh] pb-12 flex-1 flex flex-col relative"
                                 >
                                     {/* Drag Handle */}
-                                    <div className="md:hidden w-16 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
+                                    <div className="md:hidden w-12 h-1.5 bg-slate-200 rounded-full mx-auto mb-8"></div>
 
                                     {/* Close Button */}
-                                    <button
+                                    <button title="Yopish"
                                         onClick={closeAuthModal}
-                                        className="absolute top-6 right-6 p-2.5 bg-slate-100 rounded-full text-slate-500 hover:bg-slate-200 transition-colors z-10"
+                                        className="absolute top-6 right-6 p-2 bg-slate-50 rounded-full text-slate-500 hover:bg-slate-100 transition-colors z-10 border border-slate-200/50 shadow-sm"
                                     >
-                                        <X size={22} />
+                                        <X size={20} />
                                     </button>
 
-                                    <div className="flex flex-col items-center mb-6 md:mb-10">
+                                    <div className="flex flex-col items-center mb-8 md:mb-10 text-center">
                                         <motion.div
                                             initial={{ scale: 0.8, opacity: 0 }}
                                             animate={{ scale: 1, opacity: 1 }}
-                                            className="w-16 h-16 md:w-20 md:h-20 bg-blue-50 rounded-[24px] md:rounded-[32px] flex items-center justify-center mb-4 md:mb-6 border-2 border-blue-100/50 shadow-sm"
+                                            className={`flex items-center justify-center mb-4 border border-blue-100/50 rounded-2xl ${(!isVerifying && lockAnimationData) ? 'w-28 h-28 md:w-36 md:h-36 bg-transparent border-transparent' : 'w-16 h-16 md:w-20 md:h-20 bg-blue-50 text-blue-600'}`}
                                         >
-                                            <div className="text-blue-600">
-                                                {mode === 'login' ? <Lock size={24} className="md:w-8 md:h-8" strokeWidth={2.5} /> : <User size={24} className="md:w-8 md:h-8" strokeWidth={2.5} />}
-                                            </div>
+                                            {isVerifying ? <Mail size={32} /> : (lockAnimationData ? <Lottie animationData={lockAnimationData} loop autoplay className="w-full h-full scale-[1.2]" /> : <Lock size={32} />)}
                                         </motion.div>
-                                        <h3 className="text-2xl md:text-4xl font-black text-slate-900 mb-2 md:mb-3 tracking-tight">
-                                            {mode === 'login' ? 'Tizimga kirish' : "Ro'yxatdan o'tish"}
+                                        <h3 className="text-3xl md:text-4xl font-extrabold text-slate-900 mb-2 tracking-tight">
+                                            {isVerifying ? 'Tasdiqlash' : (mode === 'login' ? 'Tizimga kirish' : "Ro'yxatdan o'tish")}
                                         </h3>
-                                        <div className="text-sm md:text-base font-semibold text-slate-400">
-                                            {mode === 'login' ? 'Xush kelibsiz!' : "Yangi imkoniyatlar sari"}
+                                        <div className="text-sm md:text-base font-medium text-slate-500">
+                                            {isVerifying ? 'Raqamingizga SMS kod yubordik' : (mode === 'login' ? 'Raqamingizni kiriting va boshlaymiz' : "Yangi hisob yarating")}
                                         </div>
                                     </div>
 
-                                    <form onSubmit={isVerifying ? handleVerifyOTP : (mode === 'login' ? handleLogin : handleRegister)} className="flex flex-col gap-4">
+                                     <form onSubmit={isVerifying ? handleVerifyOTP : handleSendOTP} className="flex flex-col gap-5 relative z-10">
                                         {isVerifying ? (
-                                            <div className="space-y-4 animate-fade-in-up">
-                                                <div className="text-center p-4 bg-blue-50 rounded-2xl border border-blue-100 mb-2">
-                                                    <p className="text-sm text-blue-800 font-medium">
-                                                        Kod <b>{email}</b> manziliga yuborildi. Pochtangizni tekshiring.
-                                                    </p>
+                                            <div className="space-y-6 animate-fade-in-up">
+                                                <div className="inline-flex items-center justify-center w-full gap-2 bg-slate-50 px-4 py-3 rounded-xl mb-2">
+                                                    <Phone size={18} className="text-blue-600"/>
+                                                    <span className="font-bold text-slate-800 tracking-wide">{phone}</span>
                                                 </div>
-                                                <div className="relative group">
-                                                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                                                    <input
+                                                <div className="flex flex-col gap-2">
+                                                    <input title="Kiritish maydoni"
                                                         type="text"
-                                                        placeholder="6 xonali kodni kiriting"
+                                                        placeholder="- - - - - -"
                                                         value={otp}
                                                         onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
                                                         required
-                                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-xl tracking-[10px] text-center text-slate-900 placeholder:text-slate-400 placeholder:tracking-normal placeholder:font-medium"
+                                                        className="w-full bg-slate-50/50 border border-slate-200 outline-none focus:border-blue-600 focus:ring-4 focus:ring-blue-600/10 transition-all font-bold text-3xl tracking-[12px] text-center text-slate-900 placeholder:text-slate-300 placeholder:tracking-[8px] h-16 rounded-xl"
                                                     />
                                                 </div>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsVerifying(false)}
-                                                    className="text-sm font-bold text-slate-500 hover:text-slate-700 mx-auto block transition-colors"
-                                                >
-                                                    Ma'lumotlarni o'zgartirish
-                                                </button>
+                                                <div className="flex flex-col items-center gap-3 mt-2">
+                                                    {timeLeft > 0 ? (
+                                                        <>
+                                                            <div className="text-sm font-semibold text-slate-500 mb-1">
+                                                                Amal qilish muddati: <span className="text-blue-600 tracking-wider inline-block w-10 text-center font-bold">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+                                                            </div>
+                                                            {/* Telegram Bot Button */}
+                                                            <a
+                                                                href={`https://t.me/Hadaf_supportbot?start=verify_${phone.replace(/\D/g, '')}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="w-full flex items-center justify-center gap-2 bg-[#2ba6e1] hover:bg-[#228ebd] shadow-lg shadow-[#2ba6e1]/20 text-white py-3.5 rounded-xl font-bold transition-all active:scale-[0.98]"
+                                                            >
+                                                                <svg fill="currentColor" viewBox="0 0 24 24" className="w-6 h-6"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.774-.417-1.2.258-1.902.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.445.895-.694 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                                                                Kodni botdan bepul olish
+                                                            </a>
+                                                        </>
+                                                    ) : (
+                                                        <button
+                                                            type="button"
+                                                            onClick={handleSendOTP}
+                                                            className="w-full py-3.5 mt-2 bg-slate-100 text-slate-800 font-bold rounded-xl hover:bg-slate-200 transition-colors"
+                                                        >
+                                                            Kodni qayta yuborish
+                                                        </button>
+                                                    )}
+                                                    
+                                                    <button title="Tugma"
+                                                        type="button"
+                                                        onClick={() => setIsVerifying(false)}
+                                                        className="text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors flex items-center gap-1.5 mt-2"
+                                                    >
+                                                        <span className="text-[16px]"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg></span>
+                                                        Raqamni o'zgartirish
+                                                    </button>
+                                                </div>
                                             </div>
                                         ) : (
                                             <>
                                                 {mode === 'register' && (
                                                     <div className="space-y-4 animate-fade-in-up">
-                                                        <div className="relative group">
-                                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                                                            <input
-                                                                type="text"
-                                                                placeholder="Ism Familiya"
-                                                                value={name}
-                                                                onChange={(e) => setName(e.target.value)}
-                                                                required
-                                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400"
-                                                            />
+                                                        <div className="flex flex-col gap-2">
+                                                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Ism</label>
+                                                            <div className="relative group bg-slate-50/50 border border-slate-200/80 rounded-xl focus-within:bg-white focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-600/10 transition-all duration-300">
+                                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
+                                                                <input title="Kiritish maydoni"
+                                                                    type="text"
+                                                                    placeholder="Ismingiz"
+                                                                    value={name}
+                                                                    onChange={(e) => setName(e.target.value)}
+                                                                    required
+                                                                    className="w-full bg-transparent border-none rounded-xl pl-12 pr-4 py-3.5 outline-none font-medium text-slate-900 placeholder:text-slate-400 focus:ring-0"
+                                                                />
+                                                            </div>
                                                         </div>
-                                                        <div className="relative group">
-                                                            <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                                                            <PhoneInput
-                                                                value={phone}
-                                                                onChange={setPhone}
-                                                                required
-                                                                className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-4 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-auto"
-                                                                placeholder="+998 (90) 123-45-67"
-                                                            />
+                                                        <div className="flex flex-col gap-2">
+                                                            <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Familiya</label>
+                                                            <div className="relative group bg-slate-50/50 border border-slate-200/80 rounded-xl focus-within:bg-white focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-600/10 transition-all duration-300">
+                                                                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
+                                                                <input title="Kiritish maydoni"
+                                                                    type="text"
+                                                                    placeholder="Familiyangiz"
+                                                                    value={surname}
+                                                                    onChange={(e) => setSurname(e.target.value)}
+                                                                    required
+                                                                    className="w-full bg-transparent border-none rounded-xl pl-12 pr-4 py-3.5 outline-none font-medium text-slate-900 placeholder:text-slate-400 focus:ring-0"
+                                                                />
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 )}
 
-                                                <div className="relative group">
-                                                    <Mail className="absolute left-4 top-3.5 md:top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Telefon yoki Email"
-                                                        value={email}
-                                                        onChange={(e) => setEmail(e.target.value)}
-                                                        required
-                                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-4 py-3.5 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-[50px] md:h-auto"
-                                                    />
-                                                </div>
-
-                                                <div className="relative group">
-                                                    <Lock className="absolute left-4 top-3.5 md:top-4 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={20} />
-                                                    <input
-                                                        type={showPassword ? "text" : "password"}
-                                                        placeholder="PIN yoki Parol"
-                                                        value={password}
-                                                        onChange={(e) => setPassword(e.target.value)}
-                                                        required
-                                                        minLength={6}
-                                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl pl-12 pr-12 py-3.5 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-medium text-slate-900 placeholder:text-slate-400 h-[50px] md:h-auto"
-                                                    />
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setShowPassword(!showPassword)}
-                                                        className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
-                                                        tabIndex={-1}
-                                                    >
-                                                        {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                                                    </button>
+                                                <div className={`flex flex-col gap-2 ${mode === 'register' ? 'mt-2' : ''}`}>
+                                                    <label className="text-[11px] font-bold uppercase tracking-widest text-slate-500 ml-1">Telefon raqam</label>
+                                                    <div className="relative group bg-slate-50/50 border border-slate-200/80 rounded-xl focus-within:bg-white focus-within:border-blue-600 focus-within:ring-4 focus-within:ring-blue-600/10 transition-all duration-300 px-1 py-1">
+                                                        <PhoneInput
+                                                            value={phone}
+                                                            onChange={setPhone}
+                                                            required
+                                                            className="w-full bg-transparent border-none outline-none focus-visible:ring-0 focus-visible:ring-offset-0 focus:ring-0 font-bold text-slate-900 placeholder:text-slate-400 text-lg h-[50px]"
+                                                            placeholder="+998 00 000 00 00"
+                                                        />
+                                                    </div>
                                                 </div>
                                             </>
                                         )}
 
-                                        {mode === 'login' && !isVerifying && (
-                                            <div className="flex justify-end">
-                                                <Link
-                                                    href="/auth/forgot-password"
-                                                    className="text-sm font-bold text-blue-600 hover:text-blue-700 transition-colors"
-                                                    onClick={closeAuthModal}
-                                                >
-                                                    Parolni unutdingizmi?
-                                                </Link>
-                                            </div>
-                                        )}
-
-                                        {!isVerifying && (
+                                         {!isVerifying && (
                                             <motion.div
                                                 animate={showTermsWarning ? { x: [-5, 5, -5, 5, 0] } : {}}
-                                                className={`p-4 rounded-2xl border transition-all mb-4 ${termsAccepted ? 'bg-emerald-50/50 border-emerald-100' : showTermsWarning ? 'bg-red-50 border-red-200 shadow-sm' : 'bg-slate-50 border-slate-100'}`}
+                                                className={`p-3 rounded-xl transition-all mt-2 mb-2 ${showTermsWarning ? 'bg-red-50 border border-red-200' : ''}`}
                                             >
                                                 <div className="flex items-start gap-3">
                                                     <div className="relative flex items-center pt-0.5">
-                                                        <input
+                                                        <input title="Kiritish maydoni"
                                                             type="checkbox"
                                                             id="terms-auth"
                                                             checked={termsAccepted}
@@ -649,111 +490,83 @@ export default function AuthModal() {
                                                                 setTermsAccepted(e.target.checked);
                                                                 if (e.target.checked) setShowTermsWarning(false);
                                                             }}
-                                                            className={`w-5 h-5 rounded border-2 transition-all cursor-pointer accent-blue-600 ${termsAccepted ? 'border-blue-600' : showTermsWarning ? 'border-red-500 bg-red-50' : 'border-slate-300'}`}
+                                                            className="w-5 h-5 rounded border-2 border-slate-300 text-blue-600 focus:ring-blue-600/30 transition-all cursor-pointer"
                                                         />
                                                     </div>
-                                                    <label htmlFor="terms-auth" className="flex-1 text-[12px] md:text-[13px] text-slate-600 leading-relaxed cursor-pointer select-none">
+                                                    <label htmlFor="terms-auth" className="flex-1 text-[13px] text-slate-600 leading-snug cursor-pointer select-none">
                                                         <span className="font-medium">
-                                                            Men <Link href="/terms" className="text-blue-600 hover:underline font-bold decoration-2 underline-offset-2">Ommaviy oferta</Link> shartlari va <Link href="/privacy" className="text-blue-600 hover:underline font-bold decoration-2 underline-offset-2">Maxfiylik siyosati</Link> bilan tanishib chiqdim va roziman.
+                                                            Men <Link href="/terms" onClick={closeAuthModal} className="text-blue-600 hover:underline font-bold">Taklif shartlari</Link> va <Link href="/privacy" onClick={closeAuthModal} className="text-blue-600 hover:underline font-bold">Maxfiylik siyosati</Link>ga roziman.
                                                         </span>
-                                                        {!termsAccepted && (
-                                                            <div className={`mt-1 text-[10px] font-bold uppercase tracking-wider ${showTermsWarning ? 'text-red-500 animate-pulse' : 'text-slate-400'}`}>
-                                                                * Tasdiqlash majburiy
-                                                            </div>
-                                                        )}
                                                     </label>
                                                 </div>
                                             </motion.div>
                                         )}
 
                                         <motion.button
-                                            whileHover={{ scale: termsAccepted ? 1.01 : 1 }}
-                                            whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
+                                            whileHover={{ scale: 1.01 }}
+                                            whileTap={{ scale: 0.98 }}
                                             type="submit"
-                                            className={`w-full py-4 rounded-2xl font-bold transition-all shadow-lg flex items-center justify-center gap-2 mt-2 ${termsAccepted ? 'bg-blue-600 text-white shadow-blue-600/20 hover:bg-blue-700' : 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'}`}
+                                            className={`w-full py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-2 mt-2 tracking-wide
+                                                ${isLoading || (!isVerifying && !termsAccepted) 
+                                                    ? 'bg-slate-100 text-slate-400 cursor-not-allowed shadow-none border border-slate-200/60' 
+                                                    : 'bg-blue-600 text-white shadow-[0_8px_20px_rgba(37,99,235,0.2)] hover:bg-blue-700'
+                                                }`}
                                             disabled={isLoading || (!isVerifying && !termsAccepted)}
                                         >
                                             {isLoading ? (
                                                 <Loader2 className="animate-spin" />
                                             ) : (
-                                                isVerifying ? 'TASDIQLASH' : (mode === 'login' ? 'TIZIMGA KIRISH' : "RO'YXATDAN O'TISH")
+                                                <>
+                                                    {isVerifying ? 'Tasdiqlash' : (mode === 'login' ? 'Kodni olish' : "Ro'yxatdan o'tish")}
+                                                </>
                                             )}
                                         </motion.button>
                                     </form>
 
-                                    <div className="relative py-8">
+                                     <div className="relative py-8 z-10">
                                         <div className="absolute inset-0 flex items-center">
-                                            <div className="w-full border-t border-slate-100"></div>
+                                            <div className="w-full border-t border-slate-200/60"></div>
                                         </div>
                                         <div className="relative flex justify-center text-sm">
-                                            <span className="bg-white px-4 text-slate-400 font-bold tracking-wider">YOKI</span>
+                                            <span className="bg-white px-4 text-slate-400 font-bold tracking-wider uppercase text-[11px]">Yoki</span>
                                         </div>
                                     </div>
 
-                                    <div className="flex flex-col gap-4 mb-8">
-
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <motion.button
-                                                whileHover={{ y: termsAccepted ? -2 : 0 }}
-                                                whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
+                                    <div className="flex flex-col gap-4 mb-4 z-10">
+                                        <div className="grid grid-cols-1 gap-4">
+                                            <button
                                                 type="button"
                                                 onClick={() => handleSocialLogin("Google")}
-                                                className={`flex items-center justify-center gap-2 py-4 bg-slate-50 rounded-2xl font-bold border transition-all ${termsAccepted ? 'text-slate-700 border-slate-200 hover:bg-slate-100 opacity-100' : 'text-slate-400 border-slate-100 cursor-not-allowed opacity-50'}`}
+                                                className={`flex items-center justify-center gap-3 py-4 bg-slate-50/50 rounded-xl font-semibold border transition-all ${termsAccepted ? 'text-slate-700 border-slate-200 hover:bg-slate-50 active:scale-[0.98]' : 'text-slate-400 border-slate-200/50 cursor-not-allowed opacity-60'}`}
                                                 disabled={!termsAccepted}
                                             >
                                                 <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                                    <path
-                                                        fill="#4285F4"
-                                                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                                    />
-                                                    <path
-                                                        fill="#34A853"
-                                                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                                    />
-                                                    <path
-                                                        fill="#FBBC05"
-                                                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                                                    />
-                                                    <path
-                                                        fill="#EA4335"
-                                                        d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                                    />
+                                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                                                 </svg>
-                                                Google
-                                            </motion.button>
-                                            <motion.button
-                                                whileHover={{ y: termsAccepted ? -2 : 0 }}
-                                                whileTap={{ scale: termsAccepted ? 0.98 : 1 }}
-                                                type="button"
-                                                className={`flex items-center justify-center gap-2 py-4 bg-slate-50 rounded-2xl font-bold border transition-all ${termsAccepted ? 'text-slate-700 border-slate-200 hover:bg-slate-100 opacity-100' : 'text-slate-400 border-slate-100 cursor-not-allowed opacity-50'}`}
-                                                onClick={() => {
-                                                    if (termsAccepted) {
-                                                        window.open('https://t.me/Hadaf_supportbot?start=reg', '_blank');
-                                                    }
-                                                }}
-                                                disabled={!termsAccepted}
-                                            >
-                                                <svg className="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="#229ED9">
-                                                    <path d="M20.665 3.717l-17.73 6.837c-1.21.486-1.203 1.161-.222 1.462l4.552 1.42 10.532-6.645c.498-.303.953-.14.577.191l-8.536 7.705-.33 4.946c.485 0 .699-.223.97-.485l2.33-2.265 4.848 3.581c.894.492 1.535.239 1.756-.823l3.176-14.991c.325-1.302-.5-1.894-1.353-1.509z" />
-                                                </svg>
-                                                Telegram
-                                            </motion.button>
+                                                Google orqali davom etish
+                                            </button>
                                         </div>
                                     </div>
+                                    
+                                    {!isVerifying && (
+                                        <div className="mt-6 text-center z-10 pb-4">
+                                            <p className="text-sm font-medium text-slate-500">
+                                                {mode === 'login' ? "Hisobingiz yo'qmi?" : "Allaqachon hisobingiz bormi?"} 
+                                                <button 
+                                                    type="button" 
+                                                    onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
+                                                    className="text-blue-600 font-bold hover:underline decoration-2 underline-offset-4 ml-2 transition-all"
+                                                >
+                                                    {mode === 'login' ? "Ro'yxatdan o'tish" : "Tizimga kirish"}
+                                                </button>
+                                            </p>
+                                        </div>
+                                    )}
 
-                                    <div className="flex justify-center bg-slate-50/50 -mx-10 -mb-10 p-6 border-t border-slate-100">
-                                        {mode === 'login' ? (
-                                            <div className="text-slate-500 font-semibold text-sm">
-                                                Hisobingiz yo'qmi?{' '}
-                                                <button onClick={() => { setMode('register'); setIsVerifying(false); }} className="text-blue-600 font-bold hover:underline underline-offset-4">Ro'yxatdan o'tish</button>
-                                            </div>
-                                        ) : (
-                                            <div className="text-slate-500 font-semibold text-sm">
-                                                Allaqachon hisobingiz bormi?{' '}
-                                                <button onClick={() => { setMode('login'); setIsVerifying(false); }} className="text-blue-600 font-bold hover:underline underline-offset-4">Tizimga kirish</button>
-                                            </div>
-                                        )}
-                                    </div>
+
                                 </motion.div>
                             )}
                         </AnimatePresence>

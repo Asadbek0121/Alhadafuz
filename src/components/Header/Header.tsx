@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect, useRef } from 'react';
 import { Link } from '@/navigation';
@@ -25,6 +26,7 @@ import CartDrawer from '../Cart/CartDrawer';
 import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
+
 
 
 export default function Header() {
@@ -137,6 +139,7 @@ export default function Header() {
     const [unreadCount, setUnreadCount] = useState(0);
 
     useEffect(() => {
+
         const fetchNotifications = async () => {
             if (isAuthenticated) {
                 try {
@@ -305,6 +308,9 @@ export default function Header() {
         <>
             <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300">
                 {/* Desktop Top Bar (Location) */}
+
+
+
                 <div className="hidden xl:block w-full bg-slate-50 border-b border-slate-200 py-2 z-[51]">
                     <div className="container flex items-center justify-between">
                         <div
@@ -349,7 +355,7 @@ export default function Header() {
 
                         {/* Old Location Selector REMOVED */}
 
-                        <button
+                        <button title="Tugma"
                             id="category-btn-trigger"
                             className={`hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${isCatalogOpen
                                 ? 'bg-slate-900 text-white shadow-slate-900/20'
@@ -381,7 +387,7 @@ export default function Header() {
                     {/* Center Section: Search Bar */}
                     <div className="hidden lg:block flex-1 relative" ref={searchRef}>
                         <div className="relative group">
-                            <input
+                            <input title="Kiritish maydoni"
                                 type="text"
                                 name="search-input"
                                 autoComplete="one-time-code"
@@ -390,7 +396,7 @@ export default function Header() {
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
-                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+                            <button title="Tugma" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
                                 <Search size={20} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -538,7 +544,7 @@ export default function Header() {
                         </Link>
 
                         {/* Cart */}
-                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
+                        <button title="Tugma" onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
                                 <ShoppingBag size={24} strokeWidth={2} />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
@@ -573,7 +579,7 @@ export default function Header() {
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                             </div>
-                            <input
+                            <input title="Kiritish maydoni"
                                 type="text"
                                 name="mobile-search-input"
                                 autoComplete="one-time-code"
@@ -583,7 +589,7 @@ export default function Header() {
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
                             {searchQuery && (
-                                <button
+                                <button title="Tugma"
                                     onClick={() => setSearchQuery('')}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200/50 rounded-full text-slate-500"
                                 >
@@ -639,5 +645,7 @@ export default function Header() {
             <MegaMenu isOpen={isCatalogOpen} close={closeCatalog} menuMode={menuMode} />
             <CartDrawer />
         </>
+
+
     );
 }

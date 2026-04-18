@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from "react";
 import { Trash2, Loader2, Trash } from "lucide-react";

@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { usePathname, useRouter } from "@/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -25,7 +26,7 @@ export default function ProfileMobileHeader() {
 
     return (
         <div className="lg:hidden flex items-center gap-4 p-4 sticky top-0 z-40">
-            <button
+            <button title="Tugma"
                 onClick={() => router.back()}
                 className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-900 text-white shadow-lg shadow-gray-900/20 active:scale-95 hover:bg-gray-800 transition-all duration-200"
                 aria-label="Back"

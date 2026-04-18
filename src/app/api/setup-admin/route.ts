@@ -13,7 +13,7 @@ export async function GET() {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Try to find if user exists by email or username
-        let user = await prisma.user.findFirst({
+        const user = await prisma.user.findFirst({
             where: {
                 OR: [
                     { email: email },

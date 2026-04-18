@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import React from "react";
 import { Input, InputProps } from "@/components/ui/input";
 

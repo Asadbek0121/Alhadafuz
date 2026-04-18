@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Inter } from "next/font/google";
@@ -10,6 +11,7 @@ import { Metadata } from 'next';
 
 import AdminSidebar from './admin/AdminSidebar';
 import AdminHeader from './admin/AdminHeader';
+import Admin2FAPage from './Admin2FAPage';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -44,6 +46,20 @@ export default async function AdminLayout({
 
     const resolvedParams = await params;
     const locale = resolvedParams?.locale || 'uz';
+
+    const is2faPassed = (session?.user as any)?.admin2fa;
+    if (userRole === 'ADMIN' && !is2faPassed) {
+        return (
+            <html lang={locale} suppressHydrationWarning={true}>
+                <body className={inter.className} suppressHydrationWarning={true}>
+                    <SessionProviderWrapper session={session}>
+                        <Toaster />
+                        <Admin2FAPage userId={(session.user as any).id} />
+                    </SessionProviderWrapper>
+                </body>
+            </html>
+        )
+    }
 
     let messages;
     try {

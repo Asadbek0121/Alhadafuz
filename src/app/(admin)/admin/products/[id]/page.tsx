@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -371,13 +372,13 @@ export default function EditProductPage() {
                         <h2 className="card-title">Umumiy</h2>
                         <div className="form-group">
                             <label className="label">Mahsulot nomi <span className="text-red-500">*</span></label>
-                            <input {...register("title")} className="input" placeholder="Mahsulot nomi" />
+                            <input title="Kiritish maydoni" {...register("title")} className="input" placeholder="Mahsulot nomi" />
                             {errors.title && <span className="error">{errors.title.message}</span>}
                             <p className="helper-text">Mahsulot nomi majburiy va takrorlanmas bo'lishi tavsiya etiladi.</p>
                         </div>
                         <div className="form-group">
                             <label className="label">Tavsif</label>
-                            <textarea {...register("description")} className="input" rows={6} placeholder="Mahsulot tavsifi..." />
+                            <textarea title="Matn maydoni" {...register("description")} className="input" rows={6} placeholder="Mahsulot tavsifi..." />
                             {errors.description && <span className="error">{errors.description.message}</span>}
                         </div>
                     </div>
@@ -386,7 +387,7 @@ export default function EditProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Media</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Asosiy Rasm</label>
@@ -395,12 +396,12 @@ export default function EditProductPage() {
                                 <p style={{ margin: '10px 0', fontSize: '16px', fontWeight: '500' }}>
                                     Faylni tashlang yoki tanlang
                                 </p>
-                                <input id="edit-main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
-                                <button type="button" onClick={() => document.getElementById('edit-main-image-upload')?.click()} className="btn-light-primary" style={{ marginTop: '10px' }}>Tanlash</button>
+                                <input title="Kiritish maydoni" id="edit-main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
+                                <button title="Tugma" type="button" onClick={() => document.getElementById('edit-main-image-upload')?.click()} className="btn-light-primary" style={{ marginTop: '10px' }}>Tanlash</button>
                             </div>
                             {watch('image') && (
                                 <div style={{ marginTop: '15px', position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                    <img src={watch('image')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <img alt="Rasm" src={watch('image')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                 </div>
                             )}
                         </div>
@@ -409,7 +410,7 @@ export default function EditProductPage() {
                             <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
                                 {watch('images')?.split('\n').filter(Boolean).map((url, i) => (
                                     <div key={i} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                        <img src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        <img alt="Rasm" src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                     </div>
                                 ))}
                                 <div
@@ -418,7 +419,7 @@ export default function EditProductPage() {
                                 >
                                     <Plus />
                                 </div>
-                                <input id="edit-gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
+                                <input title="Kiritish maydoni" id="edit-gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
                             </div>
                         </div>
                     </div>
@@ -428,20 +429,20 @@ export default function EditProductPage() {
                         <h2 className="card-title">Narx</h2>
                         <div className="form-group">
                             <label className="label">Asosiy narx <span className="text-red-500">*</span></label>
-                            <input {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
+                            <input title="Kiritish maydoni" {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
                         </div>
 
                         <div className="form-group">
                             <label className="label">Chegirma turi</label>
                             <div style={{ display: 'flex', gap: '20px', margin: '10px 0' }}>
                                 <label className="radio-label">
-                                    <input type="radio" value="no_discount" {...register("discountType")} /> Chegirma yo'q
+                                    <input title="Kiritish maydoni" type="radio" value="no_discount" {...register("discountType")} /> Chegirma yo'q
                                 </label>
                                 <label className="radio-label">
-                                    <input type="radio" value="percentage" {...register("discountType")} /> Foiz (%)
+                                    <input title="Kiritish maydoni" type="radio" value="percentage" {...register("discountType")} /> Foiz (%)
                                 </label>
                                 <label className="radio-label">
-                                    <input type="radio" value="fixed_price" {...register("discountType")} /> Aniq narx
+                                    <input title="Kiritish maydoni" type="radio" value="fixed_price" {...register("discountType")} /> Aniq narx
                                 </label>
                             </div>
                         </div>
@@ -451,11 +452,11 @@ export default function EditProductPage() {
                                 <>
                                     <div className="form-group">
                                         <label className="label">Chegirma miqdori</label>
-                                        <input {...register("discountValue")} type="number" className="input" placeholder="0" />
+                                        <input title="Kiritish maydoni" {...register("discountValue")} type="number" className="input" placeholder="0" />
                                     </div>
                                     <div className="form-group">
                                         <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
-                                        <select {...register("discountCategory")} className="input">
+                                        <select title="Tanlash" {...register("discountCategory")} className="input">
                                             <option value="SALE">Aksiya (SALE)</option>
                                             <option value="PROMO">Promo (PROMO)</option>
                                             <option value="HOT">Qaynoq (HOT)</option>
@@ -467,7 +468,7 @@ export default function EditProductPage() {
 
                         <div className="form-group">
                             <label className="label">Eski narx</label>
-                            <input {...register("oldPrice")} type="number" className="input" placeholder="Eski narx" />
+                            <input title="Kiritish maydoni" {...register("oldPrice")} type="number" className="input" placeholder="Eski narx" />
                             <p className="helper-text">Chegirmadan oldingi narx (ko'rgazma uchun).</p>
                         </div>
                     </div>
@@ -481,7 +482,7 @@ export default function EditProductPage() {
                         <h2 className="card-title">Holat</h2>
                         <div className="form-group">
                             <label className="label">Mahsulot holati</label>
-                            <select {...register("status")} className="input">
+                            <select title="Tanlash" {...register("status")} className="input">
                                 <option value="published">Sotuvda mavjud</option>
                                 <option value="inactive">Sotuvda mavjud emas</option>
                                 <option value="sotuvda_kam_qolgan">Sotuvda kam qolgan</option>
@@ -495,16 +496,16 @@ export default function EditProductPage() {
                         <h2 className="card-title">Varyatsiyalar (Xususiyatlar)</h2>
                         {attributes.map((attr, idx) => (
                             <div key={idx} style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
-                                <input value={attr.key} onChange={(e) => updateAttribute(idx, 'key', e.target.value)} className="input" placeholder="Turi" />
-                                <input value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qiymati" />
-                                <button type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger"><X size={16} /></button>
+                                <input title="Kiritish maydoni" value={attr.key} onChange={(e) => updateAttribute(idx, 'key', e.target.value)} className="input" placeholder="Turi" />
+                                <input title="Kiritish maydoni" value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qiymati" />
+                                <button title="Tugma" type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger"><X size={16} /></button>
                             </div>
                         ))}
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
-                            <button type="button" onClick={addAttribute} className="btn-light-primary">
+                            <button title="Tugma" type="button" onClick={addAttribute} className="btn-light-primary">
                                 <Plus size={18} style={{ marginRight: '8px' }} /> Xususiyat qo'shish
                             </button>
-                            <button type="button" onClick={() => setShowBulkPaste(!showBulkPaste)} className="btn-light-secondary" style={{ background: '#f0f0f0', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', transition: 'background 0.2s' }}>
+                            <button title="Tugma" type="button" onClick={() => setShowBulkPaste(!showBulkPaste)} className="btn-light-secondary" style={{ background: '#f0f0f0', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', transition: 'background 0.2s' }}>
                                 <Copy size={18} style={{ marginRight: '8px' }} /> Matndan nusxalash
                             </button>
                         </div>
@@ -516,7 +517,7 @@ export default function EditProductPage() {
                                     Excel yoki boshqa saytdan nusxalab tashlang. Har bir qator yangi xususiyat bo'ladi.
                                     <br />Format: <b>Nomi [Tab] Qiymati</b> yoki <b>Nomi: Qiymati</b>
                                 </p>
-                                <textarea
+                                <textarea title="Matn maydoni"
                                     className="input"
                                     rows={8}
                                     value={bulkText}
@@ -525,10 +526,10 @@ export default function EditProductPage() {
                                     style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.5' }}
                                 />
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                                    <button type="button" onClick={processBulkPaste} className="btn-primary">
+                                    <button title="Tugma" type="button" onClick={processBulkPaste} className="btn-primary">
                                         Qo'shish
                                     </button>
-                                    <button type="button" onClick={() => { setShowBulkPaste(false); setBulkText(""); }} className="btn-outline-danger" style={{ border: 'none', padding: '10px 20px' }}>
+                                    <button title="Tugma" type="button" onClick={() => { setShowBulkPaste(false); setBulkText(""); }} className="btn-outline-danger" style={{ border: 'none', padding: '10px 20px' }}>
                                         Yopish
                                     </button>
                                 </div>
@@ -563,7 +564,7 @@ export default function EditProductPage() {
                                                     color: isSelected ? '#0085db' : '#5A6A85'
                                                 }}
                                             >
-                                                <input
+                                                <input title="Kiritish maydoni"
                                                     type="checkbox"
                                                     checked={isSelected}
                                                     onChange={(e) => {
@@ -584,15 +585,15 @@ export default function EditProductPage() {
                         </div>
                         <div className="form-group">
                             <label className="label">Brand</label>
-                            <input {...register("brand")} className="input" placeholder="Brand nomi" />
+                            <input title="Kiritish maydoni" {...register("brand")} className="input" placeholder="Brand nomi" />
                         </div>
                         <div className="form-group">
                             <label className="label">Omborda</label>
-                            <input {...register("stock")} type="number" className="input" placeholder="Ombordagi soni" />
+                            <input title="Kiritish maydoni" {...register("stock")} type="number" className="input" placeholder="Ombordagi soni" />
                         </div>
                         <div className="form-group">
                             <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer' }}>
-                                <input type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
+                                <input title="Kiritish maydoni" type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
                                 <span>"YANGI" belgisi (New Arrival)</span>
                             </label>
                             <p className="helper-text">Agar tanlansa, mahsulot kartasida "YANGI" yozuvi paydo bo'ladi.</p>
@@ -602,23 +603,23 @@ export default function EditProductPage() {
                             <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '15px', color: '#2A3547' }}>Marketing belgilari</h3>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
+                                    <input title="Kiritish maydoni" type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
                                     <span>🚚 Bepul yetkazib berish</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
+                                    <input title="Kiritish maydoni" type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
                                     <span>🎬 Video-sharh mavjud</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
+                                    <input title="Kiritish maydoni" type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
                                     <span>🎁 Sovg'asi bor / 1+1</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
+                                    <input title="Kiritish maydoni" type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
                                     <span>⚠️ "Sotuvda juda kam qoldi" (Stock Alert)</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
+                                    <input title="Kiritish maydoni" type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
                                     <span>💰 Bo'lib to'lash (Monthly Payment)</span>
                                 </label>
                             </div>
@@ -629,8 +630,8 @@ export default function EditProductPage() {
 
             {/* Footer */}
             <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                <button type="button" onClick={() => router.back()} className="btn-outline-danger">Bekor qilish</button>
-                <button type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
+                <button title="Tugma" type="button" onClick={() => router.back()} className="btn-outline-danger">Bekor qilish</button>
+                <button title="Tugma" type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
                     {loading ? "Yangilanmoqda..." : "Yangilash"}
                 </button>
             </div>

@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Phone, Mail, MapPin, Facebook, Instagram, Send, Youtube } from 'lucide-react';
 import { Link } from '@/navigation';
@@ -68,7 +69,7 @@ export default function Footer() {
                                 {tAbout('cta_desc')}
                             </p>
                         </div>
-                        <button
+                        <button title="Tugma"
                             onClick={() => setIsVendorModalOpen(true)}
                             className="whitespace-nowrap bg-white text-blue-900 px-6 py-3 md:px-10 md:py-4 rounded-2xl font-black uppercase text-xs md:text-sm tracking-widest shadow-xl shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-3 group/btn"
                         >

@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Search, X } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -35,7 +36,7 @@ export default function AdminProductSearch() {
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-indigo-600 transition-colors">
                 <Search size={18} />
             </div>
-            <input
+            <input title="Kiritish maydoni"
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
@@ -43,7 +44,7 @@ export default function AdminProductSearch() {
                 className="w-full bg-white border border-gray-200 rounded-2xl py-3 pl-12 pr-10 outline-none focus:border-indigo-600 focus:ring-4 focus:ring-indigo-100 transition-all font-medium text-sm shadow-sm"
             />
             {query && (
-                <button
+                <button title="Tugma"
                     onClick={() => setQuery("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 hover:bg-gray-100 rounded-xl text-gray-400 hover:text-gray-600 transition-all"
                 >

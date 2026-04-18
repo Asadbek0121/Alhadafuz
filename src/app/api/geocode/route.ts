@@ -30,7 +30,7 @@ export async function GET(request: Request) {
         // IP Fallback
         else {
             const forwarded = request.headers.get('x-forwarded-for');
-            let ip = forwarded ? forwarded.split(',')[0] : '';
+            const ip = forwarded ? forwarded.split(',')[0] : '';
             const isLocal = !ip || ip === '::1' || ip === '127.0.0.1';
 
             if (isLocal) {
@@ -79,7 +79,7 @@ export async function GET(request: Request) {
             const districtNode = components.find((c: any) => c.kind === 'district'); // District inside City (e.g. Yunusobod)
 
             // Determine City (System expects Region/Province or major City)
-            let parsedCity = province?.name || locality?.name;
+            const parsedCity = province?.name || locality?.name;
 
             // Determine District
             // Order: City District > Regional District (Area)

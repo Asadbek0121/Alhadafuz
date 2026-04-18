@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -210,8 +211,9 @@ export default function CheckoutPage() {
                     } else {
                         // Fallback if DB is empty
                         const fallbacks = [
-                            { id: 'cash', name: 'Naqd pul', provider: 'cash', isActive: true },
-                            { id: 'card', name: "Karta orqali", provider: 'humo_uzcard', isActive: true }
+                            { id: 'cash', name: 'Naqd pul', provider: 'CASH', isActive: true },
+                            { id: 'p2p', name: "Karta orqali (P2P)", provider: 'P2P', isActive: true },
+                            { id: 'card', name: "Karta (Terminal)", provider: 'HUMO_UZCARD', isActive: true }
                         ];
                         setPaymentMethods(fallbacks);
                         setPaymentMethod(fallbacks[0].provider);
@@ -447,7 +449,7 @@ export default function CheckoutPage() {
             <div className="sticky top-0 bg-white/90 backdrop-blur-xl border-b border-slate-200/60 z-[100] transition-all shadow-sm">
                 <div className="container max-w-7xl mx-auto px-4 py-3 md:py-4 flex items-center justify-between">
                     <div className="flex items-center gap-3 md:gap-5">
-                        <button
+                        <button title="Tugma"
                             type="button"
                             onClick={() => router.back()}
                             className="p-1.5 md:p-2 bg-white border border-slate-200 rounded-xl shadow-sm active:scale-95 transition-all hover:bg-slate-50 group"
@@ -504,7 +506,7 @@ export default function CheckoutPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest pl-1">{tCheckout('name_label')}</label>
-                                    <input
+                                    <input title="Kiritish maydoni"
                                         type="text"
                                         placeholder={tCheckout('name_placeholder')}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm placeholder:text-slate-300"
@@ -523,14 +525,14 @@ export default function CheckoutPage() {
                             </div>
 
                             <div className="flex gap-2 mb-5 p-1 bg-slate-100/50 rounded-xl border border-slate-200/50">
-                                <button
+                                <button title="Tugma"
                                     type="button"
                                     className={`flex-1 py-2.5 px-2 md:px-4 rounded-lg text-[10px] sm:text-[11px] md:text-xs font-black flex items-center justify-center gap-1.5 md:gap-2 transition-all duration-300 whitespace-nowrap ${deliveryMethod === 'courier' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                     onClick={() => setDeliveryMethod('courier')}
                                 >
                                     <Truck size={14} className="shrink-0" /> {tCheckout('courier')}
                                 </button>
-                                <button
+                                <button title="Tugma"
                                     type="button"
                                     className={`flex-1 py-2.5 px-2 md:px-4 rounded-lg text-[10px] sm:text-[11px] md:text-xs font-black flex items-center justify-center gap-1.5 md:gap-2 transition-all duration-300 whitespace-nowrap ${deliveryMethod === 'pickup' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                                     onClick={() => setDeliveryMethod('pickup')}
@@ -586,7 +588,7 @@ export default function CheckoutPage() {
                                     {/* Viloyat and Tuman Selects */}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4" ref={addressFormRef}>
                                         <div className="col-span-1 md:col-span-2 flex justify-end">
-                                            <button
+                                            <button title="Tugma"
                                                 type="button"
                                                 onClick={openMap}
                                                 className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 bg-blue-50/50 px-3 py-1.5 rounded-lg border border-blue-100"
@@ -598,7 +600,7 @@ export default function CheckoutPage() {
                                         <div className="space-y-1.5">
                                             <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest pl-1">{tCheckout('city_label')}</label>
                                             <div className="relative group">
-                                                <select
+                                                <select title="Tanlash"
                                                     ref={citySelectRef}
                                                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm appearance-none cursor-pointer"
                                                     value={formData.city}
@@ -616,7 +618,7 @@ export default function CheckoutPage() {
                                         <div className="space-y-1.5">
                                             <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest pl-1">{tCheckout('district_label')}</label>
                                             <div className="relative group">
-                                                <select
+                                                <select title="Tanlash"
                                                     className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm appearance-none cursor-pointer disabled:opacity-50"
                                                     value={formData.district}
                                                     onChange={(e) => setFormData({ ...formData, district: e.target.value })}
@@ -636,7 +638,7 @@ export default function CheckoutPage() {
 
                                     <div className="space-y-1.5">
                                         <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest pl-1">{tCheckout('address_label')}</label>
-                                        <input
+                                        <input title="Kiritish maydoni"
                                             type="text"
                                             placeholder={tCheckout('address_placeholder')}
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm placeholder:text-slate-300"
@@ -648,7 +650,7 @@ export default function CheckoutPage() {
 
                                     {!selectedAddressId && (
                                         <div className="flex items-center gap-3 py-1">
-                                            <input
+                                            <input title="Kiritish maydoni"
                                                 type="checkbox"
                                                 id="saveAddr"
                                                 checked={saveNewAddress}
@@ -663,7 +665,7 @@ export default function CheckoutPage() {
 
                                     <div className="space-y-1.5">
                                         <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-widest pl-1">{tCheckout('comment_label')}</label>
-                                        <textarea
+                                        <textarea title="Matn maydoni"
                                             placeholder={tCheckout('comment_placeholder')}
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3.5 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm min-h-[100px] placeholder:text-slate-300 resize-none"
                                             value={formData.comment}
@@ -773,6 +775,10 @@ export default function CheckoutPage() {
                                                 colorClass = isSelected ? "text-[#7000ff]" : "text-slate-400 group-hover:text-[#7000ff]";
                                                 if (isSelected) { bgClass = "bg-[#7000ff]/10"; borderClass = "border-[#7000ff]"; shadowClass = "shadow-lg shadow-[#7000ff]/10"; }
                                                 break;
+                                            case 'P2P':
+                                                colorClass = isSelected ? "text-[#e11d48]" : "text-slate-400 group-hover:text-[#e11d48]";
+                                                if (isSelected) { bgClass = "bg-[#e11d48]/10"; borderClass = "border-[#e11d48]"; shadowClass = "shadow-lg shadow-[#e11d48]/10"; }
+                                                break;
                                             case 'CASH':
                                                 Icon = Banknote;
                                                 colorClass = isSelected ? "text-amber-500" : "text-slate-400 group-hover:text-amber-500";
@@ -854,7 +860,7 @@ export default function CheckoutPage() {
 
                                 {!appliedCoupon ? (
                                     <div className="relative">
-                                        <input
+                                        <input title="Kiritish maydoni"
                                             type="text"
                                             placeholder={tCheckout('promo_placeholder')}
                                             className={cn(
@@ -867,7 +873,7 @@ export default function CheckoutPage() {
                                                 setCouponError(null);
                                             }}
                                         />
-                                        <button
+                                        <button title="Tugma"
                                             type="button"
                                             onClick={applyCoupon}
                                             disabled={isApplyingCoupon || !couponCode}
@@ -888,7 +894,7 @@ export default function CheckoutPage() {
                                                 <p className="font-black text-emerald-700 text-sm tracking-widest">{appliedCoupon.code}</p>
                                             </div>
                                         </div>
-                                        <button
+                                        <button title="Tugma"
                                             type="button"
                                             onClick={() => {
                                                 setAppliedCoupon(null);
@@ -942,7 +948,7 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <button
+                            <button title="Tugma"
                                 type="submit"
                                 className="w-full relative group overflow-hidden bg-slate-900 text-white h-14 sm:h-15 md:h-16 rounded-[22px] font-black text-xs uppercase tracking-[0.2em] transition-all hover:bg-blue-600 active:scale-[0.97] shadow-2xl shadow-slate-900/20 disabled:opacity-50 disabled:pointer-events-none"
                                 disabled={isProcessing}

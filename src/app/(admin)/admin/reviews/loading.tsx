@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 export default function ReviewsLoading() {
     return (
         <div className="p-8">

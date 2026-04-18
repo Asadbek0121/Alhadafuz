@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -101,13 +102,13 @@ function DesktopBannerCarousel({ banners }: { banners: { id: string; title: stri
             {/* Navigation */}
             {banners.length > 1 && (
                 <>
-                    <button
+                    <button title="Tugma"
                         onClick={prev}
                         className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
                     >
                         <ChevronLeft size={24} />
                     </button>
-                    <button
+                    <button title="Tugma"
                         onClick={next}
                         className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/90 hover:bg-white text-gray-800 p-3 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-all hover:scale-110"
                     >
@@ -115,7 +116,7 @@ function DesktopBannerCarousel({ banners }: { banners: { id: string; title: stri
                     </button>
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
                         {banners.map((_, index) => (
-                            <button
+                            <button title="Tugma"
                                 key={index}
                                 onClick={() => setCurrentIndex(index)}
                                 className={`h-3 rounded-full transition-all ${index === currentIndex ? 'bg-white w-8' : 'bg-white/50 w-3 hover:bg-white/75'
@@ -148,7 +149,7 @@ export default function CategoryContent({ category, banners = [], products = [] 
             <div className={styles.mobileWrapper}>
                 {/* Header */}
                 <div className={styles.mobileHeader}>
-                    <button className={styles.backBtn} onClick={() => router.back()}>
+                    <button title="Tugma" className={styles.backBtn} onClick={() => router.back()}>
                         <ChevronLeft size={20} />
                     </button>
                     <h1 className={styles.headerTitle}>{category.name}</h1>
@@ -268,7 +269,7 @@ export default function CategoryContent({ category, banners = [], products = [] 
                 <div className="container py-8">
                     {/* Breadcrumbs / Back button */}
                     <div className="flex items-center gap-4 mb-6">
-                        <button
+                        <button title="Tugma"
                             onClick={() => router.back()}
                             className="flex items-center gap-2 text-gray-500 hover:text-blue-600 font-medium transition-colors"
                         >

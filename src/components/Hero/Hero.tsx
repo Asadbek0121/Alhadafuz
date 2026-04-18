@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import styles from './Hero.module.css';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -135,7 +136,7 @@ export default function Hero() {
                         <div className={styles.sliderControls}>
                             <div className={styles.dots}>
                                 {mainBanners.map((_, i) => (
-                                    <button
+                                    <button title="Tugma"
                                         key={i}
                                         onClick={() => setCurrentIndex(i)}
                                         className={`${styles.dot} ${i === currentIndex ? styles.activeDot : ''}`}
@@ -143,8 +144,8 @@ export default function Hero() {
                                 ))}
                             </div>
                             <div className={styles.arrows}>
-                                <button onClick={prevSlide} className={styles.arrowBtn}><ChevronLeft size={20} /></button>
-                                <button onClick={nextSlide} className={styles.arrowBtn}><ChevronRight size={20} /></button>
+                                <button title="Tugma" onClick={prevSlide} className={styles.arrowBtn}><ChevronLeft size={20} /></button>
+                                <button title="Tugma" onClick={nextSlide} className={styles.arrowBtn}><ChevronRight size={20} /></button>
                             </div>
                         </div>
                     )}

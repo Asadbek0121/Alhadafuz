@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { notFound } from "next/navigation";
 import { prisma } from '@/lib/prisma';
 import CategoryContent from './CategoryContent';

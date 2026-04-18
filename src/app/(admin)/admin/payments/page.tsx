@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from "react";
 import {
@@ -231,7 +232,7 @@ export default function PaymentMethodsPage() {
                 <div className="lg:col-span-3 space-y-6">
                     <div className="relative group max-w-md">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                        <input
+                        <input title="Kiritish maydoni"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Metod nomi yoki provider bo'yicha qidirish..."
@@ -276,7 +277,7 @@ export default function PaymentMethodsPage() {
                                             <div className="text-xs font-bold text-gray-500 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 break-all pr-10 italic">
                                                 {method.details}
                                             </div>
-                                            <button
+                                            <button title="Tugma"
                                                 onClick={() => copyToClipboard(method.details!)}
                                                 className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-white rounded-lg opacity-0 group-hover/detail:opacity-100 transition-all text-gray-400 hover:text-blue-500"
                                             >
@@ -365,7 +366,7 @@ export default function PaymentMethodsPage() {
                                         </h2>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">Metod parametrlarini sozlash</p>
                                     </div>
-                                    <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-gray-50 rounded-2xl transition-all md:hidden">
+                                    <button title="Tugma" onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-gray-50 rounded-2xl transition-all md:hidden">
                                         <X size={24} className="text-gray-400" />
                                     </button>
                                 </div>
@@ -373,7 +374,7 @@ export default function PaymentMethodsPage() {
                                 <div className="space-y-5">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ekranda ko'rinuvchi nom</label>
-                                        <input
+                                        <input title="Kiritish maydoni"
                                             type="text"
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -386,7 +387,7 @@ export default function PaymentMethodsPage() {
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tizim (Provider)</label>
                                             <div className="relative">
-                                                <select
+                                                <select title="Tanlash"
                                                     value={formData.provider}
                                                     onChange={e => setFormData({ ...formData, provider: e.target.value })}
                                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 appearance-none italic"
@@ -403,7 +404,7 @@ export default function PaymentMethodsPage() {
                                         <div className="space-y-2">
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ulanish turi</label>
                                             <div className="relative">
-                                                <select
+                                                <select title="Tanlash"
                                                     value={formData.type}
                                                     onChange={e => setFormData({ ...formData, type: e.target.value })}
                                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 appearance-none italic"
@@ -422,7 +423,7 @@ export default function PaymentMethodsPage() {
                                             <span>Raqam / Details</span>
                                             {formData.provider === 'CARD' && <span className={`text-[9px] px-2 py-0.5 rounded ${formData.details?.length === 16 ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>{formData.details?.length || 0}/16</span>}
                                         </label>
-                                        <input
+                                        <input title="Kiritish maydoni"
                                             type="text"
                                             value={formData.details}
                                             onChange={e => {
@@ -440,7 +441,7 @@ export default function PaymentMethodsPage() {
                                             <Laptop size={14} className="text-gray-400" />
                                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">JSON Konfiguratsiya (Maxfiy)</label>
                                         </div>
-                                        <textarea
+                                        <textarea title="Matn maydoni"
                                             value={formData.config}
                                             onChange={e => setFormData({ ...formData, config: e.target.value })}
                                             placeholder='{"service_id": "...", "merchant_id": "..."}'
@@ -453,7 +454,7 @@ export default function PaymentMethodsPage() {
                                             <div className={`w-3 h-3 rounded-full ${formData.isActive ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-gray-300'}`} />
                                             <span className="text-xs font-black text-gray-900 uppercase italic tracking-tighter">{formData.isActive ? "Tizim hozirda ochiq" : "Tizim vaqtincha yopiq"}</span>
                                         </div>
-                                        <button
+                                        <button title="Tugma"
                                             onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                                             className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
                                         >

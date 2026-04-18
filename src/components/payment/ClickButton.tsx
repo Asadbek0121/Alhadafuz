@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { generateClickUrl } from "@/lib/click";
 import { Button } from "@/components/ui/button";

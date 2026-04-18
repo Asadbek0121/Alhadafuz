@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import ProfileSidebar from "@/components/profile/ProfileSidebar";
 import ProfileMobileHeader from "@/components/profile/ProfileMobileHeader";
 

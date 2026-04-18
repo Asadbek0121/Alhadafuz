@@ -1,4 +1,5 @@
 'use client';
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { SessionProvider } from 'next-auth/react';
 import SessionSync from './SessionSync';

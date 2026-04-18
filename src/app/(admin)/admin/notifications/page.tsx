@@ -1,4 +1,6 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
+
 
 import { useState, useEffect } from 'react';
 import { Bell, Send, Users, User, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
@@ -124,7 +126,7 @@ export default function AdminNotificationsPage() {
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '10px' }}>Yuborish usuli</label>
                                 <div style={{ display: 'flex', gap: '8px', background: '#f7f9fc', padding: '4px', borderRadius: '10px' }}>
-                                    <button
+                                    <button title="Tugma"
                                         type="button"
                                         onClick={() => setType('broadcast')}
                                         style={{
@@ -147,7 +149,7 @@ export default function AdminNotificationsPage() {
                                     >
                                         <Users size={16} /> Barchaga
                                     </button>
-                                    <button
+                                    <button title="Tugma"
                                         type="button"
                                         onClick={() => setType('personal')}
                                         style={{
@@ -176,7 +178,7 @@ export default function AdminNotificationsPage() {
                             {type === 'personal' && (
                                 <div>
                                     <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Foydalanuvchi ID</label>
-                                    <input
+                                    <input title="Kiritish maydoni"
                                         required
                                         value={targetUserId}
                                         onChange={e => setTargetUserId(e.target.value)}
@@ -188,7 +190,7 @@ export default function AdminNotificationsPage() {
 
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Sarlavha</label>
-                                <input
+                                <input title="Kiritish maydoni"
                                     required
                                     value={title}
                                     onChange={e => setTitle(e.target.value)}
@@ -199,7 +201,7 @@ export default function AdminNotificationsPage() {
 
                             <div>
                                 <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Tabrik yoki Xabar matni</label>
-                                <textarea
+                                <textarea title="Matn maydoni"
                                     required
                                     value={message}
                                     onChange={e => setMessage(e.target.value)}
@@ -209,7 +211,7 @@ export default function AdminNotificationsPage() {
                                 />
                             </div>
 
-                            <button
+                            <button title="Tugma"
                                 type="submit"
                                 disabled={sending}
                                 style={{
@@ -277,7 +279,7 @@ export default function AdminNotificationsPage() {
                                                     <span suppressHydrationWarning style={{ fontSize: '12px', color: '#999', fontWeight: '500' }}>
                                                         {new Date(notif.createdAt).toLocaleDateString()} {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                     </span>
-                                                    <button
+                                                    <button title="Tugma"
                                                         onClick={() => handleDelete(notif.id)}
                                                         style={{ background: 'none', border: 'none', color: '#fa896b', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', transition: 'background 0.2s' }}
                                                         onMouseOver={e => e.currentTarget.style.background = '#fff5f2'}

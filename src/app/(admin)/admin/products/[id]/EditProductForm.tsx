@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -176,7 +177,7 @@ export default function EditProductForm({ product }: { product: any }) {
             {/* Title */}
             <div>
                 <label className="label">Mahsulot nomi</label>
-                <input {...register("title")} className="input-field" placeholder="Masalan: iPhone 15 Pro" />
+                <input title="Kiritish maydoni" {...register("title")} className="input-field" placeholder="Masalan: iPhone 15 Pro" />
                 {errors.title && <span className="error">{errors.title.message}</span>}
             </div>
 
@@ -184,16 +185,16 @@ export default function EditProductForm({ product }: { product: any }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
                 <div>
                     <label className="label">Narxi (so'm)</label>
-                    <input {...register("price")} type="number" className="input-field" placeholder="12000000" />
+                    <input title="Kiritish maydoni" {...register("price")} type="number" className="input-field" placeholder="12000000" />
                     {errors.price && <span className="error">{errors.price.message}</span>}
                 </div>
                 <div>
                     <label className="label">Eski narx (ixtiyoriy)</label>
-                    <input {...register("oldPrice")} type="number" className="input-field" placeholder="15000000" />
+                    <input title="Kiritish maydoni" {...register("oldPrice")} type="number" className="input-field" placeholder="15000000" />
                 </div>
                 <div>
                     <label className="label">Chegirma/Foyda (so'm)</label>
-                    <input {...register("discount")} type="number" className="input-field" placeholder="3000000" />
+                    <input title="Kiritish maydoni" {...register("discount")} type="number" className="input-field" placeholder="3000000" />
                 </div>
             </div>
 
@@ -201,12 +202,12 @@ export default function EditProductForm({ product }: { product: any }) {
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "20px" }}>
                 <div>
                     <label className="label">Ombordagi soni</label>
-                    <input {...register("stock")} type="number" className="input-field" />
+                    <input title="Kiritish maydoni" {...register("stock")} type="number" className="input-field" />
                     {errors.stock && <span className="error">{errors.stock.message}</span>}
                 </div>
                 <div>
                     <label className="label">Holati</label>
-                    <select {...register("status")} className="input-field" style={{ background: "#fff" }}>
+                    <select title="Tanlash" {...register("status")} className="input-field" style={{ background: "#fff" }}>
                         <option value="ACTIVE">Faol</option>
                         <option value="DRAFT">Qoralama</option>
                         <option value="ARCHIVED">Arxiv</option>
@@ -214,7 +215,7 @@ export default function EditProductForm({ product }: { product: any }) {
                 </div>
                 <div>
                     <label className="label">Kategoriya</label>
-                    <select {...register("category")} className="input-field" style={{ background: "#fff" }}>
+                    <select title="Tanlash" {...register("category")} className="input-field" style={{ background: "#fff" }}>
                         <option value="">Tanlang...</option>
                         {categories.map(cat => (
                             <option key={cat.id} value={cat.id}>{cat.name}</option>
@@ -238,7 +239,7 @@ export default function EditProductForm({ product }: { product: any }) {
             <div>
                 <label className="label">Asosiy Rasm URL</label>
                 <div style={{ display: 'flex', gap: '10px' }}>
-                    <input {...register("image")} className="input-field" placeholder="https://..." style={{ flex: 1 }} />
+                    <input title="Kiritish maydoni" {...register("image")} className="input-field" placeholder="https://..." style={{ flex: 1 }} />
                     <label style={{
                         padding: '0 15px', background: '#f0f9ff', color: '#0066cc',
                         border: '1px solid #bae6fd', borderRadius: '8px',
@@ -246,7 +247,7 @@ export default function EditProductForm({ product }: { product: any }) {
                     }}>
                         {uploading ? <Loader2 className="animate-spin" size={16} /> : <UploadCloud size={16} />}
                         Yuklash
-                        <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'image')} />
+                        <input title="Kiritish maydoni" type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'image')} />
                     </label>
                 </div>
                 {errors.image && <span className="error">{errors.image.message}</span>}
@@ -254,14 +255,14 @@ export default function EditProductForm({ product }: { product: any }) {
 
             <div>
                 <label className="label">Qo'shimcha Rasmlar (har bir qatorda bittadan URL)</label>
-                <textarea {...register("images")} rows={4} className="input-field" placeholder="https://...\nhttps://..." />
+                <textarea title="Matn maydoni" {...register("images")} rows={4} className="input-field" placeholder="https://...\nhttps://..." />
                 <div style={{ marginTop: '5px' }}>
                     <label style={{
                         display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '13px',
                         cursor: 'pointer', color: '#0066cc'
                     }}>
                         <UploadCloud size={16} /> Rasmni yuklab ro'yxatga qo'shish
-                        <input type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'images')} />
+                        <input title="Kiritish maydoni" type="file" hidden accept="image/*" onChange={(e) => handleFileUpload(e, 'images')} />
                     </label>
                 </div>
             </div>
@@ -270,7 +271,7 @@ export default function EditProductForm({ product }: { product: any }) {
             <div style={{ border: '1px solid #eee', padding: '15px', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                     <label className="label" style={{ marginBottom: 0 }}>Xususiyatlar</label>
-                    <button type="button" onClick={addAttribute} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '5px 10px', background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
+                    <button title="Tugma" type="button" onClick={addAttribute} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', padding: '5px 10px', background: '#e0f2fe', color: '#0284c7', border: 'none', borderRadius: '4px', cursor: 'pointer' }}>
                         <Plus size={14} /> Qo'shish
                     </button>
                 </div>
@@ -278,21 +279,21 @@ export default function EditProductForm({ product }: { product: any }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {attributes.map((attr, index) => (
                         <div key={index} style={{ display: 'flex', gap: '10px' }}>
-                            <input
+                            <input title="Kiritish maydoni"
                                 placeholder="Nomi (masalan: Rang)"
                                 value={attr.key}
                                 onChange={(e) => updateAttribute(index, 'key', e.target.value)}
                                 className="input-field"
                                 style={{ flex: 1 }}
                             />
-                            <input
+                            <input title="Kiritish maydoni"
                                 placeholder="Qiymati (Qizil, Ko'k)"
                                 value={attr.value}
                                 onChange={(e) => updateAttribute(index, 'value', e.target.value)}
                                 className="input-field"
                                 style={{ flex: 1 }}
                             />
-                            <button type="button" onClick={() => removeAttribute(index)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '0 10px', cursor: 'pointer' }}>
+                            <button title="Tugma" type="button" onClick={() => removeAttribute(index)} style={{ background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '4px', padding: '0 10px', cursor: 'pointer' }}>
                                 <X size={16} />
                             </button>
                         </div>
@@ -303,11 +304,11 @@ export default function EditProductForm({ product }: { product: any }) {
             {/* Description */}
             <div>
                 <label className="label">Tavsif</label>
-                <textarea {...register("description")} rows={6} className="input-field" placeholder="Mahsulot haqida batafsil..." />
+                <textarea title="Matn maydoni" {...register("description")} rows={6} className="input-field" placeholder="Mahsulot haqida batafsil..." />
                 {errors.description && <span className="error">{errors.description.message}</span>}
             </div>
 
-            <button
+            <button title="Tugma"
                 type="submit"
                 disabled={loading}
                 style={{

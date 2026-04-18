@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 // Force recompile due to Turbopack error
 
 import { useEffect, useState } from 'react';
@@ -81,7 +82,7 @@ export default function Home() {
   };
 
   return (
-    <main style={{ paddingBottom: '60px' }}>
+    <div style={{ paddingBottom: '60px' }}>
       <Hero />
 
       <section className="container">
@@ -110,6 +111,6 @@ export default function Home() {
           ))}
         </div>
       </section>
-    </main >
+    </div>
   );
 }

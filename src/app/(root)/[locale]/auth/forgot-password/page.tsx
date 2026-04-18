@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from "react";
 import { useForm } from "react-hook-form";
@@ -229,7 +230,7 @@ export default function ForgotPasswordPage() {
                                     )}
                                 </div>
                                 <div className="text-center text-sm text-gray-500">
-                                    <button type="button" onClick={() => setStep("EMAIL")} className="text-blue-600 hover:underline">
+                                    <button title="Tugma" type="button" onClick={() => setStep("EMAIL")} className="text-blue-600 hover:underline">
                                         Emailni o'zgartirish
                                     </button>
                                 </div>

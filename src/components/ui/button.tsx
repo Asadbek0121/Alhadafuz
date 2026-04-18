@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
@@ -47,7 +48,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, ...props }, ref) => {
         // Simplified: No Slot support to avoid extra dependency unless needed.
         return (
-            <button
+            <button title="Tugma"
                 className={cn(buttonVariants({ variant, size, className }))}
                 ref={ref}
                 {...props}

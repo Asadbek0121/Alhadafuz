@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
@@ -7,6 +8,9 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
+import dynamic from 'next/dynamic';
+
+const Lottie = dynamic(() => import('lottie-react'), { ssr: false });
 
 type Message = {
     id: string;
@@ -33,8 +37,16 @@ export default function SupportChat() {
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
     const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+    const [supportAnimationData, setSupportAnimationData] = useState(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    useEffect(() => {
+        fetch('https://lottie.host/37c09846-80d2-4b2e-ba16-eeb292525d27/g8BUGOhwGd.json')
+            .then(res => res.json())
+            .then(data => setSupportAnimationData(data))
+            .catch(() => {});
+    }, []);
 
     // Fetch Admin Contact on Mount
     useEffect(() => {
@@ -331,6 +343,22 @@ export default function SupportChat() {
                     animation: pulse-ring 2s infinite;
                 }
 
+                .support-fab-lottie {
+                    position: fixed !important;
+                    bottom: 25px !important;
+                    right: 25px !important;
+                    width: 80px;
+                    height: 80px;
+                    background: transparent;
+                    border: none;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 9999;
+                    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                }
+
                 .menu-item-hover:hover {
                     background-color: #f8fafc;
                     transform: translateX(4px);
@@ -348,6 +376,12 @@ export default function SupportChat() {
                         bottom: 90px !important;
                         right: 16px !important;
                         border-radius: 16px !important;
+                    }
+                    .support-fab-lottie {
+                        width: 65px !important;
+                        height: 65px !important;
+                        bottom: 85px !important;
+                        right: 10px !important;
                     }
                     .support-fab svg {
                         width: 24px !important;
@@ -401,12 +435,16 @@ export default function SupportChat() {
                 `
             }} />
             {/* FAB */}
-            <button
+            <button title="Tugma"
                 onClick={toggleOpen}
-                className="support-fab"
+                className={supportAnimationData ? "support-fab-lottie" : "support-fab"}
                 style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
             >
-                <Headset size={28} strokeWidth={2.5} />
+                {supportAnimationData ? (
+                    <Lottie animationData={supportAnimationData} loop autoplay style={{ width: '100%', height: '100%' }} />
+                ) : (
+                    <Headset size={28} strokeWidth={2.5} />
+                )}
             </button>
 
             {/* Window */}
@@ -416,13 +454,17 @@ export default function SupportChat() {
                     <div style={styles.header} className="support-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                             {view === 'chat' && (
-                                <button onClick={openMenu} style={styles.headerBackBtn}>
+                                <button title="Tugma" onClick={openMenu} style={styles.headerBackBtn}>
                                     <ChevronLeft size={20} strokeWidth={3} />
                                 </button>
                             )}
 
                             <div style={styles.avatarContainer} className="support-avatar">
-                                {view === 'menu' ? (
+                                {supportAnimationData ? (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0e7ff' }}>
+                                        <Lottie animationData={supportAnimationData} loop autoplay style={{ width: '130%', height: '130%' }} />
+                                    </div>
+                                ) : view === 'menu' ? (
                                     <img src="/logo.png" alt="Hadaf Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                                 ) : (
                                     <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
@@ -442,7 +484,7 @@ export default function SupportChat() {
                             </div>
                         </div>
 
-                        <button onClick={closeChat} style={styles.headerCloseBtn} className="active-scale">
+                        <button title="Tugma" onClick={closeChat} style={styles.headerCloseBtn} className="active-scale">
                             <X size={16} strokeWidth={3} />
                         </button>
                     </div>
@@ -459,7 +501,7 @@ export default function SupportChat() {
                                 </div>
 
                                 <div style={styles.menuOptions}>
-                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover active-scale support-menu-item">
+                                    <button title="Tugma" onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover active-scale support-menu-item">
                                         <div style={{ ...styles.iconBox, background: '#eff6ff', color: '#2563eb' }} className="support-icon-box">
                                             <MessageSquareText size={20} strokeWidth={2.5} />
                                         </div>
@@ -570,7 +612,7 @@ export default function SupportChat() {
                                                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
                                                     <span style={{ fontWeight: 900, fontSize: '13px' }}>{formatTime(recordingTime)}</span>
                                                 </div>
-                                                <button type="button" onClick={stopRecording} style={{ color: '#2563eb', fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
+                                                <button title="Tugma" type="button" onClick={stopRecording} style={{ color: '#2563eb', fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
                                                     {t('stop_and_send') || "Yuborish"}
                                                 </button>
                                             </div>
@@ -578,20 +620,20 @@ export default function SupportChat() {
                                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', padding: '0 4px' }}>
                                                 <label style={{ cursor: 'pointer', color: '#94a3b8', padding: '6px' }}>
                                                     <Paperclip size={16} strokeWidth={2.5} />
-                                                    <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+                                                    <input title="Kiritish maydoni" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                                                 </label>
-                                                <input
+                                                <input title="Kiritish maydoni"
                                                     placeholder={t('input_placeholder') || "Xabar..."}
                                                     value={inputValue}
                                                     onChange={e => setInputValue(e.target.value)}
                                                     style={styles.input}
                                                 />
                                                 {!inputValue.trim() ? (
-                                                    <button type="button" onClick={startRecording} style={{ ...styles.actionBtn, background: '#f0fdf4', color: '#16a34a' }}>
+                                                    <button title="Tugma" type="button" onClick={startRecording} style={{ ...styles.actionBtn, background: '#f0fdf4', color: '#16a34a' }}>
                                                         <Mic size={16} strokeWidth={2.5} />
                                                     </button>
                                                 ) : (
-                                                    <button type="submit" style={{ ...styles.actionBtn, background: '#2563eb', color: '#fff' }}>
+                                                    <button title="Tugma" type="submit" style={{ ...styles.actionBtn, background: '#2563eb', color: '#fff' }}>
                                                         <Send size={15} strokeWidth={3} className="ml-0.5" />
                                                     </button>
                                                 )}

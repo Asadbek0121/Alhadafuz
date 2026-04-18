@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useEffect, useState } from 'react';
 import { Download, X, Apple, Smartphone } from 'lucide-react';
@@ -40,7 +41,7 @@ export default function InstallAppButtons() {
             <div className="flex flex-col sm:flex-row gap-2.5 p-1.5 bg-white/5 rounded-[1.4rem] border border-white/10 backdrop-blur-md">
 
                 {/* iOS Button - Sleek & Compact */}
-                <button
+                <button title="Tugma"
                     onClick={() => setShowIosInstructions(true)}
                     className="flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-[1rem] bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-blue-500/30 transition-all duration-300 group/ios"
                 >
@@ -52,7 +53,7 @@ export default function InstallAppButtons() {
                 </button>
 
                 {/* Android Button - Sleek & Compact */}
-                <button
+                <button title="Tugma"
                     onClick={handleAndroidInstall}
                     className="flex-1 flex items-center justify-center gap-3 px-4 py-3 rounded-[1rem] bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 hover:border-green-500/30 transition-all duration-300 group/android"
                 >
@@ -96,7 +97,7 @@ export default function InstallAppButtons() {
                                 ))}
                             </div>
 
-                            <button
+                            <button title="Tugma"
                                 onClick={() => { setShowIosInstructions(false); setShowAndroidInstructions(false); }}
                                 className={`w-full py-4 rounded-2xl font-black text-sm uppercase tracking-widest transition-all ${showIosInstructions ? 'bg-blue-600 hover:bg-blue-500 text-white' : 'bg-green-600 hover:bg-green-500 text-white'}`}
                             >

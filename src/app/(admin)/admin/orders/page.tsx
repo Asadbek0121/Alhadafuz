@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import OrderStatusSelect from "./OrderStatusSelect";
 import { format } from 'date-fns';
@@ -178,7 +179,7 @@ export default async function AdminOrdersPage({
                     {/* Search Bar */}
                     <form className="relative flex-1 lg:min-w-[300px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
+                        <input title="Kiritish maydoni"
                             name="search"
                             defaultValue={search}
                             placeholder="ID, ism yoki telefon..."
@@ -285,9 +286,16 @@ export default async function AdminOrdersPage({
                                                     'CARD': 'Karta',
                                                     'CLICK': 'Click',
                                                     'PAYME': 'Payme',
-                                                    'UZUM': 'Uzum'
+                                                    'UZUM': 'Uzum',
+                                                    'P2P': 'Kartadan Kartaga'
                                                 } as Record<string, string>)[order.paymentMethod.toUpperCase()] || order.paymentMethod}
                                             </div>
+                                            {order.paymentScreenshot && (
+                                                <a href={order.paymentScreenshot} target="_blank" className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded w-fit hover:bg-emerald-100 transition-colors">
+                                                    <Eye size={12} />
+                                                    Chekni ko'rish
+                                                </a>
+                                            )}
                                             <div className="flex items-center gap-2 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded w-fit">
                                                 <Truck size={12} />
                                                 {({

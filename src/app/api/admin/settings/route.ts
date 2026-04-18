@@ -45,7 +45,9 @@ export async function POST(req: Request) {
             socialLinks,
             telegramBotToken,
             telegramAdminIds,
-            courierFeePerOrder
+            courierFeePerOrder,
+            cardNumber,
+            cardHolderName
         } = body;
 
         const updateData: any = {
@@ -60,6 +62,8 @@ export async function POST(req: Request) {
         if (telegramBotToken !== undefined) updateData.telegramBotToken = telegramBotToken;
         if (telegramAdminIds !== undefined) updateData.telegramAdminIds = telegramAdminIds;
         if (courierFeePerOrder !== undefined) updateData.courierFeePerOrder = Number(courierFeePerOrder);
+        if (cardNumber !== undefined) updateData.cardNumber = cardNumber;
+        if (cardHolderName !== undefined) updateData.cardHolderName = cardHolderName;
 
         const settings = await (prisma as any).storeSettings.upsert({
             where: { id: 'default' },

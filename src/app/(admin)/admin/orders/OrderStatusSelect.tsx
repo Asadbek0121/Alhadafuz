@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -54,7 +55,7 @@ export default function OrderStatusSelect({
 
     return (
         <div className="relative inline-block">
-            <select
+            <select title="Tanlash"
                 value={status}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 disabled={loading}

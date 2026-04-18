@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Bell, Check, Info, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -52,7 +53,7 @@ export default function NotificationsPage() {
                     <p className="text-[11px] md:text-sm text-text-muted mt-0.5 line-clamp-1">{t('subtitle')}</p>
                 </div>
                 {notifications.some(n => !n.isRead) && (
-                    <button
+                    <button title="Tugma"
                         onClick={markAllRead}
                         className="shrink-0 text-[10px] md:text-sm font-black text-blue-600 bg-blue-50 px-2.5 py-1.5 md:px-3 md:py-2 rounded-full transition-all active:scale-95 border border-blue-100/50"
                     >

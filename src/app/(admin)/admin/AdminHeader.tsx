@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -114,7 +115,7 @@ export default function AdminHeader() {
                             <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50/50">
                                 <h3 className="font-semibold text-gray-700 text-sm">Bildirishnomalar</h3>
                                 {unreadCount > 0 && (
-                                    <button onClick={(e) => { e.stopPropagation(); markAllRead(); }} className="text-[10px] text-blue-600 hover:underline font-medium">
+                                    <button title="Tugma" onClick={(e) => { e.stopPropagation(); markAllRead(); }} className="text-[10px] text-blue-600 hover:underline font-medium">
                                         O'qilgan deb belgilash
                                     </button>
                                 )}

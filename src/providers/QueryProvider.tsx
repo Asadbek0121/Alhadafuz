@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 // Force rebuild
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";

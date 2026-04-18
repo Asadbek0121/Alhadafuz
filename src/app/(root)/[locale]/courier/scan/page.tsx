@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -130,7 +131,7 @@ export default function CourierScanPage() {
             {/* Controls */}
             <div className="mt-8 w-full max-w-md space-y-4">
                 {!scanning ? (
-                    <button
+                    <button title="Tugma"
                         onClick={startScan}
                         disabled={isLoading}
                         className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg flex items-center justify-center gap-2"
@@ -139,7 +140,7 @@ export default function CourierScanPage() {
                         QR Kodni Skanerlash
                     </button>
                 ) : (
-                    <button
+                    <button title="Tugma"
                         onClick={stopScan}
                         className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl text-lg shadow-lg"
                     >

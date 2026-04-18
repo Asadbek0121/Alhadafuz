@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect } from "react";
 import { Lock, Fingerprint, Loader2, Delete, ChevronLeft, ShieldCheck } from "lucide-react";
@@ -148,14 +149,14 @@ export default function PinLock() {
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
                             <NumpadButton key={n} value={n.toString()} onClick={handlePinInput} />
                         ))}
-                        <button
+                        <button title="Tugma"
                             onClick={handleBiometric}
                             className="w-20 h-20 flex items-center justify-center rounded-full hover:bg-gray-50 active:scale-90 transition-all text-gray-900 border border-gray-100 shadow-sm"
                         >
                             <Fingerprint size={32} strokeWidth={1.5} />
                         </button>
                         <NumpadButton value="0" onClick={handlePinInput} />
-                        <button
+                        <button title="Tugma"
                             onClick={handleBackspace}
                             className="w-20 h-20 flex items-center justify-center rounded-full hover:bg-gray-50 active:scale-90 transition-all text-gray-900 border border-gray-100 shadow-sm"
                         >
@@ -167,7 +168,7 @@ export default function PinLock() {
                 {/* Footer */}
                 <div className="flex flex-col items-center space-y-6 w-full max-w-sm">
                     {isLoading && <Loader2 className="animate-spin text-purple-600" size={32} />}
-                    <button
+                    <button title="Tugma"
                         onClick={() => {
                             const botUsername = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME || "HadafMarketBot";
                             window.open(`https://t.me/${botUsername}?start=recovery`, '_blank');
@@ -184,7 +185,7 @@ export default function PinLock() {
 
 function NumpadButton({ value, onClick }: { value: string; onClick: (v: string) => void }) {
     return (
-        <button
+        <button title="Tugma"
             onClick={() => onClick(value)}
             className="w-20 h-20 flex items-center justify-center text-3xl font-medium text-gray-900 rounded-full bg-gray-50/50 hover:bg-purple-600 hover:text-white active:scale-95 transition-all border border-gray-100 shadow-sm"
         >

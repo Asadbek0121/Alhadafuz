@@ -112,7 +112,7 @@ export async function POST(req: Request) {
                 });
             } else if (type === 'personal' && userId) {
                 // Try to find user by ID first, then by uniqueId (readable ID like H-0001)
-                let userMatch = await prisma.user.findFirst({
+                const userMatch = await prisma.user.findFirst({
                     where: {
                         OR: [
                             { id: userId },

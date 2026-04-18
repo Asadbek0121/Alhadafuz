@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -50,7 +51,7 @@ export default async function UserDetailPage(props: { params: Promise<{ id: stri
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
                     <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: '#e0f2fe', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#0066cc' }}>
                         {user.image ? (
-                            <img src={user.image} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
+                            <img alt="Rasm" src={user.image} style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} />
                         ) : (
                             <User size={40} />
                         )}
@@ -79,7 +80,7 @@ export default async function UserDetailPage(props: { params: Promise<{ id: stri
                                     {user.cart.items.map((item: any) => (
                                         <div key={item.id} style={{ display: 'flex', gap: '12px', paddingBottom: '12px', borderBottom: '1px solid #f9f9f9' }}>
                                             <div style={{ width: '50px', height: '50px', background: '#f5f5f5', borderRadius: '6px', overflow: 'hidden' }}>
-                                                <img src={item.product.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <img alt="Rasm" src={item.product.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             </div>
                                             <div style={{ flex: 1 }}>
                                                 <div style={{ fontWeight: '500', fontSize: '14px' }}>{item.product.title}</div>
@@ -207,7 +208,7 @@ export default async function UserDetailPage(props: { params: Promise<{ id: stri
                                 {wishlist.items.map((item: any) => (
                                     <div key={item.id} style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                                         <div style={{ width: '40px', height: '40px', borderRadius: '6px', overflow: 'hidden', background: '#f5f5f5' }}>
-                                            <img src={item.product.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img alt="Rasm" src={item.product.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         </div>
                                         <div style={{ fontSize: '13px', fontWeight: '500' }}>{item.product.title}</div>
                                     </div>

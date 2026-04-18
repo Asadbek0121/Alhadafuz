@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -34,7 +35,7 @@ export default function DeleteUserButton({ userId }: { userId: string }) {
     };
 
     return (
-        <button
+        <button title="Tugma"
             onClick={handleDelete}
             disabled={loading}
             style={{

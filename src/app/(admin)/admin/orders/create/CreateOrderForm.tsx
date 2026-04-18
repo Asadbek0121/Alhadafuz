@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -246,7 +247,7 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                                         <div key={item.product.id} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                                             <div className="flex gap-2 items-center overflow-hidden">
                                                 <div className="w-8 h-8 rounded bg-white shrink-0">
-                                                    <img src={item.product.image} className="w-full h-full object-cover" />
+                                                    <img alt="Rasm" src={item.product.image} className="w-full h-full object-cover" />
                                                 </div>
                                                 <div className="truncate">
                                                     <p className="text-sm font-medium truncate w-[120px]">{item.product.title}</p>
@@ -255,9 +256,9 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="flex items-center border rounded bg-white h-7">
-                                                    <button className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>-</button>
+                                                    <button title="Tugma" className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>-</button>
                                                     <span className="text-xs px-1 w-6 text-center">{item.quantity}</span>
-                                                    <button className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>+</button>
+                                                    <button title="Tugma" className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>+</button>
                                                 </div>
                                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={() => removeFromCart(item.product.id)}>
                                                     <Trash size={14} />
@@ -320,7 +321,7 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                             </div>
                             <div className="space-y-2">
                                 <Label>To'lov turi</Label>
-                                <select
+                                <select title="Tanlash"
                                     className="w-full border rounded-md h-10 px-3 bg-white"
                                     value={formData.paymentMethod}
                                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}

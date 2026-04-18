@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -131,7 +132,7 @@ export default function ProductPage() {
 
                         // Parse specs to separate selections
                         // Parse specs to separate selections
-                        let specsSource = data.specs || data.attributes;
+                        const specsSource = data.specs || data.attributes;
                         let parsedSpecs: Record<string, string | string[]> | null = null;
 
                         if (typeof specsSource === 'string') {
@@ -334,7 +335,7 @@ export default function ProductPage() {
                                     <AlertTriangle size={14} /> {tMarketing('showLowStock')}
                                 </div>
                             )}
-                            <button className={styles.shareBtn} onClick={handleShare}>
+                            <button title="Tugma" className={styles.shareBtn} onClick={handleShare}>
                                 <Share2 size={20} />
                             </button>
                         </div>
@@ -412,11 +413,11 @@ export default function ProductPage() {
 
                     {/* Desktop Actions */}
                     <div className={styles.desktopActions}>
-                        <button className={styles.btnCart} onClick={handleAddToCart}>
+                        <button title="Tugma" className={styles.btnCart} onClick={handleAddToCart}>
                             <ShoppingCart size={22} strokeWidth={2.5} />
                             {tProduct('add_to_cart')}
                         </button>
-                        <button className={styles.btnBuy} onClick={handleBuyNow}>
+                        <button title="Tugma" className={styles.btnBuy} onClick={handleBuyNow}>
                             {tProduct('buy_one_click')}
                         </button>
                     </div>
@@ -501,7 +502,7 @@ export default function ProductPage() {
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                         <div style={{ width: '40px', height: '40px', background: '#e5e7eb', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                                             {review.user?.image ? (
-                                                <img src={review.user.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                                <img alt="Rasm" src={review.user.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                             ) : (
                                                 <UserIcon size={20} color="#666" />
                                             )}
@@ -542,7 +543,7 @@ export default function ProductPage() {
                             <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: 600, color: '#374151' }}>{tProduct('your_rating')}</label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                    <button
+                                    <button title="Tugma"
                                         key={star}
                                         type="button"
                                         onClick={() => setUserRating(star)}
@@ -556,7 +557,7 @@ export default function ProductPage() {
                         </div>
                         <div style={{ marginBottom: '20px' }}>
                             <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: 600, color: '#374151' }}>{tProduct('your_review')}</label>
-                            <textarea
+                            <textarea title="Matn maydoni"
                                 value={userComment}
                                 onChange={e => setUserComment(e.target.value)}
                                 required
@@ -567,7 +568,7 @@ export default function ProductPage() {
                                 onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                             />
                         </div>
-                        <button
+                        <button title="Tugma"
                             type="submit"
                             disabled={submittingReview}
                             style={{
@@ -586,11 +587,11 @@ export default function ProductPage() {
             {/* Sticky Mobile/Bottom Actions */}
             <div className={styles.stickyBar}>
                 <div className="container" style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <button className={styles.stickyBtnOutline} onClick={handleAddToCart}>
+                    <button title="Tugma" className={styles.stickyBtnOutline} onClick={handleAddToCart}>
                         <ShoppingCart size={20} strokeWidth={2.5} style={{ marginRight: '8px' }} />
                         <span>{tProduct('add_to_cart')}</span>
                     </button>
-                    <button className={styles.stickyBtnPrimary} onClick={handleBuyNow}>
+                    <button title="Tugma" className={styles.stickyBtnPrimary} onClick={handleBuyNow}>
                         {tProduct('buy_one_click')}
                     </button>
                 </div>

@@ -87,13 +87,14 @@ model CourierProfile {
 }
 
 model CourierApplication {
-  id         String   @id @default(cuid())
-  telegramId String   @unique
-  name       String
-  phone      String
-  status     String   @default("PENDING") // PENDING, APPROVED, REJECTED
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  telegramId  String   @unique
+  name        String
+  phone       String
+  vehicleType String?
+  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model MerchantProfile {
@@ -148,6 +149,10 @@ model Order {
   
   deliveryToken    String?     @unique // For QR validation
   tokenExpiresAt   DateTime?
+  
+  paymentScreenshot  String?   // URL to the uploaded receipt image
+  paymentVerifiedAt  DateTime? // When admin confirmed the payment
+  paymentVerifiedBy  String?   // Admin ID who verified it
   
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
@@ -434,6 +439,8 @@ model StoreSettings {
   telegramAdminIds String?
   courierFeePerOrder Float?  @default(12000)
   autoDispatchEnabled Boolean @default(false)
+  cardHolderName   String?
+  cardNumber       String?
   updatedAt        DateTime @updatedAt
 }
 

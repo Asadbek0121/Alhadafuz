@@ -5,6 +5,7 @@ dotenv.config();
 
 const prisma = new PrismaClient();
 const token = process.env.COURIER_BOT_TOKEN;
+const paymentToken = process.env.TELEGRAM_PAYMENT_TOKEN;
 
 if (!token) {
     console.error("❌ COURIER_BOT_TOKEN topilmadi!");
@@ -149,6 +150,7 @@ async function initDb() {
                 "telegramId" TEXT NOT NULL,
                 "name" TEXT NOT NULL,
                 "phone" TEXT NOT NULL,
+                "vehicleType" TEXT,
                 "status" TEXT NOT NULL DEFAULT 'PENDING',
                 "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -158,6 +160,11 @@ async function initDb() {
         await prisma.$executeRawUnsafe(`
             CREATE UNIQUE INDEX IF NOT EXISTS "CourierApplication_telegramId_key" ON "CourierApplication"("telegramId");
         `);
+
+        // Update CourierApplication if column missing
+        try {
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierApplication" ADD COLUMN IF NOT EXISTS "vehicleType" TEXT;');
+        } catch (e) { }
 
         // 2. CourierProfile
         await prisma.$executeRawUnsafe(`
@@ -308,8 +315,8 @@ Quyidagi menyudan foydalaning:`;
         }
 
         // Start registration wizard
-        bot.sendMessage(chatId, "👋 Assalomu alaykum! Hadaf Logistics tizimiga kuryer sifatida ro'yxatdan o'tish uchun quyidagi ma'lumotlarni yuboring:\n\n1. To'liq ismingiz:");
-        userState.set(chatId, { step: 'NAME' });
+        bot.sendMessage(chatId, "👋 Assalomu alaykum! Hadaf Logistics kuryerlik xizmatiga xush kelibsiz.\n\nRo'yxatdan o'tishni boshlaymiz.\n\n1. Ismingizni kiriting:");
+        userState.set(chatId, { step: 'FIRST_NAME' });
         return;
     }
 
@@ -325,10 +332,12 @@ Quyidagi menyudan foydalaning:`;
                 LIMIT 1
             `, telegramId);
             const balance = profiles[0]?.balance || 0;
+            console.log(`[BOT] Sending Hamyon info for ${telegramId}, balance: ${balance}`);
             return bot.sendMessage(chatId, `💰 <b>Sizning balansingiz:</b>\n\n<code>${balance.toLocaleString()} SO'M</code>\n\nTo'lovlar bo'yicha admin bilan aloqaga chiqing.`, { parse_mode: 'HTML' });
         }
 
         if (cleanText === "🔄 Holatni o'zgartirish" || cleanText === "🔄 Holat") {
+            console.log(`[BOT] Toggling Status for ${telegramId}`);
             const results = await prisma.$queryRawUnsafe(`
                 SELECT u.id, cp."onDuty", cp."courierLevel"
                 FROM "User" u 
@@ -336,7 +345,10 @@ Quyidagi menyudan foydalaning:`;
                 WHERE u."telegramId" = $1 LIMIT 1
             `, telegramId);
 
-            if (results.length === 0) return;
+            if (results.length === 0) {
+                console.log(`[BOT] No profile found for ${telegramId} status toggle`);
+                return;
+            }
             const newOnDuty = !results[0].onDuty;
             const newStatus = newOnDuty ? 'ONLINE' : 'OFFLINE';
 
@@ -349,6 +361,7 @@ Quyidagi menyudan foydalaning:`;
                 ? "🚀 <b>Ish boshlandi!</b>\nEndi sizga yangi buyurtmalar keladi. Omad yor bo'lsin!"
                 : "💤 <b>Ish yakunlandi.</b>\nTanaffusingiz xayrli o'tsin!";
 
+            console.log(`[BOT] Sending Status update response to ${telegramId}`);
             return bot.sendMessage(chatId, msgText, { parse_mode: 'HTML' });
         }
 
@@ -408,7 +421,14 @@ Quyidagi menyudan foydalaning:`;
 💰 Daromad: <b>${(completedCount * currentFee).toLocaleString()} SO'M</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
 `;
-                return bot.sendMessage(chatId, statsMsg, { parse_mode: 'HTML' });
+                return bot.sendMessage(chatId, statsMsg, {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{ text: "💳 Balansni to'ldirish", callback_data: "fill_balance" }]
+                        ]
+                    }
+                });
             } catch (err) {
                 console.error("Stats error:", err);
                 return bot.sendMessage(chatId, "❌ Statistika yuklashda xatolik.");
@@ -420,7 +440,7 @@ Quyidagi menyudan foydalaning:`;
                 const settings = await prisma.$queryRawUnsafe('SELECT phone, "socialLinks" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default');
                 const s = settings[0] || {};
 
-                let adminUser = "@hadaf_admin";
+                let adminUser = "@Muhiddinovich_9";
                 try {
                     if (s.socialLinks) {
                         const links = JSON.parse(s.socialLinks);
@@ -430,11 +450,11 @@ Quyidagi menyudan foydalaning:`;
                     }
                 } catch (e) { }
 
-                const phone = s.phone || "+998 (90) 123-45-67";
+                const phone = s.phone || "+998 (33) 686-20-01";
                 const contactMsg = `<b>🆘 ADMINISTRATSIYA BILAN ALOQA</b>\n\nMuammo yoki savollar bo'yicha admin bilan bog'laning:\n\n👤 ${adminUser}\n📞 ${phone}`;
                 return bot.sendMessage(chatId, contactMsg, { parse_mode: 'HTML' });
             } catch (err) {
-                return bot.sendMessage(chatId, "<b>🆘 ADMINISTRATSIYA BILAN ALOQA</b>\n\nMuammo yoki savollar bo'yicha admin bilan bog'laning:\n\n👤 @hadaf_admin\n📞 +998 (90) 123-45-67", { parse_mode: 'HTML' });
+                return bot.sendMessage(chatId, "<b>🆘 ADMINISTRATSIYA BILAN ALOQA</b>\n\nMuammo yoki savollar bo'yicha admin bilan bog'laning:\n\n👤 @Muhiddinovich_9\n📞 +998 (33) 686-20-01", { parse_mode: 'HTML' });
             }
         }
 
@@ -442,48 +462,63 @@ Quyidagi menyudan foydalaning:`;
     }
 
     // 3. Handle Registration Wizard
-    if (state.step === 'NAME') {
-        if (!text || text.startsWith('/')) return; // Ignore commands as names
-        state.name = text;
+    if (state.step === 'NAME') state.step = 'FIRST_NAME'; // Legacy fallback
+
+    if (state.step === 'FIRST_NAME') {
+        if (!text || text.startsWith('/')) return;
+        state.firstName = text;
+        state.step = 'LAST_NAME';
+        bot.sendMessage(chatId, "✅ Ismingiz qabul qilindi.\n\n2. Familiyangizni kiriting:");
+    } else if (state.step === 'LAST_NAME') {
+        if (!text || text.startsWith('/')) return;
+        state.lastName = text;
         state.step = 'PHONE';
-        bot.sendMessage(chatId, "✅ Ismingiz qabul qilindi.\n\n2. Telefon raqamingizni yuboring (yoki pastdagi tugmani bosing):", {
+        bot.sendMessage(chatId, "✅ Familiyangiz qabul qilindi.\n\n3. Telefon raqamingizni tasdiqlash uchun quyidagi tumaniga bosing:\n\n(❗️ Faqat tugma orqali yuborish mumkin, qo'lda yozmang)", {
             reply_markup: {
-                keyboard: [[{ text: "📞 Raqamni yuborish", request_contact: true }]],
+                keyboard: [[{ text: "📞 Raqamni tasdiqlash", request_contact: true }]],
                 one_time_keyboard: true,
                 resize_keyboard: true
             }
         });
     } else if (state.step === 'PHONE') {
-        const phone = msg.contact ? msg.contact.phone_number : text;
-        if (!phone || (text && text.startsWith('/'))) return;
+        if (!msg.contact) {
+            return bot.sendMessage(chatId, "⚠️ Iltimos, raqamingizni pastdagi <b>\"📞 Raqamni tasdiqlash\"</b> tugmasi orqali yuboring. Qo'lda yozilgan raqamlar qabul qilinmaydi.", { parse_mode: 'HTML' });
+        }
+        state.phone = msg.contact.phone_number;
+        state.step = 'VEHICLE';
+        bot.sendMessage(chatId, "✅ Telefon raqamingiz tekshirildi.\n\n4. Transport turingizni tanlang:", {
+            reply_markup: {
+                keyboard: [
+                    [{ text: "🚶 Piyoda" }, { text: "🚴 Velosiped" }],
+                    [{ text: "🛵 Mototsikl / Skuter" }, { text: "🚗 Mashina" }]
+                ],
+                one_time_keyboard: true,
+                resize_keyboard: true
+            }
+        });
+    } else if (state.step === 'VEHICLE') {
+        if (!text || text.startsWith('/')) return;
+        state.vehicleType = text;
+        const fullName = `${state.firstName} ${state.lastName}`;
 
-        state.phone = phone;
-
-        // Save or Update Application (UPSERT)
         try {
             await prisma.$executeRawUnsafe(`
-                INSERT INTO "CourierApplication" (id, "telegramId", name, phone, status, "updatedAt") 
-                VALUES ($1, $2, $3, $4, $5, $6)
+                INSERT INTO "CourierApplication" (id, "telegramId", name, phone, "vehicleType", status, "updatedAt") 
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
                 ON CONFLICT ("telegramId") DO UPDATE SET 
                     name = EXCLUDED.name, 
                     phone = EXCLUDED.phone, 
+                    "vehicleType" = EXCLUDED."vehicleType",
                     status = 'PENDING', 
                     "updatedAt" = EXCLUDED."updatedAt"
-            `,
-                `app_${Date.now()}`,
-                telegramId,
-                state.name,
-                phone,
-                'PENDING',
-                new Date()
-            );
-            bot.sendMessage(chatId, "🎉 Tabriklaymiz! So'rovingiz yuborildi. Adminlar uni ko'rib chiqib, sizni tasdiqlashadi. Tasdiqlanganingizdan so'ng xabar olasiz.", {
+            `, `app_${Date.now()}`, telegramId, fullName, state.phone, state.vehicleType, 'PENDING', new Date());
+
+            bot.sendMessage(chatId, `🎉 Tabriklaymiz! Ro'yxatdan o'tish yakunlandi.\n\n👤 Ism: ${fullName}\n📞 Tel: ${state.phone}\n🚚 Transport: ${state.vehicleType}\n\nAdminlar arizangizni ko'rib chiqishadi. Tasdiqlanganingizdan so'ng xabar olasiz.`, {
                 reply_markup: { remove_keyboard: true }
             });
             userState.delete(chatId);
         } catch (e) {
-            console.error("Registration Error:", e);
-            bot.sendMessage(chatId, `❌ Xatolik yuz berdi: ${e.message || 'Noma\'lum xato'}. Iltimos qaytadan urinib ko'ring.`);
+            bot.sendMessage(chatId, "❌ Xatolik: " + e.message);
             userState.delete(chatId);
         }
     }
@@ -518,8 +553,8 @@ bot.on('callback_query', async (query) => {
             await prisma.$executeRawUnsafe('DELETE FROM "CourierApplication" WHERE "telegramId" = $1 AND status = $2', telegramId, 'REJECTED');
 
             await bot.answerCallbackQuery(query.id, { text: "Qayta ariza berish boshlandi" });
-            await bot.sendMessage(chatId, "👋 Qayta ro'yxatdan o'tish.\n\n1. To'liq ismingizni kiriting:");
-            userState.set(chatId, { step: 'NAME' });
+            await bot.sendMessage(chatId, "👋 Qayta ro'yxatdan o'tish.\n\n1. Ismingizni kiriting:");
+            userState.set(chatId, { step: 'FIRST_NAME' });
             return;
         }
 

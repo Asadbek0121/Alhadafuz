@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -45,7 +46,7 @@ export function LiveRefreshTrigger() {
                 {lastUpdated.toLocaleTimeString('uz-UZ', { hour12: false })}
             </div>
 
-            <button
+            <button title="Tugma"
                 onClick={() => setIsEnabled(!isEnabled)}
                 className={`text-[10px] font-black px-3 py-1 rounded-full transition-all ${isEnabled
                     ? "bg-slate-100 text-slate-600 hover:bg-slate-200"

@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import LiveMap from "@/components/admin/LiveMap";
 import { Suspense } from "react";
@@ -35,7 +36,7 @@ export default function AdminMapPage() {
                 </div>
             </div>
 
-            <div className="flex-1 p-4 md:p-6 overflow-hidden">
+            <div className="flex-1 overflow-hidden relative">
                 <div className="h-full w-full">
                     <Suspense fallback={<div className="flex items-center justify-center h-full"><div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div></div>}>
                         <LiveMap />

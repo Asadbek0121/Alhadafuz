@@ -1,0 +1,11 @@
+src/app/(admin)/admin/bot-debug/page.tsx(8,23): error TS2307: Cannot find module '@/components/ui/badge' or its corresponding type declarations.
+src/app/(admin)/admin/reviews/page.tsx(185,45): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/reviews/page.tsx(190,185): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/reviews/page.tsx(195,181): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/reviews/page.tsx(199,181): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/shipping/page.tsx(405,61): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/shipping/page.tsx(503,53): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/stores/page.tsx(553,57): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/app/(admin)/admin/stores/page.tsx(560,57): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/admin/LiveMap.tsx(318,33): error TS17001: JSX elements cannot have multiple attributes with the same name.
+src/components/admin/LiveMap.tsx(329,33): error TS17001: JSX elements cannot have multiple attributes with the same name.

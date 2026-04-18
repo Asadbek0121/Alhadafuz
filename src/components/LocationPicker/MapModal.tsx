@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/store/useMapStore';
@@ -241,17 +242,17 @@ export default function MapModal() {
                                     <form onSubmit={handleSearch} className="flex-1 max-w-md pointer-events-auto">
                                         <div className="relative flex items-center group">
                                             <div className="absolute left-2 md:left-4 z-10"><Search size={14} className="text-slate-400 group-focus-within:text-blue-600 transition-colors md:w-5 md:h-5" /></div>
-                                            <input type="text" placeholder="Manzilni qidiring..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                                            <input title="Kiritish maydoni" type="text" placeholder="Manzilni qidiring..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                                 className="w-full pl-8 pr-2 py-2 md:pl-12 md:pr-4 md:py-4 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[12px] md:rounded-[24px] shadow-2xl shadow-blue-900/10 outline-none focus:ring-4 focus:ring-blue-500/10 transition-all font-bold text-[10px] md:text-base text-slate-800 placeholder:font-semibold placeholder:text-slate-400"
                                             />
                                         </div>
                                     </form>
-                                    <button onClick={closeMap} className="pointer-events-auto p-2 md:p-4 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[12px] md:rounded-[24px] shadow-2xl text-slate-500 hover:bg-white transition-all active:scale-95 flex items-center justify-center ml-auto">
+                                    <button title="Tugma" onClick={closeMap} className="pointer-events-auto p-2 md:p-4 bg-white/90 backdrop-blur-xl border border-white/20 rounded-[12px] md:rounded-[24px] shadow-2xl text-slate-500 hover:bg-white transition-all active:scale-95 flex items-center justify-center ml-auto">
                                         <X size={18} strokeWidth={2.5} className="md:w-6 md:h-6" />
                                     </button>
                                 </div>
 
-                                <button onClick={detectMyLocation} disabled={isDetecting}
+                                <button title="Tugma" onClick={detectMyLocation} disabled={isDetecting}
                                     className="absolute bottom-16 right-3 md:bottom-8 md:right-8 z-[400] w-10 h-10 md:w-16 md:h-16 bg-white rounded-full shadow-2xl hover:bg-slate-50 transition-all border-2 md:border-4 border-white active:scale-90 flex items-center justify-center group"
                                 >
                                     {isDetecting ? <Loader2 className="animate-spin text-blue-600 w-4 h-4 md:w-6 md:h-6" /> : <Navigation className="text-blue-600 group-hover:scale-110 transition-transform w-4 h-4 md:w-6 md:h-6" fill="currentColor" />}
@@ -311,7 +312,7 @@ export default function MapModal() {
                                     </div>
                                 </div>
                                 <div className="p-4 md:p-10 md:pt-0 bg-white border-t border-slate-100 md:border-0 z-20">
-                                    <button onClick={() => {
+                                    <button title="Tugma" onClick={() => {
                                         if (addressDetails) {
                                             setLocation({
                                                 address: addressDetails.address,

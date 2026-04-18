@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useChatStore } from "@/store/useChatStore";
 import { MessageCircle, ChevronRight } from "lucide-react";
@@ -12,7 +13,7 @@ export default function ChatTrigger({ title, subtitle }: ChatTriggerProps) {
     const { openMenu } = useChatStore();
 
     return (
-        <button
+        <button title="Tugma"
             onClick={openMenu}
             className="w-full text-left bg-blue-600 text-white rounded-[1.25rem] p-3.5 md:p-8 shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all group relative overflow-hidden"
         >

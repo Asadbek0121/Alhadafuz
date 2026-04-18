@@ -210,8 +210,25 @@ export async function POST(req: Request) {
                 lat || null, lng || null, validatedCoupon?.code || null, discountAmount
             );
 
-            // Create items using the standard ORM (this usually works fine)
+            // Create items and decrease stock
             for (const item of finalOrderItems) {
+                // 1. Fetch current stock to double check
+                const p = await tx.product.findUnique({
+                    where: { id: item.productId },
+                    select: { stock: true, title: true }
+                });
+
+                if (!p || p.stock < item.quantity) {
+                    throw new Error(`${p?.title || 'Mahsulot'} zahirasida yetarli miqdor yo'q (Qolgan: ${p?.stock || 0})`);
+                }
+
+                // 2. Decrease Stock
+                await tx.product.update({
+                    where: { id: item.productId },
+                    data: { stock: { decrement: item.quantity } }
+                });
+
+                // 3. Create Order Item
                 await tx.orderItem.create({
                     data: {
                         orderId: orderId,

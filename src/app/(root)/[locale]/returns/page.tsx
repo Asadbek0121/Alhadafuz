@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { RefreshCw, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';

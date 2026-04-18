@@ -1,3 +1,4 @@
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 "use client";
 
@@ -39,7 +40,7 @@ export default function UserRoleSwitcher({ userId, currentRole }: { userId: stri
 
     return (
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <select
+            <select title="Tanlash"
                 disabled={loading}
                 value={currentRole}
                 onChange={(e) => handleRoleChange(e.target.value)}

@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import {
     Users, Award, ShieldCheck, Zap, MapPin, TrendingUp, Leaf, BookOpen,

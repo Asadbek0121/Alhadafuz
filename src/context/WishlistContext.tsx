@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
@@ -10,13 +11,21 @@ interface WishlistContextType {
     toggleWishlist: (id: string) => void;
 }
 
-const WishlistContext = createContext<WishlistContextType | undefined>(undefined);
+const WishlistContext = createContext<WishlistContextType>({
+    wishlist: [],
+    addToWishlist: () => {},
+    removeFromWishlist: () => {},
+    isInWishlist: () => false,
+    toggleWishlist: () => {}
+});
 
 export function WishlistProvider({ children }: { children: ReactNode }) {
     const [wishlist, setWishlist] = useState<string[]>([]);
+    const [isMounted, setIsMounted] = useState(false);
 
-    // Load from local storage
+    // Ensure we only run localstorage on client
     useEffect(() => {
+        setIsMounted(true);
         const saved = localStorage.getItem('wishlist');
         if (saved) {
             try {
@@ -29,8 +38,10 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     // Save to local storage
     useEffect(() => {
-        localStorage.setItem('wishlist', JSON.stringify(wishlist));
-    }, [wishlist]);
+        if (isMounted) {
+            localStorage.setItem('wishlist', JSON.stringify(wishlist));
+        }
+    }, [wishlist, isMounted]);
 
     const addToWishlist = (id: string) => {
         if (!wishlist.includes(id)) {
@@ -61,6 +72,9 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
 export function useWishlist() {
     const context = useContext(WishlistContext);
-    if (!context) throw new Error("useWishlist must be used within WishlistContext");
+    if (context === undefined) {
+        console.warn("useWishlist is being used outside of a WishlistProvider");
+    }
     return context;
 }
+

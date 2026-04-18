@@ -1,4 +1,5 @@
 "use client";
+// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useWishlist } from '@/context/WishlistContext';
 import { useEffect, useState } from 'react';
