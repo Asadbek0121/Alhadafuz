@@ -21,7 +21,7 @@ export async function PATCH(
         }
 
         const order = await prisma.order.update({
-            where: { id: params.id },
+            where: { id },
             data: {
                 paymentScreenshot: screenshotUrl,
                 paymentStatus: 'AWAITING_VERIFICATION' // Optional: add this if you want a specific status

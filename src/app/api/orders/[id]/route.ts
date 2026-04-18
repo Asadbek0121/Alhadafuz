@@ -15,7 +15,7 @@ export async function GET(
 
     try {
         const order = await prisma.order.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 items: true
             }
