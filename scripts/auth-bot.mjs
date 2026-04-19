@@ -23,17 +23,35 @@ bot.on('message', async (msg) => {
 
     // Handle /start verify_998901234567
     if (text && text.startsWith('/start verify_')) {
-        const payload = text.split(' ')[1]; // "verify_998901234567"
-        const phoneToVerify = payload.replace('verify_', '+');
+        const payload = text.split(' ')[1]; // "verify_998336862001"
+        const phoneToVerify = '+' + payload.replace('verify_', '').trim();
+
+        console.log(`🔍 [BOT] Checking OTP for phone: ${phoneToVerify}`);
 
         // Check if there is an active OTP for this number in DB
         const existingToken = await prisma.verificationToken.findFirst({
-            where: { identifier: phoneToVerify }
+            where: { 
+                identifier: {
+                    equals: phoneToVerify
+                }
+            }
         });
 
-        if (!existingToken || new Date() > existingToken.expires) {
-            return bot.sendMessage(chatId, `❌ Uzr, <b>${phoneToVerify}</b> raqami uchun so'rov topilmadi yoki uning vaqti o'tib ketgan. Iltimos, Saytdan "Kodni olish" tugmasini qaytadan bosing.`, { parse_mode: 'HTML' });
+        if (!existingToken) {
+            console.log(`❌ [BOT] No token found in DB for: ${phoneToVerify}`);
+            // List all tokens in DB for debugging (be careful with sensitive data if production)
+            const allTokens = await prisma.verificationToken.findMany({ take: 5 });
+            console.log(`📋 [BOT] Current tokens in DB count: ${allTokens.length}`);
+            
+            return bot.sendMessage(chatId, `❌ Uzr, <b>${phoneToVerify}</b> raqami uchun so'rov topilmadi. \n\nIltimos, Saytdan "Kodni olish" tugmasini qaytadan bosing yoki kuryerlar uchun bo'limini tekshiring.`, { parse_mode: 'HTML' });
         }
+
+        if (new Date() > existingToken.expires) {
+            console.log(`⏰ [BOT] Token expired for: ${phoneToVerify}`);
+            return bot.sendMessage(chatId, `❌ Uzr, <b>${phoneToVerify}</b> raqami uchun so'rovning vaqti o'tib ketgan. Iltimos, Saytdan "Kodni olish" tugmasini qaytadan bosing.`, { parse_mode: 'HTML' });
+        }
+
+        console.log(`✅ [BOT] Token FOUND for: ${phoneToVerify}`);
 
         userState.set(chatId, { phoneToVerify });
 
@@ -138,38 +156,52 @@ bot.on('contact', async (msg) => {
 
 // Admin 2FA Approval Webhook
 bot.on('callback_query', async (query) => {
+    console.log(`🔘 [BOT] Callback received: ${query.data}`);
+    
     if (query.data && query.data.startsWith('admin_2fa:')) {
         const parts = query.data.split(':');
         const action = parts[1];
         const userId = parts[2];
+        const tokenIdentifier = `admin_2fa_${userId}`;
 
         try {
             if (action === 'approve') {
-                await prisma.verificationToken.updateMany({
-                    where: { identifier: `admin_2fa_${userId}` },
+                console.log(`✅ [BOT] Approving 2FA for user: ${userId}`);
+                const updateRes = await prisma.verificationToken.updateMany({
+                    where: { identifier: tokenIdentifier },
                     data: { token: 'APPROVED' }
                 });
-                await bot.editMessageText("✅ <b>Kirish tasdiqlandi!</b>\nEndi admin panelga kishingiz mumkin.", { 
+                
+                console.log(`📊 [BOT] DB Update Result:`, updateRes);
+
+                await bot.editMessageText("✅ <b>Kirish tasdiqlandi!</b>\n\nSaytga qaytib kirishingiz mumkin. Baza yangilandi.", { 
                     chat_id: query.message.chat.id, 
                     message_id: query.message.message_id, 
                     parse_mode: 'HTML' 
                 });
             } else if (action === 'block') {
+                console.log(`🚫 [BOT] Blocking 2FA for user: ${userId}`);
                 // Lock out the user globally
                 await prisma.$executeRawUnsafe('UPDATE "User" SET "lockedUntil" = NOW() + INTERVAL \'30 days\' WHERE id = $1', userId);
                 
                 await prisma.verificationToken.updateMany({
-                    where: { identifier: `admin_2fa_${userId}` },
+                    where: { identifier: tokenIdentifier },
                     data: { token: 'REJECTED' }
                 });
+                
                 await bot.editMessageText("🚫 <b>Hisob zudlik bilan bloklandi!</b>\nXaker ehtimoli bo'lgan faoliyat to'xtatildi.", { 
                     chat_id: query.message.chat.id, 
                     message_id: query.message.message_id, 
                     parse_mode: 'HTML' 
                 });
             }
+            
+            // Answer callback to remove loading state in TG
+            await bot.answerCallbackQuery(query.id, { text: "Amal bajarildi!" });
+
         } catch (e) {
-            console.error("2FA Action error:", e);
+            console.error("❌ [BOT] 2FA Action error:", e);
+            await bot.answerCallbackQuery(query.id, { text: "Xatolik: " + e.message, show_alert: true });
         }
     }
 });
