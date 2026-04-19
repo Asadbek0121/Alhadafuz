@@ -46,8 +46,7 @@ export default async function AdminLayout({
 
     const resolvedParams = await params;
     const locale = resolvedParams?.locale || 'uz';
-
-    /*
+ 
     const is2faPassed = (session?.user as any)?.admin2fa;
     if (userRole === 'ADMIN' && !is2faPassed) {
         return (
@@ -61,7 +60,6 @@ export default async function AdminLayout({
             </html>
         )
     }
-    */
 
     let messages;
     try {

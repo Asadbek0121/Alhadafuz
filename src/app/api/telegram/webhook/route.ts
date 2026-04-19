@@ -1,278 +1,136 @@
 
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import TelegramBot from 'node-telegram-bot-api';
-import { generateNextUniqueId } from '@/lib/id-generator';
-import argon2 from 'argon2';
-import crypto from 'crypto';
+import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
 
-async function getBot() {
-    let token = process.env.TELEGRAM_BOT_TOKEN;
-    if (!token) {
-        const settings = await (prisma as any).storeSettings.findFirst();
-        token = settings?.telegramBotToken;
-    }
-    if (!token) return null;
-    return new TelegramBot(token, { polling: false });
-}
-
-function generateRecoveryKey() {
-    return crypto.randomBytes(6).toString('hex').toUpperCase().match(/.{4}/g)?.join('-') || 'RECOVERY-KEY-ERROR';
-}
+// Telegram Bot Token (Env variables'dan olinadi)
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 export async function POST(req: Request) {
-    const bot = await getBot();
-    if (!bot) return NextResponse.json({ message: "Bot token not configured" }, { status: 500 });
+    if (!BOT_TOKEN) {
+        return NextResponse.json({ error: "BOT_TOKEN not configured" }, { status: 500 });
+    }
 
     try {
         const body = await req.json();
-        const messageObj = body.message || body.callback_query?.message;
-        const callbackData = body.callback_query?.data;
+        
+        // Telegram yuborgan ma'lumot (Update)
+        // console.log("📩 [WEBHOOK] Update received:", JSON.stringify(body, null, 2));
 
-        if (!messageObj && !body.callback_query) return NextResponse.json({ ok: true });
-
-        const chatId = messageObj.chat.id;
-        const text = messageObj.text;
-        const contact = messageObj.contact;
-        const telegramUser = body.callback_query?.from || messageObj.from;
-        const telegramIdStr = String(telegramUser.id);
-
-        let user = await prisma.user.findUnique({ where: { telegramId: telegramIdStr } });
-
-        const safeSend = async (id: number | string, msg: string, options?: any) => {
-            try { await bot.sendMessage(id, msg, options); } catch (err) { console.error("TG Error:", err); }
-        };
-
-        // --- Handle Callback Queries (Buttons) ---
-        if (callbackData?.startsWith('verify_device_')) {
-            const deviceId = callbackData.replace('verify_device_', '');
-            await (prisma as any).device.update({
-                where: { id: deviceId },
-                data: { isTrusted: true }
-            });
-
-            // Edit original message to show success
-            try {
-                await bot.editMessageText(`✅ <b>Qurilma tasdiqlandi!</b>\n\nUshbu qurilmaga endi to'liq ruxsat berildi.`, {
-                    chat_id: chatId,
-                    message_id: messageObj.message_id,
-                    parse_mode: 'HTML'
-                });
-            } catch (e) {
-                await safeSend(chatId, "✅ Qurilma tasdiqlandi!");
-            }
-            return NextResponse.json({ ok: true });
-        }
-
-        // --- 1. /start command ---
-        if (text?.startsWith('/start')) {
-            const startArg = text.split(' ')[1];
-
-            // Handle Login Link
-            if (startArg?.startsWith('login_')) {
-                const tokenValue = startArg.replace('login_', '');
-                const loginToken = await prisma.telegramLoginToken.findUnique({
-                    where: { token: tokenValue },
-                    include: { user: true }
-                });
-
-                if (loginToken && loginToken.expiresAt > new Date() && loginToken.status === 'PENDING') {
-                    await prisma.user.update({
-                        where: { id: loginToken.userId! },
-                        data: { telegramId: telegramIdStr, isVerified: true, botState: 'FINISHED' } as any
-                    });
-                    await prisma.telegramLoginToken.update({
-                        where: { token: tokenValue },
-                        data: { status: 'VERIFIED', telegramId: telegramIdStr }
-                    });
-                    await safeSend(chatId, "✅ Muvaffaqiyatli! Hisobingiz bog'landi. Saytga qaytishingiz mumkin.");
-                    return NextResponse.json({ ok: true });
-                }
-            }
-
-            // Standard Registration Start
-            if (!user || user.botState !== 'FINISHED') {
-                if (!user) {
-                    const uniqueId = await generateNextUniqueId();
-                    user = await prisma.user.create({
-                        data: {
-                            telegramId: telegramIdStr,
-                            uniqueId,
-                            botState: 'REG_CAPTCHA',
-                            role: 'USER',
-                            image: `https://ui-avatars.com/api/?name=User&background=random`
-                        } as any
-                    });
-                } else {
-                    await prisma.user.update({
-                        where: { id: user.id },
-                        data: { botState: 'REG_CAPTCHA', isVerified: false } as any
-                    });
-                }
-
-                // Simple Math Captcha
-                const a = Math.floor(Math.random() * 10) + 1;
-                const b = Math.floor(Math.random() * 10) + 1;
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { tempData: JSON.stringify({ captcha: a + b }) }
-                });
-
-                await safeSend(chatId, `Assalomu alaykum! Hadaf marketga xush kelibsiz.\n\nXavfsizlik tekshiruvi: ${a} + ${b} = ?\n\nIltimos, javobni kiriting:`);
-                return NextResponse.json({ ok: true });
-            }
-
-            await safeSend(chatId, `Xush kelibsiz, ${user.name || 'Foydalanuvchi'}! 👋\n\nHisobingiz himoyalangan.`, {
-                reply_markup: {
-                    inline_keyboard: [
-                        [{ text: "🔑 Tasdiqlash kodini olish", callback_data: "get_verification_code" }],
-                        [{ text: "🔐 PIN o'zgartirish / Tiklash", callback_data: "start_recovery" }]
-                    ]
-                }
-            });
-            return NextResponse.json({ ok: true });
-        }
-
-        // --- Handle Direct Callbacks ---
-        if (callbackData === 'get_verification_code') {
-            const code = Math.floor(100000 + Math.random() * 900000).toString();
-            const recoveryHash = await argon2.hash(code);
-
-            await prisma.user.update({
-                where: { id: user!.id },
-                data: { recoveryHash }
-            });
-
-            await safeSend(chatId, `Sizning tasdiqlash kodingiz: <b>${code}</b>\n\nUni ilovada PIN-kodni tiklash qismiga kiriting.`);
-            return NextResponse.json({ ok: true });
-        }
-
-        if (callbackData === 'start_recovery') {
-            await prisma.user.update({ where: { id: user!.id }, data: { botState: 'RECOVERY_ASK_PHONE' } });
-            await safeSend(chatId, "Hisobni tiklashni boshlaymiz. Iltimos, telefon raqamingizni yuboring:", {
-                reply_markup: {
-                    keyboard: [[{ text: "📲 Telefonni tasdiqlash", request_contact: true }]],
-                    one_time_keyboard: true,
-                    resize_keyboard: true
-                }
-            });
-            return NextResponse.json({ ok: true });
-        }
-
-        // --- 2. Registration & Recovery Flow ---
-        if (user && user.botState && user.botState !== 'FINISHED') {
-            const state = user.botState;
-            const temp = JSON.parse(user.tempData || '{}');
-
-            // --- RECOVERY FLOW ---
-            if (state === 'RECOVERY_ASK_PHONE' && contact) {
-                if (contact.phone_number.includes(user.phone?.replace('+', '') || '---')) {
-                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'RECOVERY_ASK_KEY' } });
-                    await safeSend(chatId, "Telefon tasdiqlandi. ✅\n\nEndi 12 xonali TIKLASH KALITI (Recovery Key)ni kiriting:", {
-                        reply_markup: { remove_keyboard: true }
-                    });
-                } else {
-                    await safeSend(chatId, "Xato telefon raqami. Hisobni faqat o'z raqamingiz orqali tiklay olasiz.");
-                }
-                return NextResponse.json({ ok: true });
-            }
-
-            if (state === 'RECOVERY_ASK_KEY' && text) {
-                const isKeyValid = await argon2.verify((user as any).recoveryHash || '', text.trim().toUpperCase());
-                if (isKeyValid) {
-                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_ASK_PIN' } as any });
-
-                    // Create a faster path for recovery success later
-                    await safeSend(chatId, "Kalit to'g'ri! ✅\n\nYangi 6 xonali PIN kodni kiriting:");
-                } else {
-                    await safeSend(chatId, "Xato tiklash kaliti. Qayta urinib ko'ring:");
-                }
-                return NextResponse.json({ ok: true });
-            }
-
-            // --- REGISTRATION FLOW ---
-            if (state === 'REG_CAPTCHA' && text) {
-                if (parseInt(text) === temp.captcha) {
-                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_ASK_NAME' } });
-                    await safeSend(chatId, "To'g'ri! ✅\n\nEndi ism va familiyangizni kiriting:");
-                } else {
-                    await safeSend(chatId, "Xato javob. Qayta urinib ko'ring:");
-                }
-                return NextResponse.json({ ok: true });
-            }
-
-            if (state === 'REG_ASK_NAME' && text) {
-                await prisma.user.update({ where: { id: user.id }, data: { name: text, botState: 'REG_ASK_PHONE' } });
-                await safeSend(chatId, "Yaxshi. Endi telefon raqamingizni tasdiqlang:", {
-                    reply_markup: {
-                        keyboard: [[{ text: "📲 Telefon raqamni yuborish", request_contact: true }]],
-                        one_time_keyboard: true,
-                        resize_keyboard: true
-                    }
-                });
-                return NextResponse.json({ ok: true });
-            }
-
-            if (state === 'REG_ASK_PHONE' && contact) {
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: { phone: contact.phone_number, botState: 'REG_ASK_PIN' }
-                });
-                await safeSend(chatId, "Telefon raqam qabul qilindi. ✅\n\nXavfsizlik uchun 6 xonali PIN kod yarating:", {
-                    reply_markup: { remove_keyboard: true }
-                });
-                return NextResponse.json({ ok: true });
-            }
-
-            if (state === 'REG_ASK_PIN' && text) {
-                if (!/^\d{6}$/.test(text)) {
-                    await safeSend(chatId, "PIN kod faqat 6 ta raqamdan iborat bo'lishi kerak:");
-                    return NextResponse.json({ ok: true });
-                }
-
-                const pinHash = await argon2.hash(text, { type: argon2.argon2id });
-                const recoveryKey = generateRecoveryKey();
-                const recoveryHash = await argon2.hash(recoveryKey, { type: argon2.argon2id });
-
-                await prisma.user.update({
-                    where: { id: user.id },
-                    data: {
-                        pinHash,
-                        recoveryHash,
-                        botState: 'FINISHED',
-                        isVerified: true,
-                        tempData: null
-                    } as any
-                });
-
-                // --- Generate Auto-Login Token ---
-                const loginTokenValue = crypto.randomBytes(32).toString('hex');
-                await (prisma as any).telegramLoginToken.create({
-                    data: {
-                        token: loginTokenValue,
-                        userId: user.id,
-                        status: 'PENDING',
-                        expiresAt: new Date(Date.now() + 10 * 60 * 1000) // 10 minutes
-                    }
-                });
-
-                const me = await bot.getMe();
-                const botLink = `https://t.me/${me.username}/app?startapp=auth_${loginTokenValue}`;
-
-                await safeSend(chatId, `Tabriklaymiz! Ro'yxatdan muvaffaqiyatli o'tdingiz. 🎊\n\n🗝 **MUHIM: BU SIZNING TIKLASH KALITINGIZ:**\n\n\`${recoveryKey}\`\n\nUni xavfsiz joyda saqlang! PIN kodni unutsangiz, faqat shu kalit yordamida hisobni tiklash mumkin.`, {
-                    reply_markup: {
-                        inline_keyboard: [[
-                            { text: "🚀 Saytga kirish (Auto-login)", url: botLink }
-                        ]]
-                    }
-                });
-                return NextResponse.json({ ok: true });
-            }
+        if (body.message) {
+            await handleMessage(body.message);
+        } else if (body.callback_query) {
+            await handleCallbackQuery(body.callback_query);
         }
 
         return NextResponse.json({ ok: true });
     } catch (error) {
-        console.error("Webhook error:", error);
-        return NextResponse.json({ ok: true });
+        console.error("❌ [WEBHOOK] Processing error:", error);
+        return NextResponse.json({ ok: false, error: error.message }, { status: 200 }); // Always return 200 to Telegram
     }
+}
+
+// 1. Xabarlarni boshqarish (OTP, /start, Kontaktlar)
+async function handleMessage(message: any) {
+    const chatId = message.chat.id;
+    const text = message.text;
+    const telegramId = message.from.id.toString();
+
+    // /start verify_998336862001
+    if (text && text.startsWith('/start verify_')) {
+        const payload = text.split(' ')[1];
+        const phoneToVerify = '+' + payload.replace('verify_', '').trim();
+
+        const existingToken = await prisma.verificationToken.findFirst({
+            where: { identifier: phoneToVerify }
+        });
+
+        if (!existingToken || new Date() > existingToken.expires) {
+            return sendTelegram(chatId, `❌ Uzr, <b>${phoneToVerify}</b> raqami uchun so'rov topilmadi yoki uning vaqti o'tib ketgan. Iltimos, Saytdan "Kodni olish" tugmasini qaytadan bosing.`, { parse_mode: 'HTML' });
+        }
+
+        return sendTelegram(chatId, `👋 Assalomu alaykum!\n\nSaytga kirish uchun raqamingizni tasdiqlang: <b>${phoneToVerify}</b>\n\nIltimos, pastdagi tugmani bosing:`, {
+            parse_mode: 'HTML',
+            reply_markup: {
+                keyboard: [[{ text: '📱 Raqamni yuborish', request_contact: true }]],
+                one_time_keyboard: true,
+                resize_keyboard: true
+            }
+        });
+    }
+
+    // Kontakt ulashilganda (OTP ko'rsatish)
+    if (message.contact) {
+        let contactPhone = message.contact.phone_number.replace(/\D/g, '');
+        if (!contactPhone.startsWith('+')) contactPhone = '+' + contactPhone;
+
+        const tokenData = await prisma.verificationToken.findFirst({
+            where: { identifier: contactPhone },
+            orderBy: { expires: 'desc' }
+        });
+
+        if (!tokenData) {
+            return sendTelegram(chatId, "❌ Uzr, sizga tegishli faol kod topilmadi. Saytdan qayta kod so'rang.");
+        }
+
+        // Link telegramId to user
+        try {
+            await prisma.user.updateMany({
+                where: { phone: contactPhone },
+                data: { telegramId: telegramId }
+            });
+        } catch (e) {}
+
+        return sendTelegram(chatId, `✅ <b>Raqamingiz tasdiqlandi!</b>\n\nKodingiz: <b>${tokenData.token}</b>\n\n<code>Maxfiy tuting!</code>`, { parse_mode: 'HTML', reply_markup: { remove_keyboard: true } });
+    }
+
+    if (text === '/start') {
+        return sendTelegram(chatId, "Hadaf Market botiga xush kelibsiz!");
+    }
+}
+
+// 2. Tugmalarni boshqarish (Admin 2FA)
+async function handleCallbackQuery(query: any) {
+    const chatId = query.message.chat.id;
+    const messageId = query.message.message_id;
+    const data = query.data;
+
+    if (data && data.startsWith('admin_2fa:')) {
+        const [, action, userId] = data.split(':');
+        const tokenIdentifier = `admin_2fa_${userId}`;
+
+        try {
+            if (action === 'approve') {
+                await prisma.verificationToken.updateMany({
+                    where: { identifier: tokenIdentifier },
+                    data: { token: 'APPROVED' }
+                });
+                await editTelegram(chatId, messageId, "✅ <b>Kirish tasdiqlandi!</b>\n\nEndi admin panelga o'tishingiz mumkin.", { parse_mode: 'HTML' });
+            } else if (action === 'block') {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: { lockedUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) }
+                });
+                await editTelegram(chatId, messageId, "🚫 <b>Hisob bloklandi!</b>", { parse_mode: 'HTML' });
+            }
+        } catch (e) {
+            console.error("2FA Webhook Error:", e);
+        }
+    }
+}
+
+// Telegram API Helperlar
+async function sendTelegram(chatId: number, text: string, extra = {}) {
+    return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, text, ...extra })
+    });
+}
+
+async function editTelegram(chatId: number, messageId: number, text: string, extra = {}) {
+    return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: chatId, message_id: messageId, text, ...extra })
+    });
 }
