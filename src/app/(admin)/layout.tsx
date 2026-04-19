@@ -12,6 +12,7 @@ import { Metadata } from 'next';
 import AdminSidebar from './admin/AdminSidebar';
 import AdminHeader from './admin/AdminHeader';
 import Admin2FAPage from './Admin2FAPage';
+import SplashScreen from '@/components/Effects/SplashScreen';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -74,6 +75,7 @@ export default async function AdminLayout({
                 <SessionProviderWrapper session={session}>
                     <QueryProvider>
                         <NextIntlClientProvider messages={messages} locale={locale}>
+                            <SplashScreen />
                             <AdminSidebar />
                             <AdminHeader />
 
