@@ -91,7 +91,7 @@ export default function PinLock() {
         setPin("");
     };
 
-    if (!isLocked) return null;
+    return null;
 
     return (
         <AnimatePresence>
