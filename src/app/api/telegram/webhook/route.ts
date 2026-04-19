@@ -150,17 +150,17 @@ async function handleCallbackQuery(query: any) {
             await prisma.user.updateMany({ where: { phone: request.phone }, data: { role: 'COURIER' } });
             await prisma.courierApplication.update({ where: { id: requestId }, data: { status: 'APPROVED' } });
             await editTelegram(chatId, messageId, `✅ <b>${request.name}</b> kuryer sifatida qabul qilindi.`, { parse_mode: 'HTML' });
-            await sendTelegram(request.telegramId, "🎉 <b>Tabriklaymiz!</b>\nSizni kuryerlik arizangiz tasdiqlandi. Endi buyurtmalarni qabul qilishingiz mumkin.");
+            await sendTelegram(Number(request.telegramId), "🎉 <b>Tabriklaymiz!</b>\nSizni kuryerlik arizangiz tasdiqlandi. Endi buyurtmalarni qabul qilishingiz mumkin.");
         } else if (action === 'reject' && request) {
             await prisma.courierApplication.update({ where: { id: requestId }, data: { status: 'REJECTED' } });
             await editTelegram(chatId, messageId, `❌ <b>${request.name}</b> arizasi rad etildi.`, { parse_mode: 'HTML' });
-            await sendTelegram(request.telegramId, "😔 Uzr, kuryerlik arizangiz rad etildi.");
+            await sendTelegram(Number(request.telegramId), "😔 Uzr, kuryerlik arizangiz rad etildi.");
         }
     }
 }
 
 // Telegram API Helperlar
-async function sendTelegram(chatId: string | number, text: string, extra = {}) {
+async function sendTelegram(chatId: any, text: string, extra = {}) {
     return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,7 +168,7 @@ async function sendTelegram(chatId: string | number, text: string, extra = {}) {
     });
 }
 
-async function editTelegram(chatId: string | number, messageId: number, text: string, extra = {}) {
+async function editTelegram(chatId: any, messageId: number, text: string, extra = {}) {
     return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
