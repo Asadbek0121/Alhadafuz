@@ -160,7 +160,7 @@ async function handleCallbackQuery(query: any) {
 }
 
 // Telegram API Helperlar
-async function sendTelegram(chatId: number, text: string, extra = {}) {
+async function sendTelegram(chatId: string | number, text: string, extra = {}) {
     return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,7 +168,7 @@ async function sendTelegram(chatId: number, text: string, extra = {}) {
     });
 }
 
-async function editTelegram(chatId: number, messageId: number, text: string, extra = {}) {
+async function editTelegram(chatId: string | number, messageId: number, text: string, extra = {}) {
     return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
