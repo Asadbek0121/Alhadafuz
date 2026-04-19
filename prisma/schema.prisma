@@ -90,7 +90,7 @@ model CourierApplication {
   id          String   @id @default(cuid())
   telegramId  String   @unique
   name        String
-  phone       String
+  phone       String   @unique
   vehicleType String?
   status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
   createdAt   DateTime @default(now())
