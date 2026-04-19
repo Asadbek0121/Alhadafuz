@@ -23,9 +23,9 @@ export async function POST(req: Request) {
         }
 
         return NextResponse.json({ ok: true });
-    } catch (error) {
+    } catch (error: any) {
         console.error("❌ [WEBHOOK] Processing error:", error);
-        return NextResponse.json({ ok: false, error: error.message }, { status: 200 }); // Always return 200 to Telegram
+        return NextResponse.json({ ok: false, error: error?.message || "Internal error" }, { status: 200 }); // Always return 200 to Telegram
     }
 }
 
