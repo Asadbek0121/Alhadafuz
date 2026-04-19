@@ -109,7 +109,7 @@ async function handleMessage(message: any) {
 
         // Check if it's a courier application
         const name = `${message.contact.first_name || ''} ${message.contact.last_name || ''}`.trim();
-        await prisma.courierRequest.upsert({
+        await prisma.courierApplication.upsert({
             where: { phone: contactPhone },
             update: { telegramId, name, status: 'PENDING' },
             create: { phone: contactPhone, telegramId, name, status: 'PENDING' }
@@ -144,15 +144,15 @@ async function handleCallbackQuery(query: any) {
 
     if (data.startsWith('courier_request:')) {
         const [, action, requestId] = data.split(':');
-        const request = await prisma.courierRequest.findUnique({ where: { id: requestId } });
+        const request = await prisma.courierApplication.findUnique({ where: { id: requestId } });
 
         if (action === 'approve' && request) {
             await prisma.user.updateMany({ where: { phone: request.phone }, data: { role: 'COURIER' } });
-            await prisma.courierRequest.update({ where: { id: requestId }, data: { status: 'APPROVED' } });
+            await prisma.courierApplication.update({ where: { id: requestId }, data: { status: 'APPROVED' } });
             await editTelegram(chatId, messageId, `✅ <b>${request.name}</b> kuryer sifatida qabul qilindi.`, { parse_mode: 'HTML' });
             await sendTelegram(request.telegramId, "🎉 <b>Tabriklaymiz!</b>\nSizni kuryerlik arizangiz tasdiqlandi. Endi buyurtmalarni qabul qilishingiz mumkin.");
         } else if (action === 'reject' && request) {
-            await prisma.courierRequest.update({ where: { id: requestId }, data: { status: 'REJECTED' } });
+            await prisma.courierApplication.update({ where: { id: requestId }, data: { status: 'REJECTED' } });
             await editTelegram(chatId, messageId, `❌ <b>${request.name}</b> arizasi rad etildi.`, { parse_mode: 'HTML' });
             await sendTelegram(request.telegramId, "😔 Uzr, kuryerlik arizangiz rad etildi.");
         }
