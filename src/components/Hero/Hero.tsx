@@ -85,12 +85,28 @@ export default function Hero() {
 
     const { h, m, s } = formatTime(timeLeft);
 
+    // If not mounted, show exactly what server rendered
+    if (!isMounted) {
+        return (
+            <div className={styles.heroWrapper}>
+                <div className={`container ${styles.heroContent}`}>
+                    <div className={styles.sliderContainer}>
+                        <div className="animate-pulse bg-gray-100 w-full h-full"></div>
+                    </div>
+                    <div className={styles.hotDealCard}>
+                        <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={styles.heroWrapper}>
             <div className={`container ${styles.heroContent}`}>
                 {/* 1. Main Premium Slider */}
                 <div className={styles.sliderContainer}>
-                    {(!isMounted || loading) ? (
+                    {loading ? (
                         <div className="animate-pulse bg-gray-100 w-full h-full"></div>
                     ) : (
                         <div className="w-full h-full relative">
@@ -103,7 +119,7 @@ export default function Hero() {
                                     transition={{ duration: 0.8 }}
                                     className={styles.slider}
                                     style={{
-                                        backgroundImage: mainBanners[currentIndex]?.image ? `url(${mainBanners[currentIndex].image})` : 'none',
+                                        backgroundImage: (mainBanners.length > 0 && mainBanners[currentIndex]?.image) ? `url(${mainBanners[currentIndex].image})` : 'none',
                                         backgroundSize: 'cover',
                                         backgroundPosition: 'center'
                                     }}
@@ -154,7 +170,7 @@ export default function Hero() {
 
                 {/* 2. Special "Hot Deal" Card */}
                 <div className={styles.hotDealCard}>
-                    {(!isMounted || loading) ? (
+                    {loading ? (
                          <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
                     ) : (
                         <div className="w-full h-full flex flex-col">

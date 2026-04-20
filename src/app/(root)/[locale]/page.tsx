@@ -17,12 +17,9 @@ interface Banner {
 }
 
 export default function Home() {
-  const [products, setProducts] = useState<any[]>([]);
-  const [banners, setBanners] = useState<Banner[]>([]);
-  const [currentBanner, setCurrentBanner] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
   const t = useTranslations('Header');
-
+  const [products, setProducts] = useState<any[]>([]);
   useEffect(() => {
     setIsMounted(true);
     // Fetch products
@@ -37,51 +34,9 @@ export default function Home() {
         }
       })
       .catch(err => console.error(err));
-
-    // Fetch HOME_TOP banners
-    fetch('/api/admin/banners')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const now = new Date();
-          const homeTopBanners = data.filter((b: any) => {
-            // Check if active
-            if (!b.isActive || b.position !== 'HOME_TOP') return false;
-
-            // Check scheduling
-            if (b.startDate && new Date(b.startDate) > now) return false;
-            if (b.endDate && new Date(b.endDate) < now) return false;
-
-            return true;
-          });
-          setBanners(homeTopBanners);
-
-          // Track impressions
-          homeTopBanners.forEach((banner: any) => {
-            fetch(`/api/admin/banners/${banner.id}/impression`, { method: 'POST' })
-              .catch(err => console.error('Failed to track impression:', err));
-          });
-        }
-      })
-      .catch(err => console.error('Failed to fetch banners:', err));
   }, []);
 
-  // Auto-scroll banners
-  useEffect(() => {
-    if (banners.length <= 1) return;
-    const interval = setInterval(() => {
-      setCurrentBanner(prev => (prev + 1) % banners.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [banners.length]);
-
-  const nextBanner = () => {
-    setCurrentBanner(prev => (prev + 1) % banners.length);
-  };
-
-  const prevBanner = () => {
-    setCurrentBanner(prev => (prev - 1 + banners.length) % banners.length);
-  };
+  if (!isMounted) return null;
 
   return (
     <div className="pb-[60px] md:pb-0">
