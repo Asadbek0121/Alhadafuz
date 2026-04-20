@@ -83,6 +83,8 @@ export default function Hero() {
         return () => clearInterval(timer);
     }, [mainBanners.length]);
 
+    const { h, m, s } = formatTime(timeLeft);
+
     return (
         <div className={styles.heroWrapper}>
             <div className={`container ${styles.heroContent}`}>
