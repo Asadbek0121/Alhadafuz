@@ -249,10 +249,6 @@ export default function ProfileOverviewPage() {
                                     {isAdmin ? tProfile('admin_panel') : "Sotuvchi paneli"}
                                 </NextLink>
                             )}
-                            <Link href="/profile/settings" className="px-5 py-3 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 rounded-xl transition-all shadow-lg flex items-center gap-2 font-medium">
-                                <Settings size={20} />
-                                {tProfile('settings')}
-                            </Link>
                         </div>
                     </div>
                 </div>

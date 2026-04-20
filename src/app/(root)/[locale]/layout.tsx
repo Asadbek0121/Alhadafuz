@@ -63,6 +63,8 @@ export default async function LocaleLayout({
     <html lang={locale} suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
         <ClientProviders messages={messages} locale={locale} session={session}>
+          <Script src="https://cdn.lordicon.com/lordicon.js" strategy="beforeInteractive" />
+          <Script src="https://cdn.lordicon.com/bhenfmcm.js" strategy="beforeInteractive" />
           <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
           <SessionSync />
           <TelegramAuthSync />

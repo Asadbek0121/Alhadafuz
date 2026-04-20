@@ -26,6 +26,10 @@ import CartDrawer from '../Cart/CartDrawer';
 import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
+import LordIcon from '../ui/LordIcon';
+import dynamic from 'next/dynamic';
+
+const NotificationIcon = dynamic(() => import('../ui/NotificationIcon'), { ssr: false });
 
 
 
@@ -120,10 +124,10 @@ export default function Header() {
     const user = isAuthenticated ? (storeUser || session?.user) : null;
 
     const router = useRouter();
+    const { activeMenu, toggleMenu, closeAllMenus, isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
 
-    const [notifOpen, setNotifOpen] = useState(false);
-    // const [menuOpen, setMenuOpen] = useState(false); // Replaced by global store
-    const { isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
+    const notifOpen = activeMenu === 'notifications';
+    const lottieRef = useRef(null);
 
     const [menuMode, setMenuMode] = useState<'full' | 'catalog'>('full');
 
@@ -174,16 +178,18 @@ export default function Header() {
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (searchRef.current && !searchRef.current.contains(event.target as Node) &&
-                mobileSearchRef.current && !mobileSearchRef.current.contains(event.target as Node)) {
-                setSearchResults([]);
-            }
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setNotifOpen(false);
-            }
+            const target = event.target as HTMLElement;
+            
+            // Check if clicking inside elements that should keep menus open
+            const isInsideSearch = searchRef.current?.contains(target) || mobileSearchRef.current?.contains(target);
+            const isInsideDropdown = dropdownRef.current?.contains(target);
+            const isCatalogBtn = target.closest('#category-btn-trigger');
+            
+            if (!isInsideSearch) setSearchResults([]);
+            if (!isInsideDropdown && !isCatalogBtn) closeAllMenus();
         };
 
-        const handleCloseMenu = () => closeCatalog();
+        const handleCloseMenu = () => closeAllMenus();
 
         document.addEventListener("mousedown", handleClickOutside);
         window.addEventListener("close-catalog-menu", handleCloseMenu);
@@ -452,11 +458,13 @@ export default function Header() {
                                     setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
                                     fetch('/api/user/notifications', { method: 'PUT' }).catch(console.error);
                                 }
-                                setNotifOpen(!notifOpen);
+                                toggleMenu('notifications');
                             }}
                         >
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all">
-                                <Bell size={24} strokeWidth={2} />
+                            <div 
+                                className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center cursor-pointer"
+                            >
+                                <NotificationIcon size={24} />
                                 {unreadCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{unreadCount}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('bildirishnoma')}</span>
@@ -537,7 +545,13 @@ export default function Header() {
                         {/* Favorites */}
                         <Link href="/favorites" className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-red-500 transition-all">
-                                <Heart size={24} strokeWidth={2} />
+                                <LordIcon 
+                                    src="/icons/lordicon/heart_premium.json"
+                                    trigger="hover"
+                                    size={24}
+                                    colors="primary:#1e293b,secondary:#ef4444"
+                                    stroke="32"
+                                />
                                 {wishlist.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{wishlist.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('sevimlilar')}</span>
@@ -546,7 +560,13 @@ export default function Header() {
                         {/* Cart */}
                         <button title="Tugma" onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
-                                <ShoppingBag size={24} strokeWidth={2} />
+                                <LordIcon 
+                                    src="/icons/lordicon/cart_premium.json"
+                                    trigger="hover"
+                                    size={24}
+                                    colors="primary:#1e293b,secondary:#2563eb"
+                                    stroke="32"
+                                />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors hidden md:block">{t('savatcha')}</span>
@@ -560,7 +580,12 @@ export default function Header() {
                                 {user?.image ? (
                                     <img src={user.image} alt={user.name || "User"} className="w-6 h-6 rounded-full object-cover" />
                                 ) : (
-                                    <UserCircle size={24} strokeWidth={2} />
+                                    <LordIcon 
+                                        src="/icons/lordicon/user.json"
+                                        trigger="hover"
+                                        size={24}
+                                        colors="primary:#1e293b,secondary:#2563eb"
+                                    />
                                 )}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors max-w-[80px] truncate">
@@ -571,10 +596,10 @@ export default function Header() {
                 </div>
 
                 {/* Mobile Search & Location Bar (Only visible on mobile) */}
-                <div className="lg:hidden container pb-3 flex flex-col gap-2">
+                <div className="lg:hidden container pb-3 flex flex-col gap-2 relative z-50">
 
 
-                    <div className="flex items-center gap-2 relative" ref={mobileSearchRef}>
+                    <div className="flex items-center gap-2 relative z-[60]" ref={mobileSearchRef}>
                         <div className="relative flex-1 group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />

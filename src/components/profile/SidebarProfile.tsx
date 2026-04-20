@@ -1,8 +1,7 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Link, usePathname } from "@/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { useUserStore } from "@/store/useUserStore";
 import {
     User,
@@ -12,16 +11,14 @@ import {
     LogOut,
     LayoutGrid,
     Settings,
-    CreditCard,
     Bell,
-    HelpCircle
+    HelpCircle,
+    ChevronRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "next-intl";
-import { useSession } from "next-auth/react";
-import NextLink from "next/link";
 
-export default function ProfileSidebar() {
+export default function SidebarProfile() {
     const pathname = usePathname();
     const tProfile = useTranslations('Profile');
     const { logout } = useUserStore();
@@ -29,8 +26,6 @@ export default function ProfileSidebar() {
 
     const userRole = (session?.user as any)?.role;
     const isAdmin = userRole === 'ADMIN';
-    const isVendor = userRole === 'VENDOR';
-    const hasPanelAccess = isAdmin || isVendor;
 
     const menuItems = [
         { title: tProfile('overview'), href: "/profile", icon: LayoutGrid },
@@ -50,44 +45,54 @@ export default function ProfileSidebar() {
 
     return (
         <aside className="hidden lg:flex flex-col w-[280px] shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-24">
-                <div className="p-4 space-y-1">
+            <div className="bg-white rounded-[24px] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 overflow-hidden sticky top-24">
+                <div className="p-3 space-y-1">
                     {menuItems.map((item: any) => {
                         const isActive = pathname === item.href;
-                        const LinkComponent = item.isExternal ? NextLink : Link;
+                        const Icon = item.icon;
 
                         return (
-                            <LinkComponent
+                            <Link
                                 key={item.href}
                                 href={item.href}
                                 className={cn(
-                                    "flex items-center gap-3.5 px-4 py-3.5 rounded-xl transition-all duration-200 group text-[15px] font-medium",
+                                    "flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all duration-300 group text-[15px] font-semibold",
                                     isActive
-                                        ? "bg-primary/5 text-primary"
-                                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                        ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
+                                        : "text-slate-600 hover:bg-slate-50 hover:text-blue-600"
                                 )}
                             >
-                                <item.icon
-                                    size={20}
-                                    strokeWidth={isActive ? 2.5 : 2}
+                                <div className="flex items-center gap-3.5">
+                                    <Icon
+                                        size={20}
+                                        strokeWidth={isActive ? 2.5 : 2}
+                                        className={cn(
+                                            "transition-colors",
+                                            isActive ? "text-white" : "text-slate-400 group-hover:text-blue-600"
+                                        )}
+                                    />
+                                    <span>{item.title}</span>
+                                </div>
+                                <ChevronRight 
+                                    size={16} 
                                     className={cn(
-                                        "transition-colors",
-                                        isActive ? "text-primary" : "text-gray-400 group-hover:text-gray-600"
-                                    )}
+                                        "transition-transform duration-300",
+                                        isActive ? "translate-x-0 opacity-100" : "-translate-x-2 opacity-0 group-hover:translate-x-0 group-hover:opacity-100"
+                                    )} 
                                 />
-                                <span>{item.title}</span>
-                            </LinkComponent>
+                            </Link>
                         );
                     })}
                 </div>
 
-                <div className="p-4 border-t border-gray-50 mt-2">
-                    <button title="Tugma"
+                <div className="p-3 border-t border-slate-50 mt-1">
+                    <button 
+                        title="Logout"
                         onClick={handleLogout}
-                        className="flex items-center gap-3.5 px-4 py-3.5 w-full text-red-500 hover:bg-red-50 rounded-xl transition-colors font-medium text-[15px] group"
+                        className="flex items-center gap-3.5 px-4 py-3.5 w-full text-red-500 hover:bg-red-50 rounded-2xl transition-all duration-300 font-bold text-[15px] group"
                     >
                         <div className="w-5 h-5 flex items-center justify-center">
-                            <LogOut size={20} strokeWidth={2} className="group-hover:scale-110 transition-transform" />
+                            <LogOut size={20} strokeWidth={2.5} className="group-hover:scale-110 group-hover:-translate-x-1 transition-all" />
                         </div>
                         <span>{tProfile('logout')}</span>
                     </button>

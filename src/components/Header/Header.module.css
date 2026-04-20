@@ -382,21 +382,8 @@
         align-items: center;
         width: 100%;
         justify-content: center;
-        /* Centered Logo */
-        margin-bottom: 4px;
+        margin-bottom: 2px;
         position: relative;
-    }
-
-    .mobileMenuBtn {
-        background: none;
-        border: none;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        position: absolute;
-        /* Keep menu button positioned if we had it, but it is removed now */
-        left: 0;
     }
 
     .mobileActions {
@@ -404,11 +391,11 @@
         right: 0;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 8px;
     }
 
     .logoMobile {
-        font-size: 24px;
+        font-size: 20px; /* Reduced from 24px */
         font-weight: 800;
         color: var(--text-main);
         text-decoration: none;
@@ -419,32 +406,22 @@
         display: flex;
         align-items: center;
         width: 100%;
-        gap: 12px;
-        margin-bottom: 8px;
+        gap: 8px;
+        margin-bottom: 4px;
     }
 
     .langWrapperMobile {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: 14px;
+        gap: 4px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
         color: var(--text-main);
         background: #f5f5f7;
-        height: 48px;
-        padding: 0 12px;
-        border-radius: 12px;
-    }
-
-    .scaleBtnMobile {
-        background: none;
-        border: none;
-        padding: 0;
-        color: var(--text-main);
-        display: flex;
-        align-items: center;
-        cursor: pointer;
+        height: 40px; /* Reduced from 48px */
+        padding: 0 10px;
+        border-radius: 10px;
     }
 
     .headerInner {
@@ -453,7 +430,7 @@
         align-items: center;
         width: 100%;
         gap: 0;
-        padding: 0 16px;
+        padding: 0 12px;
     }
 
     .desktopOnly {
@@ -462,9 +439,7 @@
 
     .searchBox {
         flex: 1;
-        /* Take remaining space */
         width: auto;
-        /* Reset fixed width */
         max-width: 100%;
         margin: 0;
     }
@@ -472,16 +447,20 @@
     .searchInput {
         background-color: #f5f5f7;
         border: none;
-        border-radius: 12px;
+        height: 40px; /* Reduced from 48px */
+        border-radius: 10px;
+        font-size: 14px;
     }
 
     .searchBtn {
         background: transparent;
         color: #888;
+        top: 4px;
+        bottom: 4px;
     }
 
     .header {
-        padding: 12px 0;
+        padding: 8px 0; /* Reduced from 12px */
         background: rgba(255, 255, 255, 0.98);
     }
 }

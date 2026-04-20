@@ -30,7 +30,8 @@
         "not_found": "Not found",
         "kabinet": "Profile",
         "yetkazib_berish_manzili": "Delivery Address",
-        "joylashuvni_aniqlash": "Detect Location"
+        "joylashuvni_aniqlash": "Detect Location",
+        "tanlash": "Select"
     },
     "Hero": {
         "slider_title": "Huge discounts started!",

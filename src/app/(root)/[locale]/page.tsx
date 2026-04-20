@@ -20,9 +20,11 @@ export default function Home() {
   const [products, setProducts] = useState<any[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [currentBanner, setCurrentBanner] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const t = useTranslations('Header');
 
   useEffect(() => {
+    setIsMounted(true);
     // Fetch products
     fetch('/api/products')
       .then(res => res.json())
@@ -82,7 +84,7 @@ export default function Home() {
   };
 
   return (
-    <div style={{ paddingBottom: '60px' }}>
+    <div style={isMounted ? { paddingBottom: '60px' } : {}}>
       <Hero />
 
       <section className="container">

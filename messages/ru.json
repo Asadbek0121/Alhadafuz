@@ -30,7 +30,8 @@
         "not_found": "Не найдено",
         "kabinet": "Кабинет",
         "yetkazib_berish_manzili": "Адрес доставки",
-        "joylashuvni_aniqlash": "Определить местоположение"
+        "joylashuvni_aniqlash": "Определить местоположение",
+        "tanlash": "Выбрать"
     },
     "Hero": {
         "slider_title": "Начались большие скидки!",

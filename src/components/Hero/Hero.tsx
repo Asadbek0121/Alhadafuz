@@ -1,11 +1,13 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import styles from './Hero.module.css';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, Zap, TrendingUp } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link } from '@/navigation';
+import styles from './Hero.module.css';
+
+const DEFAULT_COUNTDOWN = 24 * 60 * 60 * 1000; // 24h fallback
 
 export default function Hero() {
     const t = useTranslations('Hero');
@@ -13,177 +15,199 @@ export default function Hero() {
     const [banners, setBanners] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [timeLeft, setTimeLeft] = useState(DEFAULT_COUNTDOWN);
+    const [isMounted, setIsMounted] = useState(false);
+    const [imageError, setImageError] = useState(false);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    const trackImpression = useCallback((id: string) => {
-        fetch(`/api/admin/banners/${id}/impression`, { method: 'POST' }).catch(() => { });
-    }, []);
-
-    const trackClick = useCallback((id: string) => {
-        fetch(`/api/admin/banners/${id}/click`, { method: 'POST' }).catch(() => { });
-    }, []);
-
+    // Mount Logic
     useEffect(() => {
-        fetch('/api/banners')
-            .then(res => res.json())
-            .then(data => {
+        setIsMounted(true);
+    }, []);
+
+    const fetchData = useCallback(async () => {
+        try {
+            const res = await fetch('/api/banners');
+            if (res.ok) {
+                const data = await res.json();
                 setBanners(data);
-                setLoading(false);
-            })
-            .catch(() => setLoading(false));
+                
+                // Identify side banner for countdown
+                const side = data.find((b: any) => b.position === 'HOME_SIDE' && b.isActive !== false);
+                if (side?.endDate) {
+                    const target = new Date(side.endDate).getTime();
+                    const now = new Date().getTime();
+                    const diff = target - now;
+                    setTimeLeft(diff > 0 ? diff : 0);
+                }
+            }
+        } catch (err) {
+            console.error("Banner fetch error:", err);
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    const mainBanners = banners.filter(b => b.position === 'HOME_TOP' && b.isActive !== false);
-    const sideBanner = banners.find(b => b.position === 'HOME_SIDE' && b.isActive !== false);
-
-    // Track side banner impression once loaded
     useEffect(() => {
-        if (sideBanner) {
-            trackImpression(sideBanner.id);
-        }
-    }, [sideBanner, trackImpression]);
+        fetchData();
+    }, [fetchData]);
 
-    // Track main banner impression when slide changes
+    // Countdown Ticker
     useEffect(() => {
-        if (mainBanners.length > 0 && mainBanners[currentIndex]) {
-            trackImpression(mainBanners[currentIndex].id);
-        }
-    }, [currentIndex, mainBanners, trackImpression]);
+        timerRef.current = setInterval(() => {
+            setTimeLeft(prev => (prev <= 1000 ? 0 : prev - 1000));
+        }, 1000);
+        return () => { if (timerRef.current) clearInterval(timerRef.current); };
+    }, []);
 
-    // Auto-play logic
-    useEffect(() => {
-        if (mainBanners.length <= 1) return;
-
-        const timer = setInterval(() => {
-            setCurrentIndex((prev) => (prev + 1) % mainBanners.length);
-        }, 5000);
-
-        return () => clearInterval(timer);
-    }, [mainBanners.length]);
+    const formatTime = (ms: number) => {
+        if (ms <= 0) return { h: 0, m: 0, s: 0 };
+        const h = Math.floor(ms / (1000 * 60 * 60));
+        const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+        const s = Math.floor((ms % (1000 * 60)) / 1000);
+        return { h, m, s };
+    };
 
     const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % mainBanners.length);
     const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + mainBanners.length) % mainBanners.length);
 
-    if (loading) return (
+    const mainBanners = banners.filter(b => b.position === 'HOME_TOP' && b.isActive !== false);
+    const sideBanner = banners.find(b => b.position === 'HOME_SIDE' && b.isActive !== false);
+
+    // Auto-play
+    useEffect(() => {
+        if (mainBanners.length <= 1) return;
+        const timer = setInterval(() => {
+            setCurrentIndex((prev) => (prev + 1) % mainBanners.length);
+        }, 6000);
+        return () => clearInterval(timer);
+    }, [mainBanners.length]);
+
+    if (!isMounted || loading) return (
         <div className={styles.heroWrapper}>
             <div className={`container ${styles.heroContent}`}>
-                <div style={{ height: '380px', width: '100%', background: '#f5f5f5', borderRadius: '20px', animation: 'heroPulse 2s infinite' }}></div>
-                <div style={{ height: '380px', width: '100%', background: '#f5f5f5', borderRadius: '20px', animation: 'heroPulse 2s infinite' }}></div>
+                <div className={styles.sliderContainer}>
+                    <div className="animate-pulse bg-gray-100 w-full h-full"></div>
+                </div>
+                <div className={styles.hotDealCard + " hidden lg:flex"}>
+                    <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
+                </div>
             </div>
         </div>
     );
 
+    const { h, m, s } = formatTime(timeLeft);
+
     return (
         <div className={styles.heroWrapper}>
             <div className={`container ${styles.heroContent}`}>
-                {/* Asosiy Banner (Slider) */}
+                {/* 1. Main Premium Slider */}
                 <div className={styles.sliderContainer}>
                     <AnimatePresence mode="wait">
-                        {mainBanners.length > 0 ? (
-                            <motion.div
-                                key={mainBanners[currentIndex].id}
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                transition={{ duration: 0.5, ease: "easeInOut" }}
-                                className={styles.slider}
-                                style={mainBanners[currentIndex].image ? { backgroundImage: `url(${mainBanners[currentIndex].image})`, backgroundSize: 'cover', backgroundPosition: 'center' } : {}}
-                            >
-                                <div className={styles.sliderContent}>
-                                    <motion.div
-                                        initial={{ y: 20, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.2 }}
-                                        className={styles.sliderTitle}
-                                    >
-                                        {mainBanners[currentIndex].title}
-                                    </motion.div>
-                                    <motion.div
-                                        initial={{ y: 20, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.3 }}
-                                        className={styles.sliderDesc}
-                                    >
-                                        {mainBanners[currentIndex].description}
-                                    </motion.div>
-                                    <motion.a
-                                        initial={{ y: 20, opacity: 0 }}
-                                        animate={{ y: 0, opacity: 1 }}
-                                        transition={{ delay: 0.4 }}
-                                        href={mainBanners[currentIndex].link || '#'}
-                                        onClick={() => trackClick(mainBanners[currentIndex].id)}
+                        <motion.div
+                            key={mainBanners.length > 0 ? mainBanners[currentIndex]?.id : 'default'}
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.8 }}
+                            className={styles.slider}
+                            style={{
+                                backgroundImage: mainBanners[currentIndex]?.image ? `url(${mainBanners[currentIndex].image})` : 'none',
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center'
+                            }}
+                        >
+                            <div className={styles.sliderOverlay}></div>
+                            <div className={styles.sliderContent}>
+                                <motion.div
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.2, duration: 0.6 }}
+                                >
+                                    <h1 className={styles.sliderTitle}>
+                                        {mainBanners[currentIndex]?.title || t('slider_title')}
+                                    </h1>
+                                </motion.div>
+
+                                <motion.div
+                                    initial={{ y: 20, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: 0.4, duration: 0.6 }}
+                                >
+                                    <Link
+                                        href={mainBanners[currentIndex]?.link || '/products'}
                                         className={styles.sliderBtn}
-                                        style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'white' }}
                                     >
-                                        {tCommon('batafsil')} <ChevronRight size={18} />
-                                    </motion.a>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <div className={styles.slider}>
-                                <div className={styles.sliderContent}>
-                                    <div className={styles.sliderTitle}>{t('slider_title')}</div>
-                                    <div className={styles.sliderDesc}>{t('slider_desc')}</div>
-                                    <a href="#" className={styles.sliderBtn} style={{ textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'white' }}>
-                                        {tCommon('batafsil')} <ChevronRight size={18} />
-                                    </a>
-                                </div>
+                                        {tCommon('batafsil')}
+                                        <ChevronRight size={14} />
+                                    </Link>
+                                </motion.div>
                             </div>
-                        )}
+                        </motion.div>
                     </AnimatePresence>
 
-                    {/* Slider Navigation */}
                     {mainBanners.length > 1 && (
-                        <div className={styles.sliderControls}>
-                            <div className={styles.dots}>
-                                {mainBanners.map((_, i) => (
-                                    <button title="Tugma"
-                                        key={i}
-                                        onClick={() => setCurrentIndex(i)}
-                                        className={`${styles.dot} ${i === currentIndex ? styles.activeDot : ''}`}
-                                    />
-                                ))}
-                            </div>
-                            <div className={styles.arrows}>
-                                <button title="Tugma" onClick={prevSlide} className={styles.arrowBtn}><ChevronLeft size={20} /></button>
-                                <button title="Tugma" onClick={nextSlide} className={styles.arrowBtn}><ChevronRight size={20} /></button>
-                            </div>
+                        <div className={styles.sliderDots}>
+                            {mainBanners.map((_, i) => (
+                                <button title="Tugma"
+                                    key={i}
+                                    onClick={() => setCurrentIndex(i)}
+                                    className={`${styles.dot} ${i === currentIndex ? styles.activeDot : ''}`}
+                                />
+                            ))}
                         </div>
                     )}
                 </div>
 
-                {/* Yon Banner (Promo Card) */}
-                <div
-                    className={styles.promoCard}
-                    style={{ cursor: sideBanner?.link ? 'pointer' : 'default' }}
-                    onClick={() => {
-                        if (sideBanner?.link) {
-                            trackClick(sideBanner.id);
-                            window.open(sideBanner.link, '_self');
-                        }
-                    }}
-                >
-                    {(sideBanner?.discount || (!sideBanner && "-34%")) && (
-                        <div className={styles.promoBadge}>{sideBanner?.discount || "-34%"}</div>
-                    )}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fa', borderRadius: '12px', margin: '16px 0', overflow: 'hidden' }}>
-                        {sideBanner?.image ? (
-                            <img src={sideBanner.image} alt={sideBanner.title} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-                        ) : (
-                            <span style={{ color: '#ccc' }}>Product Image</span>
-                        )}
+                {/* 2. Special "Hot Deal" Card */}
+                <motion.div className={styles.hotDealCard}>
+                    <div className={styles.hotDealHeader}>
+                        <div className={styles.hotDealBadge}>
+                            <Zap size={10} className="fill-current" />
+                            FLASH SALE
+                        </div>
+                        <div className={styles.countdown}>
+                            <div className={styles.timeBox}><span>{String(h).padStart(2, '0')}</span></div>
+                            <span className={styles.timeSep}>:</span>
+                            <div className={styles.timeBox}><span>{String(m).padStart(2, '0')}</span></div>
+                            <span className={styles.timeSep}>:</span>
+                            <div className={styles.timeBox}><span>{String(s).padStart(2, '0')}</span></div>
+                        </div>
                     </div>
-                    <div className={styles.promoTitle}>
-                        {sideBanner?.title || "Simsiz naushniklar Redmi Buds 5 Pro Midnight Black"}
-                    </div>
-                    <div className={styles.promoPrice}>
-                        <span className={styles.currentPrice}>
-                            {sideBanner?.price ? `${sideBanner.price.toLocaleString()} ${tCommon('som')}` : (sideBanner && `549 000 ${tCommon('som')}`)}
-                        </span>
-                        {sideBanner?.oldPrice && (
-                            <span className={styles.oldPrice}>{sideBanner.oldPrice.toLocaleString()} {tCommon('som')}</span>
-                        )}
-                    </div>
-                </div>
+
+                    <Link 
+                        href={sideBanner?.link || '/products'} 
+                        className={styles.hotDealContent}
+                    >
+                        <div className={styles.hotDealImageWrapper}>
+                            {(sideBanner?.image && !imageError) ? (
+                                <motion.img 
+                                    whileHover={{ scale: 1.1 }}
+                                    src={sideBanner.image} 
+                                    alt="Hot product" 
+                                    className={styles.hotDealImage}
+                                    onError={() => setImageError(true)}
+                                />
+                            ) : (
+                                <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
+                                    <TrendingUp size={24} className="text-blue-200" />
+                                </div>
+                            )}
+                            {sideBanner?.discount && <span className={styles.discountTag}>{sideBanner.discount}</span>}
+                        </div>
+                        
+                        <div className={styles.hotDealInfo}>
+                            <h3 className={styles.hotDealTitle}>
+                                {sideBanner?.title || "Limited Edition"}
+                            </h3>
+                            <div className={styles.priceContainer}>
+                                <span className={styles.promoPrice}>
+                                    {sideBanner?.price?.toLocaleString() || "0"} {tCommon('som')}
+                                </span>
+                            </div>
+                        </div>
+                    </Link>
+                </motion.div>
             </div>
         </div>
     );

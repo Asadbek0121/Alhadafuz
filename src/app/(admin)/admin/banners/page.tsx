@@ -62,6 +62,7 @@ export default function AdminBannersPage() {
     const [price, setPrice] = useState('');
     const [oldPrice, setOldPrice] = useState('');
     const [discount, setDiscount] = useState('');
+    const [endDate, setEndDate] = useState('');
 
     // Internal Linking Extension
     const [productId, setProductId] = useState<string | null>(null);
@@ -206,6 +207,7 @@ export default function AdminBannersPage() {
                     price: price ? parseFloat(price) : null,
                     oldPrice: oldPrice ? parseFloat(oldPrice) : null,
                     discount,
+                    endDate: endDate || null,
                     productId,
                     targetCategoryId
                 })
@@ -238,6 +240,7 @@ export default function AdminBannersPage() {
         setPrice(banner.price?.toString() || '');
         setOldPrice(banner.oldPrice?.toString() || '');
         setDiscount(banner.discount || '');
+        setEndDate(banner.endDate ? new Date(banner.endDate).toISOString().slice(0, 16) : '');
         setProductId(banner.productId || null);
         setTargetCategoryId(banner.targetCategoryId || null);
         setShowForm(true);
@@ -268,6 +271,7 @@ export default function AdminBannersPage() {
         setPrice('');
         setOldPrice('');
         setDiscount('');
+        setEndDate('');
         setProductId(null);
         setTargetCategoryId(null);
         setProductSearch('');
@@ -416,6 +420,15 @@ export default function AdminBannersPage() {
                                                 onChange={e => setOrder(e.target.value)}
                                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                 placeholder="0"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-bold text-gray-700 ml-1">Aksiya tugash vaqti (End Date)</label>
+                                            <input title="Kiritish maydoni"
+                                                type="datetime-local"
+                                                value={endDate}
+                                                onChange={e => setEndDate(e.target.value)}
+                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                             />
                                         </div>
                                     </div>
