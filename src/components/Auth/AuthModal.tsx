@@ -307,7 +307,13 @@ export default function AuthModal() {
                                 >
                                     <h2 className={styles.promoTitle}>
                                         {mode === 'login' ? 'Tizimga qaytish' : 'Hadaf oilasiga marhamat'}
-                                        <span>{mode === 'login' ? "Sizni sog'indik, xaridni davom ettiramizmi?" : "Sifat va ishonch — sizning tanlovingiz"}</span>
+                                        <span>
+                                            {mode === 'login' ? (
+                                                <>Sizni sog'indik, <br /> xaridni davom ettiramizmi?</>
+                                            ) : (
+                                                "Sifat va ishonch — sizning tanlovingiz"
+                                            )}
+                                        </span>
                                     </h2>
                                     <p className={styles.promoDesc}>
                                         {mode === 'login' 
