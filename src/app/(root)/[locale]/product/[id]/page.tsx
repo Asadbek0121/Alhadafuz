@@ -586,12 +586,12 @@ export default function ProductPage() {
 
             {/* Sticky Mobile/Bottom Actions */}
             <div className={styles.stickyBar}>
-                <div className="container" style={{ display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <button title="Tugma" className={styles.stickyBtnOutline} onClick={handleAddToCart}>
-                        <ShoppingCart size={20} strokeWidth={2.5} style={{ marginRight: '8px' }} />
+                <div className={styles.stickyBarContainer}>
+                    <button title="Savatchaga qo'shish" className={styles.stickyBtnCart} onClick={handleAddToCart}>
+                        <ShoppingCart size={20} strokeWidth={2.5} />
                         <span>{tProduct('add_to_cart')}</span>
                     </button>
-                    <button title="Tugma" className={styles.stickyBtnPrimary} onClick={handleBuyNow}>
+                    <button title="Bir klikda olish" className={styles.stickyBtnBuy} onClick={handleBuyNow}>
                         {tProduct('buy_one_click')}
                     </button>
                 </div>
