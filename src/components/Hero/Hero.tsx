@@ -93,7 +93,7 @@ export default function Hero() {
                     {(!isMounted || loading) ? (
                         <div className="animate-pulse bg-gray-100 w-full h-full"></div>
                     ) : (
-                        <>
+                        <div className="w-full h-full relative">
                             <AnimatePresence mode="wait">
                                 <motion.div
                                     key={mainBanners.length > 0 ? mainBanners[currentIndex]?.id : 'default'}
@@ -148,16 +148,16 @@ export default function Hero() {
                                     ))}
                                 </div>
                             )}
-                        </>
+                        </div>
                     )}
                 </div>
 
                 {/* 2. Special "Hot Deal" Card */}
-                <motion.div className={styles.hotDealCard}>
+                <div className={styles.hotDealCard}>
                     {(!isMounted || loading) ? (
                          <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
                     ) : (
-                        <>
+                        <div className="w-full h-full flex flex-col">
                             <div className={styles.hotDealHeader}>
                                 <div className={styles.hotDealBadge}>
                                     <Zap size={10} className="fill-current" />
@@ -204,9 +204,9 @@ export default function Hero() {
                                     </div>
                                 </div>
                             </Link>
-                        </>
+                        </div>
                     )}
-                </motion.div>
+                </div>
             </div>
         </div>
     );
