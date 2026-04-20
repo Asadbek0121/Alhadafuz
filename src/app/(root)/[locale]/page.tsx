@@ -84,7 +84,7 @@ export default function Home() {
   };
 
   return (
-    <div style={isMounted ? { paddingBottom: '60px' } : {}}>
+    <div className="pb-[60px] md:pb-0">
       <Hero />
 
       <section className="container">
