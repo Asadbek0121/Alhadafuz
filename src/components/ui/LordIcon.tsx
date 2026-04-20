@@ -17,14 +17,7 @@ interface LordIconProps {
   stroke?: number | string;
 }
 
-// Extend JSX namespace
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'lord-icon': any;
-    }
-  }
-}
+// lord-icon types are now handled in @/types/lordicon.d.ts
 
 const LordIcon: React.FC<LordIconProps> = ({ 
   src, 
