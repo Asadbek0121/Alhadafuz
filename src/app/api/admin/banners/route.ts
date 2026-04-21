@@ -62,7 +62,7 @@ export async function POST(req: Request) {
         });
 
         revalidatePath('/');
-        revalidateTag('banners');
+        (revalidateTag as any)('banners');
         return NextResponse.json(banner);
     } catch (error: any) {
         return NextResponse.json({ error: 'Failed to create', details: error.message }, { status: 500 });

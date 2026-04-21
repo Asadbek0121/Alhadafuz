@@ -15,7 +15,7 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     try {
         await (prisma as any).banner.delete({ where: { id } });
         revalidatePath('/');
-        revalidateTag('banners');
+        (revalidateTag as any)('banners');
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("Delete banner error", e);
@@ -61,7 +61,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         });
 
         revalidatePath('/');
-        revalidateTag('banners');
+        (revalidateTag as any)('banners');
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("Update banner error", e);
