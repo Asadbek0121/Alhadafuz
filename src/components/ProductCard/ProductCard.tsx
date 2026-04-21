@@ -2,6 +2,7 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import styles from './ProductCard.module.css';
 import { ShoppingBag, Heart, Scale, Star, Loader2, Truck, Play, Gift, AlertTriangle } from 'lucide-react';
@@ -26,12 +27,13 @@ interface ProductProps {
     showLowStock?: boolean;
     allowInstallment?: boolean;
     stock?: number;
+    priority?: boolean;
 }
 
 export default function ProductCard(props: ProductProps) {
     const {
         id, title, price, oldPrice, isSale, image, discountType,
-        isNew = true, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock
+        isNew = true, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false
     } = props;
     const { addToCart } = useCartStore(); // Updated hook
     const t = useTranslations('Header');
@@ -146,15 +148,19 @@ export default function ProductCard(props: ProductProps) {
                 />
             </div>
 
-            {/* Image Wrapper */}
             <div className="aspect-[4/5] bg-slate-50 w-full relative p-4 overflow-hidden">
-                <div className="w-full h-full flex items-center justify-center">
-                    <img
+                <div className="w-full h-full relative">
+                    <Image
                         src={image || "https://placehold.co/400"}
                         alt={title}
-                        className={`w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
+                        fill
+                        priority={priority}
+                        sizes="(max-width: 640px) 160px, (max-width: 1024px) 200px, 300px"
+                        className={`object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
                         onError={(e) => {
-                            (e.target as HTMLImageElement).src = "https://placehold.co/400?text=No+Image";
+                            const target = e.target as HTMLImageElement;
+                            target.srcset = "";
+                            target.src = "https://placehold.co/400?text=No+Image";
                         }}
                     />
                 </div>

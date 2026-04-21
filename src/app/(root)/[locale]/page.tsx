@@ -47,7 +47,7 @@ export default function Home() {
           {t('ommabop_mahsulotlar')}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-7 gap-3 md:gap-6">
-          {products.map((p) => (
+          {products.map((p, index) => (
             <ProductCard
               key={p.id}
               id={p.id}
@@ -64,6 +64,7 @@ export default function Home() {
               showLowStock={p.showLowStock}
               allowInstallment={p.allowInstallment}
               stock={p.stock}
+              priority={index < 6}
             />
           ))}
         </div>
