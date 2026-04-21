@@ -8,7 +8,7 @@ import {
     Loader2, Plus, Trash2, Edit2, UploadCloud,
     CornerDownRight, ChevronDown, ChevronRight,
     Folder, FolderPlus, Search, X, Image as ImageIcon,
-    LayoutGrid, List, MoreVertical, CheckCircle2, XCircle
+    LayoutGrid, List, MoreVertical, CheckCircle2, XCircle, Save
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -25,7 +25,14 @@ interface Category {
     isActive?: boolean;
 }
 
-export default function AdminCategoriesPage() {
+export default function AdminCategoriesPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ page?: string }>;
+}) {
+    // Await searchParams as required by Next.js 16 even for client page components
+    React.use(searchParams);
+
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -557,4 +564,3 @@ export default function AdminCategoriesPage() {
     );
 }
 
-const Save = ({ size }: { size: number }) => <Plus size={size} />; // Placeholder as Save is not imported
