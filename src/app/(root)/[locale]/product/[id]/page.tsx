@@ -335,7 +335,7 @@ export default function ProductPage() {
                                     <AlertTriangle size={14} /> {tMarketing('showLowStock')}
                                 </div>
                             )}
-                            <button title="Tugma" className={styles.shareBtn} onClick={handleShare}>
+                            <button className={styles.shareBtn} onClick={handleShare}>
                                 <Share2 size={20} />
                             </button>
                         </div>
@@ -413,11 +413,11 @@ export default function ProductPage() {
 
                     {/* Desktop Actions */}
                     <div className={styles.desktopActions}>
-                        <button title="Tugma" className={styles.btnCart} onClick={handleAddToCart}>
+                        <button className={styles.btnCart} onClick={handleAddToCart}>
                             <ShoppingCart size={22} strokeWidth={2.5} />
                             {tProduct('add_to_cart')}
                         </button>
-                        <button title="Tugma" className={styles.btnBuy} onClick={handleBuyNow}>
+                        <button className={styles.btnBuy} onClick={handleBuyNow}>
                             {tProduct('buy_one_click')}
                         </button>
                     </div>
@@ -543,7 +543,7 @@ export default function ProductPage() {
                             <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: 600, color: '#374151' }}>{tProduct('your_rating')}</label>
                             <div style={{ display: 'flex', gap: '8px' }}>
                                 {[1, 2, 3, 4, 5].map((star) => (
-                                    <button title="Tugma"
+                                    <button
                                         key={star}
                                         type="button"
                                         onClick={() => setUserRating(star)}
@@ -557,7 +557,7 @@ export default function ProductPage() {
                         </div>
                         <div style={{ marginBottom: '20px' }}>
                             <label style={{ display: 'block', marginBottom: '10px', fontSize: '15px', fontWeight: 600, color: '#374151' }}>{tProduct('your_review')}</label>
-                            <textarea title="Matn maydoni"
+                            <textarea
                                 value={userComment}
                                 onChange={e => setUserComment(e.target.value)}
                                 required
@@ -568,7 +568,7 @@ export default function ProductPage() {
                                 onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
                             />
                         </div>
-                        <button title="Tugma"
+                        <button
                             type="submit"
                             disabled={submittingReview}
                             style={{

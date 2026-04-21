@@ -120,7 +120,7 @@ export default function AdminSidebar() {
                     <h6 style={{ margin: 0, fontSize: '14px', fontWeight: '600', color: '#2A3547' }}>{session?.user?.name || 'Admin'}</h6>
                     <span style={{ fontSize: '12px', color: '#5A6A85' }}>{(session?.user as any)?.role || 'Boshqaruvchi'}</span>
                 </div>
-                <button title="Tugma" onClick={() => signOut()} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#0085db' }}>
+                <button onClick={() => signOut()} style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: '#0085db' }}>
                     <LogOut size={20} />
                 </button>
             </div>

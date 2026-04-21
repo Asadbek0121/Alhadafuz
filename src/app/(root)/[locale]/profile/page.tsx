@@ -191,7 +191,7 @@ export default function ProfileOverviewPage() {
                         const className = "group w-full flex items-center gap-3 p-1.5 rounded-xl hover:bg-gray-50 transition-all border border-transparent active:bg-blue-50/30 mb-0.5 last:mb-0";
 
                         return isAction ? (
-                            <button title="Tugma" key={index} onClick={item.action} className={className}>{content}</button>
+                            <button key={index} onClick={item.action} className={className}>{content}</button>
                         ) : (
                             <LinkComponent key={index} href={item.href || '#'} className={className}>{content}</LinkComponent>
                         );
@@ -199,7 +199,7 @@ export default function ProfileOverviewPage() {
                 </div>
 
                 {/* 4. Compact Logout */}
-                <button title="Tugma"
+                <button
                     onClick={() => signOut()}
                     className="group w-full bg-rose-50/50 p-3.5 rounded-[1.25rem] border border-rose-100/30 flex items-center justify-center gap-2.5 text-rose-500 text-sm font-bold hover:bg-rose-50 active:scale-[0.98] transition-all mb-4"
                 >

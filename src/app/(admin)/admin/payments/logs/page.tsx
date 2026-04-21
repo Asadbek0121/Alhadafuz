@@ -126,7 +126,7 @@ export default function PaymentLogsPage() {
             <div className="bg-white/50 backdrop-blur rounded-[32px] border border-gray-100 p-6 flex flex-wrap items-center gap-4 shadow-sm">
                 <div className="relative flex-1 min-w-[280px]">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input title="Kiritish maydoni"
+                    <input
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Tranzaksiya ID yoki status bo'yicha qidirish..."
@@ -136,7 +136,7 @@ export default function PaymentLogsPage() {
 
                 <div className="flex items-center gap-3">
                     <div className="relative">
-                        <select title="Tanlash"
+                        <select
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
                             className="pl-4 pr-10 py-3 bg-white border border-gray-100 rounded-2xl shadow-inner outline-none focus:ring-2 focus:ring-blue-500/10 font-bold text-xs appearance-none uppercase tracking-widest cursor-pointer"
@@ -150,7 +150,7 @@ export default function PaymentLogsPage() {
                     </div>
 
                     <div className="relative">
-                        <select title="Tanlash"
+                        <select
                             value={providerFilter}
                             onChange={(e) => setProviderFilter(e.target.value)}
                             className="pl-4 pr-10 py-3 bg-white border border-gray-100 rounded-2xl shadow-inner outline-none focus:ring-2 focus:ring-blue-500/10 font-bold text-xs appearance-none uppercase tracking-widest cursor-pointer"
@@ -273,7 +273,7 @@ export default function PaymentLogsPage() {
                                             <h3 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase leading-none">Tafsilotlar</h3>
                                             <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-2 italic">Tranzaksiya arxivi</p>
                                         </div>
-                                        <button title="Tugma" onClick={() => setSelectedLog(null)} className="p-3 bg-gray-50 hover:bg-white hover:shadow-lg rounded-2xl transition-all group">
+                                        <button onClick={() => setSelectedLog(null)} className="p-3 bg-gray-50 hover:bg-white hover:shadow-lg rounded-2xl transition-all group">
                                             <X size={20} className="text-gray-400 group-hover:text-red-500" />
                                         </button>
                                     </div>
@@ -303,7 +303,7 @@ export default function PaymentLogsPage() {
                                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Server Payload</span>
                                                 </div>
                                                 {selectedLog.requestData && (
-                                                    <button title="Tugma"
+                                                    <button
                                                         onClick={() => copyToClipboard(selectedLog.requestData!)}
                                                         className="text-[9px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg transition-colors"
                                                     >
@@ -391,7 +391,7 @@ function DetailItem({ icon, label, value, color, canCopy, onCopy }: { icon: any,
                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">{label}</span>
                 </div>
                 {canCopy && (
-                    <button title="Tugma" onClick={onCopy} className="opacity-0 group-hover/item:opacity-100 transition-opacity p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-blue-500">
+                    <button onClick={onCopy} className="opacity-0 group-hover/item:opacity-100 transition-opacity p-1.5 hover:bg-white rounded-lg text-gray-400 hover:text-blue-500">
                         <Copy size={12} />
                     </button>
                 )}

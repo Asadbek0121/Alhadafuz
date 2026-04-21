@@ -373,7 +373,7 @@ export default function AdminStoresPage() {
                             <div className="space-y-6">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 ml-1">Do'kon Nomi</label>
-                                    <input title="Kiritish maydoni"
+                                    <input
                                         required
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -384,7 +384,7 @@ export default function AdminStoresPage() {
 
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 ml-1">Aniq Manzil</label>
-                                    <textarea title="Matn maydoni"
+                                    <textarea
                                         required
                                         value={formData.address}
                                         onChange={e => setFormData({ ...formData, address: e.target.value })}
@@ -397,7 +397,7 @@ export default function AdminStoresPage() {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">Telefon</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             value={formData.phone}
                                             onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-sm"
@@ -406,7 +406,7 @@ export default function AdminStoresPage() {
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">Ish tartibi</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             value={formData.workingHours}
                                             onChange={e => setFormData({ ...formData, workingHours: e.target.value })}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-sm"
@@ -487,7 +487,7 @@ export default function AdminStoresPage() {
                     <div className="flex items-center gap-6 w-full lg:w-auto">
                         <div className="relative flex-1 lg:w-80">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 placeholder="Do'konlarni qidirish..."
@@ -497,13 +497,13 @@ export default function AdminStoresPage() {
                     </div>
 
                     <div className="flex items-center bg-white p-1.5 rounded-2xl border border-gray-200 shadow-sm">
-                        <button title="Tugma"
+                        <button
                             onClick={() => setViewMode('grid')}
                             className={`p-2.5 rounded-xl transition-all ${viewMode === 'grid' ? 'bg-blue-50 text-blue-600 shadow-inner' : 'text-gray-400 hover:text-gray-600'}`}
                         >
                             <LayoutGrid size={20} />
                         </button>
-                        <button title="Tugma"
+                        <button
                             onClick={() => setViewMode('list')}
                             className={`p-2.5 rounded-xl transition-all ${viewMode === 'list' ? 'bg-blue-50 text-blue-600 shadow-inner' : 'text-gray-400 hover:text-gray-600'}`}
                         >
@@ -647,7 +647,7 @@ export default function AdminStoresPage() {
                                 <div className="flex items-center gap-4 flex-1 max-w-md mx-10">
                                     <div className="relative flex-1">
                                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             value={mapSearch}
                                             onChange={(e) => setMapSearch(e.target.value)}
                                             onKeyDown={(e) => e.key === 'Enter' && handleSearchLocation()}

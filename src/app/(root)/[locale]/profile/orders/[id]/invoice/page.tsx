@@ -42,7 +42,7 @@ export default function OrderInvoicePage() {
         <div className="min-h-screen bg-slate-100 py-12 px-4">
             <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center no-print">
                 <h1 className="text-2xl font-black text-slate-800 tracking-tight">BUYURTMA INVOYSI</h1>
-                <button title="Tugma"
+                <button
                     onClick={() => handlePrint()}
                     className="bg-slate-900 text-white px-6 py-3 rounded-2xl font-black text-sm flex items-center gap-2 shadow-xl shadow-slate-200 hover:bg-black transition-all active:scale-95"
                 >

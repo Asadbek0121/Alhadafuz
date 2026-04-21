@@ -179,7 +179,7 @@ export default async function AdminOrdersPage({
                     {/* Search Bar */}
                     <form className="relative flex-1 lg:min-w-[300px]">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input title="Kiritish maydoni"
+                        <input
                             name="search"
                             defaultValue={search}
                             placeholder="ID, ism yoki telefon..."

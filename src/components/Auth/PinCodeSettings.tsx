@@ -155,7 +155,7 @@ export default function PinCodeSettings() {
 
                     <div className="space-y-4">
                         <div className="relative">
-                            <input title="Kiritish maydoni"
+                            <input
                                 type="text"
                                 maxLength={6}
                                 value={recoveryCode}
@@ -165,7 +165,7 @@ export default function PinCodeSettings() {
                             />
                         </div>
 
-                        <button title="Tugma"
+                        <button
                             onClick={verifyRecovery}
                             disabled={isLoading || recoveryCode.length < 6}
                             className="w-full h-12 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-all disabled:opacity-50"
@@ -174,7 +174,7 @@ export default function PinCodeSettings() {
                             <span>{t('pin_verify_btn')}</span>
                         </button>
 
-                        <button title="Tugma"
+                        <button
                             onClick={requestRecovery}
                             disabled={isCounting || isLoading}
                             className="w-full text-sm font-medium text-primary hover:underline disabled:text-gray-400"
@@ -202,7 +202,7 @@ export default function PinCodeSettings() {
 
                         <div className="space-y-4">
                             <div className="relative">
-                                <input title="Kiritish maydoni"
+                                <input
                                     type={showPassword ? "text" : "password"}
                                     value={password}
                                     onChange={(e) => {
@@ -212,7 +212,7 @@ export default function PinCodeSettings() {
                                     className="w-full h-12 px-4 pr-12 rounded-xl border border-gray-200 focus:border-primary focus:ring-4 focus:ring-primary/5 outline-none transition-all"
                                     placeholder="••••••••"
                                 />
-                                <button title="Tugma"
+                                <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary transition-colors"
@@ -228,7 +228,7 @@ export default function PinCodeSettings() {
                                 <StrengthItem label={t('error_number')} active={passwordStrength.number} />
                             </div>
 
-                            <button title="Tugma"
+                            <button
                                 onClick={() => setStep(2)}
                                 disabled={!isPasswordStrong}
                                 className="w-full h-12 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
@@ -253,7 +253,7 @@ export default function PinCodeSettings() {
                         </div>
 
                         <div className="space-y-4">
-                            <input title="Kiritish maydoni"
+                            <input
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
@@ -264,7 +264,7 @@ export default function PinCodeSettings() {
                                 placeholder="••••"
                             />
 
-                            <button title="Tugma"
+                            <button
                                 onClick={() => setStep(3)}
                                 disabled={pin.length !== 4}
                                 className="w-full h-12 bg-primary text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-primary-hover transition-all disabled:opacity-50 shadow-lg shadow-primary/20"
@@ -273,7 +273,7 @@ export default function PinCodeSettings() {
                                 <ChevronRight size={20} />
                             </button>
 
-                            <button title="Tugma" onClick={() => setStep(1)} className="w-full text-sm font-medium text-text-muted">
+                            <button onClick={() => setStep(1)} className="w-full text-sm font-medium text-text-muted">
                                 {t('back')}
                             </button>
                         </div>
@@ -293,7 +293,7 @@ export default function PinCodeSettings() {
                         </div>
 
                         <div className="space-y-4">
-                            <input title="Kiritish maydoni"
+                            <input
                                 type="text"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
@@ -304,7 +304,7 @@ export default function PinCodeSettings() {
                                 placeholder="••••"
                             />
 
-                            <button title="Tugma"
+                            <button
                                 onClick={handleSetPin}
                                 disabled={confirmPin.length !== 4 || isLoading}
                                 className="w-full h-12 bg-green-600 text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-green-700 transition-all disabled:opacity-50 shadow-lg shadow-green-600/20"
@@ -313,7 +313,7 @@ export default function PinCodeSettings() {
                                 <span>{t('pin_set_btn')}</span>
                             </button>
 
-                            <button title="Tugma" onClick={() => setStep(2)} className="w-full text-sm font-medium text-text-muted">
+                            <button onClick={() => setStep(2)} className="w-full text-sm font-medium text-text-muted">
                                 {t('back')}
                             </button>
                         </div>
@@ -335,7 +335,7 @@ export default function PinCodeSettings() {
                     </div>
                 </div>
                 {user?.pinHash && (
-                    <button title="Tugma"
+                    <button
                         onClick={requestRecovery}
                         className="text-xs font-bold text-primary px-3 py-1.5 rounded-lg bg-primary/5 hover:bg-primary/10 transition-colors"
                     >

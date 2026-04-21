@@ -97,7 +97,7 @@ export default function TelegramSettings() {
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Bot Token</label>
                             <a href="https://t.me/BotFather" target="_blank" rel="noreferrer" className="text-[10px] font-black text-indigo-500 hover:text-indigo-600">@BotFather</a>
                         </div>
-                        <input title="Kiritish maydoni"
+                        <input
                             type="password"
                             autoComplete="new-password"
                             value={token}
@@ -113,7 +113,7 @@ export default function TelegramSettings() {
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Admin IDlar</label>
                             <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-[10px] font-black text-indigo-500 hover:text-indigo-600">@userinfobot</a>
                         </div>
-                        <input title="Kiritish maydoni"
+                        <input
                             value={adminIds}
                             onChange={e => setAdminIds(e.target.value)}
                             placeholder="1234, 5678"
@@ -126,7 +126,7 @@ export default function TelegramSettings() {
                 <div className="space-y-2">
                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest px-1">Har bir yetkazib berish haqi</label>
                     <div className="relative">
-                        <input title="Kiritish maydoni"
+                        <input
                             type="number"
                             value={fee}
                             onChange={e => setFee(e.target.value)}
@@ -147,7 +147,7 @@ export default function TelegramSettings() {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-2">
-                    <button title="Tugma"
+                    <button
                         type="submit"
                         disabled={loading}
                         className={`flex-1 h-12 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all shadow-lg ${isSaved ? 'bg-emerald-500 text-white shadow-emerald-200/50' : 'bg-indigo-600 text-white shadow-indigo-200/50 hover:bg-indigo-700 hover:-translate-y-0.5'}`}
@@ -156,7 +156,7 @@ export default function TelegramSettings() {
                         {isSaved ? 'SAQLANDI' : 'SAQLASH'}
                     </button>
 
-                    <button title="Tugma"
+                    <button
                         type="button"
                         onClick={handleTest}
                         className="h-12 px-5 rounded-xl border-2 border-gray-100 text-gray-600 hover:bg-gray-50 hover:border-gray-200 transition-all flex items-center justify-center gap-2"

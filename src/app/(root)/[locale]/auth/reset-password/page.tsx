@@ -137,7 +137,7 @@ export default function ResetPasswordPage() {
                                     {...form.register("password")}
                                     className="h-14 bg-gray-50 border-gray-200 rounded-2xl pr-12 focus:border-blue-500 transition-all"
                                 />
-                                <button title="Tugma"
+                                <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"

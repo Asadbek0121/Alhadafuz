@@ -146,7 +146,7 @@ export default function AdminCouponsPage() {
                     </h1>
                     <p className="text-slate-500 text-sm mt-1">Promokodlarni yaratish va tahrirlash</p>
                 </div>
-                <button title="Tugma"
+                <button
                     onClick={() => {
                         setEditingCoupon(null);
                         resetForm();
@@ -181,7 +181,7 @@ export default function AdminCouponsPage() {
                 </div>
                 <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-                    <input title="Kiritish maydoni"
+                    <input
                         type="text"
                         placeholder="Kupon kodini qidiring..."
                         className="w-full h-full pl-12 pr-4 bg-transparent outline-none font-bold text-slate-700 placeholder:text-slate-400"
@@ -271,13 +271,13 @@ export default function AdminCouponsPage() {
                                     </td>
                                     <td className="px-6 py-5 text-right">
                                         <div className="flex justify-end gap-2">
-                                            <button title="Tugma"
+                                            <button
                                                 onClick={() => handleEdit(coupon)}
                                                 className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                             >
                                                 <Edit2 size={18} />
                                             </button>
-                                            <button title="Tugma"
+                                            <button
                                                 onClick={() => handleDelete(coupon.id)}
                                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                             >
@@ -314,7 +314,7 @@ export default function AdminCouponsPage() {
                                     <h2 className="text-xl font-black text-slate-900">
                                         {editingCoupon ? "Kuponni tahrirlash" : "Yangi kupon yaratish"}
                                     </h2>
-                                    <button title="Tugma"
+                                    <button
                                         type="button"
                                         onClick={() => setIsAddModalOpen(false)}
                                         className="text-slate-400 hover:text-slate-600"
@@ -326,7 +326,7 @@ export default function AdminCouponsPage() {
                                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                                     <div className="md:col-span-2">
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Kupon kodi</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="text"
                                             required
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 uppercase"
@@ -338,7 +338,7 @@ export default function AdminCouponsPage() {
 
                                     <div>
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma turi</label>
-                                        <select title="Tanlash"
+                                        <select
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 appearance-none cursor-pointer"
                                             value={formData.discountType}
                                             onChange={(e) => setFormData({ ...formData, discountType: e.target.value as any })}
@@ -350,7 +350,7 @@ export default function AdminCouponsPage() {
 
                                     <div>
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma miqdori</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number"
                                             required
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -362,7 +362,7 @@ export default function AdminCouponsPage() {
 
                                     <div>
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Minimal buyurtma</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number"
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                             value={formData.minAmount === 0 ? "" : formData.minAmount}
@@ -373,7 +373,7 @@ export default function AdminCouponsPage() {
 
                                     <div>
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Ishlatish limiti</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number"
                                             required
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -387,7 +387,7 @@ export default function AdminCouponsPage() {
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Boshlanish sanasi</label>
                                         <div className="relative">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="date"
                                                 required
                                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -401,7 +401,7 @@ export default function AdminCouponsPage() {
                                         <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Tugash sanasi</label>
                                         <div className="relative">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="date"
                                                 required
                                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -413,7 +413,7 @@ export default function AdminCouponsPage() {
 
                                     <div className="md:col-span-2">
                                         <label className="flex items-center gap-3 cursor-pointer">
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="checkbox"
                                                 className="w-6 h-6 rounded-lg accent-blue-600"
                                                 checked={formData.isActive}
@@ -425,14 +425,14 @@ export default function AdminCouponsPage() {
                                 </div>
 
                                 <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
-                                    <button title="Tugma"
+                                    <button
                                         type="button"
                                         onClick={() => setIsAddModalOpen(false)}
                                         className="flex-1 px-6 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
                                     >
                                         Bekor qilish
                                     </button>
-                                    <button title="Tugma"
+                                    <button
                                         type="submit"
                                         className="flex-[2] bg-blue-600 text-white px-6 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
                                     >

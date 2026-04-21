@@ -318,7 +318,7 @@ export default function AdminBannersPage() {
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">Sarlavha (Title)</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             value={title}
                                             onChange={e => setTitle(e.target.value)}
                                             required
@@ -329,7 +329,7 @@ export default function AdminBannersPage() {
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">Joylashuvi (Position)</label>
-                                        <select title="Tanlash"
+                                        <select
                                             value={position}
                                             onChange={e => setPosition(e.target.value)}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
@@ -343,7 +343,7 @@ export default function AdminBannersPage() {
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">Tavsif (Description) - ixtiyoriy</label>
-                                        <textarea title="Matn maydoni"
+                                        <textarea
                                             value={description}
                                             onChange={e => setDescription(e.target.value)}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium min-h-[100px]"
@@ -355,7 +355,7 @@ export default function AdminBannersPage() {
                                         <label className="text-sm font-bold text-gray-700 ml-1">Status</label>
                                         <div className="flex items-center gap-4">
                                             <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
-                                                <input title="Kiritish maydoni"
+                                                <input
                                                     type="radio"
                                                     name="status"
                                                     className="hidden"
@@ -365,7 +365,7 @@ export default function AdminBannersPage() {
                                                 <CheckCircle2 size={18} /> Faol
                                             </label>
                                             <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
-                                                <input title="Kiritish maydoni"
+                                                <input
                                                     type="radio"
                                                     name="status"
                                                     className="hidden"
@@ -382,7 +382,7 @@ export default function AdminBannersPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700 ml-1">Narxi (Price)</label>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="number"
                                                 value={price}
                                                 onChange={e => setPrice(e.target.value)}
@@ -392,7 +392,7 @@ export default function AdminBannersPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700 ml-1">Eski Narxi</label>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="number"
                                                 value={oldPrice}
                                                 onChange={e => setOldPrice(e.target.value)}
@@ -405,7 +405,7 @@ export default function AdminBannersPage() {
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700 ml-1">Chegirma (masalan: -34%)</label>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 value={discount}
                                                 onChange={e => setDiscount(e.target.value)}
                                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -414,7 +414,7 @@ export default function AdminBannersPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700 ml-1">Tartib (Order)</label>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="number"
                                                 value={order}
                                                 onChange={e => setOrder(e.target.value)}
@@ -424,7 +424,7 @@ export default function AdminBannersPage() {
                                         </div>
                                         <div className="space-y-2">
                                             <label className="text-sm font-bold text-gray-700 ml-1">Aksiya tugash vaqti (End Date)</label>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="datetime-local"
                                                 value={endDate}
                                                 onChange={e => setEndDate(e.target.value)}
@@ -438,7 +438,7 @@ export default function AdminBannersPage() {
                                             <label className="text-sm font-bold text-gray-700 ml-1">Mahsulotga bog'lash</label>
                                             <div className="relative">
                                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                                <input title="Kiritish maydoni"
+                                                <input
                                                     value={productSearch}
                                                     onChange={e => setProductSearch(e.target.value)}
                                                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -450,7 +450,7 @@ export default function AdminBannersPage() {
                                             {productResults.length > 0 && (
                                                 <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
                                                     {productResults.map(p => (
-                                                        <button title="Tugma"
+                                                        <button
                                                             key={p.id}
                                                             type="button"
                                                             onClick={() => {
@@ -475,7 +475,7 @@ export default function AdminBannersPage() {
                                             {productId && (
                                                 <div className="flex items-center gap-2 mt-2 p-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold w-fit">
                                                     <CheckCircle2 size={14} /> Biriktirilgan
-                                                    <button title="Tugma" onClick={() => { setProductId(null); setProductSearch(''); }} className="hover:text-red-500"><X size={14} /></button>
+                                                    <button onClick={() => { setProductId(null); setProductSearch(''); }} className="hover:text-red-500"><X size={14} /></button>
                                                 </div>
                                             )}
                                         </div>
@@ -484,7 +484,7 @@ export default function AdminBannersPage() {
                                             <label className="text-sm font-bold text-gray-700 ml-1">Kategoriyaga bog'lash</label>
                                             <div className="relative">
                                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                                                <input title="Kiritish maydoni"
+                                                <input
                                                     value={categorySearch}
                                                     onChange={e => setCategorySearch(e.target.value)}
                                                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -496,7 +496,7 @@ export default function AdminBannersPage() {
                                             {categoryResults.length > 0 && (
                                                 <div className="absolute z-50 left-0 right-0 mt-1 bg-white border border-gray-100 rounded-2xl shadow-xl max-h-60 overflow-y-auto">
                                                     {categoryResults.map(c => (
-                                                        <button title="Tugma"
+                                                        <button
                                                             key={c.id}
                                                             type="button"
                                                             onClick={() => {
@@ -520,7 +520,7 @@ export default function AdminBannersPage() {
                                             {targetCategoryId && (
                                                 <div className="flex items-center gap-2 mt-2 p-2 bg-purple-50 text-purple-700 rounded-xl text-xs font-bold w-fit">
                                                     <CheckCircle2 size={14} /> Biriktirilgan
-                                                    <button title="Tugma" onClick={() => { setTargetCategoryId(null); setCategorySearch(''); }} className="hover:text-red-500"><X size={14} /></button>
+                                                    <button onClick={() => { setTargetCategoryId(null); setCategorySearch(''); }} className="hover:text-red-500"><X size={14} /></button>
                                                 </div>
                                             )}
                                         </div>
@@ -528,7 +528,7 @@ export default function AdminBannersPage() {
 
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">Havola (Link) - ixtiyoriy</label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             value={link}
                                             onChange={e => setLink(e.target.value)}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -543,7 +543,7 @@ export default function AdminBannersPage() {
                                             {image ? (
                                                 <div className="relative group w-full h-40">
                                                     <img src={image} alt="Preview" className="w-full h-full object-cover rounded-2xl shadow-md" />
-                                                    <button title="Tugma"
+                                                    <button
                                                         type="button"
                                                         onClick={() => setImage('')}
                                                         className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
@@ -565,7 +565,7 @@ export default function AdminBannersPage() {
                                             <label className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95 flex items-center gap-2">
                                                 {uploading ? <Loader2 className="animate-spin" size={14} /> : <UploadCloud size={14} />}
                                                 {uploading ? "..." : "Tanlash"}
-                                                <input title="Kiritish maydoni" type="file" hidden accept="image/*" onChange={handleUpload} />
+                                                <input type="file" hidden accept="image/*" onChange={handleUpload} />
                                             </label>
                                         </div>
                                     </div>
@@ -664,7 +664,7 @@ export default function AdminBannersPage() {
                             <div className="p-6 border-b border-gray-50">
                                 <div className="relative w-full md:w-80">
                                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input title="Kiritish maydoni"
+                                    <input
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder="Bannerlarni qidirish..."

@@ -189,7 +189,7 @@ export default function AdminCategoriesPage() {
                     <div className="flex items-center gap-4 flex-1">
                         <div className="flex items-center gap-2">
                             {hasChildren ? (
-                                <button title="Tugma"
+                                <button
                                     onClick={() => toggleExpand(category.id)}
                                     className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-gray-400"
                                 >
@@ -299,7 +299,7 @@ export default function AdminCategoriesPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 ml-1">Kategoriya Nomi</label>
-                                    <input title="Kiritish maydoni"
+                                    <input
                                         value={name}
                                         onChange={e => setName(e.target.value)}
                                         required
@@ -310,7 +310,7 @@ export default function AdminCategoriesPage() {
 
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-gray-700 ml-1">Ota Kategoriya (Hierarchy)</label>
-                                    <select title="Tanlash"
+                                    <select
                                         value={parentId}
                                         onChange={e => setParentId(e.target.value)}
                                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
@@ -328,7 +328,7 @@ export default function AdminCategoriesPage() {
                                     <label className="text-sm font-bold text-gray-700 ml-1">Status</label>
                                     <div className="flex items-center gap-4">
                                         <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="radio"
                                                 name="status"
                                                 className="hidden"
@@ -338,7 +338,7 @@ export default function AdminCategoriesPage() {
                                             <CheckCircle2 size={18} /> Faol
                                         </label>
                                         <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="radio"
                                                 name="status"
                                                 className="hidden"
@@ -359,7 +359,7 @@ export default function AdminCategoriesPage() {
                                             <div className="w-24 h-24 rounded-2xl overflow-hidden border-2 border-white shadow-xl ring-1 ring-gray-100">
                                                 <img src={image} alt="Preview" className="w-full h-full object-cover" />
                                             </div>
-                                            <button title="Tugma"
+                                            <button
                                                 type="button"
                                                 onClick={() => setImage('')}
                                                 className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
@@ -379,7 +379,7 @@ export default function AdminCategoriesPage() {
                                         <label className="mt-4 flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95">
                                             {uploading ? <Loader2 className="animate-spin" size={16} /> : <UploadCloud size={16} className="text-blue-600" />}
                                             {uploading ? "Yuklanmoqda..." : "Faylni tanlash"}
-                                            <input title="Kiritish maydoni" type="file" hidden accept="image/*" onChange={handleUpload} />
+                                            <input type="file" hidden accept="image/*" onChange={handleUpload} />
                                         </label>
                                     </div>
                                 </div>
@@ -412,14 +412,14 @@ export default function AdminCategoriesPage() {
                 <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="relative w-full md:w-80">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input title="Kiritish maydoni"
+                        <input
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Kategoriyalarni qidirish..."
                             className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
                         />
                         {searchQuery && (
-                            <button title="Tugma"
+                            <button
                                 onClick={() => setSearchQuery('')}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                             >
@@ -429,14 +429,14 @@ export default function AdminCategoriesPage() {
                     </div>
 
                     <div className="flex items-center p-1 bg-gray-100 rounded-xl">
-                        <button title="Tugma"
+                        <button
                             onClick={() => setViewMode('tree')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'tree' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
                                 }`}
                         >
                             <LayoutGrid size={14} /> {viewMode === 'tree' && 'Daraxtsimon'}
                         </button>
-                        <button title="Tugma"
+                        <button
                             onClick={() => setViewMode('list')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
                                 }`}

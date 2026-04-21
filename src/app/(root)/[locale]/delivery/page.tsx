@@ -195,7 +195,7 @@ export default function DeliveryPage() {
 
             <div className="relative flex-1 min-h-[400px] lg:h-auto order-2 lg:order-1">
                 <div id="delivery-map" className="absolute inset-0 z-0" />
-                <button title="Tugma"
+                <button
                     onClick={locateMe}
                     disabled={isLoadingLocation}
                     className="absolute bottom-6 right-6 z-10 w-14 h-14 bg-white rounded-full shadow-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-all active:scale-95 disabled:opacity-70"
@@ -221,7 +221,7 @@ export default function DeliveryPage() {
                             <Store size={18} strokeWidth={2.5} />
                             <span className="text-[11px] font-black uppercase tracking-widest">Do'konni tanlang</span>
                         </div>
-                        <select title="Tanlash"
+                        <select
                             className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/10"
                             onChange={(e) => setSelectedStore(stores.find(s => s.id === e.target.value))}
                             value={selectedStore?.id || ''}
@@ -247,7 +247,7 @@ export default function DeliveryPage() {
                             </p>
                         )}
                         {!customerCoords && (
-                            <button title="Tugma" onClick={locateMe} className="mt-3 text-[11px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
+                            <button onClick={locateMe} className="mt-3 text-[11px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
                                 <Navigation size={12} /> Mening joylashuvim
                             </button>
                         )}
@@ -282,7 +282,7 @@ export default function DeliveryPage() {
                         </div>
                     )}
 
-                    <button title="Tugma"
+                    <button
                         onClick={handleOrder}
                         disabled={!routeInfo || isOrdering}
                         className="group w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[24px] font-black text-lg transition-all active:scale-95 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center gap-3 shadow-2xl shadow-slate-900/20"

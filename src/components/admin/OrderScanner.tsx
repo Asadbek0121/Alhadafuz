@@ -39,7 +39,7 @@ export default function OrderScanner() {
         <form onSubmit={handleSearch} className="relative flex items-center">
             <div className="relative">
                 <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4" />
-                <input title="Kiritish maydoni"
+                <input
                     ref={inputRef}
                     type="text"
                     value={query}
@@ -49,7 +49,7 @@ export default function OrderScanner() {
                     autoComplete="off"
                 />
                 {query && (
-                    <button title="Tugma"
+                    <button
                         type="button"
                         onClick={clearSearch}
                         className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"

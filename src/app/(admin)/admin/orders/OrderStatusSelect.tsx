@@ -55,7 +55,7 @@ export default function OrderStatusSelect({
 
     return (
         <div className="relative inline-block">
-            <select title="Tanlash"
+            <select
                 value={status}
                 onChange={(e) => handleStatusChange(e.target.value)}
                 disabled={loading}

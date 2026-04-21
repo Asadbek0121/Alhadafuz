@@ -435,7 +435,7 @@ export default function SupportChat() {
                 `
             }} />
             {/* FAB */}
-            <button title="Tugma"
+            <button
                 onClick={toggleOpen}
                 className={supportAnimationData ? "support-fab-lottie" : "support-fab"}
                 style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
@@ -454,7 +454,7 @@ export default function SupportChat() {
                     <div style={styles.header} className="support-header">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
                             {view === 'chat' && (
-                                <button title="Tugma" onClick={openMenu} style={styles.headerBackBtn}>
+                                <button onClick={openMenu} style={styles.headerBackBtn}>
                                     <ChevronLeft size={20} strokeWidth={3} />
                                 </button>
                             )}
@@ -484,7 +484,7 @@ export default function SupportChat() {
                             </div>
                         </div>
 
-                        <button title="Tugma" onClick={closeChat} style={styles.headerCloseBtn} className="active-scale">
+                        <button onClick={closeChat} style={styles.headerCloseBtn} className="active-scale">
                             <X size={16} strokeWidth={3} />
                         </button>
                     </div>
@@ -501,7 +501,7 @@ export default function SupportChat() {
                                 </div>
 
                                 <div style={styles.menuOptions}>
-                                    <button title="Tugma" onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover active-scale support-menu-item">
+                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover active-scale support-menu-item">
                                         <div style={{ ...styles.iconBox, background: '#eff6ff', color: '#2563eb' }} className="support-icon-box">
                                             <MessageSquareText size={20} strokeWidth={2.5} />
                                         </div>
@@ -612,7 +612,7 @@ export default function SupportChat() {
                                                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
                                                     <span style={{ fontWeight: 900, fontSize: '13px' }}>{formatTime(recordingTime)}</span>
                                                 </div>
-                                                <button title="Tugma" type="button" onClick={stopRecording} style={{ color: '#2563eb', fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
+                                                <button type="button" onClick={stopRecording} style={{ color: '#2563eb', fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
                                                     {t('stop_and_send') || "Yuborish"}
                                                 </button>
                                             </div>
@@ -620,20 +620,20 @@ export default function SupportChat() {
                                             <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', padding: '0 4px' }}>
                                                 <label style={{ cursor: 'pointer', color: '#94a3b8', padding: '6px' }}>
                                                     <Paperclip size={16} strokeWidth={2.5} />
-                                                    <input title="Kiritish maydoni" type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+                                                    <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
                                                 </label>
-                                                <input title="Kiritish maydoni"
+                                                <input
                                                     placeholder={t('input_placeholder') || "Xabar..."}
                                                     value={inputValue}
                                                     onChange={e => setInputValue(e.target.value)}
                                                     style={styles.input}
                                                 />
                                                 {!inputValue.trim() ? (
-                                                    <button title="Tugma" type="button" onClick={startRecording} style={{ ...styles.actionBtn, background: '#f0fdf4', color: '#16a34a' }}>
+                                                    <button type="button" onClick={startRecording} style={{ ...styles.actionBtn, background: '#f0fdf4', color: '#16a34a' }}>
                                                         <Mic size={16} strokeWidth={2.5} />
                                                     </button>
                                                 ) : (
-                                                    <button title="Tugma" type="submit" style={{ ...styles.actionBtn, background: '#2563eb', color: '#fff' }}>
+                                                    <button type="submit" style={{ ...styles.actionBtn, background: '#2563eb', color: '#fff' }}>
                                                         <Send size={15} strokeWidth={3} className="ml-0.5" />
                                                     </button>
                                                 )}

@@ -8,24 +8,23 @@ const intlMiddleware = createMiddleware(routing);
 
 const { auth } = NextAuth(authConfig);
 
-export const proxy = auth((req) => {
+import { NextRequest } from "next/server";
+
+export const proxy = auth((req: NextRequest) => {
     const { pathname } = req.nextUrl;
 
-    // Admin va Print sahifalari i18n middleware'dan mustasno va prefix bilan kelsa redirect qilamiz
     const specialPathMatch = pathname.match(/^\/(?:uz|ru|en)?\/?(admin|print)(\/.*)?$/);
 
     if (specialPathMatch) {
         const [, type, rest] = specialPathMatch;
-        // Agar prefix bilan kelgan bo'lsa (/uz/admin, /uz/print), prefixsizga redirect qilamiz
         if (pathname.startsWith('/uz/') || pathname.startsWith('/ru/') || pathname.startsWith('/en/')) {
             return NextResponse.redirect(new URL(`/${type}${rest || ''}`, req.url));
         }
         return NextResponse.next();
     }
 
-    // Boshqa barcha sahifalar uchun i18n routing (locale prefix qo'shish)
     return intlMiddleware(req);
-});
+}) as any;
 
 export default proxy;
 

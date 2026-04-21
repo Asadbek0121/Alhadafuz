@@ -276,7 +276,7 @@ export default function LiveMap() {
                     <div className="p-8 border-b border-slate-50 bg-slate-50/30 shrink-0">
                         <div className="relative group">
                             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-blue-500 transition-colors" size={20} />
-                            <input title="Kiritish maydoni"
+                            <input
                                 type="text"
                                 placeholder="Kuryer ismini kiriting..."
                                 value={searchQuery}
@@ -297,7 +297,7 @@ export default function LiveMap() {
                             </div>
                         ) : (
                             filteredCouriers.map(c => (
-                                <button title="Tugma"
+                                <button
                                     key={c.id}
                                     onClick={() => focusCourier(c)}
                                     className={`w-full p-6 text-left hover:bg-slate-50/80 transition-all flex items-center gap-5 group relative ${selectedCourierId === c.id ? 'bg-blue-50/50 after:absolute after:left-0 after:top-6 after:bottom-6 after:w-1.5 after:bg-blue-600 after:rounded-r-full' : ''}`}

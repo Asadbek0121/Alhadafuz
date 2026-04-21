@@ -48,7 +48,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, ...props }, ref) => {
         // Simplified: No Slot support to avoid extra dependency unless needed.
         return (
-            <button title="Tugma"
+            <button
                 className={cn(buttonVariants({ variant, size, className }))}
                 ref={ref}
                 {...props}

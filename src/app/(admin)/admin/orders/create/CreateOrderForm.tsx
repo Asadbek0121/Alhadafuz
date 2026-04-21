@@ -256,9 +256,9 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 <div className="flex items-center border rounded bg-white h-7">
-                                                    <button title="Tugma" className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>-</button>
+                                                    <button className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity - 1)}>-</button>
                                                     <span className="text-xs px-1 w-6 text-center">{item.quantity}</span>
-                                                    <button title="Tugma" className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>+</button>
+                                                    <button className="px-2" onClick={() => updateQuantity(item.product.id, item.quantity + 1)}>+</button>
                                                 </div>
                                                 <Button size="icon" variant="ghost" className="h-7 w-7 text-red-500" onClick={() => removeFromCart(item.product.id)}>
                                                     <Trash size={14} />
@@ -321,7 +321,7 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                             </div>
                             <div className="space-y-2">
                                 <Label>To'lov turi</Label>
-                                <select title="Tanlash"
+                                <select
                                     className="w-full border rounded-md h-10 px-3 bg-white"
                                     value={formData.paymentMethod}
                                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value })}

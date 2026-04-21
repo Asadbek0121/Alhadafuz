@@ -148,7 +148,7 @@ export default function AdminReviewsPage() {
 
                                     {replyingId === review.id && (
                                         <div className="mt-2 flex gap-2">
-                                            <textarea title="Matn maydoni"
+                                            <textarea
                                                 className="w-full p-2 text-sm border rounded focus:ring-2 focus:ring-blue-500 outline-none"
                                                 rows={2}
                                                 value={replyText}
@@ -156,10 +156,10 @@ export default function AdminReviewsPage() {
                                                 placeholder="Javob yozing..."
                                             />
                                             <div className="flex flex-col gap-1">
-                                                <button title="Tugma" onClick={() => handleReplySubmit(review.id)} className="p-1 text-white bg-blue-600 rounded hover:bg-blue-700">
+                                                <button onClick={() => handleReplySubmit(review.id)} className="p-1 text-white bg-blue-600 rounded hover:bg-blue-700">
                                                     <Save size={16} />
                                                 </button>
-                                                <button title="Tugma" onClick={() => setReplyingId(null)} className="p-1 text-gray-600 bg-gray-200 rounded hover:bg-gray-300">
+                                                <button onClick={() => setReplyingId(null)} className="p-1 text-gray-600 bg-gray-200 rounded hover:bg-gray-300">
                                                     <X size={16} />
                                                 </button>
                                             </div>

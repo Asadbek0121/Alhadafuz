@@ -73,7 +73,7 @@ export default function CourierSelector({
 
     return (
         <div className="relative">
-            <button title="Tugma"
+            <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border transition-all ${currentCourierId
                     ? 'bg-blue-50 text-blue-600 border-blue-100'
@@ -88,7 +88,7 @@ export default function CourierSelector({
                 <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 z-[100] overflow-hidden">
                     <div className="p-3 border-b border-gray-50 flex justify-between items-center bg-gray-50/50">
                         <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Kuryerlar ro'yxati</span>
-                        <button title="Tugma" onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-900">×</button>
+                        <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-gray-900">×</button>
                     </div>
 
                     <div className="max-h-80 overflow-y-auto custom-scrollbar">
@@ -99,7 +99,7 @@ export default function CourierSelector({
                             </div>
                         )}
                         {couriers.map((courier) => (
-                            <button title="Tugma"
+                            <button
                                 key={courier.id}
                                 onClick={() => handleAssign(courier.id)}
                                 disabled={loading}

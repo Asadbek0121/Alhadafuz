@@ -191,7 +191,7 @@ export default function ProductCard(props: ProductProps) {
                     </div>
 
                     <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
-                        <button title="Tugma"
+                        <button
                             className={`flex-1 text-white text-[10px] md:text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1 shadow-md active:scale-95 ${isOutOfStock ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'}`}
                             onClick={handleBuyNow}
                             disabled={isBuying || isOutOfStock}

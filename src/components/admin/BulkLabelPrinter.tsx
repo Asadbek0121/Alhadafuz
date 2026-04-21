@@ -23,7 +23,7 @@ export default function BulkLabelPrinter({ orders }: BulkLabelPrinterProps) {
 
     return (
         <>
-            <button title="Tugma"
+            <button
                 onClick={() => handlePrint()}
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 font-medium shadow-sm transition-colors"
             >

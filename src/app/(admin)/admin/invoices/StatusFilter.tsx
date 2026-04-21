@@ -70,7 +70,7 @@ export default function StatusFilter() {
                         {statuses.map((status) => {
                             const isActive = currentStatus === status.value;
                             return (
-                                <button title="Tugma"
+                                <button
                                     key={status.value}
                                     onClick={() => handleFilter(status.value)}
                                     className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold rounded-xl transition-all ${isActive

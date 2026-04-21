@@ -43,7 +43,7 @@ export default function CartPage() {
                 <div className="flex-1 bg-white rounded-2xl md:rounded-3xl border border-slate-100 p-3 md:p-6 shadow-sm h-fit">
                     <div className="flex items-center justify-between mb-4 md:mb-6 pb-2 md:pb-4 border-b border-slate-100">
                         <span className="font-bold text-sm md:text-base text-slate-700">{tHeader('mahsulotlar')}</span>
-                        <button title="Tugma"
+                        <button
                             className="text-xs md:text-sm font-bold text-red-500 hover:bg-red-50 px-2 py-1 md:px-3 md:py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
                             onClick={clearCart}
                         >
@@ -66,7 +66,7 @@ export default function CartPage() {
                                             <h3 className="text-xs md:text-lg font-bold text-slate-900 line-clamp-2 leading-snug">{item.title}</h3>
                                             <span className="text-[10px] md:text-xs text-slate-400 font-medium bg-slate-100 px-1.5 py-0.5 rounded w-fit">Apple</span>
                                         </div>
-                                        <button title="Tugma"
+                                        <button
                                             onClick={() => removeFromCart(item.id)}
                                             className="text-slate-300 hover:text-red-500 transition-colors p-1"
                                         >
@@ -77,20 +77,20 @@ export default function CartPage() {
                                     <div className="flex items-end justify-between mt-2 md:mt-0">
                                         {/* Controls */}
                                         <div className="flex items-center gap-1 md:gap-2 bg-slate-50 rounded-xl p-1 border border-slate-100">
-                                            <button title="Tugma"
+                                            <button
                                                 onClick={() => updateQuantity(item.id, -1)}
                                                 disabled={item.quantity <= 1}
                                                 className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                                             >
                                                 <Minus size={14} strokeWidth={3} />
                                             </button>
-                                            <input title="Kiritish maydoni"
+                                            <input
                                                 type="text"
                                                 value={item.quantity}
                                                 readOnly
                                                 className="w-6 md:w-10 text-center bg-transparent font-bold text-slate-900 text-xs md:text-base outline-none"
                                             />
-                                            <button title="Tugma"
+                                            <button
                                                 onClick={() => updateQuantity(item.id, 1)}
                                                 className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 transition-all active:scale-95"
                                             >
@@ -135,7 +135,7 @@ export default function CartPage() {
                             </div>
                         </div>
 
-                        <button title="Tugma"
+                        <button
                             onClick={() => {
                                 if (isAuthenticated) {
                                     router.push('/checkout');

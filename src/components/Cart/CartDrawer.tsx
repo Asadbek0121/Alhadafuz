@@ -24,7 +24,7 @@ export default function CartDrawer() {
                         <h3>{tHeader('savatcha')}</h3>
                         <span style={{ background: '#eee', padding: '2px 8px', borderRadius: '12px', fontSize: '14px', fontWeight: '600' }}>{isHydrated ? items.length : 0}</span>
                     </div>
-                    <button title="Tugma" onClick={closeCart} className={styles.closeBtn}><X size={24} /></button>
+                    <button onClick={closeCart} className={styles.closeBtn}><X size={24} /></button>
                 </div>
 
                 <div className={styles.items}>
@@ -55,14 +55,14 @@ export default function CartDrawer() {
                                     <div className={styles.title}>{item.title}</div>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
                                         <div className={styles.controls}>
-                                            <button title="Tugma" onClick={() => updateQuantity(item.id, -1)}>-</button>
+                                            <button onClick={() => updateQuantity(item.id, -1)}>-</button>
                                             <span>{item.quantity}</span>
-                                            <button title="Tugma" onClick={() => updateQuantity(item.id, 1)}>+</button>
+                                            <button onClick={() => updateQuantity(item.id, 1)}>+</button>
                                         </div>
                                         <div className={styles.price}>{(item.price * item.quantity).toLocaleString()} {tHeader('som')}</div>
                                     </div>
                                 </div>
-                                <button title="Tugma" className={styles.remove} onClick={() => removeFromCart(item.id)}>
+                                <button className={styles.remove} onClick={() => removeFromCart(item.id)}>
                                     <Trash2 size={18} />
                                 </button>
                             </div>

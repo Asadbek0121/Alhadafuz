@@ -133,7 +133,7 @@ export default function CustomerTrackingPage() {
             </div>
             <h1 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Buyurtma topilmadi</h1>
             <p className="text-slate-500 font-bold text-xs mb-8 uppercase tracking-widest">ID noto'g'ri yoki buyurtma hali faollashmadi.</p>
-            <button title="Tugma" onClick={() => router.push('/')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-slate-200">Bosh sahifaga</button>
+            <button onClick={() => router.push('/')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-slate-200">Bosh sahifaga</button>
         </div>
     );
 
@@ -154,7 +154,7 @@ export default function CustomerTrackingPage() {
             {/* Header */}
             <header className="bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4 flex items-center justify-between sticky top-0 z-[100] shadow-sm">
                 <div className="flex items-center gap-4">
-                    <button title="Tugma" onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
+                    <button onClick={() => router.back()} className="p-2 hover:bg-slate-100 rounded-xl transition-colors">
                         <ChevronLeft size={20} />
                     </button>
                     <div>

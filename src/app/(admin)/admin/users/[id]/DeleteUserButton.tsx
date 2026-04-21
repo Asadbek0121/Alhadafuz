@@ -35,7 +35,7 @@ export default function DeleteUserButton({ userId }: { userId: string }) {
     };
 
     return (
-        <button title="Tugma"
+        <button
             onClick={handleDelete}
             disabled={loading}
             style={{

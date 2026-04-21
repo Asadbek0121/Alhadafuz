@@ -240,7 +240,7 @@ export default function AdminShippingPage() {
                         { id: 'couriers', label: 'Kuryerlar', icon: <Users size={16} /> },
                         { id: 'zones', label: 'Narxlar', icon: <Navigation size={16} /> }
                     ].map(tab => (
-                        <button title="Tugma"
+                        <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`px-6 py-3 rounded-[20px] font-bold text-sm transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab.id ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
@@ -344,7 +344,7 @@ export default function AdminShippingPage() {
 
                             <div className="flex gap-3">
                                 {courierApplications.length > 0 && (
-                                    <button title="Tugma"
+                                    <button
                                         onClick={() => setShowApplicants(!showApplicants)}
                                         className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${showApplicants ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'}`}
                                     >
@@ -364,7 +364,7 @@ export default function AdminShippingPage() {
 
                         <div className="relative">
                             <form onSubmit={handleAddCourier} className="flex gap-4">
-                                <input title="Kiritish maydoni"
+                                <input
                                     required
                                     value={searchQuery}
                                     onChange={e => setSearchQuery(e.target.value)}
@@ -386,7 +386,7 @@ export default function AdminShippingPage() {
                                     >
                                         <div className="flex justify-between items-center px-2">
                                             <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Telegramdan kelgan arizalar</h4>
-                                            <button title="Tugma" onClick={() => setShowApplicants(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
+                                            <button onClick={() => setShowApplicants(false)} className="text-gray-400 hover:text-gray-600"><X size={14} /></button>
                                         </div>
                                         <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
                                             {courierApplications.map((app) => (
@@ -406,7 +406,7 @@ export default function AdminShippingPage() {
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>
-                                                        <button title="Tugma"
+                                                        <button
                                                             onClick={() => handleApproveApplication(app.id, 'APPROVE')}
                                                             className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-100 active:scale-95 transition-all flex items-center gap-2"
                                                         >
@@ -475,7 +475,7 @@ export default function AdminShippingPage() {
                                         </td>
                                         <td className="py-5 px-8 text-center">
                                             <div className="font-extrabold text-gray-900">{(courier.courierProfile?.balance || 0).toLocaleString()} <span className="text-[10px] text-gray-400">UZS</span></div>
-                                            <button title="Tugma"
+                                            <button
                                                 disabled={(courier.courierProfile?.balance || 0) <= 0}
                                                 onClick={async () => {
                                                     const amount = prompt("To'lov miqdorini kiriting:", courier.courierProfile?.balance);
@@ -535,13 +535,13 @@ export default function AdminShippingPage() {
                                         <Truck size={32} />
                                     </div>
                                     <div className="flex gap-3">
-                                        <button title="Tugma"
+                                        <button
                                             onClick={() => handleOpenModal(zone)}
                                             className="w-12 h-12 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all transform active:scale-90 shadow-sm"
                                         >
                                             <Edit2 size={20} />
                                         </button>
-                                        <button title="Tugma"
+                                        <button
                                             onClick={() => handleDeleteZone(zone.id)}
                                             className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all transform active:scale-90 shadow-sm"
                                         >
@@ -618,7 +618,7 @@ export default function AdminShippingPage() {
                                             <span>Masofa (40% = 0.4)</span>
                                             <span className="text-blue-600">{(dispatchSettings.distanceWeight * 100).toFixed(0)}%</span>
                                         </label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number" step="0.05" min="0" max="1"
                                             value={dispatchSettings.distanceWeight}
                                             onChange={e => setDispatchSettings({ ...dispatchSettings, distanceWeight: Number(e.target.value) })}
@@ -631,7 +631,7 @@ export default function AdminShippingPage() {
                                             <span>Reyting (25% = 0.25)</span>
                                             <span className="text-blue-600">{(dispatchSettings.ratingWeight * 100).toFixed(0)}%</span>
                                         </label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number" step="0.05" min="0" max="1"
                                             value={dispatchSettings.ratingWeight}
                                             onChange={e => setDispatchSettings({ ...dispatchSettings, ratingWeight: Number(e.target.value) })}
@@ -644,7 +644,7 @@ export default function AdminShippingPage() {
                                             <span>Yuklama (20% = 0.2)</span>
                                             <span className="text-blue-600">{(dispatchSettings.workloadWeight * 100).toFixed(0)}%</span>
                                         </label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number" step="0.05" min="0" max="1"
                                             value={dispatchSettings.workloadWeight}
                                             onChange={e => setDispatchSettings({ ...dispatchSettings, workloadWeight: Number(e.target.value) })}
@@ -657,7 +657,7 @@ export default function AdminShippingPage() {
                                             <span>Javob tezligi (15% = 0.15)</span>
                                             <span className="text-blue-600">{(dispatchSettings.responseWeight * 100).toFixed(0)}%</span>
                                         </label>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number" step="0.05" min="0" max="1"
                                             value={dispatchSettings.responseWeight}
                                             onChange={e => setDispatchSettings({ ...dispatchSettings, responseWeight: Number(e.target.value) })}
@@ -674,14 +674,14 @@ export default function AdminShippingPage() {
                                 </div>
 
                                 <div className="flex gap-4 pt-4">
-                                    <button title="Tugma"
+                                    <button
                                         type="button"
                                         onClick={() => setIsDispatchModalOpen(false)}
                                         className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 h-16 rounded-[24px] font-black uppercase tracking-widest text-xs transition-all active:scale-95"
                                     >
                                         Bekor qilish
                                     </button>
-                                    <button title="Tugma"
+                                    <button
                                         type="submit"
                                         disabled={saving || (dispatchSettings.distanceWeight + dispatchSettings.ratingWeight + dispatchSettings.workloadWeight + dispatchSettings.responseWeight).toFixed(2) !== '1.00'}
                                         className="flex-[1.5] bg-blue-600 hover:bg-blue-700 text-white h-16 rounded-[24px] font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl shadow-blue-200 flex items-center justify-center gap-3 disabled:opacity-50"
@@ -711,14 +711,14 @@ export default function AdminShippingPage() {
                                 <div className="grid grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Viloyat / Shahar</label>
-                                        <select title="Tanlash" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all">
+                                        <select required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all">
                                             <option value="">Tanlang</option>
                                             {regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tuman / Shahar <span className="text-red-500">*</span></label>
-                                        <select title="Tanlash" value={formData.district} onChange={e => setFormData({ ...formData, district: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all">
+                                        <select value={formData.district} onChange={e => setFormData({ ...formData, district: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all">
                                             <option value="">Tanlang</option>
                                             {formData.name && (districts[regions.find(r => r.name === formData.name)?.id || ''] || []).map(d => <option key={d} value={d}>{d}</option>)}
                                         </select>
@@ -728,15 +728,15 @@ export default function AdminShippingPage() {
                                 <div className="grid grid-cols-3 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Narxi (SO'M)</label>
-                                        <input title="Kiritish maydoni" type="number" placeholder="0" required value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
+                                        <input type="number" placeholder="0" required value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bepul (SO'M)</label>
-                                        <input title="Kiritish maydoni" type="number" placeholder="Summa" value={formData.freeFrom} onChange={e => setFormData({ ...formData, freeFrom: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
+                                        <input type="number" placeholder="Summa" value={formData.freeFrom} onChange={e => setFormData({ ...formData, freeFrom: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bepul (SONI)</label>
-                                        <input title="Kiritish maydoni" type="number" placeholder="Soni" value={formData.freeFromQty} onChange={e => setFormData({ ...formData, freeFromQty: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
+                                        <input type="number" placeholder="Soni" value={formData.freeFromQty} onChange={e => setFormData({ ...formData, freeFromQty: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
                                     </div>
                                 </div>
 
@@ -776,14 +776,14 @@ export default function AdminShippingPage() {
                                 </div>
 
                                 <div className="flex gap-4 pt-4">
-                                    <button title="Tugma"
+                                    <button
                                         type="button"
                                         onClick={() => setIsModalOpen(false)}
                                         className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 h-16 rounded-[24px] font-black uppercase tracking-widest text-xs transition-all active:scale-95"
                                     >
                                         Bekor qilish
                                     </button>
-                                    <button title="Tugma"
+                                    <button
                                         type="submit"
                                         disabled={saving}
                                         className="flex-[1.5] bg-blue-600 hover:bg-blue-700 text-white h-16 rounded-[24px] font-black uppercase tracking-widest text-xs transition-all active:scale-95 shadow-xl shadow-blue-200 flex items-center justify-center gap-3 disabled:opacity-50"

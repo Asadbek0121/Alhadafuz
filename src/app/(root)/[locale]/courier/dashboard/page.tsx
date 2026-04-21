@@ -138,7 +138,7 @@ export default function CourierDashboard() {
                             </div>
 
                             <div className="flex gap-3">
-                                <button title="Tugma"
+                                <button
                                     onClick={() => updateStatus(activeOrder.status === 'assigned' ? 'delivering' : 'completed')}
                                     className="flex-1 py-5 bg-blue-600 hover:bg-blue-700 text-white rounded-3xl font-black text-md shadow-xl shadow-blue-600/20 active:scale-95 transition-all flex items-center justify-center gap-2"
                                 >

@@ -421,7 +421,7 @@ export default function TermsPage() {
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-6 px-4">{t('ui.table_of_contents')}</h3>
                             <nav className="space-y-1.5">
                                 {sections.map((section) => (
-                                    <button title="Tugma"
+                                    <button
                                         key={section.id}
                                         onClick={() => {
                                             setActiveSection(section.id);
@@ -453,7 +453,7 @@ export default function TermsPage() {
                             {/* Nav Buttons */}
                             <div className="px-8 md:px-16 pb-12 flex justify-between gap-4">
                                 {sections.findIndex(s => s.id === activeSection) > 0 && (
-                                    <button title="Tugma"
+                                    <button
                                         onClick={() => {
                                             const idx = sections.findIndex(s => s.id === activeSection);
                                             setActiveSection(sections[idx - 1].id);
@@ -465,7 +465,7 @@ export default function TermsPage() {
                                     </button>
                                 )}
                                 {sections.findIndex(s => s.id === activeSection) < sections.length - 1 ? (
-                                    <button title="Tugma"
+                                    <button
                                         onClick={() => {
                                             const idx = sections.findIndex(s => s.id === activeSection);
                                             setActiveSection(sections[idx + 1].id);
@@ -476,7 +476,7 @@ export default function TermsPage() {
                                         {t('ui.next_section')} <ArrowRight size={16} />
                                     </button>
                                 ) : (
-                                    <button title="Tugma"
+                                    <button
                                         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                                         className="ml-auto px-10 py-5 rounded-2xl bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest shadow-xl hover:bg-emerald-700 transition-all"
                                     >
@@ -521,7 +521,7 @@ export default function TermsPage() {
                                 <ChevronRight size={20} className="text-blue-500 group-hover:translate-x-2 transition-all" />
                             </Link>
 
-                            <button title="Tugma"
+                            <button
                                 onClick={handleDownloadPDF}
                                 className="flex-1 bg-white border border-slate-100 p-10 rounded-[2.5rem] shadow-lg shadow-slate-200/30 hover:shadow-2xl transition-all duration-300 group flex items-center justify-between text-left"
                             >

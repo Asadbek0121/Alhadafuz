@@ -44,7 +44,7 @@ export default function AdminAuthPage() {
                 <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                     <div>
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#2A3547', marginBottom: '8px' }}>Email</label>
-                        <input title="Kiritish maydoni"
+                        <input
                             {...register('email')}
                             type="email"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none' }}
@@ -53,7 +53,7 @@ export default function AdminAuthPage() {
                     </div>
                     <div>
                         <label style={{ display: 'block', fontSize: '14px', fontWeight: 600, color: '#2A3547', marginBottom: '8px' }}>Password</label>
-                        <input title="Kiritish maydoni"
+                        <input
                             {...register('password')}
                             type="password"
                             style={{ width: '100%', padding: '12px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none' }}
@@ -61,7 +61,7 @@ export default function AdminAuthPage() {
                         />
                     </div>
 
-                    <button title="Tugma"
+                    <button
                         disabled={loading}
                         style={{ background: '#0085db', color: '#fff', padding: '14px', borderRadius: '8px', border: 'none', fontWeight: 600, cursor: 'pointer', display: 'flex', justifyContent: 'center', alignItems: 'center' }}
                     >

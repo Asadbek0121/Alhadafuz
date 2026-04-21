@@ -119,7 +119,7 @@ export default function AdminMessagesPage() {
 
                     <div className="relative group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                        <input title="Kiritish maydoni"
+                        <input
                             placeholder="Qidirish..."
                             className="w-full pl-11 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
                         />
@@ -143,7 +143,7 @@ export default function AdminMessagesPage() {
                             const isActive = selectedUserId === idToUse;
 
                             return (
-                                <button title="Tugma"
+                                <button
                                     key={idToUse}
                                     onClick={() => setSelectedUserId(idToUse)}
                                     className={`w-full p-4 rounded-2xl transition-all duration-200 flex gap-4 text-left group ${isActive
@@ -212,10 +212,10 @@ export default function AdminMessagesPage() {
                             </div>
 
                             <div className="flex items-center gap-2">
-                                <button title="Tugma" aria-label="Tugma" className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-blue-600 transition-colors">
+                                <button aria-label="Tugma" className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-blue-600 transition-colors">
                                     <Phone size={20} />
                                 </button>
-                                <button title="Tugma" aria-label="Tugma" className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-blue-600 transition-colors">
+                                <button aria-label="Tugma" className="p-2 rounded-xl hover:bg-gray-50 text-gray-400 hover:text-blue-600 transition-colors">
                                     <MoreVertical size={20} />
                                 </button>
                             </div>
@@ -286,10 +286,10 @@ export default function AdminMessagesPage() {
                         {/* Input Area */}
                         <div className="p-4 bg-white border-t border-gray-100">
                             <div className="bg-gray-50 flex items-center p-2 rounded-[24px] border border-gray-100 shadow-inner focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500/50 transition-all">
-                                <button title="Tugma" aria-label="Tugma" className="p-3 text-gray-400 hover:text-blue-600 transition-colors rounded-full hover:bg-white/50">
+                                <button aria-label="Tugma" className="p-3 text-gray-400 hover:text-blue-600 transition-colors rounded-full hover:bg-white/50">
                                     <Paperclip size={20} />
                                 </button>
-                                <input title="Kiritish maydoni"
+                                <input
                                     type="text"
                                     value={messageText}
                                     onChange={(e) => setMessageText(e.target.value)}
@@ -297,10 +297,10 @@ export default function AdminMessagesPage() {
                                     placeholder="Xabar yozing..."
                                     className="flex-1 bg-transparent px-4 py-2 focus:outline-none text-gray-900 placeholder:text-gray-400 font-medium"
                                 />
-                                <button title="Tugma" aria-label="Tugma" className="p-3 text-gray-400 hover:text-orange-500 transition-colors rounded-full hover:bg-white/50 mr-2">
+                                <button aria-label="Tugma" className="p-3 text-gray-400 hover:text-orange-500 transition-colors rounded-full hover:bg-white/50 mr-2">
                                     <Smile size={20} />
                                 </button>
-                                <button title="Tugma" aria-label="Tugma"
+                                <button aria-label="Tugma"
                                     onClick={handleSendMessage}
                                     disabled={!messageText.trim() || sendMessageMutation.isPending}
                                     className="p-3 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-500/30 disabled:opacity-50 disabled:shadow-none transition-all active:scale-95 flex items-center justify-center"

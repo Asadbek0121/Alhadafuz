@@ -164,7 +164,7 @@ export default function Hero({ initialBanners = [] }: { initialBanners?: any[] }
                             {mainBanners.length > 1 && (
                                 <div className={styles.sliderDots}>
                                     {mainBanners.map((_, i) => (
-                                        <button title="Tugma"
+                                        <button
                                             key={i}
                                             onClick={() => setCurrentIndex(i)}
                                             className={`${styles.dot} ${i === currentIndex ? styles.activeDot : ''}`}

@@ -124,7 +124,7 @@ export default function AdminSettingsPage() {
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sayt Nomi</label>
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={formData.siteName}
                                 onChange={e => setFormData({ ...formData, siteName: e.target.value })}
                                 placeholder="Hadaf Market"
@@ -150,7 +150,7 @@ export default function AdminSettingsPage() {
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                                     <Phone size={10} /> Telefon Raqam
                                 </label>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="+998 71 123 45 67"
@@ -161,7 +161,7 @@ export default function AdminSettingsPage() {
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                                     <Mail size={10} /> Email
                                 </label>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="info@hadaf.uz"
@@ -170,7 +170,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="col-span-1 md:col-span-2 space-y-2">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Manzil</label>
-                                <textarea title="Matn maydoni"
+                                <textarea
                                     value={formData.address}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                                     placeholder="Toshkent shahri, ..."
@@ -184,7 +184,7 @@ export default function AdminSettingsPage() {
                                 </label>
                                 <div className="relative">
                                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">@</span>
-                                    <input title="Kiritish maydoni"
+                                    <input
                                         value={(formData.socialLinks as any).supportTelegram?.replace('@', '') || ''}
                                         onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, supportTelegram: e.target.value } } as any)}
                                         placeholder="hadaf_uz"
@@ -211,7 +211,7 @@ export default function AdminSettingsPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Karta Raqami</label>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.cardNumber}
                                     onChange={e => setFormData({ ...formData, cardNumber: e.target.value })}
                                     placeholder="8600 0000 0000 0000"
@@ -220,7 +220,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Karta Egasi (F.I.SH)</label>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.cardHolderName}
                                     onChange={e => setFormData({ ...formData, cardHolderName: e.target.value })}
                                     placeholder="FALONCHIYEV FALONCHI"
@@ -250,7 +250,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
                                     <Send size={18} />
                                 </div>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.socialLinks.telegram}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, telegram: e.target.value } })}
                                     placeholder="t.me/kanal"
@@ -261,7 +261,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
                                     <Instagram size={18} />
                                 </div>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.socialLinks.instagram}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, instagram: e.target.value } })}
                                     placeholder="instagram.com/profile"
@@ -272,7 +272,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
                                     <Facebook size={18} />
                                 </div>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.socialLinks.facebook}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, facebook: e.target.value } })}
                                     placeholder="facebook.com/page"
@@ -283,7 +283,7 @@ export default function AdminSettingsPage() {
                                 <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
                                     <Youtube size={18} />
                                 </div>
-                                <input title="Kiritish maydoni"
+                                <input
                                     value={formData.socialLinks.youtube}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, youtube: e.target.value } })}
                                     placeholder="youtube.com/channel"

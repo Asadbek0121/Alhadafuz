@@ -142,14 +142,14 @@ export default function SecurityPage() {
 
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 md:space-y-6">
                             {/* Hidden fields to catch browser autofill */}
-                            <input title="Kiritish maydoni" type="text" name="username" style={{ display: 'none' }} autoComplete="username" />
-                            <input title="Kiritish maydoni" type="password" name="password" style={{ display: 'none' }} autoComplete="current-password" />
+                            <input type="text" name="username" style={{ display: 'none' }} autoComplete="username" />
+                            <input type="password" name="password" style={{ display: 'none' }} autoComplete="current-password" />
 
                             <div className="space-y-1.5">
                                 <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight ml-1">{t('current_password')}</label>
                                 <div className="relative">
                                     <Key className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                    <input title="Kiritish maydoni"
+                                    <input
                                         type="password"
                                         autoComplete="current-password"
                                         {...register("currentPassword")}
@@ -166,7 +166,7 @@ export default function SecurityPage() {
                                     <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight ml-1">{t('new_password')}</label>
                                     <div className="relative">
                                         <ShieldCheck className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="password"
                                             autoComplete="new-password"
                                             {...register("newPassword")}
@@ -180,7 +180,7 @@ export default function SecurityPage() {
 
                                 <div className="space-y-1.5">
                                     <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight ml-1">{t('confirm_password')}</label>
-                                    <input title="Kiritish maydoni"
+                                    <input
                                         type="password"
                                         autoComplete="new-password"
                                         {...register("confirmPassword")}
@@ -193,7 +193,7 @@ export default function SecurityPage() {
                             </div>
 
                             <div className="pt-3 md:pt-6 border-t border-gray-100 flex justify-end">
-                                <button title="Tugma"
+                                <button
                                     type="submit"
                                     disabled={isSaving}
                                     className="w-full md:w-auto bg-blue-600 text-white h-10 md:h-12 px-6 md:px-8 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20 text-[13px] md:text-base"
@@ -214,7 +214,7 @@ export default function SecurityPage() {
                             <p className="text-[11px] md:text-sm text-blue-800/70 font-medium leading-relaxed">
                                 {t('2fa_desc')}
                             </p>
-                            <button title="Tugma"
+                            <button
                                 onClick={toggle2FA}
                                 disabled={is2FALoading}
                                 className="text-blue-600 font-bold text-[11px] md:text-sm mt-2 md:mt-3 flex items-center gap-2 hover:underline disabled:opacity-50 transition-all active:scale-95"

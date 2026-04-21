@@ -62,7 +62,7 @@ export default async function TopshiriqUsersPage({
                     {/* Search */}
                     <form className="relative w-full md:w-96 group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
-                        <input title="Kiritish maydoni"
+                        <input
                             name="q"
                             defaultValue={query}
                             placeholder="Email yoki ism orqali qidirish..."

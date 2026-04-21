@@ -13,7 +13,7 @@ export default function ChatTrigger({ title, subtitle }: ChatTriggerProps) {
     const { openMenu } = useChatStore();
 
     return (
-        <button title="Tugma"
+        <button
             onClick={openMenu}
             className="w-full text-left bg-blue-600 text-white rounded-[1.25rem] p-3.5 md:p-8 shadow-xl shadow-blue-500/20 active:scale-[0.98] transition-all group relative overflow-hidden"
         >

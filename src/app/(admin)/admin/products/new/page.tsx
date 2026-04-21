@@ -303,13 +303,13 @@ export default function AddProductPage() {
                         <h2 className="card-title">Umumiy</h2>
                         <div className="form-group">
                             <label className="label">Mahsulot nomi <span className="text-red-500">*</span></label>
-                            <input title="Kiritish maydoni" {...register("title")} className="input" placeholder="Mahsulot nomi" />
+                            <input {...register("title")} className="input" placeholder="Mahsulot nomi" />
                             {errors.title && <span className="error">{errors.title.message}</span>}
                             <p className="helper-text">Mahsulot nomi majburiy va takrorlanmas bo'lishi tavsiya etiladi.</p>
                         </div>
                         <div className="form-group">
                             <label className="label">Tavsif</label>
-                            <textarea title="Matn maydoni" {...register("description")} className="input" rows={6} placeholder="Mahsulot tavsifi..." />
+                            <textarea {...register("description")} className="input" rows={6} placeholder="Mahsulot tavsifi..." />
                             {errors.description && <span className="error">{errors.description.message}</span>}
                             <p className="helper-text">Mahsulot haqida batafsil ma'lumot bering.</p>
                         </div>
@@ -319,7 +319,7 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Media</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Asosiy Rasm</label>
@@ -331,12 +331,12 @@ export default function AddProductPage() {
                                 <p style={{ fontSize: '12px', color: '#999' }}>
                                     Fayllarni shu yerga tashlang yoki kompyuterdan <span style={{ color: '#0085db', cursor: 'pointer' }} onClick={() => document.getElementById('main-image-upload')?.click()}>tanlang</span>
                                 </p>
-                                <input title="Kiritish maydoni" id="main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
+                                <input id="main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
                             </div>
                             {watch('image') && (
                                 <div style={{ marginTop: '15px', position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
                                     <img alt="Rasm" src={watch('image')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <button title="Tugma" onClick={() => setValue('image', '')} type="button" style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(255,0,0,0.7)', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>&times;</button>
+                                    <button onClick={() => setValue('image', '')} type="button" style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(255,0,0,0.7)', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>&times;</button>
                                 </div>
                             )}
                         </div>
@@ -354,7 +354,7 @@ export default function AddProductPage() {
                                 >
                                     <Plus />
                                 </div>
-                                <input title="Kiritish maydoni" id="gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
+                                <input id="gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
                             </div>
                         </div>
                     </div>
@@ -363,30 +363,30 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Varyatsiyalar</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
 
                         {attributes.map((attr, idx) => (
                             <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 40px', gap: '15px', alignItems: 'end', marginBottom: '15px' }}>
                                 <div>
                                     <label className="label">Varyatsiya turi</label>
-                                    <input title="Kiritish maydoni" value={attr.key} onChange={(e) => updateAttribute(idx, 'key', e.target.value)} className="input" placeholder="Rang, O'lcham..." />
+                                    <input value={attr.key} onChange={(e) => updateAttribute(idx, 'key', e.target.value)} className="input" placeholder="Rang, O'lcham..." />
                                 </div>
                                 <div>
                                     <label className="label">Qiymati</label>
-                                    <input title="Kiritish maydoni" value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qizil, XL..." />
+                                    <input value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qizil, XL..." />
                                 </div>
-                                <button title="Tugma" type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger">
+                                <button type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger">
                                     <X size={18} />
                                 </button>
                             </div>
                         ))}
 
                         <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-                            <button title="Tugma" type="button" onClick={addAttribute} className="btn-light-primary">
+                            <button type="button" onClick={addAttribute} className="btn-light-primary">
                                 <Plus size={18} style={{ marginRight: '8px' }} /> Varyatsiya qo'shish
                             </button>
-                            <button title="Tugma" type="button" onClick={() => setShowBulkPaste(!showBulkPaste)} className="btn-light-secondary" style={{ background: '#f0f0f0', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', transition: 'background 0.2s' }}>
+                            <button type="button" onClick={() => setShowBulkPaste(!showBulkPaste)} className="btn-light-secondary" style={{ background: '#f0f0f0', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', transition: 'background 0.2s' }}>
                                 <Copy size={18} style={{ marginRight: '8px' }} /> Matndan nusxalash
                             </button>
                         </div>
@@ -398,7 +398,7 @@ export default function AddProductPage() {
                                     Excel yoki boshqa saytdan nusxalab tashlang. Har bir qator yangi xususiyat bo'ladi.
                                     <br />Format: <b>Nomi [Tab] Qiymati</b> yoki <b>Nomi: Qiymati</b>
                                 </p>
-                                <textarea title="Matn maydoni"
+                                <textarea
                                     className="input"
                                     rows={8}
                                     value={bulkText}
@@ -407,10 +407,10 @@ export default function AddProductPage() {
                                     style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.5' }}
                                 />
                                 <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
-                                    <button title="Tugma" type="button" onClick={processBulkPaste} className="btn-primary">
+                                    <button type="button" onClick={processBulkPaste} className="btn-primary">
                                         Qo'shish
                                     </button>
-                                    <button title="Tugma" type="button" onClick={() => { setShowBulkPaste(false); setBulkText(""); }} className="btn-outline-danger" style={{ border: 'none', padding: '10px 20px' }}>
+                                    <button type="button" onClick={() => { setShowBulkPaste(false); setBulkText(""); }} className="btn-outline-danger" style={{ border: 'none', padding: '10px 20px' }}>
                                         Yopish
                                     </button>
                                 </div>
@@ -422,18 +422,18 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Narx</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <div className="form-group">
                                 <label className="label">Asosiy narx <span className="text-red-500">*</span></label>
-                                <input title="Kiritish maydoni" {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
+                                <input {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
                                 {errors.price && <span className="error">{errors.price.message}</span>}
                                 <p className="helper-text">Mahsulot narxini belgilang.</p>
                             </div>
                             <div className="form-group">
                                 <label className="label">Eski narx (optional)</label>
-                                <input title="Kiritish maydoni" {...register("oldPrice")} type="number" className="input" placeholder="0" />
+                                <input {...register("oldPrice")} type="number" className="input" placeholder="0" />
                                 {errors.oldPrice && <span className="error">{errors.oldPrice.message}</span>}
                                 <p className="helper-text">Chegirmadan oldingi narx.</p>
                             </div>
@@ -443,13 +443,13 @@ export default function AddProductPage() {
                             <label className="label">Chegirma turi</label>
                             <div style={{ display: 'flex', gap: '20px', margin: '10px 0' }}>
                                 <label className="radio-label">
-                                    <input title="Kiritish maydoni" type="radio" value="no_discount" {...register("discountType")} /> Chegirma yo'q
+                                    <input type="radio" value="no_discount" {...register("discountType")} /> Chegirma yo'q
                                 </label>
                                 <label className="radio-label">
-                                    <input title="Kiritish maydoni" type="radio" value="percentage" {...register("discountType")} /> Foiz (%)
+                                    <input type="radio" value="percentage" {...register("discountType")} /> Foiz (%)
                                 </label>
                                 <label className="radio-label">
-                                    <input title="Kiritish maydoni" type="radio" value="fixed_price" {...register("discountType")} /> Aniq narx
+                                    <input type="radio" value="fixed_price" {...register("discountType")} /> Aniq narx
                                 </label>
                             </div>
                         </div>
@@ -459,11 +459,11 @@ export default function AddProductPage() {
                                 <>
                                     <div className="form-group">
                                         <label className="label">Chegirma miqdori</label>
-                                        <input title="Kiritish maydoni" {...register("discountValue")} type="number" className="input" placeholder="0" />
+                                        <input {...register("discountValue")} type="number" className="input" placeholder="0" />
                                     </div>
                                     <div className="form-group">
                                         <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
-                                        <select title="Tanlash" {...register("discountCategory")} className="input">
+                                        <select {...register("discountCategory")} className="input">
                                             <option value="SALE">Aksiya (SALE)</option>
                                             <option value="PROMO">Promo (PROMO)</option>
                                             <option value="HOT">Qaynoq (HOT)</option>
@@ -475,7 +475,7 @@ export default function AddProductPage() {
 
                         <div className="form-group">
                             <label className="label">Soliq (%)</label>
-                            <input title="Kiritish maydoni" {...register("vatAmount")} type="number" className="input" placeholder="0" />
+                            <input {...register("vatAmount")} type="number" className="input" placeholder="0" />
                             {errors.vatAmount && <span className="error">{errors.vatAmount.message}</span>}
                             <p className="helper-text">QQS miqdorini belgilang.</p>
                         </div>
@@ -493,7 +493,7 @@ export default function AddProductPage() {
                         </div>
                         <div className="form-group">
                             <label className="label">Mahsulot holati</label>
-                            <select title="Tanlash" {...register("status")} className="input">
+                            <select {...register("status")} className="input">
                                 <option value="published">Nashr qilingan</option>
                                 <option value="draft">Qoralama</option>
                                 <option value="scheduled">Rejalashtirilgan</option>
@@ -507,7 +507,7 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Mahsulot ma'lumotlari</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Kategoriyalar (bir yoki bir nechta)</label>
@@ -533,7 +533,7 @@ export default function AddProductPage() {
                                                     color: isSelected ? '#0085db' : '#5A6A85'
                                                 }}
                                             >
-                                                <input title="Kiritish maydoni"
+                                                <input
                                                     type="checkbox"
                                                     checked={isSelected}
                                                     onChange={(e) => {
@@ -553,17 +553,17 @@ export default function AddProductPage() {
                             </div>
                             {errors.category && <span className="error">{errors.category.message}</span>}
                             <p className="helper-text">Mahsulotni bir yoki bir nechta kategoriyaga biriktiring.</p>
-                            <button title="Tugma" type="button" className="btn-light-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>
+                            <button type="button" className="btn-light-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>
                                 <Plus size={16} style={{ marginRight: '5px' }} /> Yangi kategoriya yaratish
                             </button>
                         </div>
                         <div className="form-group" style={{ marginTop: '20px' }}>
                             <label className="label">Brand</label>
-                            <input title="Kiritish maydoni" {...register("brand")} className="input" placeholder="Brand nomi" />
+                            <input {...register("brand")} className="input" placeholder="Brand nomi" />
                         </div>
                         <div className="form-group">
                             <label className="label">Teglar</label>
-                            <input title="Kiritish maydoni" {...register("tags")} className="input" placeholder="Teglarni kiriting..." />
+                            <input {...register("tags")} className="input" placeholder="Teglarni kiriting..." />
                             <p className="helper-text">Mahsulotga teglar qo'shing.</p>
                         </div>
                     </div>
@@ -572,11 +572,11 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Mahsulot shabloni</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Shablonni tanlash</label>
-                            <select title="Tanlash" {...register("template")} className="input">
+                            <select {...register("template")} className="input">
                                 <option value="default">Odatiy shablon</option>
                                 <option value="box">Box ko'rinishi</option>
                                 <option value="full">To'liq kenglik</option>
@@ -589,11 +589,11 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Ombor</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Ombordagi soni</label>
-                            <input title="Kiritish maydoni" {...register("stock")} type="number" className="input" placeholder="0" />
+                            <input {...register("stock")} type="number" className="input" placeholder="0" />
                             {errors.stock && <span className="error">{errors.stock.message}</span>}
                         </div>
                     </div>
@@ -602,34 +602,34 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Marketing</h2>
-                            <button title="Tugma" type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                <input title="Kiritish maydoni" type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
+                                <input type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
                                 <span>"YANGI" belgisi</span>
                             </label>
                         </div>
                         <div className="form-group">
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input title="Kiritish maydoni" type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
+                                    <input type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
                                     <span>🚚 Bepul yetkazib berish</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input title="Kiritish maydoni" type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
+                                    <input type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
                                     <span>🎬 Video-sharh mavjud</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input title="Kiritish maydoni" type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
+                                    <input type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
                                     <span>🎁 Sovg'asi bor</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input title="Kiritish maydoni" type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
+                                    <input type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
                                     <span>⚠️ "Kam qoldi" (Stock Alert)</span>
                                 </label>
                                 <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input title="Kiritish maydoni" type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
+                                    <input type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
                                     <span>💰 Bo'lib to'lash</span>
                                 </label>
                             </div>
@@ -641,10 +641,10 @@ export default function AddProductPage() {
 
             {/* Footer Actions */}
             <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                <button title="Tugma" type="button" onClick={() => router.back()} className="btn-outline-danger">
+                <button type="button" onClick={() => router.back()} className="btn-outline-danger">
                     Bekor qilish
                 </button>
-                <button title="Tugma" type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
+                <button type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
                     {loading && <Loader2 className="animate-spin" size={18} style={{ marginRight: "10px" }} />}
                     {loading ? "Saqlanmoqda..." : "Mahsulot qo'shish"}
                 </button>

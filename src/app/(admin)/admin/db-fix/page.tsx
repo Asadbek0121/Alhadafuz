@@ -53,7 +53,7 @@ export default function DBFixPage() {
                         </div>
                     </div>
 
-                    <button title="Tugma"
+                    <button
                         onClick={runFix}
                         disabled={loading}
                         className="w-full py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-black uppercase tracking-widest text-sm shadow-xl shadow-indigo-200 transition-all active:scale-[0.98] disabled:opacity-50 flex items-center justify-center gap-3 overflow-hidden relative group"

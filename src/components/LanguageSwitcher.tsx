@@ -32,7 +32,7 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
 
     return (
         <div className="relative" ref={ref} style={{ zIndex: 100 }}>
-            <button title="Tugma"
+            <button
                 onClick={() => {
                     // Mobile cycling logic (width < 768px)
                     if (typeof window !== 'undefined' && window.innerWidth < 768) {
@@ -132,7 +132,7 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                             Tilni tanlang
                         </div>
                         {languages.map((lang) => (
-                            <button title="Tugma"
+                            <button
                                 key={lang.code}
                                 onClick={() => handleSwitch(lang.code)}
                                 style={{

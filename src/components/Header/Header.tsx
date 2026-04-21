@@ -361,7 +361,7 @@ export default function Header() {
 
                         {/* Old Location Selector REMOVED */}
 
-                        <button title="Tugma"
+                        <button
                             id="category-btn-trigger"
                             className={`hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${isCatalogOpen
                                 ? 'bg-slate-900 text-white shadow-slate-900/20'
@@ -393,7 +393,7 @@ export default function Header() {
                     {/* Center Section: Search Bar */}
                     <div className="hidden lg:block flex-1 relative" ref={searchRef}>
                         <div className="relative group">
-                            <input title="Kiritish maydoni"
+                            <input
                                 type="text"
                                 name="search-input"
                                 autoComplete="one-time-code"
@@ -402,7 +402,7 @@ export default function Header() {
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
-                            <button title="Tugma" className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
                                 <Search size={20} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -558,7 +558,7 @@ export default function Header() {
                         </Link>
 
                         {/* Cart */}
-                        <button title="Tugma" onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
+                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
                                 <LordIcon 
                                     src="/icons/lordicon/cart_premium.json"
@@ -604,7 +604,7 @@ export default function Header() {
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Search size={16} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                             </div>
-                            <input title="Kiritish maydoni"
+                            <input
                                 type="text"
                                 name="mobile-search-input"
                                 autoComplete="one-time-code"
@@ -614,7 +614,7 @@ export default function Header() {
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
                             {searchQuery && (
-                                <button title="Tugma"
+                                <button
                                     onClick={() => setSearchQuery('')}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200/50 rounded-full text-slate-500"
                                 >

@@ -181,7 +181,7 @@ export default function PersonalInfoPage() {
                     <p className="text-[11px] md:text-sm text-text-muted mt-0.5 line-clamp-1">{t('personal_dashboard')}</p>
                 </div>
                 <div className="relative shrink-0">
-                    <input title="Kiritish maydoni"
+                    <input
                         type="file"
                         id="avatar-upload"
                         className="hidden"
@@ -216,7 +216,7 @@ export default function PersonalInfoPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-6">
                     <div className="space-y-1 md:space-y-2">
                         <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('fio')}</label>
-                        <input title="Kiritish maydoni"
+                        <input
                             {...register("name")}
                             className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.name ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
@@ -227,7 +227,7 @@ export default function PersonalInfoPage() {
 
                     <div className="space-y-1 md:space-y-2">
                         <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('username')}</label>
-                        <input title="Kiritish maydoni"
+                        <input
                             {...register("username")}
                             className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.username ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
@@ -238,7 +238,7 @@ export default function PersonalInfoPage() {
 
                     <div className="space-y-1 md:space-y-2">
                         <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('email')}</label>
-                        <input title="Kiritish maydoni"
+                        <input
                             {...register("email")}
                             className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.email ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
                                 }`}
@@ -267,7 +267,7 @@ export default function PersonalInfoPage() {
 
                     <div className="space-y-1 md:space-y-2">
                         <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('date_of_birth')}</label>
-                        <input title="Kiritish maydoni"
+                        <input
                             type="date"
                             {...register("dateOfBirth")}
                             className={`w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border transition-all outline-none font-medium ${errors.dateOfBirth ? "border-red-500 bg-red-50/10" : "border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5"
@@ -278,7 +278,7 @@ export default function PersonalInfoPage() {
 
                     <div className="space-y-1 md:space-y-2">
                         <label className="text-[11px] md:text-sm font-bold text-gray-700 uppercase tracking-tight">{t('gender')}</label>
-                        <select title="Tanlash"
+                        <select
                             {...register("gender")}
                             className="w-full h-9 md:h-12 px-3.5 text-sm rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/5 outline-none transition-all cursor-pointer bg-white font-medium"
                         >
@@ -290,7 +290,7 @@ export default function PersonalInfoPage() {
                 </div>
 
                 <div className="pt-4 md:pt-6 border-t border-gray-100 flex justify-end">
-                    <button title="Tugma"
+                    <button
                         type="submit"
                         disabled={isSaving}
                         className="w-full md:w-auto bg-blue-600 text-white h-10 md:h-12 px-6 md:px-8 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-blue-500/20 text-sm md:text-base mb-2"

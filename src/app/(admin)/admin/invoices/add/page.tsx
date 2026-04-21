@@ -70,7 +70,7 @@ export default function AddInvoicePage() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Order Status:</h2>
-                        <select title="Tanlash"
+                        <select
                             value={status}
                             onChange={e => setStatus(e.target.value)}
                             style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', outline: 'none' }}
@@ -82,7 +82,7 @@ export default function AddInvoicePage() {
                     </div>
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
                         <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Order Date:</h2>
-                        <input title="Kiritish maydoni"
+                        <input
                             type="date"
                             value={issueDate}
                             onChange={e => setIssueDate(e.target.value)}
@@ -100,26 +100,26 @@ export default function AddInvoicePage() {
                     <div style={{ flex: 1, minWidth: '300px' }}>
                         <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Bill From</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={billFrom.name}
                                 onChange={e => setBillFrom({ ...billFrom, name: e.target.value })}
                                 placeholder="Bill From Name"
                                 style={styles.input}
                             />
-                            <textarea title="Matn maydoni"
+                            <textarea
                                 value={billFrom.address}
                                 onChange={e => setBillFrom({ ...billFrom, address: e.target.value })}
                                 placeholder="Bill From Address"
                                 style={styles.input}
                                 rows={2}
                             />
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={billFrom.email}
                                 onChange={e => setBillFrom({ ...billFrom, email: e.target.value })}
                                 placeholder="Bill From Email"
                                 style={styles.input}
                             />
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={billFrom.phone}
                                 onChange={e => setBillFrom({ ...billFrom, phone: e.target.value })}
                                 placeholder="Bill From Phone"
@@ -132,26 +132,26 @@ export default function AddInvoicePage() {
                     <div style={{ flex: 1, minWidth: '300px' }}>
                         <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Bill To</h3>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={billTo.name}
                                 onChange={e => setBillTo({ ...billTo, name: e.target.value })}
                                 placeholder="Mijoz ismi (Bill To Name)"
                                 style={styles.input}
                             />
-                            <textarea title="Matn maydoni"
+                            <textarea
                                 value={billTo.address}
                                 onChange={e => setBillTo({ ...billTo, address: e.target.value })}
                                 placeholder="Mijoz manzili (Bill To Address)"
                                 style={styles.input}
                                 rows={2}
                             />
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={billTo.email}
                                 onChange={e => setBillTo({ ...billTo, email: e.target.value })}
                                 placeholder="Bill To Email"
                                 style={styles.input}
                             />
-                            <input title="Kiritish maydoni"
+                            <input
                                 value={billTo.phone}
                                 onChange={e => setBillTo({ ...billTo, phone: e.target.value })}
                                 placeholder="Bill To Phone"
@@ -181,7 +181,7 @@ export default function AddInvoicePage() {
                                 <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
                                     <td style={styles.td}>{index + 1}</td>
                                     <td style={styles.td}>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             value={item.name}
                                             onChange={e => updateItem(item.id, 'name', e.target.value)}
                                             placeholder="Item Name"
@@ -189,7 +189,7 @@ export default function AddInvoicePage() {
                                         />
                                     </td>
                                     <td style={styles.td}>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number"
                                             value={item.cost}
                                             onChange={e => updateItem(item.id, 'cost', Number(e.target.value))}
@@ -198,7 +198,7 @@ export default function AddInvoicePage() {
                                         />
                                     </td>
                                     <td style={styles.td}>
-                                        <input title="Kiritish maydoni"
+                                        <input
                                             type="number"
                                             value={item.qty}
                                             onChange={e => updateItem(item.id, 'qty', Number(e.target.value))}
@@ -210,7 +210,7 @@ export default function AddInvoicePage() {
                                         {(item.cost * item.qty).toLocaleString()} so'm
                                     </td>
                                     <td style={styles.td}>
-                                        <button title="Tugma" onClick={() => removeItem(item.id)} style={{ color: '#fa896b', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                        <button onClick={() => removeItem(item.id)} style={{ color: '#fa896b', background: 'none', border: 'none', cursor: 'pointer' }}>
                                             <Trash2 size={18} />
                                         </button>
                                     </td>
@@ -218,7 +218,7 @@ export default function AddInvoicePage() {
                             ))}
                         </tbody>
                     </table>
-                    <button title="Tugma" onClick={addItem} style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#ecf2ff', color: '#0085db', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={addItem} style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#ecf2ff', color: '#0085db', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
                         <Plus size={16} /> Add Item
                     </button>
                 </div>
@@ -247,10 +247,10 @@ export default function AddInvoicePage() {
                 <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '30px 0' }} />
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button title="Tugma" onClick={handleSave} style={{ background: '#0085db', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <button onClick={handleSave} style={{ background: '#0085db', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Save size={18} /> Save Invoice
                     </button>
-                    <button title="Tugma" onClick={() => router.back()} style={{ background: '#fa896b', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={() => router.back()} style={{ background: '#fa896b', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
                         Cancel
                     </button>
                 </div>
