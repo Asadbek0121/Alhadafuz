@@ -19,6 +19,7 @@ import PinLock from "@/components/Auth/PinLock";
 import OfflineOverlay from "@/components/OfflineOverlay";
 import SplashScreen from "@/components/Effects/SplashScreen";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { Analytics } from "@vercel/analytics/next";
 
 import { ClientProviders } from "@/providers/ClientProviders";
 
@@ -82,6 +83,7 @@ export default async function LocaleLayout({
           <PinLock />
           <MapModal />
           <OfflineOverlay />
+          <Analytics />
           <SpeedInsights />
         </ClientProviders>
       </body>
