@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@/navigation';
+import Image from 'next/image';
 import styles from './Hero.module.css';
 
 const DEFAULT_COUNTDOWN = 24 * 60 * 60 * 1000; // 24h fallback
@@ -118,12 +119,18 @@ export default function Hero() {
                                     exit={{ opacity: 0 }}
                                     transition={{ duration: 0.8 }}
                                     className={styles.slider}
-                                    style={{
-                                        backgroundImage: (mainBanners.length > 0 && mainBanners[currentIndex]?.image) ? `url(${mainBanners[currentIndex].image})` : 'none',
-                                        backgroundSize: 'cover',
-                                        backgroundPosition: 'center'
-                                    }}
                                 >
+                                    {mainBanners.length > 0 && mainBanners[currentIndex]?.image && (
+                                        <Image
+                                            src={mainBanners[currentIndex].image}
+                                            alt={mainBanners[currentIndex]?.title || "Banner"}
+                                            fill
+                                            priority={currentIndex === 0}
+                                            className="object-cover"
+                                            sizes="(max-width: 1024px) 100vw, (max-width: 1440px) 1200px, 1600px"
+                                            quality={90}
+                                        />
+                                    )}
                                     <div className={styles.sliderOverlay}></div>
                                     <div className={styles.sliderContent}>
                                         <motion.div
@@ -194,13 +201,20 @@ export default function Hero() {
                             >
                                 <div className={styles.hotDealImageWrapper}>
                                     {(sideBanner?.image && !imageError) ? (
-                                        <motion.img 
+                                        <motion.div 
                                             whileHover={{ scale: 1.1 }}
-                                            src={sideBanner.image} 
-                                            alt="Hot product" 
-                                            className={styles.hotDealImage}
-                                            onError={() => setImageError(true)}
-                                        />
+                                            className="w-full h-full relative"
+                                        >
+                                            <Image 
+                                                src={sideBanner.image} 
+                                                alt={sideBanner?.title || "Hot product"} 
+                                                fill
+                                                priority
+                                                className={styles.hotDealImage}
+                                                sizes="(max-width: 640px) 70px, (max-width: 1024px) 100px, 250px"
+                                                onError={() => setImageError(true)}
+                                            />
+                                        </motion.div>
                                     ) : (
                                         <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                                             <TrendingUp size={24} className="text-blue-200" />
