@@ -3,16 +3,22 @@ import { unstable_cache } from 'next/cache';
 
 export const getCachedProducts = unstable_cache(
     async () => {
-        const results = await (prisma as any).product.findMany({
-            where: {
-                isDeleted: false,
-                OR: [
-                    { status: 'published' },
-                    { status: 'ACTIVE' }
-                ]
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        let results = [];
+        try {
+            results = await (prisma as any).product.findMany({
+                where: {
+                    isDeleted: false,
+                    OR: [
+                        { status: 'published' },
+                        { status: 'ACTIVE' }
+                    ]
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+        } catch (e) {
+            console.error("Failed to fetch products:", e);
+            return [];
+        }
 
         return Array.isArray(results) ? results.map((p: any) => {
             let isNew = true;
