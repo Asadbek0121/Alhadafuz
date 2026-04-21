@@ -6,13 +6,22 @@ import Image from "next/image";
 import LordIcon from "../ui/LordIcon";
 
 export default function SplashScreen() {
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(false);
 
   useEffect(() => {
-    // Longer duration for the "WOW" effect to be appreciated
+    // Only show splash screen once per session
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    if (hasSeenSplash) {
+      setShow(false);
+      return;
+    }
+
+    setShow(true);
+    // Reduced duration for better UX/Performance score
     const timer = setTimeout(() => {
       setShow(false);
-    }, 3500);
+      sessionStorage.setItem('hasSeenSplash', 'true');
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, []);

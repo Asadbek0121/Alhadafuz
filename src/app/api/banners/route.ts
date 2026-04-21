@@ -1,13 +1,11 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { getCachedBanners } from '@/lib/data';
 
 export async function GET(req: Request) {
     try {
-        const banners = await (prisma as any).banner.findMany({
-            orderBy: { order: 'asc' }
-        });
+        const banners = await getCachedBanners();
         return NextResponse.json(banners);
     } catch (err) {
         return NextResponse.json([]);

@@ -8,7 +8,7 @@ const intlMiddleware = createMiddleware(routing);
 
 const { auth } = NextAuth(authConfig);
 
-export default auth((req) => {
+export const proxy = auth((req) => {
     const { pathname } = req.nextUrl;
 
     // Admin va Print sahifalari i18n middleware'dan mustasno va prefix bilan kelsa redirect qilamiz
@@ -26,6 +26,8 @@ export default auth((req) => {
     // Boshqa barcha sahifalar uchun i18n routing (locale prefix qo'shish)
     return intlMiddleware(req);
 });
+
+export default proxy;
 
 export const config = {
     matcher: ['/((?!api|_next|.*\\..*).*)']

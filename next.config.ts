@@ -70,7 +70,6 @@ export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
   silent: !process.env.CI,
   widenClientFileUpload: true,
   hideSourceMaps: true,
-  disableLogger: true,
   tunnelRoute: "/monitoring",
   webpack: {
     automaticVercelMonitors: true,

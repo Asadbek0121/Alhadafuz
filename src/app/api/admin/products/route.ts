@@ -2,7 +2,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { revalidatePath } from 'next/cache';
+import { revalidatePath, revalidateTag } from 'next/cache';
+
 import { z } from 'zod';
 
 export const dynamic = 'force-dynamic';
@@ -142,6 +143,7 @@ export async function POST(req: Request) {
 
         revalidatePath('/admin/products');
         revalidatePath('/', 'layout');
+        revalidateTag('products');
         return NextResponse.json(product);
     } catch (error: any) {
         console.error("Critical Product creation error:", error);

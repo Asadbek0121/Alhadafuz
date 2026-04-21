@@ -10,11 +10,12 @@ import styles from './Hero.module.css';
 
 const DEFAULT_COUNTDOWN = 24 * 60 * 60 * 1000; // 24h fallback
 
-export default function Hero() {
+export default function Hero({ initialBanners = [] }: { initialBanners?: any[] }) {
     const t = useTranslations('Hero');
     const tCommon = useTranslations('Header');
-    const [banners, setBanners] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [banners, setBanners] = useState<any[]>(initialBanners);
+    const [loading, setLoading] = useState(initialBanners.length === 0);
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(DEFAULT_COUNTDOWN);
     const [isMounted, setIsMounted] = useState(false);

@@ -1,53 +1,28 @@
-"use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
-// Force recompile due to Turbopack error
-
-import { useEffect, useState } from 'react';
 import Hero from "@/components/Hero/Hero";
 import ProductCard from "@/components/ProductCard/ProductCard";
-import { useTranslations } from 'next-intl';
-import Link from 'next/link';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { getTranslations } from 'next-intl/server';
+import { getCachedProducts, getCachedBanners } from '@/lib/data';
 
-interface Banner {
-  id: string;
-  title: string;
-  image: string;
-  link?: string;
-}
-
-export default function Home() {
-  const [isMounted, setIsMounted] = useState(false);
-  const t = useTranslations('Header');
-  const [products, setProducts] = useState<any[]>([]);
-  useEffect(() => {
-    setIsMounted(true);
-    // Fetch products
-    fetch('/api/products')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setProducts(data);
-        } else {
-          console.error("Products API returned non-array:", data);
-          setProducts([]);
-        }
-      })
-      .catch(err => console.error(err));
-  }, []);
-
-  if (!isMounted) return null;
+export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: 'Header' });
+  
+  // Parallel fetch on server
+  const [products, banners] = await Promise.all([
+    getCachedProducts(),
+    getCachedBanners()
+  ]);
 
   return (
     <div className="pb-[60px] md:pb-0">
-      <Hero />
+      <Hero initialBanners={banners} />
 
       <section className="container">
         <h2 className="text-2xl font-bold mb-6 mt-10 text-slate-900">
           {t('ommabop_mahsulotlar')}
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 min-[1800px]:grid-cols-7 gap-3 md:gap-6">
-          {products.map((p, index) => (
+          {products.map((p: any, index: number) => (
             <ProductCard
               key={p.id}
               id={p.id}
@@ -64,7 +39,7 @@ export default function Home() {
               showLowStock={p.showLowStock}
               allowInstallment={p.allowInstallment}
               stock={p.stock}
-              priority={index < 6}
+              priority={index < 8}
             />
           ))}
         </div>
@@ -72,3 +47,4 @@ export default function Home() {
     </div>
   );
 }
+

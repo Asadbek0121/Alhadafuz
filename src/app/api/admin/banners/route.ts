@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,6 +61,8 @@ export async function POST(req: Request) {
             }
         });
 
+        revalidatePath('/');
+        revalidateTag('banners');
         return NextResponse.json(banner);
     } catch (error: any) {
         return NextResponse.json({ error: 'Failed to create', details: error.message }, { status: 500 });
