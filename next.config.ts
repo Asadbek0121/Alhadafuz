@@ -69,7 +69,6 @@ export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
   project: "sentry-chestnut-bridge",
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  hideSourceMaps: true,
   tunnelRoute: "/monitoring",
   webpack: {
     automaticVercelMonitors: true,

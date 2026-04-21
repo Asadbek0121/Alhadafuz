@@ -25,14 +25,7 @@ interface Category {
     isActive?: boolean;
 }
 
-export default function AdminCategoriesPage({
-    searchParams,
-}: {
-    searchParams: Promise<{ page?: string }>;
-}) {
-    // Await searchParams as required by Next.js 16 even for client page components
-    React.use(searchParams);
-
+export default function AdminCategoriesPage() {
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
