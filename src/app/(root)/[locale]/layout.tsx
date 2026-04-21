@@ -54,8 +54,7 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const messages = await getMessages();
-  const session = await auth();
+  const [messages, session] = await Promise.all([getMessages(), auth()]);
 
   if (!['uz', 'ru', 'en'].includes(locale)) {
     notFound();
