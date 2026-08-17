@@ -41,7 +41,8 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
 
     useEffect(() => {
         if (isOpen) {
-            setLoading(true);
+            // Use a microtask to avoid synchronous setState warning in Next.js/React 19
+            queueMicrotask(() => setLoading(true));
             fetch('/api/categories')
                 .then(res => res.json())
                 .then(data => {
@@ -98,9 +99,9 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
 
                     <div className={styles.menuGrid}>
                         {loading ? (
-                            <div style={{ padding: '20px', color: '#666' }}>Yuklanmoqda...</div>
+                            <div className={styles.statusMessage}>Yuklanmoqda...</div>
                         ) : categories.length === 0 ? (
-                            <div style={{ padding: '20px', color: '#666' }}>Kategoriyalar mavjud emas.</div>
+                            <div className={styles.statusMessage}>Kategoriyalar mavjud emas.</div>
                         ) : (
                             <>
                                 <div className={styles.leftCol}>
@@ -120,13 +121,13 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             <div className={styles.mobileCatImage}>
                                                 {cat.image ? (
                                                     <img src={cat.image} alt={cat.name} />
-                                                ) : <div style={{ opacity: 0.5 }}>{getIcon(cat.slug || '')}</div>}
+                                                ) : <div className={styles.fallbackIcon}>{getIcon(cat.slug || '')}</div>}
                                             </div>
 
                                             {/* Desktop Icon (original) */}
                                             <span className={styles.icon}>
                                                 {cat.image ? (
-                                                    <img src={cat.image} alt={cat.name} style={{ width: '20px', height: '20px', objectFit: 'contain' }} />
+                                                    <img src={cat.image} alt={cat.name} />
                                                 ) : getIcon(cat.slug || '')}
                                             </span>
 
@@ -137,8 +138,8 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                 <div className={styles.rightCol}>
                                     {categories[activeIdx] && (
                                         <>
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
-                                                <h3 style={{ margin: 0 }}>{categories[activeIdx].name}</h3>
+                                            <div className={styles.rightColHeader}>
+                                                <h3>{categories[activeIdx].name}</h3>
                                                 <Link href={`/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={close}>
                                                     Barchasini ko'rish
                                                 </Link>
@@ -162,7 +163,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                         </div>
                                                     ))
                                                 ) : (
-                                                    <div style={{ color: '#888', fontSize: '14px', gridColumn: 'span 4' }}>
+                                                    <div className={styles.noSubCategories}>
                                                         Ushbu bo'limda hozircha ichki kategoriyalar yo'q.
                                                     </div>
                                                 )}

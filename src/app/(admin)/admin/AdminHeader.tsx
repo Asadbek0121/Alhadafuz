@@ -1,6 +1,5 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
-
 "use client";
+
 
 import { useState, useEffect, useRef } from 'react';
 import { Search, Bell, X, Check, User as UserIcon } from 'lucide-react';
@@ -99,15 +98,22 @@ export default function AdminHeader() {
 
                 {/* Bell Icon */}
                 <div
-                    className="relative cursor-pointer"
-                    onClick={() => setIsOpen(!isOpen)}
+                    className="relative"
                 >
-                    <Bell size={22} color="#5A6A85" className={`transition-transform ${isOpen ? 'scale-110 text-blue-600' : ''}`} />
-                    {unreadCount > 0 && (
-                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white ring-2 ring-white font-bold animate-pulse">
-                            {unreadCount}
-                        </span>
-                    )}
+                    <button
+                        onClick={() => setIsOpen(!isOpen)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors relative"
+                        aria-label={`Bildirishnomalar${unreadCount > 0 ? `, ${unreadCount} ta o'qilmagan` : ''}`}
+                        aria-expanded={isOpen ? "true" : "false"}
+                        aria-haspopup="true"
+                    >
+                        <Bell size={22} color="#5A6A85" className={`transition-transform ${isOpen ? 'scale-110 text-blue-600' : ''}`} />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-0 right-0 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] text-white ring-2 ring-white font-bold animate-pulse">
+                                {unreadCount}
+                            </span>
+                        )}
+                    </button>
 
                     {/* Dropdown */}
                     {isOpen && (
@@ -115,7 +121,11 @@ export default function AdminHeader() {
                             <div className="flex items-center justify-between px-4 py-3 border-b bg-gray-50/50">
                                 <h3 className="font-semibold text-gray-700 text-sm">Bildirishnomalar</h3>
                                 {unreadCount > 0 && (
-                                    <button onClick={(e) => { e.stopPropagation(); markAllRead(); }} className="text-[10px] text-blue-600 hover:underline font-medium">
+                                    <button 
+                                        onClick={(e) => { e.stopPropagation(); markAllRead(); }} 
+                                        className="text-[10px] text-blue-600 hover:underline font-medium"
+                                        aria-label="Barcha bildirishnomalarni o'qilgan deb belgilash"
+                                    >
                                         O'qilgan deb belgilash
                                     </button>
                                 )}
@@ -164,7 +174,7 @@ export default function AdminHeader() {
                     </div>
                     <div className="w-[40px] h-[40px] rounded-full overflow-hidden cursor-pointer shadow-sm hover:shadow-md transition-shadow bg-gray-100 flex items-center justify-center border-2 border-white ring-1 ring-gray-100">
                         {user?.image ? (
-                            <img src={user.image} className="w-full h-full object-cover" alt={user.name || ''} />
+                            <img src={user.image} className="w-full h-full object-cover" alt={user.name || 'Admin'} />
                         ) : (
                             <UserIcon size={20} className="text-gray-400" />
                         )}

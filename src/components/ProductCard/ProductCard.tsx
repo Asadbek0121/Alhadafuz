@@ -28,12 +28,15 @@ interface ProductProps {
     allowInstallment?: boolean;
     stock?: number;
     priority?: boolean;
+    rating?: number;
+    reviewCount?: number;
 }
 
 export default function ProductCard(props: ProductProps) {
     const {
         id, title, price, oldPrice, isSale, image, discountType,
-        isNew = true, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false
+        freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false,
+        rating = 0, reviewCount
     } = props;
     const { addToCart } = useCartStore(); // Updated hook
     const t = useTranslations('Header');
@@ -49,6 +52,9 @@ export default function ProductCard(props: ProductProps) {
 
     const isLowStock = showLowStock && typeof stock !== 'undefined' && stock > 0 && stock < 10;
     const monthlyPayment = Math.round(price / 12);
+
+    // "AKSIYA" sticker faqat HOT/PROMO marketing turlarida chiqadi — oddiy % chegirma ribbon bilan ko'rsatiladi
+    const isCampaignSticker = discountType === 'HOT' || discountType === 'PROMO';
 
     const handleAddToCart = (e: React.MouseEvent) => {
         e.preventDefault();
@@ -80,104 +86,122 @@ export default function ProductCard(props: ProductProps) {
 
     const activeWishlist = isInWishlist(id);
 
-    return (
-        <Link href={`/product/${id}`} className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
-            {/* Top Left: Promotion Stickers */}
-            <div className={styles.badgeContainer}>
-                {(discountType && discountType !== 'no_discount') || (discountPercentage > 0 && !discountType) ? (
-                    <div className={`${styles.promoSticker} ${discountType === 'HOT' ? styles.hotTheme :
-                        discountType === 'PROMO' ? styles.promoTheme : styles.saleTheme
-                        }`}>
-                        {discountType === 'SALE' || !discountType ? tMarketing('sale') : tMarketing(discountType.toLowerCase())}
-                    </div>
-                ) : null}
-
-                {isNew !== false && (
-                    <div className={`${styles.promoSticker} ${styles.newTheme}`}>
-                        {tMarketing('isNew')}
-                    </div>
-                )}
-
-                {freeDelivery && (
-                    <div className={`${styles.promoSticker} ${styles.deliveryTheme}`}>
-                        <Truck size={12} className="mr-1" /> {tMarketing('bepul')}
-                    </div>
-                )}
-                {hasGift && (
-                    <div className={`${styles.promoSticker} ${styles.giftTheme}`}>
-                        <Gift size={12} className="mr-1" /> {tMarketing('sovga')}
-                    </div>
-                )}
-                {isOutOfStock && (
-                    <div className={`${styles.promoSticker} bg-red-600 text-white`}>
-                        {tMarketing('tugagan') || 'Tugagan'}
-                    </div>
-                )}
+    // Badge'lar — maksimal 2 ta, ustuvorlik tartibida
+    const badges: React.ReactNode[] = [];
+    if (isOutOfStock) {
+        badges.push(
+            <div key="stock" className={`${styles.promoSticker} bg-red-600 text-white`}>
+                {tMarketing('tugagan')}
             </div>
-
-            {/* Top Right: Discount Percentage Tag */}
-            {discountPercentage > 0 && (
-                <div className={styles.discountTag}>
-                    <span>-{discountPercentage}%</span>
-                    {tMarketing('chegirma')}
+        );
+    } else {
+        if (isCampaignSticker) {
+            badges.push(
+                <div key="disc" className={`${styles.promoSticker} ${discountType === 'HOT' ? styles.hotTheme : styles.promoTheme}`}>
+                    {tMarketing(discountType.toLowerCase())}
                 </div>
-            )}
+            );
+        }
+        if (freeDelivery) {
+            badges.push(
+                <div key="del" className={`${styles.promoSticker} ${styles.deliveryTheme}`}>
+                    <Truck size={12} className="mr-1" /> {tMarketing('bepul')}
+                </div>
+            );
+        }
+        if (hasGift) {
+            badges.push(
+                <div key="gift" className={`${styles.promoSticker} ${styles.giftTheme}`}>
+                    <Gift size={12} className="mr-1" /> {tMarketing('sovga')}
+                </div>
+            );
+        }
+    }
 
-            {/* Bottom Indicators (Video, stock) */}
-            <div className="absolute bottom-1/3 left-2 z-10 flex flex-col gap-1">
-                {hasVideo && (
-                    <div className="bg-white/90 backdrop-blur-sm p-1 rounded-full shadow-sm text-blue-600 border border-blue-100">
-                        <Play size={14} fill="currentColor" />
+    return (
+        <div className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
+            {/* Clickable area: badges + image */}
+            <Link href={`/product/${id}`} className="block relative">
+                {/* Top Left: Promotion Stickers (max 2) — chegirma lentasi bor bo'lsa uning ostida */}
+                {badges.length > 0 && (
+                    <div className={`${styles.badgeContainer} ${discountPercentage > 0 ? styles.badgeBelowRibbon : ''}`}>
+                        {badges.slice(0, 2)}
                     </div>
                 )}
-                {isLowStock && (
-                    <div className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">
-                        {tMarketing('kam_qoldi')}
+
+                {/* Top Right: Discount Percentage Tag */}
+                {discountPercentage > 0 && (
+                    <div className={styles.discountTag}>
+                        <span>-{discountPercentage}%</span>
+                        {tMarketing('chegirma')}
                     </div>
                 )}
-            </div>
+
+                {/* Bottom Indicators (Video, stock) */}
+                <div className="absolute bottom-2 left-2 z-10 flex flex-col gap-1">
+                    {hasVideo && (
+                        <div className="bg-white/90 backdrop-blur-sm p-1 rounded-full shadow-sm text-blue-600 border border-blue-100">
+                            <Play size={14} fill="currentColor" />
+                        </div>
+                    )}
+                    {isLowStock && (
+                        <div className="bg-amber-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm flex items-center gap-1">
+                            {tMarketing('kam_qoldi')}
+                        </div>
+                    )}
+                </div>
+
+                <div className="aspect-[4/5] bg-slate-50 w-full relative p-4 overflow-hidden">
+                    <div className="w-full h-full relative">
+                        <Image
+                            src={image || "https://placehold.co/400"}
+                            alt={title}
+                            fill
+                            priority={priority}
+                            sizes="(max-width: 640px) 160px, (max-width: 1024px) 200px, 300px"
+                            className={`object-contain group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
+                            onError={(e) => {
+                                const target = e.target as HTMLImageElement;
+                                target.srcset = "";
+                                target.src = "https://placehold.co/400?text=No+Image";
+                            }}
+                        />
+                    </div>
+                </div>
+            </Link>
 
             {/* Wishlist Button */}
-            <div className={`absolute top-2 right-2 z-10 p-1.5 rounded-full backdrop-blur-sm shadow-sm transition-all duration-300 cursor-pointer group/heart ${isInWishlist(id) ? 'bg-red-50 text-red-500' : 'bg-white/80 text-slate-400 hover:text-red-500 hover:bg-white'}`}
+            <div
+                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all duration-300 cursor-pointer group/heart ${activeWishlist ? 'bg-red-50 text-red-500' : 'text-slate-400 hover:text-red-500 hover:bg-white'}`}
                 onClick={handleToggleWishlist}
+                role="button"
+                aria-label="Sevimlilarga qo'shish"
             >
                 <Heart
                     size={18}
-                    className={`${isInWishlist(id) ? 'fill-current' : ''} transition-transform duration-300 group-hover/heart:scale-110`}
-                    strokeWidth={isInWishlist(id) ? 0 : 2}
+                    className={`${activeWishlist ? 'fill-current' : ''} transition-transform duration-300 group-hover/heart:scale-110`}
+                    strokeWidth={activeWishlist ? 0 : 2}
                 />
-            </div>
-
-            <div className="aspect-[4/5] bg-slate-50 w-full relative p-4 overflow-hidden">
-                <div className="w-full h-full relative">
-                    <Image
-                        src={image || "https://placehold.co/400"}
-                        alt={title}
-                        fill
-                        priority={priority}
-                        sizes="(max-width: 640px) 160px, (max-width: 1024px) 200px, 300px"
-                        className={`object-contain group-hover:scale-105 transition-transform duration-500 mix-blend-multiply ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
-                        onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.srcset = "";
-                            target.src = "https://placehold.co/400?text=No+Image";
-                        }}
-                    />
-                </div>
             </div>
 
             {/* Content */}
             <div className="p-3 md:p-4 flex flex-col flex-1">
-                <h3 className="text-xs md:text-sm font-medium text-slate-700 line-clamp-2 min-h-[2.5em] mb-1 leading-snug group-hover:text-blue-600 transition-colors" title={title}>
-                    {title}
-                </h3>
+                <Link href={`/product/${id}`} className="block">
+                    <h3 className="text-xs md:text-sm font-medium text-slate-700 line-clamp-2 min-h-[2.5em] mb-1 leading-snug group-hover:text-blue-600 transition-colors" title={title}>
+                        {title}
+                    </h3>
+                </Link>
 
-                <div className="flex items-center gap-0.5 mb-2">
-                    {[1, 2, 3, 4, 5].map(i => (
-                        <Star key={i} size={10} className={`${i <= 5 ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
-                    ))}
-                    <span className="text-[10px] text-slate-400 ml-1">(5)</span>
-                </div>
+                {rating > 0 && (
+                    <div className="flex items-center gap-0.5 mb-2">
+                        {[1, 2, 3, 4, 5].map(i => (
+                            <Star key={i} size={10} className={`${i <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
+                        ))}
+                        {typeof reviewCount === 'number' && reviewCount > 0 && (
+                            <span className="text-[10px] text-slate-400 ml-1">({reviewCount})</span>
+                        )}
+                    </div>
+                )}
 
                 <div className="mt-auto flex flex-col gap-2">
                     <div className="flex flex-col">
@@ -186,17 +210,17 @@ export default function ProductCard(props: ProductProps) {
                                 {tMarketing('oyiga')} {monthlyPayment.toLocaleString()} {t('som')} {tMarketing('dan')}
                             </div>
                         )}
-                        {oldPrice && <div className="text-[10px] text-slate-400 line-through decoration-red-500 decoration-1">{oldPrice.toLocaleString()} {t('som')}</div>}
+                        {oldPrice && <div className="text-[10px] text-slate-400 line-through">{oldPrice.toLocaleString()} {t('som')}</div>}
                         <div className="text-sm md:text-lg font-black text-blue-600">{price.toLocaleString()} <span className="text-xs font-medium">{t('som')}</span></div>
                     </div>
 
-                    <div className="flex items-center gap-2" onClick={(e) => e.preventDefault()}>
+                    <div className="flex items-center gap-2">
                         <button
                             className={`flex-1 text-white text-[10px] md:text-xs font-bold py-2 rounded-xl transition-colors flex items-center justify-center gap-1 shadow-md active:scale-95 ${isOutOfStock ? 'bg-slate-300 cursor-not-allowed shadow-none' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20'}`}
                             onClick={handleBuyNow}
                             disabled={isBuying || isOutOfStock}
                         >
-                            {isBuying ? <Loader2 size={14} className="animate-spin" /> : isOutOfStock ? 'Tugagan' : t('sotib_olish')}
+                            {isBuying ? <Loader2 size={14} className="animate-spin" /> : isOutOfStock ? tMarketing('tugagan') : t('sotib_olish')}
                         </button>
                         <button title="Savat"
                             className={`p-2 rounded-xl transition-colors active:scale-95 ${isOutOfStock ? 'bg-slate-100 text-slate-300 cursor-not-allowed' : 'bg-blue-50 text-blue-600 hover:bg-blue-100'}`}
@@ -209,6 +233,6 @@ export default function ProductCard(props: ProductProps) {
                     </div>
                 </div>
             </div>
-        </Link>
+        </div>
     )
 }

@@ -203,9 +203,6 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 if (session.admin2fa !== undefined) token.admin2fa = session.admin2fa;
             }
 
-            // Owner Override
-            if (token.email === 'admin@hadaf.uz') token.role = 'ADMIN';
-
             return token;
         }
     }

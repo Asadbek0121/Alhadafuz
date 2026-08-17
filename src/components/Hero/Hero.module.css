@@ -6,17 +6,19 @@
     display: grid;
     grid-template-columns: 1fr 280px;
     gap: 16px;
-    height: 300px; /* PC height */
+    height: auto;
+    min-height: 300px; /* PC floor height; grows if the hot deal card needs more */
     position: relative;
 }
 
 /* 1. Slider Styles */
 .sliderContainer {
     position: relative;
-    border-radius: 20px;
+    border-radius: 16px;
     overflow: hidden;
     height: 100%;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    min-height: 0; /* allow the grid item to shrink to the row height */
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
 }
 
 .slider {
@@ -26,9 +28,8 @@
     padding: 30px 50px;
     display: flex;
     align-items: center;
-    border-radius: 20px;
-    background-size: cover; 
-    background-position: center;
+    border-radius: inherit;
+    overflow: hidden;
 }
 
 .sliderOverlay {
@@ -84,50 +85,225 @@
     background: white;
 }
 
-/* 2. Hot Deal Card - Global Styling */
-.hotDealCard {
-    background: white;
-    border-radius: 20px;
-    border: 1px solid #f1f5f9;
-    padding: 16px;
+/* 1b. Empty Slider Fallback (products carousel) */
+.fallbackCarousel {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+    padding: 18px 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+    gap: 10px;
 }
 
-.hotDealHeader {
+.fallbackHeader {
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
-.hotDealBadge {
-    padding: 3px 8px;
-    background: #fff1f2;
-    color: #e11d48;
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
+.fallbackHint {
+    display: none;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.75);
 }
+
+.fallbackTitle {
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0;
+}
+
+.fallbackTrack {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 4px;
+    scrollbar-width: none;
+}
+
+.fallbackTrack::-webkit-scrollbar {
+    display: none;
+}
+
+.fallbackCard {
+    scroll-snap-align: start;
+    flex: 0 0 150px;
+    background: white;
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    text-decoration: none;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+/* Kam mahsulot (1-2) bo'lganda — markazga tushib, kattaroq ko'rinadi */
+.fallbackTrackCentered {
+    justify-content: center;
+}
+
+@media (min-width: 641px) {
+    .fallbackTrackCentered .fallbackCard {
+        flex: 0 0 190px;
+    }
+}
+
+.fallbackCard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+}
+
+.fallbackImageWrap {
+    position: relative;
+    flex: none;
+    aspect-ratio: 4 / 5;
+    max-height: 170px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #f8fafc;
+}
+
+.fallbackName {
+    font-size: 11px;
+    font-weight: 600;
+    color: #334155;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    min-height: 2.6em;
+}
+
+.fallbackPrice {
+    font-size: 14px;
+    font-weight: 800;
+    color: #2563eb;
+}
+
+.fallbackOldPrice {
+    font-size: 10px;
+    color: #94a3b8;
+    text-decoration: line-through;
+}
+
+/* Fallback karta — PC va tablet: rasm kattaroq (karta enini to'ldiradi), matn/narx eng pastda, hover qimirlamaydi */
+@media (min-width: 641px) {
+    .fallbackCard {
+        flex: 0 0 180px;
+        padding: 8px;
+        gap: 6px;
+    }
+
+    .fallbackTrackCentered .fallbackCard {
+        flex: 0 0 220px;
+    }
+
+    .fallbackCard:hover {
+        transform: none;
+    }
+
+    .fallbackImageWrap {
+        width: 100%;
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+        aspect-ratio: auto;
+    }
+
+    .fallbackName {
+        margin-top: auto;
+    }
+}
+
+/* 2. Hot Deal Card - Global Styling */
+.hotDealCard {
+    background: white;
+    border-radius: 24px;
+    border: 1px solid #f1f5f9;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 15px 45px rgba(0,0,0,0.07);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    height: 100%;
+}
+
+.hotDealCard:hover {
+    box-shadow: 0 25px 60px rgba(0,0,0,0.12);
+    border-color: #e2e8f0;
+}
+
+.countdownHead {
+    font-size: 10.5px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-align: center;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.countdownIcon {
+    width: 18px;
+    height: 18px;
+    border: 0;
+    flex-shrink: 0;
+}
+
 
 .countdown {
     display: flex !important;
+    gap: 8px;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.timeUnit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     gap: 4px;
 }
 
 .timeBox {
     background: #1e293b;
     color: white;
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-weight: 800;
+    font-size: 12px;
+}
+
+.timeLabel {
+    font-size: 8px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.timeSep {
     font-weight: 700;
-    font-size: 13px;
+    margin-top: 5px;
+    color: #cbd5e1;
 }
 
 .hotDealContent {
@@ -138,140 +314,404 @@
     color: inherit;
 }
 
+.hotDealImageLink {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    flex-shrink: 0;
+}
+
 .hotDealImageWrapper {
-    height: 130px;
-    background: #f8fafc;
-    border-radius: 12px;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    max-height: 210px;
+    background: #fff;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
     position: relative;
-    padding: 10px;
+    padding: 0;
+}
+
+.discountBadge {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: #e11d48;
+    color: white;
+    padding: 5px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 900;
+    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);
+    z-index: 10;
 }
 
 .hotDealImage {
     object-fit: contain;
 }
 
+.hotDealInfo {
+    margin-top: 10px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
 .hotDealTitle {
-    font-size: 14px;
-    font-weight: 700;
-    color: #1e293b;
-    margin-top: 4px;
+    font-size: 15px;
+    font-weight: 800;
+    color: #0f172a;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .promoPrice {
-    font-size: 18px;
-    font-weight: 800;
+    font-size: 22px;
+    font-weight: 900;
     color: #e11d48;
+    line-height: 1;
+}
+
+.oldPrice {
+    font-size: 12px;
+    text-decoration: line-through;
+    color: #94a3b8;
+    margin-bottom: 2px;
+}
+
+.currency {
+    font-size: 14px;
+    font-weight: 700;
+    color: #e11d48;
+    margin-left: 2px;
+}
+
+.hotDealBtn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 8px;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.expiredBadge {
+    background: #f1f5f9;
+    color: #64748b;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+}
+
+.hotDealBtn:hover {
+    background: #1d4ed8;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+}
+
+.hotDealBtn:active {
+    transform: scale(0.96);
+    background: #1e40af;
 }
 
 /* RESPONSIVE - FULL WIDTH STACK FOR TABLET & MOBILE */
 
 @media (max-width: 1024px) {
     .heroContent {
-        grid-template-columns: 1fr; /* Stack also for Tablet */
+        grid-template-columns: 1fr;
         height: auto;
-        gap: 16px;
+        min-height: 0;
+        gap: 20px;
     }
 
     .sliderContainer {
+        aspect-ratio: 2.8 / 1;
         height: auto;
-        aspect-ratio: 1200 / 450; /* Perfect full-visibility for provided banner size */
-        border-radius: 20px;
     }
 
     .slider {
-        padding: 30px 40px;
-    }
-
-    .sliderTitle {
-        font-size: 24px;
-    }
-
-    .hotDealCard {
-        flex-direction: row; 
-        align-items: center;
-        padding: 16px;
-        position: relative;
-    }
-
-    .hotDealHeader {
-        position: absolute;
-        top: 12px;
-        right: 16px;
-    }
-
-    .hotDealBadge {
-        display: none; /* Keep header clean for countdown */
-    }
-
-    .hotDealContent {
-        flex-direction: row;
-        gap: 20px;
-        width: 100%;
-        align-items: center;
-    }
-
-    .hotDealImageWrapper {
-        width: 100px;
-        height: 100px;
-        margin: 0;
-        flex-shrink: 0;
-    }
-
-    .hotDealInfo {
-        margin-top: 0;
-    }
-
-    .hotDealTitle {
-        font-size: 14px;
-    }
-
-    .promoPrice {
-        font-size: 16px;
-    }
-}
-
-@media (max-width: 640px) {
-    .slider {
-        padding: 20px;
-    }
-
-    .sliderTitle {
-        font-size: 18px;
-    }
-
-    .sliderBtn {
-        padding: 6px 14px;
-        font-size: 12px;
-    }
-
-    .sliderDots {
-        left: 20px;
-        bottom: 12px;
+        padding: 0 24px;
     }
 
     .hotDealCard {
         padding: 12px;
+        flex-direction: row;
+        align-items: center;
+        gap: 12px;
+        min-height: 80px;
     }
 
-    .hotDealHeader {
-        top: 8px;
-        right: 12px;
+    .hotDealContent {
+        flex-direction: row;
+        gap: 12px;
+        width: 100%;
+        align-items: center;
     }
 
-    .timeBox {
-        width: 22px;
-        height: 22px;
-        font-size: 10px;
+    .hotDealImageLink {
+        flex: none;
     }
 
     .hotDealImageWrapper {
-        width: 70px;
-        height: 70px;
+        width: 96px;
+        height: 96px;
+        max-height: none;
+        flex-shrink: 0;
+    }
+
+    .hotDealInfo {
+        text-align: left;
+        margin-top: 0;
+        flex: 1;
+    }
+
+    .countdownHead {
+        text-align: left;
+        justify-content: flex-start;
+    }    .promoPrice {
+        font-size: 22px;
+    }
+
+
+    .hotDealBtn {
+        width: 100%;
+        max-width: 240px;
+        padding: 14px;
+        font-size: 15px;
+    }
+
+    /* Fallback (bannersiz) rejimida tugma to'liq en — mockup bilan bir xil */
+    .heroContent.fallbackLayout .hotDealBtn {
+        max-width: none;
+    }
+
+    .discountBadge {
+        top: 10px;
+        right: 10px;
+        padding: 4px 8px;
+        font-size: 10px;
+    }
+}
+
+/* Fallback (bannersiz) rejimida tablet'da ham hot deal o'ng ustunda — mockup bilan bir xil */
+@media (min-width: 641px) and (max-width: 1024px) {
+    .heroContent.fallbackLayout {
+        grid-template-columns: minmax(0, 1fr) 260px;
+        gap: 16px;
+        min-height: 300px;
+    }
+
+    .heroContent.fallbackLayout .sliderContainer {
+        aspect-ratio: auto;
+        min-height: 300px;
+    }
+
+    .heroContent.fallbackLayout .hotDealCard {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 20px 16px;
+        min-height: 0;
+    }
+
+    .heroContent.fallbackLayout .hotDealContent {
+        flex-direction: column;
+        gap: 14px;
+        align-items: stretch;
+    }
+
+    .heroContent.fallbackLayout .hotDealImageWrapper {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 1 / 1;
+        max-height: 200px;
+    }
+
+    .heroContent.fallbackLayout .countdownHead {
+        text-align: center;
+    }
+
+    .heroContent.fallbackLayout .hotDealInfo {
+        text-align: center;
+        align-items: center;
+    }
+}
+
+@media (max-width: 640px) {
+    .sliderContainer {
+        aspect-ratio: 3 / 1;
+    }
+
+    /* Fallback (bannersiz) — karta kontentiga mos o'sadi, 3:1 aspekt kesib qo'ymaydi */
+    .heroContent.fallbackLayout .sliderContainer {
+        aspect-ratio: auto;
+        min-height: 0;
+    }
+
+    .fallbackCarousel {
+        padding: 12px 14px;
+        gap: 8px;
+    }
+
+    .fallbackCard {
+        flex: 0 0 calc(50% - 6px);
+        padding: 8px;
+        gap: 4px;
+    }
+
+    .fallbackTitle {
+        font-size: 13px;
+    }
+
+    .fallbackHint {
+        display: inline-flex;
+        animation: fallbackPulse 1.6s infinite;
+    }
+
+    @keyframes fallbackPulse {
+        0%, 100% { opacity: 0.5; }
+        50% { opacity: 1; }
+    }
+
+    .fallbackName {
+        font-size: 10px;
+        min-height: 2.4em;
+    }
+
+    .fallbackPrice {
+        font-size: 12px;
+    }
+
+    .slider {
+        padding: 0 16px;
+    }
+
+    .hotDealCard {
+        padding: 12px;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        height: auto !important;
+    }
+
+    .hotDealContent {
+        flex-direction: row !important;
+        gap: 12px !important;
+        align-items: center !important;
+        width: 100% !important;
+    }
+
+    .hotDealImageLink {
+        flex: none !important;
+    }
+
+    .hotDealImageWrapper {
+        flex: none !important;
+        width: 112px !important;
+        height: 112px !important;
+        max-height: none !important;
+        position: relative !important;
+        margin: 0 !important;
+        border-radius: 12px !important;
+    }
+
+    .hotDealInfo {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        justify-content: center !important;
+        text-align: left !important;
+        flex: 1 !important;
+        min-width: 0 !important;
+        gap: 3px !important;
+        margin-top: 0 !important;
+    }
+
+    .countdownHead {
+        text-align: left !important;
+        justify-content: flex-start !important;
+    }
+
+    .countdownIcon {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .countdown {
+        display: flex !important;
+        justify-content: flex-start !important;
+        gap: 3px !important;
+        margin-bottom: 4px !important;
+    }
+
+    .timeBox {
+        width: 26px !important;
+        height: 26px !important;
+        font-size: 10px !important;
+        background: #1f2937 !important;
+        border-radius: 6px !important;
+    }
+    
+    .timeLabel {
+        font-size: 6px !important;
+        margin-top: 1px !important;
+    }
+
+    .promoPrice {
+        font-size: 17px !important;
+        line-height: 1 !important;
+        margin-top: 2px !important;
+    }
+
+    .oldPrice {
+        font-size: 11px !important;
+        margin-bottom: -2px !important;
+    }
+
+    .currency {
+        font-size: 10px !important;
+        margin-left: 2px !important;
+    }
+
+    .hotDealTitle {
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        margin: 0 !important;
+        width: 100% !important;
+        text-align: left !important;
+        color: #0f172a !important;
+    }
+
+    .hotDealBtn {
+        width: 100% !important;
+        padding: 11px !important;
+        font-size: 12px !important;
+        border-radius: 10px !important;
+        margin-top: 2px !important;
+        align-self: stretch !important;
+    }
+
+    .discountBadge {
+        top: 8px;
+        right: 8px;
+        padding: 3px 7px;
+        font-size: 9px;
     }
 }

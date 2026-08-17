@@ -78,13 +78,13 @@ export default function CheckoutPage() {
             const data = await res.json();
             if (res.ok) {
                 setAppliedCoupon(data);
-                toast.success("Promo kod muvaffaqiyatli qo'llanildi");
+                toast.success(tCheckout('coupon_applied'));
             } else {
                 setCouponError(data.error);
                 setAppliedCoupon(null);
             }
         } catch (err) {
-            setCouponError("Xatolik yuz berdi");
+            setCouponError(tCheckout('coupon_error'));
         } finally {
             setIsApplyingCoupon(false);
         }
@@ -211,23 +211,23 @@ export default function CheckoutPage() {
                     } else {
                         // Fallback if DB is empty
                         const fallbacks = [
-                            { id: 'cash', name: 'Naqd pul', provider: 'CASH', isActive: true },
-                            { id: 'p2p', name: "Karta orqali (P2P)", provider: 'P2P', isActive: true },
-                            { id: 'card', name: "Karta (Terminal)", provider: 'HUMO_UZCARD', isActive: true }
+                            { id: 'cash', name: tCheckout('cash'), provider: 'CASH', isActive: true },
+                            { id: 'p2p', name: tCheckout('p2p'), provider: 'P2P', isActive: true },
+                            { id: 'card', name: tCheckout('terminal'), provider: 'HUMO_UZCARD', isActive: true }
                         ];
                         setPaymentMethods(fallbacks);
                         setPaymentMethod(fallbacks[0].provider);
                     }
                 } else {
                     const fallbacks = [
-                        { id: 'cash', name: 'Naqd pul', provider: 'cash', isActive: true }
+                        { id: 'cash', name: tCheckout('cash'), provider: 'cash', isActive: true }
                     ];
                     setPaymentMethods(fallbacks);
                     setPaymentMethod(fallbacks[0].provider);
                 }
             } catch (err) {
                 console.error("Failed to fetch payment methods", err);
-                setPaymentMethods([{ id: 'cash', name: 'Naqd pul', provider: 'cash', isActive: true }]);
+                setPaymentMethods([{ id: 'cash', name: tCheckout('cash'), provider: 'cash', isActive: true }]);
                 setPaymentMethod('cash');
             } finally {
                 setIsMethodsLoading(false);
@@ -352,6 +352,9 @@ export default function CheckoutPage() {
 
     if (items.length === 0) return null;
 
+    // Jami summa — chegirma tovar summasidan oshib ketsa 0 dan pastga tushmaydi
+    const grandTotal = Math.max(0, total() + deliveryFee - (appliedCoupon?.discountAmount || 0));
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -364,7 +367,29 @@ export default function CheckoutPage() {
         setError(null);
 
         if (!paymentMethod) {
-            setError("Iltimos, to'lov turini tanlang");
+            setError(tCheckout('select_payment'));
+            setIsProcessing(false);
+            return;
+        }
+
+        // Telefon raqam to'liqligini tekshirish
+        const phoneDigits = (formData.phone || '').replace(/\D/g, '');
+        if (phoneDigits.length < 12) {
+            setError(tCheckout('phone_invalid'));
+            setIsProcessing(false);
+            return;
+        }
+
+        // Kuryer yetkazib berishda tuman tanlanishi shart
+        if (deliveryMethod === 'courier' && !formData.district) {
+            setError(tCheckout('select_district'));
+            setIsProcessing(false);
+            return;
+        }
+
+        // Olib ketishda filial tanlanishi shart
+        if (deliveryMethod === 'pickup' && stores.length > 0 && !selectedStoreId) {
+            setError(tCheckout('select_store_err'));
             setIsProcessing(false);
             return;
         }
@@ -400,7 +425,7 @@ export default function CheckoutPage() {
                         quantity: item.quantity,
                         image: item.image,
                     })),
-                    total: total() + deliveryFee - (appliedCoupon?.discountAmount || 0),
+                    total: grandTotal,
                     paymentMethod,
                     deliveryMethod,
                     couponCode: appliedCoupon?.code,
@@ -437,7 +462,7 @@ export default function CheckoutPage() {
             clearCart();
             router.push(`/order-success?orderId=${data.order.id}`);
         } catch (err: any) {
-            setError(err.message || 'Xatolik yuz berdi. Qayta urinib ko\'ring.');
+            setError(err.message || tCheckout('order_error'));
         } finally {
             setIsProcessing(false);
         }
@@ -458,7 +483,7 @@ export default function CheckoutPage() {
                         </button>
                         <div>
                             <h1 className="text-[14px] sm:text-[16px] md:text-xl font-black text-slate-900 tracking-tight leading-none">{tCart('checkout')}</h1>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 hidden md:block">Xavfsiz to'lov tizimi</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1 hidden md:block">{tCheckout('secure_payment')}</p>
                         </div>
                     </div>
 
@@ -500,6 +525,7 @@ export default function CheckoutPage() {
                                     <PhoneInput
                                         value={formData.phone}
                                         onChange={(val) => setFormData({ ...formData, phone: val })}
+                                        required
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 md:py-3.5 outline-none focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm"
                                     />
                                 </div>
@@ -512,6 +538,7 @@ export default function CheckoutPage() {
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-3 md:py-4 outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm placeholder:text-slate-300"
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                        required
                                     />
                                 </div>
                             </div>
@@ -594,7 +621,7 @@ export default function CheckoutPage() {
                                                 className="text-blue-600 hover:text-blue-700 font-bold text-xs flex items-center gap-1.5 transition-all active:scale-95 bg-blue-50/50 px-3 py-1.5 rounded-lg border border-blue-100"
                                             >
                                                 <MapPin size={14} />
-                                                <span className="uppercase tracking-wide text-[10px]">Xaritadan tanlash</span>
+                                                <span className="uppercase tracking-wide text-[10px]">{tCheckout('map_select')}</span>
                                             </button>
                                         </div>
                                         <div className="space-y-1.5">
@@ -747,74 +774,92 @@ export default function CheckoutPage() {
                                     <Loader2 className="animate-spin text-blue-600" />
                                 </div>
                             ) : (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                <div className="flex flex-col gap-3">
                                     {(paymentMethods.length === 0 ? [
                                         { id: 'fallback-cash', name: tCheckout('cash'), provider: 'CASH' },
                                         { id: 'fallback-card', name: tCheckout('card'), provider: 'CARD' }
                                     ] : paymentMethods).map((method) => {
                                         const isSelected = paymentMethod === method.provider;
                                         let Icon = CreditCard;
-                                        let colorClass = "text-slate-400"; // Default muted
-                                        let bgClass = "bg-white";
-                                        let borderClass = "border-slate-100";
-                                        let shadowClass = "";
+                                        let iconColor = "text-blue-600";
+                                        let iconBg = "bg-blue-50";
 
                                         // Normalize provider for styling check
                                         const providerUpper = (method.provider || '').toUpperCase();
 
                                         switch (providerUpper) {
                                             case 'CLICK':
-                                                colorClass = isSelected ? "text-[#0085db]" : "text-slate-400 group-hover:text-[#0085db]";
-                                                if (isSelected) { bgClass = "bg-[#0085db]/10"; borderClass = "border-[#0085db]"; shadowClass = "shadow-lg shadow-[#0085db]/10"; }
+                                                Icon = CreditCard;
+                                                iconColor = "text-[#0085db]";
+                                                iconBg = "bg-[#0085db]/10";
                                                 break;
                                             case 'PAYME':
-                                                colorClass = isSelected ? "text-[#00c1af]" : "text-slate-400 group-hover:text-[#00c1af]";
-                                                if (isSelected) { bgClass = "bg-[#00c1af]/10"; borderClass = "border-[#00c1af]"; shadowClass = "shadow-lg shadow-[#00c1af]/10"; }
+                                                Icon = CreditCard;
+                                                iconColor = "text-[#00c1af]";
+                                                iconBg = "bg-[#00c1af]/10";
                                                 break;
                                             case 'UZUM':
-                                                colorClass = isSelected ? "text-[#7000ff]" : "text-slate-400 group-hover:text-[#7000ff]";
-                                                if (isSelected) { bgClass = "bg-[#7000ff]/10"; borderClass = "border-[#7000ff]"; shadowClass = "shadow-lg shadow-[#7000ff]/10"; }
+                                                Icon = CreditCard;
+                                                iconColor = "text-[#7000ff]";
+                                                iconBg = "bg-[#7000ff]/10";
                                                 break;
                                             case 'P2P':
-                                                colorClass = isSelected ? "text-[#e11d48]" : "text-slate-400 group-hover:text-[#e11d48]";
-                                                if (isSelected) { bgClass = "bg-[#e11d48]/10"; borderClass = "border-[#e11d48]"; shadowClass = "shadow-lg shadow-[#e11d48]/10"; }
+                                                Icon = CreditCard;
+                                                iconColor = "text-[#e11d48]";
+                                                iconBg = "bg-[#e11d48]/10";
                                                 break;
                                             case 'CASH':
                                                 Icon = Banknote;
-                                                colorClass = isSelected ? "text-amber-500" : "text-slate-400 group-hover:text-amber-500";
-                                                if (isSelected) { bgClass = "bg-amber-50"; borderClass = "border-amber-500"; shadowClass = "shadow-lg shadow-amber-500/10"; }
+                                                iconColor = "text-amber-500";
+                                                iconBg = "bg-amber-50";
                                                 break;
                                             case 'CARD':
                                             case 'HUMO_UZCARD':
-                                                colorClass = isSelected ? "text-blue-500" : "text-slate-400 group-hover:text-blue-500";
-                                                if (isSelected) { bgClass = "bg-blue-50"; borderClass = "border-blue-500"; shadowClass = "shadow-lg shadow-blue-500/10"; }
+                                                Icon = CreditCard;
+                                                iconColor = "text-blue-600";
+                                                iconBg = "bg-blue-50";
                                                 break;
-                                            default:
-                                                if (isSelected) { bgClass = "bg-slate-100"; borderClass = "border-slate-900"; colorClass = "text-slate-900"; }
                                         }
+
+                                        // Tavsif — to'lov turi bo'yicha
+                                        let desc = '';
+                                        if (providerUpper === 'CASH') desc = tCheckout('pay_cash');
+                                        else if (providerUpper === 'CLICK') desc = tCheckout('pay_click');
+                                        else if (providerUpper === 'PAYME') desc = tCheckout('pay_payme');
+                                        else if (providerUpper === 'UZUM') desc = tCheckout('pay_uzum');
+                                        else if (providerUpper === 'P2P') desc = tCheckout('pay_p2p');
+                                        else if (providerUpper === 'CARD' || providerUpper === 'HUMO_UZCARD') desc = tCheckout('pay_card');
 
                                         return (
                                             <div
                                                 key={method.id}
+                                                role="radio"
+                                                tabIndex={0}
+                                                aria-checked={isSelected}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter' || e.key === ' ') {
+                                                        e.preventDefault();
+                                                        setPaymentMethod(method.provider);
+                                                    }
+                                                }}
                                                 className={cn(
-                                                    "group cursor-pointer p-4 rounded-[22px] border-2 flex flex-col items-center justify-center gap-3 aspect-[4/3] transition-all duration-300 relative overflow-hidden",
-                                                    isSelected ? `${borderClass} ${bgClass} ${shadowClass} scale-[1.02]` : "border-slate-100 bg-white hover:border-slate-200 hover:shadow-md"
+                                                    "flex items-center gap-4 p-4 rounded-2xl border-2 cursor-pointer transition-all duration-200",
+                                                    isSelected ? "border-blue-600 bg-blue-50/50 shadow-sm" : "border-slate-100 bg-white hover:border-slate-200"
                                                 )}
                                                 onClick={() => setPaymentMethod(method.provider)}
                                             >
-                                                {/* Checkmark for selected */}
-                                                {isSelected && (
-                                                    <div className="absolute top-3 right-3 animate-scale-in">
-                                                        <div className={cn("w-5 h-5 rounded-full flex items-center justify-center text-white", colorClass.replace('text-', 'bg-'))}>
-                                                            <CheckCircle2 size={12} fill="currentColor" className="text-white" />
-                                                        </div>
-                                                    </div>
-                                                )}
-
-                                                <div className={cn("p-3 rounded-2xl transition-all duration-300", isSelected ? "bg-white shadow-sm scale-110" : "bg-slate-50 group-hover:bg-white group-hover:shadow-sm")}>
-                                                    <Icon size={28} className={cn("transition-colors duration-300", colorClass)} />
+                                                <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors", isSelected ? `${iconBg} ${iconColor}` : "bg-slate-50 text-slate-400")}>
+                                                    <Icon size={24} className="transition-colors" />
                                                 </div>
-                                                <span className={cn("font-black text-[10px] sm:text-[11px] text-center uppercase tracking-widest leading-none transition-colors duration-300", isSelected ? "text-slate-900" : "text-slate-400 group-hover:text-slate-600")}>{method.name}</span>
+
+                                                <div className="flex-1 min-w-0">
+                                                    <p className={cn("text-sm font-black truncate transition-colors", isSelected ? "text-slate-900" : "text-slate-600")}>{method.name}</p>
+                                                    {desc && <p className="text-[11px] font-medium text-slate-400 mt-0.5 truncate">{desc}</p>}
+                                                </div>
+
+                                                <div className={cn("w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors", isSelected ? "border-blue-600" : "border-slate-300")}>
+                                                    {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-blue-600" />}
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -915,16 +960,14 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="flex justify-between items-center group">
                                     <span className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{tHeader('yetkazib_berish')}</span>
-                                    <span className={cn("text-sm font-black transition-all group-hover:scale-105", (deliveryFee === 0 && (deliveryMethod === 'pickup' || formData.district)) ? "text-emerald-500" : "text-slate-900")}>
-                                        {(deliveryMethod === 'courier' && !formData.district) ? (
-                                            <>0 <span className="text-[10px] ml-0.5 text-slate-400 font-bold">{tHeader('som')}</span></>
-                                        ) : (
-                                            <>
-                                                {deliveryFee === 0 ? tCart('free') : `${deliveryFee.toLocaleString()} `}
-                                                {deliveryFee !== 0 && <span className="text-[10px] ml-0.5 text-slate-400 font-bold">{tHeader('som')}</span>}
-                                            </>
-                                        )}
-                                    </span>
+                                    {deliveryMethod === 'courier' && !formData.district ? (
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">{tCheckout('calculating')}</span>
+                                    ) : (
+                                        <span className={cn("text-sm font-black transition-all group-hover:scale-105", deliveryFee === 0 ? "text-emerald-500" : "text-slate-900")}>
+                                            {deliveryFee === 0 ? tCart('free') : `${deliveryFee.toLocaleString()} `}
+                                            {deliveryFee !== 0 && <span className="text-[10px] ml-0.5 text-slate-400 font-bold">{tHeader('som')}</span>}
+                                        </span>
+                                    )}
                                 </div>
 
                                 {appliedCoupon && (
@@ -942,7 +985,7 @@ export default function CheckoutPage() {
                                         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">{items.length} {tHeader('mahsulotlar')}</p>
                                     </div>
                                     <div className="text-right">
-                                        <span className="text-[22px] sm:text-[26px] md:text-3xl font-black text-slate-900 tracking-tighter leading-none block">{(total() + deliveryFee - (appliedCoupon?.discountAmount || 0)).toLocaleString()}</span>
+                                        <span className="text-[22px] sm:text-[26px] md:text-3xl font-black text-slate-900 tracking-tighter leading-none block">{grandTotal.toLocaleString()}</span>
                                         <span className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">{tHeader('som')}</span>
                                     </div>
                                 </div>

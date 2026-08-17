@@ -25,7 +25,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
     // Ensure we only run localstorage on client
     useEffect(() => {
-        setIsMounted(true);
+        queueMicrotask(() => setIsMounted(true));
         const saved = localStorage.getItem('wishlist');
         if (saved) {
             try {

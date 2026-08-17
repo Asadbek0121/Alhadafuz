@@ -17,7 +17,7 @@ interface CartState {
     isHydrated: boolean;
 
     // Actions
-    addToCart: (product: Omit<CartItem, 'quantity'>, openDrawer?: boolean) => void;
+    addToCart: (product: Omit<CartItem, 'quantity'>, openDrawer?: boolean, qty?: number) => void;
     removeFromCart: (id: string) => void;
     updateQuantity: (id: string, delta: number) => void;
     clearCart: () => void;
@@ -40,20 +40,20 @@ export const useCartStore = create<CartState>()(
             isOpen: false,
             isHydrated: false,
 
-            addToCart: (product, openDrawer = true) => set((state) => {
+            addToCart: (product, openDrawer = true, qty = 1) => set((state) => {
                 const existing = state.items.find(item => item.id === product.id);
                 if (existing) {
                     return {
                         items: state.items.map(item =>
                             item.id === product.id
-                                ? { ...item, quantity: item.quantity + 1 }
+                                ? { ...item, quantity: item.quantity + qty }
                                 : item
                         ),
                         isOpen: openDrawer ? true : state.isOpen,
                     };
                 }
                 return {
-                    items: [...state.items, { ...product, quantity: 1 }],
+                    items: [...state.items, { ...product, quantity: qty }],
                     isOpen: openDrawer ? true : state.isOpen,
                 };
             }),

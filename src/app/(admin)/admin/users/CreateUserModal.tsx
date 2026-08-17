@@ -1,6 +1,5 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
-
 "use client";
+
 
 import { useState } from "react";
 import { Plus, X, Loader2, User, Mail, Lock } from "lucide-react";
@@ -61,7 +60,11 @@ export default function CreateUserModal() {
                     <div className="bg-white rounded-[32px] w-full max-w-md overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-200">
                         <div className="p-8 border-b border-gray-100 flex justify-between items-center">
                             <h2 className="text-xl font-black text-gray-900">Yangi Foydalanuvchi</h2>
-                            <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+                            <button 
+                                onClick={() => setIsOpen(false)} 
+                                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                                aria-label="Yopish"
+                            >
                                 <X size={20} />
                             </button>
                         </div>
@@ -69,10 +72,11 @@ export default function CreateUserModal() {
                         <form onSubmit={handleSubmit} className="p-8 space-y-6">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">To'liq ism</label>
+                                    <label htmlFor="user-name" className="text-sm font-bold text-gray-700 ml-1">To'liq ism</label>
                                     <div className="relative">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                         <input
+                                            id="user-name"
                                             required
                                             value={formData.name}
                                             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -83,10 +87,11 @@ export default function CreateUserModal() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Email</label>
+                                    <label htmlFor="user-email" className="text-sm font-bold text-gray-700 ml-1">Email</label>
                                     <div className="relative">
                                         <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                         <input
+                                            id="user-email"
                                             type="email"
                                             required
                                             value={formData.email}
@@ -98,10 +103,11 @@ export default function CreateUserModal() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Login (username)</label>
+                                    <label htmlFor="user-username" className="text-sm font-bold text-gray-700 ml-1">Login (username)</label>
                                     <div className="relative">
                                         <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                         <input
+                                            id="user-username"
                                             required
                                             value={formData.username}
                                             onChange={(e) => setFormData({ ...formData, username: e.target.value })}
@@ -112,10 +118,11 @@ export default function CreateUserModal() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Parol</label>
+                                    <label htmlFor="user-password" className="text-sm font-bold text-gray-700 ml-1">Parol</label>
                                     <div className="relative">
                                         <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                                         <input
+                                            id="user-password"
                                             type="password"
                                             required
                                             minLength={6}
@@ -128,8 +135,9 @@ export default function CreateUserModal() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Rol</label>
+                                    <label htmlFor="user-role" className="text-sm font-bold text-gray-700 ml-1">Rol</label>
                                     <select
+                                        id="user-role"
                                         value={formData.role}
                                         onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                                         className="w-full px-4 py-3.5 rounded-2xl bg-gray-50 border-none ring-1 ring-gray-200 focus:ring-2 focus:ring-blue-500/20 transition-all outline-none font-medium"

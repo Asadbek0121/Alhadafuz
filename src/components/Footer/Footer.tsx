@@ -36,7 +36,7 @@ export default function Footer() {
     const isHome = pathname === '/' || pathname === '/uz' || pathname === '/ru' || pathname === '/en';
 
     useEffect(() => {
-        fetch('/api/admin/settings')
+        fetch('/api/settings')
             .then(res => res.json())
             .then(data => {
                 if (data.socialLinks) {
@@ -71,6 +71,8 @@ export default function Footer() {
                         </div>
                         <button
                             onClick={() => setIsVendorModalOpen(true)}
+                            title={tAbout('cta_btn')}
+                            aria-label={tAbout('cta_btn')}
                             className="whitespace-nowrap bg-white text-blue-900 px-6 py-3 md:px-10 md:py-4 rounded-2xl font-black uppercase text-xs md:text-sm tracking-widest shadow-xl shadow-blue-500/20 transition-all hover:scale-105 active:scale-95 flex items-center gap-3 group/btn"
                         >
                             {tAbout('cta_btn')}
@@ -97,10 +99,10 @@ export default function Footer() {
                             {t('download_app_desc')}
                         </p>
                         <div className="flex gap-4">
-                            <SocialLink href={socials.facebook} icon={<Facebook size={20} />} color="hover:text-blue-500" />
-                            <SocialLink href={socials.instagram} icon={<Instagram size={20} />} color="hover:text-pink-500" />
-                            <SocialLink href={socials.telegram} icon={<Send size={20} />} color="hover:text-blue-400" />
-                            <SocialLink href={socials.youtube} icon={<Youtube size={20} />} color="hover:text-red-500" />
+                            <SocialLink href={socials.facebook} icon={<Facebook size={20} />} color="hover:text-blue-500" label="Facebook" />
+                            <SocialLink href={socials.instagram} icon={<Instagram size={20} />} color="hover:text-pink-500" label="Instagram" />
+                            <SocialLink href={socials.telegram} icon={<Send size={20} />} color="hover:text-blue-400" label="Telegram" />
+                            <SocialLink href={socials.youtube} icon={<Youtube size={20} />} color="hover:text-red-500" label="YouTube" />
                         </div>
                     </div>
 
@@ -192,12 +194,14 @@ export default function Footer() {
     );
 }
 
-function SocialLink({ href, icon, color }: { href: string, icon: React.ReactNode, color: string }) {
+function SocialLink({ href, icon, color, label }: { href: string, icon: React.ReactNode, color: string, label: string }) {
     return (
         <a
             href={href}
             target="_blank"
             rel="noopener noreferrer"
+            title={label}
+            aria-label={label}
             className={`w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 transition-all transform hover:scale-110 hover:bg-white ${color}`}
         >
             {icon}

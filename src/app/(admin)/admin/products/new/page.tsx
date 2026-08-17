@@ -26,7 +26,7 @@ const productSchema = z.object({
     images: z.string().optional(),
     tags: z.string().optional(),
     status: z.enum(["published", "draft", "scheduled", "inactive"]).default("published"),
-    isNew: z.boolean().default(true),
+    isNew: z.boolean().default(false),
     freeDelivery: z.boolean().default(false),
     hasVideo: z.boolean().default(false),
     hasGift: z.boolean().default(false),
@@ -109,7 +109,7 @@ export default function AddProductPage() {
             price: 0,
             stock: 0,
             category: "",
-            isNew: true,
+            isNew: false,
             freeDelivery: false,
             hasVideo: false,
             hasGift: false,
@@ -319,7 +319,14 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Media</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button 
+                                type="button" 
+                                className="fab-green"
+                                title="Media sozlamalari"
+                                aria-label="Media sozlamalari"
+                            >
+                                <Settings size={20} />
+                            </button>
                         </div>
                         <div className="form-group">
                             <label className="label">Asosiy Rasm</label>
@@ -331,12 +338,27 @@ export default function AddProductPage() {
                                 <p style={{ fontSize: '12px', color: '#999' }}>
                                     Fayllarni shu yerga tashlang yoki kompyuterdan <span style={{ color: '#0085db', cursor: 'pointer' }} onClick={() => document.getElementById('main-image-upload')?.click()}>tanlang</span>
                                 </p>
-                                <input id="main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
+                                <input 
+                                    id="main-image-upload" 
+                                    type="file" 
+                                    hidden 
+                                    accept="image/*" 
+                                    onChange={(e) => handleImageUpload(e, 'image')} 
+                                    title="Asosiy rasmni tanlang"
+                                />
                             </div>
                             {watch('image') && (
                                 <div style={{ marginTop: '15px', position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
                                     <img alt="Rasm" src={watch('image')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <button onClick={() => setValue('image', '')} type="button" style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(255,0,0,0.7)', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}>&times;</button>
+                                    <button 
+                                        onClick={() => setValue('image', '')} 
+                                        type="button" 
+                                        style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(255,0,0,0.7)', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
+                                        title="O'chirish"
+                                        aria-label="Rasmni o'chirish"
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -354,7 +376,14 @@ export default function AddProductPage() {
                                 >
                                     <Plus />
                                 </div>
-                                <input id="gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
+                                <input 
+                                    id="gallery-upload" 
+                                    type="file" 
+                                    hidden 
+                                    accept="image/*" 
+                                    onChange={(e) => handleImageUpload(e, 'images')} 
+                                    title="Galereya rasmlarini tanlang"
+                                />
                             </div>
                         </div>
                     </div>
@@ -363,7 +392,14 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Varyatsiyalar</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button 
+                                type="button" 
+                                className="fab-green"
+                                title="Varyatsiya sozlamalari"
+                                aria-label="Varyatsiya sozlamalari"
+                            >
+                                <Settings size={20} />
+                            </button>
                         </div>
 
                         {attributes.map((attr, idx) => (
@@ -376,7 +412,13 @@ export default function AddProductPage() {
                                     <label className="label">Qiymati</label>
                                     <input value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qizil, XL..." />
                                 </div>
-                                <button type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger">
+                                <button 
+                                    type="button" 
+                                    onClick={() => removeAttribute(idx)} 
+                                    className="btn-icon-danger"
+                                    title="O'chirish"
+                                    aria-label="Varyatsiyani olib tashlash"
+                                >
                                     <X size={18} />
                                 </button>
                             </div>
@@ -422,7 +464,14 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Narx</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button 
+                                type="button" 
+                                className="fab-green"
+                                title="Narx sozlamalari"
+                                aria-label="Narx sozlamalari"
+                            >
+                                <Settings size={20} />
+                            </button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                             <div className="form-group">
@@ -463,7 +512,11 @@ export default function AddProductPage() {
                                     </div>
                                     <div className="form-group">
                                         <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
-                                        <select {...register("discountCategory")} className="input">
+                                        <select 
+                                            {...register("discountCategory")} 
+                                            className="input"
+                                            title="Chegirma kategoriyasi"
+                                        >
                                             <option value="SALE">Aksiya (SALE)</option>
                                             <option value="PROMO">Promo (PROMO)</option>
                                             <option value="HOT">Qaynoq (HOT)</option>
@@ -493,7 +546,11 @@ export default function AddProductPage() {
                         </div>
                         <div className="form-group">
                             <label className="label">Mahsulot holati</label>
-                            <select {...register("status")} className="input">
+                             <select 
+                                {...register("status")} 
+                                className="input"
+                                title="Mahsulot holati"
+                            >
                                 <option value="published">Nashr qilingan</option>
                                 <option value="draft">Qoralama</option>
                                 <option value="scheduled">Rejalashtirilgan</option>
@@ -507,7 +564,14 @@ export default function AddProductPage() {
                     <div className="card">
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                             <h2 className="card-title">Mahsulot ma'lumotlari</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button 
+                                type="button" 
+                                className="fab-green"
+                                title="Ma'lumotlar sozlamalari"
+                                aria-label="Ma'lumotlar sozlamalari"
+                            >
+                                <Settings size={20} />
+                            </button>
                         </div>
                         <div className="form-group">
                             <label className="label">Kategoriyalar (bir yoki bir nechta)</label>
@@ -570,13 +634,17 @@ export default function AddProductPage() {
 
                     {/* Product Template */}
                     <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="flex-between-center">
                             <h2 className="card-title">Mahsulot shabloni</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green" title="Shablon sozlamalari" aria-label="Shablon sozlamalari"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Shablonni tanlash</label>
-                            <select {...register("template")} className="input">
+                             <select 
+                                {...register("template")} 
+                                className="input"
+                                title="Shablonni tanlang"
+                            >
                                 <option value="default">Odatiy shablon</option>
                                 <option value="box">Box ko'rinishi</option>
                                 <option value="full">To'liq kenglik</option>
@@ -587,9 +655,9 @@ export default function AddProductPage() {
 
                     {/* Inventory */}
                     <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="flex-between-center">
                             <h2 className="card-title">Ombor</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green" title="Ombor sozlamalari" aria-label="Ombor sozlamalari"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Ombordagi soni</label>
@@ -600,36 +668,36 @@ export default function AddProductPage() {
 
                     {/* Marketing */}
                     <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="flex-between-center">
                             <h2 className="card-title">Marketing</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green" title="Marketing sozlamalari" aria-label="Marketing sozlamalari"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
-                            <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                <input type="checkbox" {...register("isNew")} style={{ width: '18px', height: '18px' }} />
+                            <label className="checkbox-label font-normal">
+                                <input type="checkbox" {...register("isNew")} className="checkbox-input" />
                                 <span>"YANGI" belgisi</span>
                             </label>
                         </div>
                         <div className="form-group">
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
+                            <div className="grid-1">
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("freeDelivery")} className="checkbox-input" />
                                     <span>🚚 Bepul yetkazib berish</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("hasVideo")} className="checkbox-input" />
                                     <span>🎬 Video-sharh mavjud</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("hasGift")} className="checkbox-input" />
                                     <span>🎁 Sovg'asi bor</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("showLowStock")} className="checkbox-input" />
                                     <span>⚠️ "Kam qoldi" (Stock Alert)</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("allowInstallment")} className="checkbox-input" />
                                     <span>💰 Bo'lib to'lash</span>
                                 </label>
                             </div>
@@ -640,12 +708,12 @@ export default function AddProductPage() {
             </div>
 
             {/* Footer Actions */}
-            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+            <div className="footer-actions">
                 <button type="button" onClick={() => router.back()} className="btn-outline-danger">
                     Bekor qilish
                 </button>
                 <button type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
-                    {loading && <Loader2 className="animate-spin" size={18} style={{ marginRight: "10px" }} />}
+                    {loading && <Loader2 className="animate-spin mr-2" size={18} />}
                     {loading ? "Saqlanmoqda..." : "Mahsulot qo'shish"}
                 </button>
             </div>
@@ -678,6 +746,29 @@ export default function AddProductPage() {
 
                 .btn-outline-danger { background: transparent; color: #fa896b; border: 1px solid #fa896b; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
                 .btn-outline-danger:hover { background: #fdede8; }
+
+                .flex-between-center { display: flex; justify-content: space-between; align-items: center; }
+                .flex-gap-10 { display: flex; gap: 10px; }
+                .flex-wrap { flex-wrap: wrap; }
+                .flex-center { display: flex; align-items: center; justify-content: center; }
+                .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .grid-1 { display: grid; grid-template-columns: 1fr; gap: 12px; }
+                
+                .image-preview-container { position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; margin-top: 15px; }
+                .gallery-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+                .gallery-add { width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; }
+                .image-full { width: 100%; height: 100%; object-fit: cover; }
+                
+                .category-list-container { maxHeight: 200px; overflow-y: auto; padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e5eaef; }
+                .category-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+                .category-item.selected { background: #ecf2ff; border: 1px solid #0085db; font-weight: 600; color: #0085db; }
+                .category-item.unselected { background: #fff; border: 1px solid #e5eaef; font-weight: 500; color: #5A6A85; }
+                
+                .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+                .checkbox-input { width: 18px; height: 18px; cursor: pointer; }
+                
+                .footer-actions { margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px; }
+
             `}</style>
         </div >
     );

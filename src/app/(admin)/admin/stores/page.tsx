@@ -551,6 +551,7 @@ export default function AdminStoresPage() {
                                                         onClick={(e) => { e.stopPropagation(); handleEdit(store); }}
                                                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-95"
                                                         title="Tahrirlash"
+                                                        aria-label="Tahrirlash"
                                                     >
                                                         <Edit2 size={16} />
                                                     </button>
@@ -558,6 +559,7 @@ export default function AdminStoresPage() {
                                                         onClick={(e) => { e.stopPropagation(); handleDelete(store.id); }}
                                                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all active:scale-95"
                                                         title="O'chirish"
+                                                        aria-label="O'chirish"
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>
@@ -655,17 +657,19 @@ export default function AdminStoresPage() {
                                             className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-bold text-sm"
                                         />
                                     </div>
-                                    <Button
+                                    <button
                                         onClick={handleSearchLocation}
-                                        className="bg-blue-600 hover:bg-blue-700 rounded-2xl h-12 px-6 font-black shadow-lg shadow-blue-100 transition-all active:scale-95"
+                                        className="bg-blue-600 text-white px-8 py-3 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-200 active:scale-95 transition-all flex items-center gap-2"
+                                        aria-label="Qidirish"
                                     >
                                         Qidirish
-                                    </Button>
+                                    </button>
                                 </div>
                                 <Button
                                     variant="ghost"
                                     onClick={() => setShowMapModal(false)}
                                     className="rounded-full w-12 h-12 p-0 hover:bg-gray-100 transition-colors"
+                                    aria-label="Yopish"
                                 >
                                     <X size={24} className="text-gray-400" />
                                 </Button>
@@ -687,6 +691,7 @@ export default function AdminStoresPage() {
                                         onClick={handleGetCurrentLocation}
                                         className="w-14 h-14 bg-white hover:bg-blue-50 text-blue-600 rounded-2xl shadow-xl flex items-center justify-center transition-all active:scale-95 group border border-blue-100"
                                         title="Mening joylashuvim"
+                                        aria-label="Mening joylashuvim"
                                     >
                                         <div className="relative">
                                             <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20 scale-150 group-hover:block" />
@@ -710,12 +715,13 @@ export default function AdminStoresPage() {
 
                                     <div className="h-px bg-gray-100" />
 
-                                    <Button
+                                    <button
                                         onClick={() => setShowMapModal(false)}
                                         className="w-full bg-blue-600 hover:bg-blue-700 rounded-2xl h-12 font-black text-white text-sm active:scale-95 transition-all shadow-lg shadow-blue-100"
+                                        aria-label="Tasdiqlash"
                                     >
                                         Tasdiqlash
-                                    </Button>
+                                    </button>
                                     <p className="text-[9px] text-gray-400 text-center font-bold leading-tight px-2">
                                         * Markerni kerakli nuqtaga sudrab qo'ying
                                     </p>

@@ -1,8 +1,14 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function POST() {
+    const session = await auth();
+    if (session?.user?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     let token = process.env.COURIER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 
     if (!token) {

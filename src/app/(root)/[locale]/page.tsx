@@ -17,7 +17,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   return (
     <div className="pb-[60px] md:pb-0">
-      <Hero initialBanners={banners} />
+      <Hero initialBanners={banners} fallbackProducts={products} />
 
       <section className="container">
         <h2 className="text-2xl font-bold mb-6 mt-10 text-slate-900">

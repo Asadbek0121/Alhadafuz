@@ -17,6 +17,11 @@ const withPWA = withPWAInit({
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig: NextConfig = {
+  // Pin the Turbopack workspace root: a stray package-lock.json in the home
+  // directory makes Next.js infer the wrong root, hanging page compilation.
+  turbopack: {
+    root: __dirname,
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
@@ -51,6 +56,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
         hostname: '*.public.blob.vercel-storage.com',
       },
     ],
@@ -69,7 +78,7 @@ export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
   project: "sentry-chestnut-bridge",
   silent: !process.env.CI,
   widenClientFileUpload: true,
-  tunnelRoute: "/monitoring",
+  // tunnelRoute: "/monitoring",
   webpack: {
     automaticVercelMonitors: true,
     treeshake: {

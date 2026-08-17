@@ -1,5 +1,4 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect } from "react";
 import {
@@ -153,6 +152,8 @@ export default function AdminCouponsPage() {
                         setIsAddModalOpen(true);
                     }}
                     className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                    title="Yangi kupon yaratish"
+                    aria-label="Yangi kupon yaratish"
                 >
                     <Plus size={20} />
                     Yangi kupon
@@ -180,13 +181,16 @@ export default function AdminCouponsPage() {
                     </div>
                 </div>
                 <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative">
+                    <label htmlFor="coupon-search" className="sr-only">Kupon kodini qidirish</label>
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
                     <input
+                        id="coupon-search"
                         type="text"
                         placeholder="Kupon kodini qidiring..."
                         className="w-full h-full pl-12 pr-4 bg-transparent outline-none font-bold text-slate-700 placeholder:text-slate-400"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
+                        aria-label="Kupon kodini qidiring"
                     />
                 </div>
             </div>
@@ -274,12 +278,16 @@ export default function AdminCouponsPage() {
                                             <button
                                                 onClick={() => handleEdit(coupon)}
                                                 className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                title="Tahrirlash"
+                                                aria-label={`${coupon.code} kuponini tahrirlash`}
                                             >
                                                 <Edit2 size={18} />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(coupon.id)}
                                                 className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                title="O'chirish"
+                                                aria-label={`${coupon.code} kuponini o'chirish`}
                                             >
                                                 <Trash2 size={18} />
                                             </button>
@@ -318,6 +326,7 @@ export default function AdminCouponsPage() {
                                         type="button"
                                         onClick={() => setIsAddModalOpen(false)}
                                         className="text-slate-400 hover:text-slate-600"
+                                        title="Yopish"
                                     >
                                         <XCircle size={24} />
                                     </button>
@@ -325,8 +334,9 @@ export default function AdminCouponsPage() {
 
                                 <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
                                     <div className="md:col-span-2">
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Kupon kodi</label>
+                                        <label htmlFor="couponCode" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Kupon kodi</label>
                                         <input
+                                            id="couponCode"
                                             type="text"
                                             required
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 uppercase"
@@ -337,11 +347,13 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma turi</label>
+                                        <label htmlFor="discountType" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma turi</label>
                                         <select
+                                            id="discountType"
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 appearance-none cursor-pointer"
                                             value={formData.discountType}
                                             onChange={(e) => setFormData({ ...formData, discountType: e.target.value as any })}
+                                            title="Chegirma turini tanlang"
                                         >
                                             <option value="PERCENTAGE">Foiz (%)</option>
                                             <option value="FIXED">Summa (so'm)</option>
@@ -349,8 +361,9 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma miqdori</label>
+                                        <label htmlFor="discountValue" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma miqdori</label>
                                         <input
+                                            id="discountValue"
                                             type="number"
                                             required
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -361,8 +374,9 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Minimal buyurtma</label>
+                                        <label htmlFor="minAmount" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Minimal buyurtma</label>
                                         <input
+                                            id="minAmount"
                                             type="number"
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                             value={formData.minAmount === 0 ? "" : formData.minAmount}
@@ -372,8 +386,9 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Ishlatish limiti</label>
+                                        <label htmlFor="usageLimit" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Ishlatish limiti</label>
                                         <input
+                                            id="usageLimit"
                                             type="number"
                                             required
                                             className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -384,10 +399,11 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Boshlanish sanasi</label>
+                                        <label htmlFor="startDate" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Boshlanish sanasi</label>
                                         <div className="relative">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                             <input
+                                                id="startDate"
                                                 type="date"
                                                 required
                                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -398,10 +414,11 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Tugash sanasi</label>
+                                        <label htmlFor="expiryDate" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Tugash sanasi</label>
                                         <div className="relative">
                                             <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                                             <input
+                                                id="expiryDate"
                                                 type="date"
                                                 required
                                                 className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
@@ -412,8 +429,9 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div className="md:col-span-2">
-                                        <label className="flex items-center gap-3 cursor-pointer">
+                                        <label htmlFor="isActive" className="flex items-center gap-3 cursor-pointer">
                                             <input
+                                                id="isActive"
                                                 type="checkbox"
                                                 className="w-6 h-6 rounded-lg accent-blue-600"
                                                 checked={formData.isActive}

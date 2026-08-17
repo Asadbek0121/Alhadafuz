@@ -26,7 +26,7 @@ const productSchema = z.object({
     images: z.string().optional(),
     tags: z.string().optional(),
     status: z.enum(["published", "draft", "scheduled", "inactive", "sotuvda_kam_qolgan"]).default("published"),
-    isNew: z.boolean().default(true),
+    isNew: z.boolean().default(false),
     freeDelivery: z.boolean().default(false),
     hasVideo: z.boolean().default(false),
     hasGift: z.boolean().default(false),
@@ -385,37 +385,37 @@ export default function EditProductPage() {
 
                     {/* Media Section */}
                     <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div className="flex-between-center">
                             <h2 className="card-title">Media</h2>
-                            <button type="button" className="fab-green"><Settings size={20} /></button>
+                            <button type="button" className="fab-green" title="Media sozlamalari" aria-label="Media sozlamalari"><Settings size={20} /></button>
                         </div>
                         <div className="form-group">
                             <label className="label">Asosiy Rasm</label>
                             <div className="upload-zone">
                                 <UploadCloud size={40} color="#0085db" />
-                                <p style={{ margin: '10px 0', fontSize: '16px', fontWeight: '500' }}>
+                                <p className="mt-2 text-base font-medium">
                                     Faylni tashlang yoki tanlang
                                 </p>
                                 <input id="edit-main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
                                 <button type="button" onClick={() => document.getElementById('edit-main-image-upload')?.click()} className="btn-light-primary" style={{ marginTop: '10px' }}>Tanlash</button>
                             </div>
                             {watch('image') && (
-                                <div style={{ marginTop: '15px', position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                    <img alt="Rasm" src={watch('image')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                <div className="image-preview-container">
+                                    <img alt="Rasm" src={watch('image')} className="image-full" />
                                 </div>
                             )}
                         </div>
                         <div className="form-group">
                             <label className="label">Galereya rasmlari</label>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <div className="flex-gap-10 flex-wrap">
                                 {watch('images')?.split('\n').filter(Boolean).map((url, i) => (
-                                    <div key={i} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                        <img alt="Rasm" src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                    <div key={i} className="gallery-item">
+                                        <img alt="Rasm" src={url} className="image-full" />
                                     </div>
                                 ))}
                                 <div
                                     onClick={() => document.getElementById('edit-gallery-upload')?.click()}
-                                    style={{ width: '80px', height: '80px', borderRadius: '8px', border: '2px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#999' }}
+                                    className="gallery-add"
                                 >
                                     <Plus />
                                 </div>
@@ -447,7 +447,7 @@ export default function EditProductPage() {
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                        <div className="grid-2">
                             {watch('discountType') !== 'no_discount' && (
                                 <>
                                     <div className="form-group">
@@ -495,13 +495,13 @@ export default function EditProductPage() {
                     <div className="card">
                         <h2 className="card-title">Varyatsiyalar (Xususiyatlar)</h2>
                         {attributes.map((attr, idx) => (
-                            <div key={idx} style={{ marginBottom: '10px', display: 'flex', gap: '10px' }}>
+                            <div key={idx} className="flex-gap-10 mb-2">
                                 <input value={attr.key} onChange={(e) => updateAttribute(idx, 'key', e.target.value)} className="input" placeholder="Turi" />
                                 <input value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qiymati" />
-                                <button type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger"><X size={16} /></button>
+                                <button type="button" onClick={() => removeAttribute(idx)} className="btn-icon-danger" title="O'chirish" aria-label="Varyatsiyani o'chirish"><X size={16} /></button>
                             </div>
                         ))}
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+                        <div className="flex-gap-10 flex-wrap mt-2 items-center">
                             <button type="button" onClick={addAttribute} className="btn-light-primary">
                                 <Plus size={18} style={{ marginRight: '8px' }} /> Xususiyat qo'shish
                             </button>
@@ -511,9 +511,9 @@ export default function EditProductPage() {
                         </div>
 
                         {showBulkPaste && (
-                            <div style={{ marginTop: '15px', background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #e5eaef', animation: 'fadeIn 0.3s' }}>
-                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#2A3547' }}>Xususiyatlarni matndan nusxalash</h4>
-                                <p style={{ fontSize: '13px', color: '#5A6A85', marginBottom: '15px', lineHeight: '1.5' }}>
+                            <div className="bulk-paste-box">
+                                <h4 className="bulk-paste-title">Xususiyatlarni matndan nusxalash</h4>
+                                <p className="bulk-paste-desc">
                                     Excel yoki boshqa saytdan nusxalab tashlang. Har bir qator yangi xususiyat bo'ladi.
                                     <br />Format: <b>Nomi [Tab] Qiymati</b> yoki <b>Nomi: Qiymati</b>
                                 </p>
@@ -525,7 +525,7 @@ export default function EditProductPage() {
                                     placeholder={`Masalan:\nRang\tQizil\nO'lcham\tXL\nMaterial: Paxta`}
                                     style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.5' }}
                                 />
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                <div className="flex-gap-10 mt-4">
                                     <button type="button" onClick={processBulkPaste} className="btn-primary">
                                         Qo'shish
                                     </button>
@@ -600,26 +600,26 @@ export default function EditProductPage() {
                         </div>
 
                         <div className="form-group">
-                            <h3 style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '15px', color: '#2A3547' }}>Marketing belgilari</h3>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '12px' }}>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("freeDelivery")} style={{ width: '18px', height: '18px' }} />
+                            <h3 className="bulk-paste-title">Marketing belgilari</h3>
+                            <div className="grid-1">
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("freeDelivery")} className="checkbox-input" />
                                     <span>🚚 Bepul yetkazib berish</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("hasVideo")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("hasVideo")} className="checkbox-input" />
                                     <span>🎬 Video-sharh mavjud</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("hasGift")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("hasGift")} className="checkbox-input" />
                                     <span>🎁 Sovg'asi bor / 1+1</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("showLowStock")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("showLowStock")} className="checkbox-input" />
                                     <span>⚠️ "Sotuvda juda kam qoldi" (Stock Alert)</span>
                                 </label>
-                                <label className="label" style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', fontWeight: 'normal' }}>
-                                    <input type="checkbox" {...register("allowInstallment")} style={{ width: '18px', height: '18px' }} />
+                                <label className="checkbox-label font-normal">
+                                    <input type="checkbox" {...register("allowInstallment")} className="checkbox-input" />
                                     <span>💰 Bo'lib to'lash (Monthly Payment)</span>
                                 </label>
                             </div>
@@ -629,7 +629,7 @@ export default function EditProductPage() {
             </div>
 
             {/* Footer */}
-            <div style={{ marginTop: '30px', display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
+            <div className="footer-actions">
                 <button type="button" onClick={() => router.back()} className="btn-outline-danger">Bekor qilish</button>
                 <button type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
                     {loading ? "Yangilanmoqda..." : "Yangilash"}
@@ -661,6 +661,34 @@ export default function EditProductPage() {
                 .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
                 .btn-outline-danger { background: transparent; color: #fa896b; border: 1px solid #fa896b; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
                 .btn-outline-danger:hover { background: #fdede8; }
+                
+                .flex-between-center { display: flex; justify-content: space-between; align-items: center; }
+                .flex-gap-10 { display: flex; gap: 10px; }
+                .flex-gap-20 { display: flex; gap: 20px; }
+                .flex-wrap { flex-wrap: wrap; }
+                .flex-col { display: flex; flex-direction: column; }
+                .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .grid-1 { display: grid; grid-template-columns: 1fr; gap: 8px; }
+                
+                .image-preview-container { position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; margin-top: 15px; }
+                .gallery-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+                .gallery-add { width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; }
+                .image-full { width: 100%; height: 100%; object-fit: cover; }
+                
+                .bulk-paste-box { margin-top: 15px; background: #f8f9fa; padding: 20px; border-radius: 12px; border: 1px solid #e5eaef; animation: fadeIn 0.3s; }
+                .bulk-paste-title { margin: 0 0 10px 0; font-size: 14px; font-weight: 600; color: #2A3547; }
+                .bulk-paste-desc { font-size: 13px; color: #5A6A85; marginBottom: 15px; lineHeight: 1.5; }
+                
+                .category-list-container { maxHeight: 200px; overflow-y: auto; padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e5eaef; }
+                .category-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
+                .category-item.selected { background: #ecf2ff; border: 1px solid #0085db; font-weight: 600; color: #0085db; }
+                .category-item.unselected { background: #fff; border: 1px solid #e5eaef; font-weight: 500; color: #5A6A85; }
+                
+                .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
+                .checkbox-input { width: 18px; height: 18px; cursor: pointer; }
+                
+                .footer-actions { margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px; }
+
             `}</style>
         </div>
     );

@@ -277,7 +277,7 @@ export default function AuthModal() {
 
                     {/* Modal Wrapper */}
                     <div className={styles.modalWrapper}>
-                        <button title="Yopish" onClick={closeAuthModal} className={styles.closeBtn}>
+                        <button title="Yopish" aria-label="Yopish" onClick={closeAuthModal} className={styles.closeBtn}>
                             <X size={20} />
                         </button>
                         {/* 1. Left Panel: Branding & Promo */}

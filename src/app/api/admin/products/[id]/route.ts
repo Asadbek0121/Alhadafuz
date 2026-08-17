@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath, revalidateTag } from 'next/cache';
+import { mapProductMarketing } from '@/lib/data';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,25 +66,9 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
             ? mappedReviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewsCount
             : (product.rating || 0);
 
-        // Extract marketing flags from attributes JSON for the edit form
-        let isNew = true; // Default
-        let freeDelivery = false;
-        let hasVideo = false;
-        let hasGift = false;
-        let showLowStock = false;
-        let allowInstallment = false;
-
-        if (product.attributes) {
-            try {
-                const attrs = JSON.parse(product.attributes);
-                if (typeof attrs.isNew !== 'undefined') isNew = attrs.isNew;
-                if (typeof attrs.freeDelivery !== 'undefined') freeDelivery = attrs.freeDelivery;
-                if (typeof attrs.hasVideo !== 'undefined') hasVideo = attrs.hasVideo;
-                if (typeof attrs.hasGift !== 'undefined') hasGift = attrs.hasGift;
-                if (typeof attrs.showLowStock !== 'undefined') showLowStock = attrs.showLowStock;
-                if (typeof attrs.allowInstallment !== 'undefined') allowInstallment = attrs.allowInstallment;
-            } catch (e) { }
-        }
+        // Extract marketing flags from attributes JSON for the edit form (default false)
+        const marketing = mapProductMarketing(product);
+        const { isNew, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment } = marketing;
 
         return NextResponse.json({
             ...product,

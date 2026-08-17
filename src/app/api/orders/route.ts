@@ -129,6 +129,11 @@ export async function POST(req: Request) {
             }
         }
 
+        // Chegirma tovar summasidan oshib keta olmaydi — manfiy total oldini olish
+        if (discountAmount > calculatedTotal) {
+            discountAmount = calculatedTotal;
+        }
+
         // Calculate Delivery Fee
         let deliveryFee = 0;
         if (deliveryMethod === 'courier' && deliveryAddress?.city) {

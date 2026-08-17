@@ -183,20 +183,36 @@ export default function AdminReviewsPage() {
                                             }}
                                             className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
                                             title="Javob berish"
+                                            aria-label="Javob berish"
                                         >
                                             <MessageCircle size={18} />
                                         </button>
                                         {review.status !== 'APPROVED' && (
-                                            <button onClick={() => handleStatusChange(review.id, 'APPROVED')} className="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Tasdiqlash">
+                                            <button 
+                                                onClick={() => handleStatusChange(review.id, 'APPROVED')} 
+                                                className="p-2 text-green-600 hover:bg-green-50 rounded-lg" 
+                                                title="Tasdiqlash"
+                                                aria-label="Tasdiqlash"
+                                            >
                                                 <Check size={18} />
                                             </button>
                                         )}
                                         {review.status !== 'REJECTED' && (
-                                            <button onClick={() => handleStatusChange(review.id, 'REJECTED')} className="p-2 text-red-600 hover:bg-red-50 rounded-lg" title="Rad etish">
+                                            <button 
+                                                onClick={() => handleStatusChange(review.id, 'REJECTED')} 
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg" 
+                                                title="Rad etish"
+                                                aria-label="Rad etish"
+                                            >
                                                 <X size={18} />
                                             </button>
                                         )}
-                                        <button onClick={() => handleDelete(review.id)} className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-lg" title="O'chirish">
+                                        <button 
+                                            onClick={() => handleDelete(review.id)} 
+                                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-gray-100 rounded-lg" 
+                                            title="O'chirish"
+                                            aria-label="O'chirish"
+                                        >
                                             <Trash2 size={18} />
                                         </button>
                                     </div>

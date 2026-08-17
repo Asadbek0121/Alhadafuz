@@ -402,7 +402,7 @@ export default function Header() {
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
                             />
-                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm">
+                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm" title="Qidirish" aria-label="Qidirish">
                                 <Search size={20} strokeWidth={2.5} />
                             </button>
                         </div>
@@ -558,7 +558,7 @@ export default function Header() {
                         </Link>
 
                         {/* Cart */}
-                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
+                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer" title="Savatcha" aria-label="Savatchani ochish">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
                                 <LordIcon 
                                     src="/icons/lordicon/cart_premium.json"
@@ -617,6 +617,8 @@ export default function Header() {
                                 <button
                                     onClick={() => setSearchQuery('')}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200/50 rounded-full text-slate-500"
+                                    title="Tozalash"
+                                    aria-label="Qidiruv maydonini tozalash"
                                 >
                                     <X size={14} />
                                 </button>

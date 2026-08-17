@@ -1,10 +1,9 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { Plus, Trash2, Printer, Download, Save, Send } from "lucide-react";
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { Trash2, Plus, Save } from 'lucide-react';
+import styles from '../InvoiceForm.module.css';
 
 export default function AddInvoicePage() {
     const router = useRouter();
@@ -22,16 +21,11 @@ export default function AddInvoicePage() {
     ]);
 
     // Metadata
-    const [subTotal, setSubTotal] = useState(0);
     const [vat, setVat] = useState(10); // 10% VAT
-    const [grandTotal, setGrandTotal] = useState(0);
 
-    // Calc totals effect
-    useEffect(() => {
-        const sub = items.reduce((acc, item) => acc + (item.cost * item.qty), 0);
-        setSubTotal(sub);
-        setGrandTotal(sub + (sub * vat / 100));
-    }, [items, vat]);
+    // Calc totals (derived during render)
+    const subTotal = items.reduce((acc, item) => acc + (item.cost * item.qty), 0);
+    const grandTotal = subTotal + (subTotal * vat / 100);
 
     const addItem = () => {
         setItems([...items, { id: Date.now(), name: "", cost: 0, qty: 1 }]);
@@ -60,20 +54,21 @@ export default function AddInvoicePage() {
     };
 
     return (
-        <div style={{ padding: "0" }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h1 style={{ fontSize: '20px', fontWeight: 'bold' }}>Invoys Qo'shish</h1>
+        <div className={styles.container}>
+            <div className={styles.header}>
+                <h1 className={styles.title}>Invoys Qo'shish</h1>
             </div>
 
-            <div style={{ background: '#fff', borderRadius: '12px', padding: '30px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
+            <div className={styles.card}>
                 {/* Header Row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '30px', flexWrap: 'wrap', gap: '20px' }}>
+                <div className={styles.infoSection}>
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Order Status:</h2>
+                        <h2 className={styles.label}>Order Status:</h2>
                         <select
                             value={status}
                             onChange={e => setStatus(e.target.value)}
-                            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', outline: 'none' }}
+                            className={styles.select}
+                            title="Invoys holati"
                         >
                             <option value="Pending">Kutilmoqda (Pending)</option>
                             <option value="Shipped">Yuborilgan (Shipped)</option>
@@ -81,12 +76,13 @@ export default function AddInvoicePage() {
                         </select>
                     </div>
                     <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-                        <h2 style={{ fontSize: '16px', fontWeight: '600' }}>Order Date:</h2>
+                        <h2 className={styles.label}>Order Date:</h2>
                         <input
                             type="date"
                             value={issueDate}
                             onChange={e => setIssueDate(e.target.value)}
-                            style={{ padding: '8px 12px', borderRadius: '6px', border: '1px solid #ddd', outline: 'none' }}
+                            className={styles.input}
+                            title="Buyurtma sanasi"
                         />
                     </div>
                 </div>
@@ -94,68 +90,75 @@ export default function AddInvoicePage() {
                 <hr style={{ border: 'none', borderTop: '1px solid #eee', marginBottom: '30px' }} />
 
                 {/* Addresses Row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '40px', marginBottom: '30px' }}>
-
+                <div className={styles.billingSection}>
                     {/* Bill From */}
-                    <div style={{ flex: 1, minWidth: '300px' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Bill From</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className={styles.infoCol}>
+                        <h3 className={styles.billingTitle}>Bill From</h3>
+                        <div className={styles.billingInputs}>
                             <input
                                 value={billFrom.name}
                                 onChange={e => setBillFrom({ ...billFrom, name: e.target.value })}
                                 placeholder="Bill From Name"
-                                style={styles.input}
+                                className={styles.input}
+                                title="Kimdan: Ism"
                             />
                             <textarea
                                 value={billFrom.address}
                                 onChange={e => setBillFrom({ ...billFrom, address: e.target.value })}
                                 placeholder="Bill From Address"
-                                style={styles.input}
+                                className={styles.input}
                                 rows={2}
+                                title="Kimdan: Manzil"
                             />
                             <input
                                 value={billFrom.email}
                                 onChange={e => setBillFrom({ ...billFrom, email: e.target.value })}
                                 placeholder="Bill From Email"
-                                style={styles.input}
+                                className={styles.input}
+                                title="Kimdan: Email"
                             />
                             <input
                                 value={billFrom.phone}
                                 onChange={e => setBillFrom({ ...billFrom, phone: e.target.value })}
                                 placeholder="Bill From Phone"
-                                style={styles.input}
+                                className={styles.input}
+                                title="Kimdan: Telefon"
                             />
                         </div>
                     </div>
 
                     {/* Bill To */}
-                    <div style={{ flex: 1, minWidth: '300px' }}>
-                        <h3 style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '15px' }}>Bill To</h3>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <div className={styles.infoCol}>
+                        <h3 className={styles.billingTitle}>Bill To</h3>
+                        <div className={styles.billingInputs}>
                             <input
                                 value={billTo.name}
                                 onChange={e => setBillTo({ ...billTo, name: e.target.value })}
-                                placeholder="Mijoz ismi (Bill To Name)"
-                                style={styles.input}
+                                placeholder="Mijoz ismi"
+                                className={styles.input}
+                                title="Kimga: Ism"
                             />
                             <textarea
                                 value={billTo.address}
                                 onChange={e => setBillTo({ ...billTo, address: e.target.value })}
-                                placeholder="Mijoz manzili (Bill To Address)"
-                                style={styles.input}
+                                placeholder="Mijoz manzili"
+                                className={styles.input}
                                 rows={2}
+                                title="Kimga: Manzil"
                             />
                             <input
                                 value={billTo.email}
                                 onChange={e => setBillTo({ ...billTo, email: e.target.value })}
                                 placeholder="Bill To Email"
-                                style={styles.input}
+                                className={styles.input}
+                                title="Kimga: Email"
                             />
                             <input
                                 value={billTo.phone}
                                 onChange={e => setBillTo({ ...billTo, phone: e.target.value })}
                                 placeholder="Bill To Phone"
-                                style={styles.input}
+                                className={styles.input}
+                                title="Kimga: Telefon"
                             />
                         </div>
                     </div>
@@ -165,52 +168,55 @@ export default function AddInvoicePage() {
 
                 {/* Items Table */}
                 <div style={{ overflowX: 'auto', marginBottom: '30px' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <table className={styles.table}>
                         <thead>
-                            <tr style={{ borderBottom: '1px solid #eee' }}>
-                                <th style={styles.th}>#</th>
-                                <th style={styles.th}>Item Name</th>
-                                <th style={styles.th}>Unit Cost</th>
-                                <th style={styles.th}>Unit</th>
-                                <th style={styles.th}>Total</th>
-                                <th style={styles.th}>Action</th>
+                            <tr>
+                                <th className={styles.th}>#</th>
+                                <th className={styles.th}>Item Name</th>
+                                <th className={styles.th}>Unit Cost</th>
+                                <th className={styles.th}>Unit</th>
+                                <th className={styles.th}>Total</th>
+                                <th className={styles.th}>Action</th>
                             </tr>
                         </thead>
                         <tbody>
                             {items.map((item, index) => (
                                 <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
-                                    <td style={styles.td}>{index + 1}</td>
-                                    <td style={styles.td}>
+                                    <td className={styles.td}>{index + 1}</td>
+                                    <td className={styles.td}>
                                         <input
                                             value={item.name}
                                             onChange={e => updateItem(item.id, 'name', e.target.value)}
                                             placeholder="Item Name"
-                                            style={styles.tableInput}
+                                            className={styles.tableInput}
+                                            title="Mahsulot nomi"
                                         />
                                     </td>
-                                    <td style={styles.td}>
+                                    <td className={styles.td}>
                                         <input
                                             type="number"
                                             value={item.cost}
                                             onChange={e => updateItem(item.id, 'cost', Number(e.target.value))}
                                             placeholder="Cost"
-                                            style={styles.tableInput}
+                                            className={styles.tableInput}
+                                            title="Narxi"
                                         />
                                     </td>
-                                    <td style={styles.td}>
+                                    <td className={styles.td}>
                                         <input
                                             type="number"
                                             value={item.qty}
                                             onChange={e => updateItem(item.id, 'qty', Number(e.target.value))}
                                             placeholder="Qty"
-                                            style={styles.tableInput}
+                                            className={styles.tableInput}
+                                            title="Dona"
                                         />
                                     </td>
-                                    <td style={styles.td}>
+                                    <td className={styles.td}>
                                         {(item.cost * item.qty).toLocaleString()} so'm
                                     </td>
-                                    <td style={styles.td}>
-                                        <button onClick={() => removeItem(item.id)} style={{ color: '#fa896b', background: 'none', border: 'none', cursor: 'pointer' }}>
+                                    <td className={styles.td}>
+                                        <button onClick={() => removeItem(item.id)} className={styles.removeButton} title="O'chirish">
                                             <Trash2 size={18} />
                                         </button>
                                     </td>
@@ -218,7 +224,7 @@ export default function AddInvoicePage() {
                             ))}
                         </tbody>
                     </table>
-                    <button onClick={addItem} style={{ marginTop: '15px', display: 'flex', alignItems: 'center', gap: '5px', background: '#ecf2ff', color: '#0085db', border: 'none', padding: '8px 15px', borderRadius: '6px', fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={addItem} className={styles.addButton} title="Yangi mahsulot qo'shish">
                         <Plus size={16} /> Add Item
                     </button>
                 </div>
@@ -226,18 +232,17 @@ export default function AddInvoicePage() {
                 <hr style={{ border: 'none', borderTop: '1px solid #eee', marginBottom: '30px' }} />
 
                 {/* Footer Totals */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                    <div style={{ width: '300px' }}>
-                        <div style={styles.totalRow}>
-                            <span>Sub Total:</span>
-                            <span>{subTotal.toLocaleString()} so'm</span>
+                <div className={styles.summarySection}>
+                    <div className={styles.summaryCard}>
+                        <div className={styles.summaryRow}>
+                            <span className={styles.summaryLabel}>Sub Total:</span>
+                            <span className={styles.summaryValue}>{subTotal.toLocaleString()} so'm</span>
                         </div>
-                        <div style={styles.totalRow}>
-                            <span>Vat (10%):</span>
-                            <span>{(subTotal * 0.1).toLocaleString()} so'm</span>
+                        <div className={styles.summaryRow}>
+                            <span className={styles.summaryLabel}>Vat (10%):</span>
+                            <span className={styles.summaryValue}>{(subTotal * 0.1).toLocaleString()} so'm</span>
                         </div>
-                        <hr style={{ margin: '15px 0', border: 'none', borderTop: '1px solid #eee' }} />
-                        <div style={{ ...styles.totalRow, fontSize: '18px', fontWeight: 'bold' }}>
+                        <div className={styles.totalRow}>
                             <span>Grand Total:</span>
                             <span>{grandTotal.toLocaleString()} so'm</span>
                         </div>
@@ -246,11 +251,11 @@ export default function AddInvoicePage() {
 
                 <hr style={{ border: 'none', borderTop: '1px solid #eee', margin: '30px 0' }} />
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '15px' }}>
-                    <button onClick={handleSave} style={{ background: '#0085db', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div className={styles.actions}>
+                    <button onClick={handleSave} className={styles.saveButton} title="Invoysni saqlash">
                         <Save size={18} /> Save Invoice
                     </button>
-                    <button onClick={() => router.back()} style={{ background: '#fa896b', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                    <button onClick={() => router.back()} className={styles.cancelButton} title="Bekor qilish">
                         Cancel
                     </button>
                 </div>
@@ -259,42 +264,3 @@ export default function AddInvoicePage() {
         </div>
     );
 }
-
-const styles = {
-    input: {
-        width: '100%',
-        padding: '10px',
-        borderRadius: '6px',
-        border: '1px solid #e5eaef',
-        outline: 'none',
-        fontSize: '14px',
-        color: '#5A6A85'
-    },
-    th: {
-        textAlign: 'left' as const,
-        padding: '12px',
-        color: '#5A6A85',
-        fontSize: '14px',
-        fontWeight: 600
-    },
-    td: {
-        padding: '12px',
-        color: '#2A3547',
-        fontSize: '14px'
-    },
-    tableInput: {
-        width: '100%',
-        padding: '8px',
-        borderRadius: '4px',
-        border: '1px solid #eee',
-        outline: 'none',
-        fontSize: '14px'
-    },
-    totalRow: {
-        display: 'flex',
-        justifyContent: 'space-between',
-        marginBottom: '10px',
-        fontSize: '14px',
-        color: '#5A6A85'
-    }
-};

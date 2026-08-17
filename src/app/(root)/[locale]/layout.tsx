@@ -1,7 +1,5 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import "../../globals.css";
 import { getMessages, getTranslations } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import Header from "@/components/Header/Header";
@@ -22,8 +20,6 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 import { ClientProviders } from "@/providers/ClientProviders";
-
-const inter = Inter({ subsets: ["latin", "cyrillic"] });
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -61,9 +57,7 @@ export default async function LocaleLayout({
   }
 
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <body className={inter.className} suppressHydrationWarning>
-        <ClientProviders messages={messages} locale={locale} session={session}>
+    <ClientProviders messages={messages} locale={locale} session={session}>
           <Script src="https://cdn.lordicon.com/lordicon.js" strategy="beforeInteractive" />
           <Script src="https://cdn.lordicon.com/bhenfmcm.js" strategy="beforeInteractive" />
           <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
@@ -85,8 +79,6 @@ export default async function LocaleLayout({
           <Analytics />
           <SpeedInsights />
         </ClientProviders>
-      </body>
-    </html>
   );
 }
 

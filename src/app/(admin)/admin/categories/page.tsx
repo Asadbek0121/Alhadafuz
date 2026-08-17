@@ -1,6 +1,7 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
-
 "use client";
+
+
+import styles from './CategoriesPage.module.css';
 
 import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { toast } from 'sonner';
@@ -192,6 +193,8 @@ export default function AdminCategoriesPage() {
                                 <button
                                     onClick={() => toggleExpand(category.id)}
                                     className="p-1 hover:bg-gray-100 rounded-lg transition-colors text-gray-400"
+                                    aria-label={isExpanded ? "Yopish" : "Ochish"}
+                                    aria-expanded={isExpanded ? "true" : "false"}
                                 >
                                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                                 </button>
@@ -236,6 +239,8 @@ export default function AdminCategoriesPage() {
                             size="icon"
                             className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
                             onClick={() => handleEdit(category)}
+                            title="Tahrirlash"
+                            aria-label={`${category.name} kategoriyasini tahrirlash`}
                         >
                             <Edit2 size={16} />
                         </Button>
@@ -244,6 +249,8 @@ export default function AdminCategoriesPage() {
                             size="icon"
                             className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
                             onClick={() => handleDelete(category.id)}
+                            title="O'chirish"
+                            aria-label={`${category.name} kategoriyasini o'chirish`}
                         >
                             <Trash2 size={16} />
                         </Button>
@@ -273,9 +280,10 @@ export default function AdminCategoriesPage() {
                     <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Kataloglar Boshqaruvi</h1>
                     <p className="text-gray-500 mt-1">Mahsulot toifalari va iyerarxiyasini boshqaring</p>
                 </div>
-                <Button
+                 <Button
                     onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
                     className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6"
+                    aria-label={showForm ? "Formani yopish" : "Yangi kategoriya qo'shish"}
                 >
                     {showForm ? <X size={18} /> : <Plus size={18} />}
                     {showForm ? "Yopish" : "Yangi Kategoriya"}
@@ -298,8 +306,9 @@ export default function AdminCategoriesPage() {
                         <form onSubmit={handleSubmit} className="space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Kategoriya Nomi</label>
+                                    <label htmlFor="category-name" className="text-sm font-bold text-gray-700 ml-1">Kategoriya Nomi</label>
                                     <input
+                                        id="category-name"
                                         value={name}
                                         onChange={e => setName(e.target.value)}
                                         required
@@ -309,12 +318,14 @@ export default function AdminCategoriesPage() {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Ota Kategoriya (Hierarchy)</label>
+                                    <label htmlFor="category-parent" className="text-sm font-bold text-gray-700 ml-1">Ota Kategoriya (Hierarchy)</label>
                                     <select
+                                        id="category-parent"
                                         value={parentId}
                                         onChange={e => setParentId(e.target.value)}
                                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
                                         style={{ backgroundPosition: 'right 1rem center' }}
+                                        title="Ota kategoriyani tanlang"
                                     >
                                         <option value="">Asosiy (Ota kategoriya yo'q)</option>
                                         {categories.filter(c => c.id !== editId).map(c => (
@@ -325,10 +336,11 @@ export default function AdminCategoriesPage() {
                                     </select>
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-sm font-bold text-gray-700 ml-1">Status</label>
+                                    <span className="text-sm font-bold text-gray-700 ml-1">Status</span>
                                     <div className="flex items-center gap-4">
-                                        <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                        <label htmlFor="status-active" className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
                                             <input
+                                                id="status-active"
                                                 type="radio"
                                                 name="status"
                                                 className="hidden"
@@ -337,8 +349,9 @@ export default function AdminCategoriesPage() {
                                             />
                                             <CheckCircle2 size={18} /> Faol
                                         </label>
-                                        <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                        <label htmlFor="status-inactive" className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
                                             <input
+                                                id="status-inactive"
                                                 type="radio"
                                                 name="status"
                                                 className="hidden"
@@ -363,6 +376,7 @@ export default function AdminCategoriesPage() {
                                                 type="button"
                                                 onClick={() => setImage('')}
                                                 className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                                                title="Rasmni o'chirish"
                                             >
                                                 <X size={12} />
                                             </button>
@@ -376,10 +390,10 @@ export default function AdminCategoriesPage() {
                                     <div className="flex-1 min-w-[200px]">
                                         <h4 className="text-sm font-bold text-gray-900">Rasm yuklash</h4>
                                         <p className="text-xs text-gray-400 mt-1">PNG, JPG yoki WEBP, maksimal 2MB</p>
-                                        <label className="mt-4 flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95">
+                                        <label htmlFor="category-file-input" className="mt-4 flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95">
                                             {uploading ? <Loader2 className="animate-spin" size={16} /> : <UploadCloud size={16} className="text-blue-600" />}
                                             {uploading ? "Yuklanmoqda..." : "Faylni tanlash"}
-                                            <input type="file" hidden accept="image/*" onChange={handleUpload} />
+                                            <input id="category-file-input" type="file" hidden accept="image/*" onChange={handleUpload} />
                                         </label>
                                     </div>
                                 </div>
@@ -411,8 +425,10 @@ export default function AdminCategoriesPage() {
             <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col min-h-[500px]">
                 <div className="p-6 border-b border-gray-50 bg-gray-50/30 flex flex-col md:flex-row justify-between items-center gap-6">
                     <div className="relative w-full md:w-80">
+                        <label htmlFor="categories-search" className="sr-only">Kategoriyalarni qidirish</label>
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
+                            id="categories-search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Kategoriyalarni qidirish..."
@@ -422,6 +438,8 @@ export default function AdminCategoriesPage() {
                             <button
                                 onClick={() => setSearchQuery('')}
                                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                title="Qidiruvni tozalash"
+                                aria-label="Qidiruvni tozalash"
                             >
                                 <X size={14} />
                             </button>
@@ -433,6 +451,8 @@ export default function AdminCategoriesPage() {
                             onClick={() => setViewMode('tree')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'tree' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
                                 }`}
+                            aria-label="Daraxtsimon ko'rinish"
+                            title="Daraxtsimon ko'rinish"
                         >
                             <LayoutGrid size={14} /> {viewMode === 'tree' && 'Daraxtsimon'}
                         </button>
@@ -440,6 +460,8 @@ export default function AdminCategoriesPage() {
                             onClick={() => setViewMode('list')}
                             className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${viewMode === 'list' ? "bg-white text-blue-600 shadow-sm" : "text-gray-500 hover:text-gray-800"
                                 }`}
+                            aria-label="Ro'yxat ko'rinish"
+                            title="Ro'yxat ko'rinish"
                         >
                             <List size={14} /> {viewMode === 'list' && 'Ro\'yxat'}
                         </button>
@@ -528,6 +550,8 @@ export default function AdminCategoriesPage() {
                                                             size="icon"
                                                             className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
                                                             onClick={() => handleEdit(category)}
+                                                            title="Tahrirlash"
+                                                            aria-label={`${category.name} kategoriyasini tahrirlash`}
                                                         >
                                                             <Edit2 size={16} />
                                                         </Button>
@@ -536,6 +560,8 @@ export default function AdminCategoriesPage() {
                                                             size="icon"
                                                             className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
                                                             onClick={() => handleDelete(category.id)}
+                                                            title="O'chirish"
+                                                            aria-label={`${category.name} kategoriyasini o'chirish`}
                                                         >
                                                             <Trash2 size={16} />
                                                         </Button>

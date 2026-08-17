@@ -177,8 +177,9 @@ export default function AdminNotificationsPage() {
 
                             {type === 'personal' && (
                                 <div>
-                                    <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Foydalanuvchi ID</label>
+                                    <label htmlFor="targetUserId" style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Foydalanuvchi ID</label>
                                     <input
+                                        id="targetUserId"
                                         required
                                         value={targetUserId}
                                         onChange={e => setTargetUserId(e.target.value)}
@@ -189,8 +190,9 @@ export default function AdminNotificationsPage() {
                             )}
 
                             <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Sarlavha</label>
+                                <label htmlFor="notifTitle" style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Sarlavha</label>
                                 <input
+                                    id="notifTitle"
                                     required
                                     value={title}
                                     onChange={e => setTitle(e.target.value)}
@@ -200,8 +202,9 @@ export default function AdminNotificationsPage() {
                             </div>
 
                             <div>
-                                <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Tabrik yoki Xabar matni</label>
+                                <label htmlFor="notifMessage" style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#5A6A85', marginBottom: '8px' }}>Tabrik yoki Xabar matni</label>
                                 <textarea
+                                    id="notifMessage"
                                     required
                                     value={message}
                                     onChange={e => setMessage(e.target.value)}
@@ -284,6 +287,7 @@ export default function AdminNotificationsPage() {
                                                         style={{ background: 'none', border: 'none', color: '#fa896b', cursor: 'pointer', padding: '4px', borderRadius: '6px', display: 'flex', transition: 'background 0.2s' }}
                                                         onMouseOver={e => e.currentTarget.style.background = '#fff5f2'}
                                                         onMouseOut={e => e.currentTarget.style.background = 'none'}
+                                                        title="O'chirish"
                                                     >
                                                         <Trash2 size={16} />
                                                     </button>

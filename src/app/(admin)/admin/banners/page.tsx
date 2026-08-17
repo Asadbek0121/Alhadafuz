@@ -1,12 +1,11 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
     Loader2, Plus, Trash2, Edit2, UploadCloud,
-    X, Image as ImageIcon, Search, CheckCircle2, XCircle,
+    X, Image as ImageIcon, Search, CheckCircle2, XCircle, AlertTriangle,
     MousePointerClick, Eye, TrendingUp, BarChart3, ChevronRight,
     Folder
 } from 'lucide-react';
@@ -19,7 +18,7 @@ interface Banner {
     description?: string;
     image: string;
     link?: string;
-    position: 'HOME_TOP' | 'HOME_SIDE';
+    position: 'HOME_TOP' | 'HOME_SIDE' | 'CATEGORY_TOP';
     isActive: boolean;
     order: number;
     price?: number;
@@ -39,12 +38,15 @@ interface Banner {
 const POSITIONS = [
     { value: 'HOME_TOP', label: 'Bosh Sahifa - Asosiy Slider (Chap qism)', dimensions: '1200x450' },
     { value: 'HOME_SIDE', label: 'Bosh Sahifa - Yon Promo Card (O\'ng qism)', dimensions: '400x400' },
+    { value: 'CATEGORY_TOP', label: 'Kategoriya Sahifasi - Yuqori Banner', dimensions: '1200x250' },
 ];
 
 export default function AdminBannersPage() {
     const [banners, setBanners] = useState<Banner[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive' | 'expired'>('all');
+    const [cleaningUp, setCleaningUp] = useState(false);
 
     // Form state
     const [showForm, setShowForm] = useState(false);
@@ -78,6 +80,8 @@ export default function AdminBannersPage() {
     const totalClicks = banners.reduce((acc, b) => acc + (b.clickCount || 0), 0);
     const avgCTR = totalImpressions > 0 ? ((totalClicks / totalImpressions) * 100).toFixed(1) : '0.0';
     const activeBannersCount = banners.filter(b => b.isActive).length;
+    const isBannerExpired = (b: Banner) => !!b.endDate && new Date(b.endDate).getTime() < Date.now();
+    const expiredActiveCount = banners.filter(b => b.isActive && isBannerExpired(b)).length;
 
     // Auto-calculate discount
     useEffect(() => {
@@ -260,6 +264,27 @@ export default function AdminBannersPage() {
         }
     };
 
+    const handleDeactivateExpired = async () => {
+        if (!confirm("Muddati o'tgan faol bannerlar yopilsinmi (isActive=false)?")) return;
+        setCleaningUp(true);
+        try {
+            const res = await fetch('/api/admin/banners/expired', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                toast.success(data.count > 0
+                    ? `${data.count} ta muddati o'tgan banner yopildi`
+                    : "Muddati o'tgan faol banner topilmadi");
+                fetchData();
+            } else {
+                toast.error("Xatolik yuz berdi");
+            }
+        } catch (e) {
+            toast.error("Xatolik yuz berdi");
+        } finally {
+            setCleaningUp(false);
+        }
+    };
+
     const resetForm = () => {
         setTitle('');
         setDescription('');
@@ -280,9 +305,15 @@ export default function AdminBannersPage() {
     };
 
 
-    const filteredBanners = banners.filter(b =>
-        b.title.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredBanners = banners.filter(b => {
+        if (!b.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
+        switch (statusFilter) {
+            case 'active': return b.isActive;
+            case 'inactive': return !b.isActive;
+            case 'expired': return isBannerExpired(b);
+            default: return true;
+        }
+    });
 
     return (
         <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
@@ -291,13 +322,28 @@ export default function AdminBannersPage() {
                     <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Bannerlar Boshqaruvi</h1>
                     <p className="text-gray-500 mt-1">Reklama va e'lonlar uchun bannerlar tizimi</p>
                 </div>
-                <Button
-                    onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6"
-                >
-                    {showForm ? <X size={18} /> : <Plus size={18} />}
-                    {showForm ? "Yopish" : "Yangi Banner"}
-                </Button>
+                <div className="flex items-center gap-3">
+                    {expiredActiveCount > 0 && (
+                        <Button
+                            variant="outline"
+                            onClick={handleDeactivateExpired}
+                            disabled={cleaningUp}
+                            className="gap-2 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-5"
+                            title="endDate o'tgan faol bannerlarni isActive=false qilish"
+                        >
+                            {cleaningUp ? <Loader2 size={18} className="animate-spin" /> : <AlertTriangle size={18} />}
+                            {cleaningUp ? "Yopilmoqda..." : `Muddati o'tganlarni yopish (${expiredActiveCount})`}
+                        </Button>
+                    )}
+                    <Button
+                        onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6"
+                        aria-label={showForm ? "Formani yopish" : "Yangi banner qo'shish"}
+                    >
+                        {showForm ? <X size={18} /> : <Plus size={18} />}
+                        {showForm ? "Yopish" : "Yangi Banner"}
+                    </Button>
+                </div>
             </div>
 
             <AnimatePresence>
@@ -317,8 +363,9 @@ export default function AdminBannersPage() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Sarlavha (Title)</label>
+                                        <label htmlFor="banner-title" className="text-sm font-bold text-gray-700 ml-1">Sarlavha (Title)</label>
                                         <input
+                                            id="banner-title"
                                             value={title}
                                             onChange={e => setTitle(e.target.value)}
                                             required
@@ -328,11 +375,14 @@ export default function AdminBannersPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Joylashuvi (Position)</label>
+                                        <label htmlFor="banner-position" className="text-sm font-bold text-gray-700 ml-1">Joylashuvi (Position)</label>
                                         <select
+                                            id="banner-position"
                                             value={position}
                                             onChange={e => setPosition(e.target.value)}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
+                                            title="Banner joylashuvini tanlang"
+                                            aria-label="Banner joylashuvi"
                                         >
                                             {POSITIONS.map(pos => (
                                                 <option key={pos.value} value={pos.value}>{pos.label}</option>
@@ -342,8 +392,9 @@ export default function AdminBannersPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Tavsif (Description) - ixtiyoriy</label>
+                                        <label htmlFor="banner-description" className="text-sm font-bold text-gray-700 ml-1">Tavsif (Description) - ixtiyoriy</label>
                                         <textarea
+                                            id="banner-description"
                                             value={description}
                                             onChange={e => setDescription(e.target.value)}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium min-h-[100px]"
@@ -352,10 +403,11 @@ export default function AdminBannersPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Status</label>
+                                        <span className="text-sm font-bold text-gray-700 ml-1">Status</span>
                                         <div className="flex items-center gap-4">
-                                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                            <label htmlFor="status-active" className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
                                                 <input
+                                                    id="status-active"
                                                     type="radio"
                                                     name="status"
                                                     className="hidden"
@@ -364,8 +416,9 @@ export default function AdminBannersPage() {
                                                 />
                                                 <CheckCircle2 size={18} /> Faol
                                             </label>
-                                            <label className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                            <label htmlFor="status-inactive" className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
                                                 <input
+                                                    id="status-inactive"
                                                     type="radio"
                                                     name="status"
                                                     className="hidden"
@@ -381,8 +434,9 @@ export default function AdminBannersPage() {
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Narxi (Price)</label>
+                                            <label htmlFor="banner-price" className="text-sm font-bold text-gray-700 ml-1">Narxi (Price)</label>
                                             <input
+                                                id="banner-price"
                                                 type="number"
                                                 value={price}
                                                 onChange={e => setPrice(e.target.value)}
@@ -391,8 +445,9 @@ export default function AdminBannersPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Eski Narxi</label>
+                                            <label htmlFor="banner-old-price" className="text-sm font-bold text-gray-700 ml-1">Eski Narxi</label>
                                             <input
+                                                id="banner-old-price"
                                                 type="number"
                                                 value={oldPrice}
                                                 onChange={e => setOldPrice(e.target.value)}
@@ -404,8 +459,9 @@ export default function AdminBannersPage() {
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Chegirma (masalan: -34%)</label>
+                                            <label htmlFor="banner-discount" className="text-sm font-bold text-gray-700 ml-1">Chegirma (masalan: -34%)</label>
                                             <input
+                                                id="banner-discount"
                                                 value={discount}
                                                 onChange={e => setDiscount(e.target.value)}
                                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -413,8 +469,9 @@ export default function AdminBannersPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Tartib (Order)</label>
+                                            <label htmlFor="banner-order" className="text-sm font-bold text-gray-700 ml-1">Tartib (Order)</label>
                                             <input
+                                                id="banner-order"
                                                 type="number"
                                                 value={order}
                                                 onChange={e => setOrder(e.target.value)}
@@ -423,22 +480,25 @@ export default function AdminBannersPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Aksiya tugash vaqti (End Date)</label>
+                                            <label htmlFor="banner-end-date" className="text-sm font-bold text-gray-700 ml-1">Aksiya tugash vaqti (End Date)</label>
                                             <input
+                                                id="banner-end-date"
                                                 type="datetime-local"
                                                 value={endDate}
                                                 onChange={e => setEndDate(e.target.value)}
                                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                title="Aksiya tugash vaqtini tanlang"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2 relative">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Mahsulotga bog'lash</label>
+                                            <label htmlFor="banner-product-search" className="text-sm font-bold text-gray-700 ml-1">Mahsulotga bog'lash</label>
                                             <div className="relative">
                                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                                 <input
+                                                    id="banner-product-search"
                                                     value={productSearch}
                                                     onChange={e => setProductSearch(e.target.value)}
                                                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -475,16 +535,24 @@ export default function AdminBannersPage() {
                                             {productId && (
                                                 <div className="flex items-center gap-2 mt-2 p-2 bg-blue-50 text-blue-700 rounded-xl text-xs font-bold w-fit">
                                                     <CheckCircle2 size={14} /> Biriktirilgan
-                                                    <button onClick={() => { setProductId(null); setProductSearch(''); }} className="hover:text-red-500"><X size={14} /></button>
+                                                    <button 
+                                                        onClick={() => { setProductId(null); setProductSearch(''); }} 
+                                                        className="hover:text-red-500"
+                                                        title="O'chirish"
+                                                        aria-label="Mahsulotni olib tashlash"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
 
                                         <div className="space-y-2 relative">
-                                            <label className="text-sm font-bold text-gray-700 ml-1">Kategoriyaga bog'lash</label>
+                                            <label htmlFor="banner-category-search" className="text-sm font-bold text-gray-700 ml-1">Kategoriyaga bog'lash</label>
                                             <div className="relative">
                                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                                 <input
+                                                    id="banner-category-search"
                                                     value={categorySearch}
                                                     onChange={e => setCategorySearch(e.target.value)}
                                                     className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -520,15 +588,23 @@ export default function AdminBannersPage() {
                                             {targetCategoryId && (
                                                 <div className="flex items-center gap-2 mt-2 p-2 bg-purple-50 text-purple-700 rounded-xl text-xs font-bold w-fit">
                                                     <CheckCircle2 size={14} /> Biriktirilgan
-                                                    <button onClick={() => { setTargetCategoryId(null); setCategorySearch(''); }} className="hover:text-red-500"><X size={14} /></button>
+                                                    <button 
+                                                        onClick={() => { setTargetCategoryId(null); setCategorySearch(''); }} 
+                                                        className="hover:text-red-500"
+                                                        title="O'chirish"
+                                                        aria-label="Kategoriyani olib tashlash"
+                                                    >
+                                                        <X size={14} />
+                                                    </button>
                                                 </div>
                                             )}
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-sm font-bold text-gray-700 ml-1">Havola (Link) - ixtiyoriy</label>
+                                        <label htmlFor="banner-link" className="text-sm font-bold text-gray-700 ml-1">Havola (Link) - ixtiyoriy</label>
                                         <input
+                                            id="banner-link"
                                             value={link}
                                             onChange={e => setLink(e.target.value)}
                                             className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
@@ -547,6 +623,8 @@ export default function AdminBannersPage() {
                                                         type="button"
                                                         onClick={() => setImage('')}
                                                         className="absolute -top-2 -right-2 bg-red-500 text-white p-1.5 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                                                        title="Rasmni o'chirish"
+                                                        aria-label="Tanlangan rasmni o'chirish"
                                                     >
                                                         <X size={12} />
                                                     </button>
@@ -562,10 +640,17 @@ export default function AdminBannersPage() {
                                                     </p>
                                                 </div>
                                             )}
-                                            <label className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95 flex items-center gap-2">
+                                            <label htmlFor="banner-file-input" className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95 flex items-center gap-2">
                                                 {uploading ? <Loader2 className="animate-spin" size={14} /> : <UploadCloud size={14} />}
                                                 {uploading ? "..." : "Tanlash"}
-                                                <input type="file" hidden accept="image/*" onChange={handleUpload} />
+                                                <input 
+                                                    id="banner-file-input"
+                                                    type="file" 
+                                                    hidden 
+                                                    accept="image/*" 
+                                                    onChange={handleUpload} 
+                                                    title="Banner rasmini tanlang"
+                                                />
                                             </label>
                                         </div>
                                     </div>
@@ -662,15 +747,37 @@ export default function AdminBannersPage() {
 
                         <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden min-h-[500px]">
                             <div className="p-6 border-b border-gray-50">
-                                <div className="relative w-full md:w-80">
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                                    <input
-                                        value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Bannerlarni qidirish..."
-                                        className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
-                                    />
-                                </div>
+                        <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:justify-between">
+                            <div className="relative w-full lg:w-80">
+                                <label htmlFor="banners-search" className="sr-only">Bannerlarni qidirish</label>
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <input
+                                    id="banners-search"
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    placeholder="Bannerlarni qidirish..."
+                                    className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {([['all', 'Hammasi'], ['active', 'Faol'], ['inactive', 'Nofaol'], ['expired', 'Muddati o\'tgan']] as const).map(([value, label]) => (
+                                    <button
+                                        key={value}
+                                        type="button"
+                                        onClick={() => setStatusFilter(value)}
+                                        title={`${label} bannerlar`}
+                                        aria-pressed={statusFilter === value}
+                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                                            statusFilter === value
+                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        {label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                             </div>
 
                             <div className="overflow-x-auto">
@@ -735,9 +842,15 @@ export default function AdminBannersPage() {
                                                     </td>
 
                                                     <td className="px-6 py-4 text-center">
-                                                        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${banner.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
-                                                            {banner.isActive ? 'Faol' : 'Nofaol'}
-                                                        </span>
+                                                        {isBannerExpired(banner) ? (
+                                                            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide bg-red-100 text-red-600" title={`Tugash sanasi: ${banner.endDate}`}>
+                                                                Muddati o'tgan
+                                                            </span>
+                                                        ) : (
+                                                            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wide ${banner.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>
+                                                                {banner.isActive ? 'Faol' : 'Nofaol'}
+                                                            </span>
+                                                        )}
                                                     </td>
                                                     <td className="px-6 py-4 text-right">
                                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -746,6 +859,8 @@ export default function AdminBannersPage() {
                                                                 size="icon"
                                                                 className="h-8 w-8 rounded-full text-blue-600 hover:bg-blue-50"
                                                                 onClick={() => handleEdit(banner)}
+                                                                title="Tahrirlash"
+                                                                aria-label="Bannerni tahrirlash"
                                                             >
                                                                 <Edit2 size={16} />
                                                             </Button>
@@ -754,6 +869,8 @@ export default function AdminBannersPage() {
                                                                 size="icon"
                                                                 className="h-8 w-8 rounded-full text-red-600 hover:bg-red-50"
                                                                 onClick={() => handleDelete(banner.id)}
+                                                                title="O'chirish"
+                                                                aria-label="Bannerni o'chirish"
                                                             >
                                                                 <Trash2 size={16} />
                                                             </Button>

@@ -1,4 +1,3 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import OrderStatusSelect from "./OrderStatusSelect";
 import { format } from 'date-fns';
@@ -178,12 +177,15 @@ export default async function AdminOrdersPage({
                 <div className="flex flex-wrap gap-3 items-center w-full lg:w-auto">
                     {/* Search Bar */}
                     <form className="relative flex-1 lg:min-w-[300px]">
+                        <label htmlFor="order-search" className="sr-only">Buyurtmalarni qidirish</label>
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                         <input
+                            id="order-search"
                             name="search"
                             defaultValue={search}
                             placeholder="ID, ism yoki telefon..."
                             className="w-full pl-10 pr-4 py-2 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all shadow-sm"
+                            aria-label="ID, ism yoki telefon orqali qidirish"
                         />
                         {statusFilter && <input type="hidden" name="status" value={statusFilter} />}
                     </form>
@@ -291,7 +293,7 @@ export default async function AdminOrdersPage({
                                                 } as Record<string, string>)[order.paymentMethod.toUpperCase()] || order.paymentMethod}
                                             </div>
                                             {order.paymentScreenshot && (
-                                                <a href={order.paymentScreenshot} target="_blank" className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded w-fit hover:bg-emerald-100 transition-colors">
+                                                <a href={order.paymentScreenshot} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-xs text-emerald-600 bg-emerald-50 border border-emerald-100 px-2 py-1 rounded w-fit hover:bg-emerald-100 transition-colors">
                                                     <Eye size={12} />
                                                     Chekni ko'rish
                                                 </a>
@@ -322,13 +324,13 @@ export default async function AdminOrdersPage({
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex justify-center items-center gap-1">
                                             <AutoDispatchButton orderId={order.id} currentStatus={order.status} />
-                                            <Link href={`/track/${order.id}`} target="_blank">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500 hover:bg-emerald-50" title="Tracking Page">
+                                            <Link href={`/track/${order.id}`} target="_blank" rel="noopener noreferrer">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-emerald-500 hover:bg-emerald-50" title="Tracking Page" aria-label="Kuryer kuzatuv sahifasini ochish">
                                                     <MapPin size={16} />
                                                 </Button>
                                             </Link>
                                             <Link href={`/admin/orders/${order.id}`}>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50" title="Batafsil ko'rish" aria-label="Buyurtma tafsilotlarini ko'rish">
                                                     <Eye size={16} />
                                                 </Button>
                                             </Link>
@@ -355,12 +357,12 @@ export default async function AdminOrdersPage({
                     </div>
                     <div className="flex gap-2">
                         <Link href={`/admin/orders?page=${Math.max(1, page - 1)}&status=${statusFilter || 'ALL'}`}>
-                            <Button variant="outline" size="sm" disabled={page <= 1} className="h-8 w-8 p-0">
+                            <Button variant="outline" size="sm" disabled={page <= 1} className="h-8 w-8 p-0" title="Oldingi sahifa" aria-label="Oldingi sahifaga o'tish">
                                 <ChevronLeft size={14} />
                             </Button>
                         </Link>
                         <Link href={`/admin/orders?page=${Math.min(totalPages, page + 1)}&status=${statusFilter || 'ALL'}`}>
-                            <Button variant="outline" size="sm" disabled={page >= totalPages} className="h-8 w-8 p-0">
+                            <Button variant="outline" size="sm" disabled={page >= totalPages} className="h-8 w-8 p-0" title="Keyingi sahifa" aria-label="Keyingi sahifaga o'tish">
                                 <ChevronRight size={14} />
                             </Button>
                         </Link>

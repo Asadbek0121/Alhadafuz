@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function GET() {
+    const session = await auth();
+    if (session?.user?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const courierToken = process.env.COURIER_BOT_TOKEN;
     const notificationToken = process.env.TELEGRAM_BOT_TOKEN;
 

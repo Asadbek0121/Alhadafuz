@@ -1,4 +1,3 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Package, Tag, AlertCircle } from "lucide-react";
@@ -141,6 +140,8 @@ export default async function AdminProductsPage({
                     <Link
                         href="/admin/products/new"
                         className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-6 py-3 shadow-xl shadow-indigo-200/50 transition-all active:scale-95 font-black tracking-tight uppercase text-sm whitespace-nowrap"
+                        title="Yangi mahsulot qo'shish"
+                        aria-label="Yangi mahsulot qo'shish"
                     >
                         <Plus size={18} strokeWidth={3} /> Yangi mahsulot
                     </Link>
@@ -253,6 +254,7 @@ export default async function AdminProductsPage({
                         <Link
                             href={`/admin/products?page=${page - 1}${query ? `&q=${query}` : ""}`}
                             className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            aria-label="Oldingi sahifaga o'tish"
                         >
                             <ChevronLeft size={18} /> Oldingi
                         </Link>
@@ -264,6 +266,7 @@ export default async function AdminProductsPage({
                         <Link
                             href={`/admin/products?page=${page + 1}${query ? `&q=${query}` : ""}`}
                             className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            aria-label="Keyingi sahifaga o'tish"
                         >
                             Keyingi <ChevronRight size={18} />
                         </Link>

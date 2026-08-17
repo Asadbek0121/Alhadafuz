@@ -301,6 +301,7 @@ export default function LiveMap() {
                                     key={c.id}
                                     onClick={() => focusCourier(c)}
                                     className={`w-full p-6 text-left hover:bg-slate-50/80 transition-all flex items-center gap-5 group relative ${selectedCourierId === c.id ? 'bg-blue-50/50 after:absolute after:left-0 after:top-6 after:bottom-6 after:w-1.5 after:bg-blue-600 after:rounded-r-full' : ''}`}
+                                    aria-label={`${c.name} kuryerini tanlash`}
                                 >
                                     <div className={`w-16 h-16 rounded-[22px] flex items-center justify-center text-3xl shadow-2xl shadow-slate-200 transform group-hover:scale-105 transition-all duration-500 ${selectedCourierId === c.id ? 'bg-blue-600 text-white rotate-3' : 'bg-white border-2 border-slate-50 text-blue-600'}`}>
                                         {c.vehicleType === 'CAR' ? '🚗' : '🛵'}
@@ -359,6 +360,7 @@ export default function LiveMap() {
                                 onClick={() => mapRef.current?.setCenter([41.311081, 69.240562], 12)}
                                 className="w-12 h-12 bg-white rounded-2xl shadow-2xl shadow-blue-200/20 flex items-center justify-center text-slate-900 hover:bg-slate-900 hover:text-white transition-all transform hover:scale-105 active:scale-95 border border-slate-50 group/btn"
                                 title="Markazlash"
+                                aria-label="Markazlash"
                             >
                                 <Target size={20} />
                             </button>
@@ -370,6 +372,7 @@ export default function LiveMap() {
                                 }}
                                 className="w-12 h-12 bg-white rounded-2xl shadow-2xl shadow-blue-200/20 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border border-slate-50 group/btn"
                                 title="Xarita turini o'zgartirish"
+                                aria-label="Xarita turini o'zgartirish"
                             >
                                 <Layers size={20} />
                             </button>

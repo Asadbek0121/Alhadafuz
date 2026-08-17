@@ -1,0 +1,199 @@
+.container {
+    padding: 0;
+}
+
+.header {
+    margin-bottom: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.title {
+    font-size: 24px;
+    font-weight: 800;
+    color: #2A3547;
+}
+
+.card {
+    background: #fff;
+    border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    border: 1px solid #f0f0f0;
+}
+
+.infoSection {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    gap: 20px;
+}
+
+.infoCol {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.label {
+    font-size: 14px;
+    font-weight: 700;
+    color: #5A6A85;
+    margin-bottom: 5px;
+}
+
+.input, .select {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid #e5eaef;
+    outline: none;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.input:focus, .select:focus {
+    border-color: #0085db;
+}
+
+.billingSection {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    margin-bottom: 40px;
+}
+
+.billingTitle {
+    font-size: 16px;
+    font-weight: 800;
+    color: #2A3547;
+    margin-bottom: 20px;
+}
+
+.billingInputs {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 30px;
+}
+
+.th {
+    text-align: left;
+    padding: 15px;
+    background: #f8fafc;
+    font-size: 13px;
+    font-weight: 700;
+    color: #5A6A85;
+}
+
+.td {
+    padding: 15px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.tableInput {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid #e5eaef;
+    border-radius: 6px;
+    outline: none;
+    font-size: 14px;
+}
+
+.tableInput:focus {
+    border-color: #0085db;
+}
+
+.removeButton {
+    color: #fa896b;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.removeButton:hover {
+    color: #d94a2b;
+}
+
+.addButton {
+    color: #0085db;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 0;
+}
+
+.summarySection {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 30px;
+}
+
+.summaryCard {
+    width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+}
+
+.summaryLabel {
+    color: #5A6A85;
+}
+
+.summaryValue {
+    font-weight: 700;
+    color: #2A3547;
+}
+
+.totalRow {
+    display: flex;
+    justify-content: space-between;
+    font-size: 18px;
+    font-weight: 800;
+    padding-top: 15px;
+    border-top: 2px solid #f1f5f9;
+}
+
+.actions {
+    margin-top: 40px;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+.saveButton {
+    padding: 12px 30px;
+    background: #0085db;
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0,133,219,0.2);
+}
+
+.cancelButton {
+    padding: 12px 30px;
+    background: #fff;
+    color: #5A6A85;
+    border: 1px solid #e5eaef;
+    border-radius: 10px;
+    font-weight: 700;
+    cursor: pointer;
+}

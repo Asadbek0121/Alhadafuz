@@ -1,4 +1,3 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, User, Shield, Calendar, Mail } from "lucide-react";
@@ -61,12 +60,15 @@ export default async function TopshiriqUsersPage({
                 <div className="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
                     {/* Search */}
                     <form className="relative w-full md:w-96 group">
+                        <label htmlFor="user-search" className="sr-only">Foydalanuvchilarni qidirish</label>
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
                         <input
+                            id="user-search"
                             name="q"
                             defaultValue={query}
                             placeholder="Email yoki ism orqali qidirish..."
                             className="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:scale-[1.02] transition-all outline-none font-medium placeholder:text-gray-300"
+                            aria-label="Email yoki ism orqali qidirish"
                         />
                     </form>
                     <CreateUserModal />
@@ -149,6 +151,7 @@ export default async function TopshiriqUsersPage({
                         <Link
                             href={`/admin/users?page=${page - 1}&q=${query}`}
                             className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            aria-label="Oldingi sahifa"
                         >
                             <ChevronLeft size={18} /> Oldingi
                         </Link>
@@ -160,6 +163,7 @@ export default async function TopshiriqUsersPage({
                         <Link
                             href={`/admin/users?page=${page + 1}&q=${query}`}
                             className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            aria-label="Keyingi sahifa"
                         >
                             Keyingi <ChevronRight size={18} />
                         </Link>

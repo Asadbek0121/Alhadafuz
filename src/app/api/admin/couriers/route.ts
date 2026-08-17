@@ -1,8 +1,14 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export async function GET() {
+    const session = await auth();
+    if (session?.user?.role !== "ADMIN") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
         // Raw SQL Join to get couriers with their profiles
         const couriers: any[] = await prisma.$queryRawUnsafe(`
@@ -50,6 +56,11 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const session = await auth();
+    if (session?.user?.role !== "ADMIN") {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     try {
         const { emailOrPhone } = await req.json();
 

@@ -7,83 +7,78 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
 model User {
-  id                   String         @id @default(cuid())
+  id                   String               @id @default(cuid())
   name                 String?
-  email                String?        @unique
+  email                String?              @unique
   emailVerified        DateTime?
-  isVerified           Boolean        @default(false)
-  username             String?        @unique
-  phone                String?        @unique
+  isVerified           Boolean              @default(false)
+  username             String?              @unique
+  phone                String?              @unique
   password             String?
   hashedPassword       String?
   image                String?
-  role                 String         @default("USER") // ADMIN, MERCHANT, COURIER, USER
-  provider             String?        @default("credentials")
-  uniqueId             String?        @unique
-  notificationsEnabled Boolean        @default(true)
-  twoFactorEnabled     Boolean        @default(false)
-  isDarkMode           Boolean        @default(false)
-  isDeleted            Boolean        @default(false)
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  telegramId           String?        @unique
+  role                 String               @default("USER")
+  provider             String?              @default("credentials")
+  uniqueId             String?              @unique
+  notificationsEnabled Boolean              @default(true)
+  twoFactorEnabled     Boolean              @default(false)
+  isDarkMode           Boolean              @default(false)
+  isDeleted            Boolean              @default(false)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  telegramId           String?              @unique
   pinHash              String?
   recoveryHash         String?
-  failedAttempts       Int            @default(0)
+  failedAttempts       Int                  @default(0)
   lockedUntil          DateTime?
   dateOfBirth          DateTime?
   gender               String?
-  botState             String?        @default("START")
-  tempData             String?        @db.Text // Optimized for JSON storage as string
+  botState             String?              @default("START")
+  tempData             String?
   lastIp               String?
   lastLoginAt          DateTime?
-  riskScore            Int            @default(0)
-  
-  // Profiles
-  courierProfile       CourierProfile?
-  merchantProfile      MerchantProfile?
-  
-  // Relations
-  orders               Order[]        @relation("CustomerOrders")
-  assignedOrders       Order[]        @relation("CourierOrders")
-  managedOrders        Order[]        @relation("MerchantOrders")
-  createdOrders        Order[]        @relation("CreatedOrders")
-  notifications        Notification[]
-  reviews              Review[]
-  products             Product[]      @relation("VendorProducts")
+  riskScore            Int                  @default(0)
+  accounts             Account[]
   logs                 ActivityLog[]
   addresses            Address[]
-  cart                 Cart?
-  receivedMessages     Message[]      @relation("ReceivedMessages")
-  sentMessages         Message[]      @relation("SentMessages")
-  accounts             Account[]
-  sessions             Session[]
-  devices              Device[]
-  wishlist             Wishlist?
-  telegramLoginTokens  TelegramLoginToken[]
   authenticators       Authenticator[]
+  cart                 Cart?
+  courierProfile       CourierProfile?
+  devices              Device[]
+  merchantProfile      MerchantProfile?
+  receivedMessages     Message[]            @relation("ReceivedMessages")
+  sentMessages         Message[]            @relation("SentMessages")
+  notifications        Notification[]
+  assignedOrders       Order[]              @relation("CourierOrders")
+  createdOrders        Order[]              @relation("CreatedOrders")
+  managedOrders        Order[]              @relation("MerchantOrders")
+  orders               Order[]              @relation("CustomerOrders")
+  products             Product[]            @relation("VendorProducts")
+  reviews              Review[]
+  sessions             Session[]
+  telegramLoginTokens  TelegramLoginToken[]
+  wishlist             Wishlist?
 }
 
 model CourierProfile {
-  id                String   @id @default(cuid())
-  userId            String   @unique
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status            String   @default("OFFLINE") // ONLINE, BUSY, OFFLINE
-  rating            Float    @default(5.0)
-  totalDeliveries   Int      @default(0)
-  currentLat        Float?
-  currentLng        Float?
-  vehicleType       String?  // CAR, MOTO, BIKE, ON_FOOT
-  balance           Float    @default(0)
-  isVerified        Boolean  @default(false)
-  lastOnlineAt      DateTime @default(now())
-  onDuty            Boolean  @default(false)
-  courierLevel      String   @default("BRONZE")
-  lastLocationAt    DateTime?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  status          String    @default("OFFLINE")
+  rating          Float     @default(5.0)
+  totalDeliveries Int       @default(0)
+  currentLat      Float?
+  currentLng      Float?
+  vehicleType     String?
+  balance         Float     @default(0)
+  isVerified      Boolean   @default(false)
+  lastOnlineAt    DateTime  @default(now())
+  onDuty          Boolean   @default(false)
+  courierLevel    String    @default("BRONZE")
+  lastLocationAt  DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model CourierApplication {
@@ -91,16 +86,15 @@ model CourierApplication {
   telegramId  String   @unique
   name        String
   phone       String   @unique
-  vehicleType String?
-  status      String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  status      String   @default("PENDING")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  vehicleType String?
 }
 
 model MerchantProfile {
   id          String   @id @default(cuid())
   userId      String   @unique
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   storeName   String
   description String?
   logo        String?
@@ -110,88 +104,77 @@ model MerchantProfile {
   balance     Float    @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Order {
-  id               String      @id @default(cuid())
-  userId           String      // Customer
-  courierId        String?     // Assigned Courier
-  merchantId       String?     // Assigned Merchant/Store
-  
-  status           String      @default("CREATED") 
-  // CREATED, ASSIGNED, PICKED_UP, DELIVERING, DELIVERED, PAID, COMPLETED, CANCELLED
-
-  total            Float
-  deliveryFee      Float       @default(0)
-  paymentMethod    String      @default("CASH")
-  paymentStatus    String      @default("PENDING") 
-  paymentId        String?     // External transaction ID (Click, Payme, etc)
-  paymentProvider  String?     // CLICK, PAYME, HUMO, etc  
-  shippingName     String?
-  shippingPhone    String?
-  shippingAddress  String?
-  shippingCity     String?
-  shippingDistrict String?
-  districtCode     String?
-  lat              Float?
-  lng              Float?
-  comment          String?
-  
-  couponCode       String?     // Applied coupon identifier
-  discountAmount   Float       @default(0) // Absolute discount value
-  
-  deliveryMethod   String      @default("COURIER") // COURIER, PICKUP
-  creatorId        String?
-  createdVia       String?     @default("USER_APP") // USER_APP, ADMIN_PANEL, TELEGRAM_BOT
-  
-  gpsLogs          String?     @db.Text // JSON history of delivery locations
-  deliveryPhoto    String?     // Telegram file_id for proof
-  
-  deliveryToken    String?     @unique // For QR validation
-  tokenExpiresAt   DateTime?
-  
-  paymentScreenshot  String?   // URL to the uploaded receipt image
-  paymentVerifiedAt  DateTime? // When admin confirmed the payment
-  paymentVerifiedBy  String?   // Admin ID who verified it
-  
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
-  finishedAt       DateTime?
-  finishedAtRaw    DateTime?   // For historical reasons if any
-  
-  user             User        @relation("CustomerOrders", fields: [userId], references: [id])
-  courier          User?       @relation("CourierOrders", fields: [courierId], references: [id])
-  merchant         User?       @relation("MerchantOrders", fields: [merchantId], references: [id])
-  creator          User?       @relation("CreatedOrders", fields: [creatorId], references: [id])
-  
-  items            OrderItem[]
-  dispatchLogs     DispatchLog[]
-  earnings         Earning[]
-  storeId          String?
-  store            Store?      @relation(fields: [storeId], references: [id])
+  id                String        @id @default(cuid())
+  userId            String
+  courierId         String?
+  merchantId        String?
+  status            String        @default("CREATED")
+  total             Float
+  deliveryFee       Float         @default(0)
+  paymentMethod     String        @default("CASH")
+  paymentStatus     String        @default("PENDING")
+  paymentId         String?
+  paymentProvider   String?
+  shippingName      String?
+  shippingPhone     String?
+  shippingAddress   String?
+  shippingCity      String?
+  shippingDistrict  String?
+  districtCode      String?
+  lat               Float?
+  lng               Float?
+  comment           String?
+  couponCode        String?
+  discountAmount    Float         @default(0)
+  deliveryMethod    String        @default("COURIER")
+  creatorId         String?
+  createdVia        String?       @default("USER_APP")
+  gpsLogs           String?
+  deliveryPhoto     String?
+  deliveryToken     String?       @unique
+  tokenExpiresAt    DateTime?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  finishedAt        DateTime?
+  finishedAtRaw     DateTime?
+  storeId           String?
+  paymentScreenshot String?
+  paymentVerifiedAt DateTime?
+  paymentVerifiedBy String?
+  dispatchLogs      DispatchLog[]
+  earnings          Earning[]
+  courier           User?         @relation("CourierOrders", fields: [courierId], references: [id])
+  creator           User?         @relation("CreatedOrders", fields: [creatorId], references: [id])
+  merchant          User?         @relation("MerchantOrders", fields: [merchantId], references: [id])
+  store             Store?        @relation(fields: [storeId], references: [id])
+  user              User          @relation("CustomerOrders", fields: [userId], references: [id])
+  items             OrderItem[]
 }
 
 model DispatchLog {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  courierId   String
-  status      String   // PENDING, ACCEPTED, REJECTED, TIMEOUT
-  score       Float?   // Dispatch algorithm score
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  orderId   String
+  courierId String
+  status    String
+  score     Float?
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model Earning {
-  id          String   @id @default(cuid())
-  orderId     String
-  order       Order    @relation(fields: [orderId], references: [id])
-  userId      String   // Courier or Merchant
-  amount      Float
-  type        String   // DELIVERY_FEE, PRODUCT_SALE, BONUS
-  status      String   @default("PENDING") // PENDING, PAID
-  createdAt   DateTime @default(now())
+  id        String   @id @default(cuid())
+  orderId   String
+  userId    String
+  amount    Float
+  type      String
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id])
 }
-
 
 model Account {
   id                String  @id @default(cuid())
@@ -219,24 +202,24 @@ model Session {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   deviceId     String?
-  device       Device?  @relation(fields: [deviceId], references: [id])
   ipAddress    String?
   userAgent    String?
+  device       Device?  @relation(fields: [deviceId], references: [id])
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Device {
-  id           String   @id @default(cuid())
-  userId       String
-  deviceId     String   @unique
-  deviceName   String
-  isTrusted    Boolean  @default(false)
-  lastSeen     DateTime @updatedAt
-  riskScore    Int      @default(0)
-  fingerprint  String?
-  createdAt    DateTime @default(now())
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessions     Session[]
+  id          String    @id @default(cuid())
+  userId      String
+  deviceId    String    @unique
+  deviceName  String
+  isTrusted   Boolean   @default(false)
+  lastSeen    DateTime  @updatedAt
+  riskScore   Int       @default(0)
+  fingerprint String?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions    Session[]
 
   @@index([userId])
 }
@@ -250,8 +233,8 @@ model Authenticator {
   credentialBackedUp   Boolean
   transports           String?
   userId               String
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt            DateTime @default(now())
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -265,7 +248,7 @@ model VerificationToken {
 }
 
 model Address {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   userId    String
   title     String
   city      String
@@ -273,30 +256,29 @@ model Address {
   street    String
   house     String?
   apartment String?
-  isDefault Boolean @default(false)
+  isDefault Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
 model TelegramLoginToken {
-  token     String   @id
-  status    String   @default("PENDING")
-  userId    String? 
-  user      User?    @relation(fields: [userId], references: [id])
+  token      String   @id
+  status     String   @default("PENDING")
+  userId     String?
   telegramId String?
-  createdAt DateTime @default(now())
-  expiresAt DateTime
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  user       User?    @relation(fields: [userId], references: [id])
 }
-
 
 model OrderItem {
   id        String  @id @default(cuid())
   orderId   String
   productId String
-  vendorId  String? // Store vendor at time of purchase
+  vendorId  String?
   title     String
   price     Float
   quantity  Int
@@ -311,14 +293,13 @@ model OrderItem {
 
 model Product {
   id            String         @id @default(cuid())
-  vendorId      String?        // Vendor owner
-  vendor        User?          @relation("VendorProducts", fields: [vendorId], references: [id])
+  vendorId      String?
   title         String
   description   String
   price         Float
   oldPrice      Float?
   discount      Float?
-  discountType  String?        // SALE, PROMO, HOT, etc.
+  discountType  String?
   image         String
   images        String?
   stock         Int            @default(0)
@@ -331,18 +312,19 @@ model Product {
   status        String         @default("ACTIVE")
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
-  categoryId    String? // @deprecated
+  categoryId    String?
   mxikCode      String?
   packageCode   String?
   vatPercent    Int            @default(0)
   brand         String?
+  banners       Banner[]
   cartItems     CartItem[]
   orderItems    OrderItem[]
   categoryRel   Category?      @relation("ProductCategoryOld", fields: [categoryId], references: [id])
-  categories    Category[]     @relation("ProductToCategory")
+  vendor        User?          @relation("VendorProducts", fields: [vendorId], references: [id])
   reviews       Review[]
   wishlistItems WishlistItem[]
-  banners       Banner[]
+  categories    Category[]     @relation("ProductToCategory")
 
   @@index([title])
   @@index([category])
@@ -352,108 +334,89 @@ model Product {
 }
 
 model Category {
-  id        String     @id @default(cuid())
-  name      String
-  slug      String     @unique
-  image     String?
-  order     Int        @default(0)
-  isActive  Boolean    @default(true)
-  parentId  String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  parent    Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children  Category[] @relation("CategoryHierarchy")
-  products  Product[]  @relation("ProductToCategory")
-  banners         Banner[]   @relation("BannerToCategory")
+  id              String     @id @default(cuid())
+  name            String
+  slug            String     @unique
+  image           String?
+  order           Int        @default(0)
+  isActive        Boolean    @default(true)
+  parentId        String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
   bannersAsTarget Banner[]   @relation("BannerTargetCategory")
+  parent          Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children        Category[] @relation("CategoryHierarchy")
   productsOld     Product[]  @relation("ProductCategoryOld")
-}
-
-enum BannerPosition {
-  HOME_TOP      // Main Slider (Chap qism)
-  HOME_SIDE     // Side Promo (O'ng qism)
-  SIDEBAR
-  CATEGORY_TOP
-  FOOTER
+  banners         Banner[]   @relation("BannerToCategory")
+  products        Product[]  @relation("ProductToCategory")
 }
 
 model Banner {
-  id              String         @id @default(cuid())
-  title           String
-  description     String?        // For Slider/Promo text
-  image           String
-  link            String?
-  position        BannerPosition @default(HOME_TOP)
-  isActive        Boolean        @default(true)
-  order           Int            @default(0)
-  
-  // Promotion specific
-  price           Float?
-  oldPrice        Float?
-  discount        String?        // e.g. "-34%"
-  
-  // Analytics
-  clickCount      Int            @default(0)
-  impressionCount Int            @default(0)
-  
-  // Scheduling
-  startDate       DateTime?
-  endDate         DateTime?
-  
-  // A/B Testing
-  variant         String?        // A, B, C, etc.
-
-  // Link to internal content
-  productId       String?
-  product         Product?       @relation(fields: [productId], references: [id])
+  id               String         @id @default(cuid())
+  title            String
+  description      String?
+  image            String
+  link             String?
+  position         BannerPosition @default(HOME_TOP)
+  isActive         Boolean        @default(true)
+  order            Int            @default(0)
+  price            Float?
+  oldPrice         Float?
+  discount         String?
+  clickCount       Int            @default(0)
+  impressionCount  Int            @default(0)
+  startDate        DateTime?
+  endDate          DateTime?
+  variant          String?
+  productId        String?
   targetCategoryId String?
-  targetCategory  Category?      @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
-  
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  categories      Category[]     @relation("BannerToCategory")
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  product          Product?       @relation(fields: [productId], references: [id])
+  targetCategory   Category?      @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
+  categories       Category[]     @relation("BannerToCategory")
 }
 
 model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String?
-  status    String   @default("PENDING")
-  userId    String
-  productId String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  rating     Int
+  comment    String?
+  status     String   @default("PENDING")
+  userId     String
+  productId  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   adminReply String?
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model StoreSettings {
-  id               String   @id @default("default")
-  siteName         String   @default("UzMarket")
-  phone            String?
-  email            String?
-  address          String?
-  socialLinks      String?
-  telegramBotToken String?
-  telegramAdminIds String?
-  courierFeePerOrder Float?  @default(12000)
-  autoDispatchEnabled Boolean @default(false)
-  cardHolderName   String?
-  cardNumber       String?
-  updatedAt        DateTime @updatedAt
+  id                  String   @id @default("default")
+  siteName            String   @default("UzMarket")
+  phone               String?
+  email               String?
+  address             String?
+  socialLinks         String?
+  telegramBotToken    String?
+  telegramAdminIds    String?
+  courierFeePerOrder  Float?   @default(12000)
+  updatedAt           DateTime @updatedAt
+  autoDispatchEnabled Boolean  @default(false)
+  cardHolderName      String?
+  cardNumber          String?
 }
 
 model ActivityLog {
-  id         String   @id @default(cuid())
-  userId     String?
-  action     String   // LOGIN, FAILED_LOGIN, PIN_CHANGE, LOGOUT, RECOVERY_START, DEVICE_TRUSTED
-  details    String?  // JSON string for additional info
-  ip         String?
-  location   String?  // City, Country via API
-  userAgent  String?
-  createdAt  DateTime @default(now())
-  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  userId    String?
+  action    String
+  details   String?
+  ip        String?
+  location  String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Cart {
@@ -495,7 +458,6 @@ model WishlistItem {
 
   @@unique([wishlistId, productId])
 }
-
 
 model Message {
   id         String   @id @default(cuid())
@@ -539,41 +501,39 @@ model Store {
   orders       Order[]
 }
 
-
-
 model PaymentMethod {
-  id          String   @id @default(cuid())
-  name        String
-  type        String   @default("MERCHANT") // MERCHANT, CARD, CASH
-  provider    String   // CLICK, PAYME, CASH_ON_DELIVERY (Not unique anymore)
-  details     String?  // Extra info (public)
-  config      String?  // Secret config (service_id etc, encrypted preferably, but here simple)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id        String   @id @default(cuid())
+  name      String
+  type      String   @default("MERCHANT")
+  provider  String
+  details   String?
+  config    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model PaymentLog {
-  id           String   @id @default(cuid())
-  provider     String
+  id            String   @id @default(cuid())
+  provider      String
   transactionId String?
-  amount       Float?
-  status       String   // REQUEST_RECEIVED, SIGNATURE_FAILED, SUCCESS, ERROR
-  requestData  String?  @db.Text // Store raw JSON/Form data
-  responseData String?  @db.Text
-  ipAddress    String?
-  createdAt    DateTime @default(now())
+  amount        Float?
+  status        String
+  requestData   String?
+  responseData  String?
+  ipAddress     String?
+  createdAt     DateTime @default(now())
 }
 
 model ShippingZone {
   id                String   @id @default(cuid())
-  name              String   // Region name (Viloyat)
-  district          String?  // Optional District name (Tuman)
+  name              String
+  district          String?
   price             Float    @default(0)
-  freeFrom          Float?   // Free shipping if total > this
-  freeFromQty       Int?     // Free if item count > this
-  freeIfHasDiscount Boolean  @default(false) // Free if any product has discount
-  freeDiscountType  String   @default("ANY") // ANY, SALE, PROMO, etc.
+  freeFrom          Float?
+  freeFromQty       Int?
+  freeIfHasDiscount Boolean  @default(false)
+  freeDiscountType  String   @default("ANY")
   isActive          Boolean  @default(true)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
@@ -582,7 +542,7 @@ model ShippingZone {
 model Coupon {
   id            String   @id @default(cuid())
   code          String   @unique
-  discountType  String   // PERCENTAGE, FIXED
+  discountType  String
   discountValue Float
   minAmount     Float    @default(0)
   startDate     DateTime @default(now())
@@ -592,4 +552,12 @@ model Coupon {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+enum BannerPosition {
+  HOME_TOP
+  HOME_SIDE
+  SIDEBAR
+  CATEGORY_TOP
+  FOOTER
 }

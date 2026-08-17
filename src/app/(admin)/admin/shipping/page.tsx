@@ -403,12 +403,15 @@ export default function AdminShippingPage() {
                                                             onClick={() => handleApproveApplication(app.id, 'REJECT')}
                                                             className="p-3 text-gray-400 hover:text-red-500 transition-colors"
                                                             title="Rad etish"
+                                                            aria-label="Rad etish"
                                                         >
                                                             <Trash2 size={16} />
                                                         </button>
                                                         <button
                                                             onClick={() => handleApproveApplication(app.id, 'APPROVE')}
                                                             className="bg-blue-600 text-white px-5 py-3 rounded-xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-blue-100 active:scale-95 transition-all flex items-center gap-2"
+                                                            title="Tasdiqlash"
+                                                            aria-label="Tasdiqlash"
                                                         >
                                                             <Plus size={14} /> Qo'shish
                                                         </button>

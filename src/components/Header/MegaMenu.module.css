@@ -8,6 +8,7 @@
     background: rgba(0, 0, 0, 0.4);
     z-index: 40;
     backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
     animation: fadeIn 0.2s ease;
 }
 
@@ -103,10 +104,23 @@
 .icon {
     margin-right: 12px;
     color: var(--text-muted);
+    display: flex;
+    align-items: center;
+}
+
+.icon img {
+    width: 20px;
+    height: 20px;
+    object-fit: contain;
 }
 
 .catItem:hover .icon {
     color: var(--primary);
+}
+
+.fallbackIcon {
+    opacity: 0.5;
+    display: flex;
 }
 
 .catName {
@@ -371,4 +385,26 @@
         font-size: 12px;
         padding: 3px 6px;
     }
+}
+
+.statusMessage {
+    padding: 20px;
+    color: #666;
+}
+
+.rightColHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+}
+
+.rightColHeader h3 {
+    margin: 0 !important;
+}
+
+.noSubCategories {
+    color: #888;
+    font-size: 14px;
+    grid-column: span 4;
 }

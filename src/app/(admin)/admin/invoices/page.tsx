@@ -1,4 +1,3 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import { Plus, Eye, FileText, CheckCircle, Truck, Clock, Search } from 'lucide-react';
 import Link from "next/link";
@@ -194,7 +193,7 @@ export default async function AdminInvoicesPage({
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs shadow-sm overflow-hidden text-center truncate">
-                                                {inv.user.image ? <img src={inv.user.image} alt="" className="w-full h-full object-cover" /> : inv.user.name?.[0] || 'U'}
+                                                {inv.user.image ? <img src={inv.user.image} alt={inv.user.name || 'Mijoz'} className="w-full h-full object-cover" /> : inv.user.name?.[0] || 'U'}
                                             </div>
                                             <div>
                                                 <div className="text-sm font-bold text-gray-900">{inv.user.name || "Mehmon"}</div>
@@ -218,7 +217,7 @@ export default async function AdminInvoicesPage({
                                     <td className="px-6 py-4">
                                         <div className="flex justify-center items-center gap-2">
                                             <Link href={`/admin/invoices/${inv.id}`}>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" aria-label="Invoysni ko'rish">
                                                     <Eye size={16} />
                                                 </Button>
                                             </Link>

@@ -1,5 +1,4 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
@@ -298,7 +297,6 @@ export default function SupportChat() {
         toggleChat();
     };
 
-
     return (
         <>
             <style dangerouslySetInnerHTML={{
@@ -349,96 +347,52 @@ export default function SupportChat() {
                     right: 25px !important;
                     width: 80px;
                     height: 80px;
-                    background: transparent;
-                    border: none;
+                    border-radius: 50%;
+                    background: #fff;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
                     cursor: pointer;
                     display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 9999;
                     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    padding: 0;
+                    border: none;
+                    overflow: hidden;
                 }
 
-                .menu-item-hover:hover {
-                    background-color: #f8fafc;
-                    transform: translateX(4px);
-                    border-color: #2563eb33;
-                }
-                
-                .active-scale:active {
-                    transform: scale(0.96);
+                .support-fab:hover, .support-fab-lottie:hover {
+                    transform: translateY(-5px) scale(1.05);
+                    box-shadow: 0 15px 35px rgba(37, 99, 235, 0.5);
                 }
 
-                @media (max-width: 768px) {
-                    .support-fab {
-                        width: 50px !important;
-                        height: 50px !important;
-                        bottom: 90px !important;
-                        right: 16px !important;
-                        border-radius: 16px !important;
-                    }
-                    .support-fab-lottie {
-                        width: 65px !important;
-                        height: 65px !important;
-                        bottom: 85px !important;
-                        right: 10px !important;
-                    }
-                    .support-fab svg {
-                        width: 24px !important;
-                        height: 24px !important;
-                    }
+                .support-window {
+                    animation: slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
+                }
+
+                @media (max-width: 480px) {
                     .support-window {
-                        width: calc(100vw - 32px) !important;
-                        max-width: 320px !important;
-                        height: 480px !important;
-                        bottom: 150px !important;
-                        right: 16px !important;
-                        border-radius: 24px !important;
-                        border: 1px solid rgba(255,255,255,0.8) !important;
+                        bottom: 0 !important;
+                        right: 0 !important;
+                        width: 100% !important;
+                        height: 100% !important;
+                        max-height: 100% !important;
+                        border-radius: 0 !important;
                     }
-                    .support-header {
-                        padding: 12px 14px !important;
-                        min-height: 56px !important;
-                    }
-                    .support-header h4 {
-                        font-size: 13px !important;
-                    }
-                    .support-avatar {
-                        width: 34px !important;
-                        height: 34px !important;
-                        border-radius: 10px !important;
-                    }
-                    .support-menu-content {
-                        padding: 16px !important;
-                    }
-                    .support-menu-item {
-                        padding: 10px !important;
-                        gap: 10px !important;
-                        border-radius: 14px !important;
-                    }
-                    .support-icon-box {
-                        width: 36px !important;
-                        height: 36px !important;
-                        border-radius: 10px !important;
-                    }
-                    .support-icon-box svg {
-                        width: 18px !important;
-                        height: 18px !important;
-                    }
-                    .welcome-title {
-                        font-size: 14px !important;
-                    }
-                    .welcome-desc {
-                        font-size: 11px !important;
+                    .support-fab, .support-fab-lottie {
+                        bottom: 20px !important;
+                        right: 20px !important;
                     }
                 }
                 `
             }} />
+
             {/* FAB */}
             <button
                 onClick={toggleOpen}
                 className={supportAnimationData ? "support-fab-lottie" : "support-fab"}
                 style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
+                aria-label={isOpen ? t('close_chat') || "Chatni yopish" : t('open_chat') || "Chatni ochish"}
             >
                 {supportAnimationData ? (
                     <Lottie animationData={supportAnimationData} loop autoplay style={{ width: '100%', height: '100%' }} />
@@ -449,129 +403,129 @@ export default function SupportChat() {
 
             {/* Window */}
             {isOpen && (
-                <div style={styles.container} className="support-window">
+                <div className="support-window fixed bottom-[100px] right-[25px] w-[320px] h-[460px] max-h-[calc(100vh-140px)] bg-white rounded-[24px] shadow-2xl flex flex-col z-[9999] overflow-hidden border border-slate-100 origin-bottom-right animate-slide-up">
                     {/* Header - Modern Redesign */}
-                    <div style={styles.header} className="support-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1 }}>
+                    <div className="support-header p-3 px-4 bg-gradient-to-br from-blue-600 to-blue-700 text-white flex justify-between items-center min-h-[64px] z-10">
+                        <div className="flex items-center gap-2.5 flex-1">
                             {view === 'chat' && (
-                                <button onClick={openMenu} style={styles.headerBackBtn}>
+                                <button 
+                                    onClick={openMenu} 
+                                    className="bg-white/15 border-none text-white cursor-pointer p-1.5 flex rounded-lg backdrop-blur-sm"
+                                    aria-label={t('back') || "Orqaga"}
+                                >
                                     <ChevronLeft size={20} strokeWidth={3} />
                                 </button>
                             )}
 
-                            <div style={styles.avatarContainer} className="support-avatar">
+                            <div className="support-avatar w-[38px] h-[38px] rounded-xl overflow-hidden border-[1.5px] border-white/30 bg-white">
                                 {supportAnimationData ? (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#e0e7ff' }}>
+                                    <div className="w-full h-full flex items-center justify-center bg-indigo-50">
                                         <Lottie animationData={supportAnimationData} loop autoplay style={{ width: '130%', height: '130%' }} />
                                     </div>
                                 ) : view === 'menu' ? (
-                                    <img src="/logo.png" alt="Hadaf Logo" style={{ width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
+                                    <img src="/logo.png" alt="Hadaf Logo" className="w-full h-full object-contain p-1" />
                                 ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8fafc' }}>
-                                        <Headset size={20} color="#2563eb" strokeWidth={2.5} />
+                                    <div className="w-full h-full flex items-center justify-center bg-slate-50">
+                                        <Headset size={20} className="text-blue-600" strokeWidth={2.5} />
                                     </div>
                                 )}
                             </div>
 
                             <div className="min-w-0">
-                                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 900, color: '#fff', letterSpacing: '-0.3px', lineHeight: '1.2' }} className="truncate">
+                                <h4 className="m-0 text-[15px] font-black text-white tracking-tight leading-tight truncate">
                                     {view === 'menu' ? t('title') : (t('operator') || "Operator")}
                                 </h4>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginTop: '1px' }}>
-                                    <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#4ade80', boxShadow: '0 0 8px #4ade80', animation: 'pulse 2s infinite' }}></span>
-                                    <span style={{ fontSize: '10px', color: 'rgba(255,255,255,0.8)', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('online')}</span>
+                                <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#4ade80] animate-pulse"></span>
+                                    <span className="text-[10px] text-white/80 font-extrabold uppercase tracking-wider">{t('online')}</span>
                                 </div>
                             </div>
                         </div>
 
-                        <button onClick={closeChat} style={styles.headerCloseBtn} className="active-scale">
+                        <button 
+                            onClick={closeChat} 
+                            className="bg-white/15 border-none rounded-lg w-7 h-7 text-white cursor-pointer flex items-center justify-center backdrop-blur-sm active-scale"
+                            aria-label={t('close') || "Yopish"}
+                        >
                             <X size={16} strokeWidth={3} />
                         </button>
                     </div>
 
                     {/* Content */}
-                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', background: '#fff' }}>
+                    <div className="flex-1 overflow-hidden flex flex-col bg-white">
                         {view === 'menu' ? (
-                            <div style={styles.menuContent} className="support-menu-content">
-                                <div style={{ textAlign: 'center', marginBottom: '20px', marginTop: '4px' }}>
-                                    <h3 style={{ fontSize: '16px', fontWeight: 900, color: '#0f172a', marginBottom: '6px', letterSpacing: '-0.2px' }} className="welcome-title">{t('welcome')}</h3>
-                                    <p style={{ color: '#64748b', fontSize: '12px', lineHeight: '1.4', fontWeight: 600 }} className="welcome-desc px-4">
+                            <div className="support-menu-content p-5 flex-1 flex flex-col bg-white">
+                                <div className="text-center mb-5 mt-1">
+                                    <h3 className="text-base font-black text-slate-900 mb-1.5 tracking-tight welcome-title">{t('welcome')}</h3>
+                                    <p className="text-slate-500 text-[12px] leading-relaxed font-semibold welcome-desc px-4">
                                         {t('subtitle') || "Savollaringiz bormi? Bizga yozing"}
                                     </p>
                                 </div>
 
-                                <div style={styles.menuOptions}>
-                                    <button onClick={handleStartChat} style={styles.menuItem} className="menu-item-hover active-scale support-menu-item">
-                                        <div style={{ ...styles.iconBox, background: '#eff6ff', color: '#2563eb' }} className="support-icon-box">
+                                <div className="flex flex-col gap-2.5">
+                                    <button onClick={handleStartChat} className="support-menu-item flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-100 cursor-pointer transition-all menu-item-hover active-scale">
+                                        <div className="support-icon-box w-10 h-10 rounded-xl flex items-center justify-center bg-blue-50 text-blue-600">
                                             <MessageSquareText size={20} strokeWidth={2.5} />
                                         </div>
-                                        <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '13px', letterSpacing: '-0.1px' }}>{t('live_chat')}</div>
-                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{t('live_chat_desc') || "Jonli muloqot"}</div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-extrabold text-slate-800 text-[13px] tracking-tight">{t('live_chat')}</div>
+                                            <div className="text-[10px] text-slate-400 font-semibold">{t('live_chat_desc') || "Jonli muloqot"}</div>
                                         </div>
                                         <ChevronRight size={14} className="opacity-30" strokeWidth={3} />
                                     </button>
 
-                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" style={{ ...styles.menuItem, textDecoration: 'none' }} className="menu-item-hover active-scale support-menu-item">
-                                        <div style={{ ...styles.iconBox, background: '#f0fdf4', color: '#16a34a' }} className="support-icon-box">
+                                    <a href="https://t.me/Hadaf_supportbot" target="_blank" rel="noopener noreferrer" className="support-menu-item flex items-center gap-3 p-3 rounded-2xl bg-white border border-slate-100 cursor-pointer transition-all no-underline menu-item-hover active-scale">
+                                        <div className="support-icon-box w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-50 text-emerald-600">
                                             <Send size={20} strokeWidth={2.5} />
                                         </div>
-                                        <div style={{ flex: 1, textAlign: 'left' }}>
-                                            <div style={{ fontWeight: 800, color: '#1e293b', fontSize: '13px', letterSpacing: '-0.1px' }}>{t('telegram_bot')}</div>
-                                            <div style={{ fontSize: '10px', color: '#94a3b8', fontWeight: 600 }}>{t('telegram_bot_desc') || "Telegram orqali"}</div>
+                                        <div className="flex-1 text-left">
+                                            <div className="font-extrabold text-slate-800 text-[13px] tracking-tight">{t('telegram_bot')}</div>
+                                            <div className="text-[10px] text-slate-400 font-semibold">{t('telegram_bot_desc') || "Telegram orqali"}</div>
                                         </div>
                                         <ChevronRight size={14} className="opacity-30" strokeWidth={3} />
                                     </a>
                                 </div>
-                                <div style={{ marginTop: 'auto', textAlign: 'center', paddingBottom: '10px' }}>
-                                    <p style={{ fontSize: '9px', fontWeight: 800, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '1px' }}>Hadaf Market Support</p>
+                                <div className="mt-auto text-center pb-2.5">
+                                    <p className="text-[9px] font-extrabold text-slate-300 uppercase tracking-widest">Hadaf Market Support</p>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 {/* Chat Area - Styled like previous premium chat */}
-                                <div ref={scrollRef} style={styles.messagesArea}>
+                                <div ref={scrollRef} className="flex-1 bg-slate-50/50 p-3.5 overflow-y-auto">
                                     {loading && messages.length === 0 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+                                        <div className="flex flex-col items-center justify-center h-full">
                                             <div className="w-5 h-5 border-2 border-blue-600/20 border-t-blue-600 rounded-full animate-spin"></div>
                                         </div>
                                     ) : messages.length === 0 ? (
-                                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#cbd5e1', textAlign: 'center', padding: '0 30px' }}>
-                                            <div style={{ width: '56px', height: '56px', background: '#fff', borderRadius: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)', border: '1px solid #f1f5f9' }}>
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-300 text-center px-8">
+                                            <div className="w-14 h-14 bg-white rounded-[18px] flex items-center justify-center mb-3 shadow-sm border border-slate-100">
                                                 <MessageSquare size={24} strokeWidth={2.5} />
                                             </div>
-                                            <h4 style={{ margin: '0 0 4px 0', color: '#1e293b', fontSize: '13px', fontWeight: 900 }}>{t('no_messages') || "Xabarlar yo'q"}</h4>
-                                            <p style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8' }}>{t('no_messages_desc') || "Savolingizni yo'llang"}</p>
+                                            <h4 className="m-0 text-slate-800 text-[13px] font-black">{t('no_messages') || "Xabarlar yo'q"}</h4>
+                                            <p className="text-[10px] font-semibold text-slate-400">{t('no_messages_desc') || "Savolingizni yo'llang"}</p>
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                        <div className="flex flex-col gap-2.5">
                                             {messages.map(msg => {
                                                 const isMe = msg.senderId === session?.user?.id;
                                                 return (
-                                                    <div key={msg.id} style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start' }}>
-                                                        <div style={{
-                                                            maxWidth: '85%',
-                                                            padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.content.includes('blob.vercel-storage.com')) ? '4px' : '8px 13px',
-                                                            borderRadius: isMe ? '14px 14px 2px 14px' : '14px 14px 14px 2px',
-                                                            background: isMe ? '#2563eb' : '#fff',
-                                                            color: isMe ? '#fff' : '#0f172a',
-                                                            fontSize: '11px',
-                                                            lineHeight: '1.4',
-                                                            fontWeight: 700,
-                                                            wordBreak: 'break-word',
-                                                            boxShadow: isMe ? '0 4px 12px rgba(37, 99, 235, 0.15)' : '0 2px 5px rgba(0,0,0,0.03)',
-                                                            border: isMe ? 'none' : '1px solid #f1f5f9',
-                                                        }}>
+                                                    <div key={msg.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                                                        <div className={`max-w-[85%] ${
+                                                            (msg.type === 'IMAGE' || msg.type === 'AUDIO' || msg.content.includes('blob.vercel-storage.com')) ? 'p-1' : 'p-2 px-3'
+                                                        } ${
+                                                            isMe ? 'rounded-[14px_14px_2px_14px] bg-blue-600 text-white shadow-md shadow-blue-600/10' : 'rounded-[14px_14px_14px_2px] bg-white text-slate-900 border border-slate-100 shadow-sm'
+                                                        } text-[11px] leading-relaxed font-bold break-words`}>
                                                             {msg.type === 'IMAGE' || (msg.content.includes('blob.vercel-storage.com') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
                                                                 <img
                                                                     src={msg.content}
                                                                     alt="Chat image"
-                                                                    style={{ width: '100%', borderRadius: '10px', display: 'block' }}
+                                                                    className="w-full rounded-lg block cursor-pointer"
                                                                     onClick={() => window.open(msg.content, '_blank')}
                                                                 />
                                                             ) : msg.type === 'AUDIO' || (msg.content.includes('blob.vercel-storage.com') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content)) ? (
-                                                                <div style={{ minWidth: '180px', padding: '4px' }}>
-                                                                    <audio controls style={{ width: '100%', height: '32px' }} preload="metadata">
+                                                                <div className="min-w-[180px] p-1">
+                                                                    <audio controls className="w-full h-8" preload="metadata">
                                                                         <source src={msg.content} />
                                                                     </audio>
                                                                 </div>
@@ -579,12 +533,12 @@ export default function SupportChat() {
                                                                 msg.content
                                                             )}
                                                         </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '3px', marginTop: '3px', padding: '0 4px' }}>
-                                                            <span style={{ fontSize: '7px', color: '#cbd5e1', fontWeight: 800, textTransform: 'uppercase' }}>
+                                                        <div className="flex items-center gap-1 mt-1 px-1">
+                                                            <span className="text-[7px] text-slate-300 font-black uppercase">
                                                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                             {isMe && (
-                                                                msg.isRead ? <CheckCheck size={10} color="#4ade80" strokeWidth={3} /> : <Check size={10} color="#cbd5e1" strokeWidth={3} />
+                                                                msg.isRead ? <CheckCheck size={10} className="text-emerald-400" strokeWidth={3} /> : <Check size={10} className="text-slate-300" strokeWidth={3} />
                                                             )}
                                                         </div>
                                                     </div>
@@ -595,45 +549,46 @@ export default function SupportChat() {
                                 </div>
 
                                 {/* Input - Ultra Compact and Premium */}
-                                <form onSubmit={handleSend} style={styles.inputArea}>
-                                    <div style={{ flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <form onSubmit={handleSend} className="p-3 bg-white border-t border-slate-100">
+                                    <div className="flex items-center gap-1.5 relative">
                                         {isRecording ? (
-                                            <div style={{
-                                                flex: 1,
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'space-between',
-                                                padding: '6px 12px',
-                                                background: '#fef2f2',
-                                                borderRadius: '12px',
-                                                border: '1px solid #fee2e2'
-                                            }}>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#ef4444' }}>
+                                            <div className="flex-1 flex items-center justify-between p-1.5 px-3 bg-red-50 rounded-xl border border-red-100">
+                                                <div className="flex items-center gap-2 text-red-500">
                                                     <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
-                                                    <span style={{ fontWeight: 900, fontSize: '13px' }}>{formatTime(recordingTime)}</span>
+                                                    <span className="font-black text-[13px]">{formatTime(recordingTime)}</span>
                                                 </div>
-                                                <button type="button" onClick={stopRecording} style={{ color: '#2563eb', fontWeight: 900, background: 'none', border: 'none', cursor: 'pointer', fontSize: '11px', textTransform: 'uppercase' }}>
+                                                <button type="button" onClick={stopRecording} className="text-blue-600 font-black bg-transparent border-none cursor-pointer text-[11px] uppercase">
                                                     {t('stop_and_send') || "Yuborish"}
                                                 </button>
                                             </div>
                                         ) : (
-                                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: '#f8fafc', borderRadius: '12px', border: '1px solid #f1f5f9', padding: '0 4px' }}>
-                                                <label style={{ cursor: 'pointer', color: '#94a3b8', padding: '6px' }}>
+                                            <div className="flex-1 flex items-center bg-slate-50 rounded-xl border border-slate-100 p-0 px-1">
+                                                <label className="cursor-pointer text-slate-400 p-1.5 hover:text-blue-600 transition-colors">
                                                     <Paperclip size={16} strokeWidth={2.5} />
-                                                    <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} />
+                                                    <input type="file" accept="image/*" aria-label="Rasm yuborish" onChange={handleImageUpload} className="hidden" />
                                                 </label>
                                                 <input
                                                     placeholder={t('input_placeholder') || "Xabar..."}
                                                     value={inputValue}
                                                     onChange={e => setInputValue(e.target.value)}
-                                                    style={styles.input}
+                                                    className="flex-1 p-2.5 text-[12px] bg-transparent border-none outline-none text-slate-900 font-bold placeholder:text-slate-400"
+                                                    aria-label="Xabar matni"
                                                 />
                                                 {!inputValue.trim() ? (
-                                                    <button type="button" onClick={startRecording} style={{ ...styles.actionBtn, background: '#f0fdf4', color: '#16a34a' }}>
+                                                    <button 
+                                                        type="button" 
+                                                        onClick={startRecording} 
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer border-none transition-all m-1 bg-emerald-50 text-emerald-600 hover:bg-emerald-100"
+                                                        aria-label="Ovozli xabar yozishni boshlash"
+                                                    >
                                                         <Mic size={16} strokeWidth={2.5} />
                                                     </button>
                                                 ) : (
-                                                    <button type="submit" style={{ ...styles.actionBtn, background: '#2563eb', color: '#fff' }}>
+                                                    <button 
+                                                        type="submit" 
+                                                        className="w-8 h-8 rounded-lg flex items-center justify-center cursor-pointer border-none transition-all m-1 bg-blue-600 text-white hover:bg-blue-700"
+                                                        aria-label="Xabarni yuborish"
+                                                    >
                                                         <Send size={15} strokeWidth={3} className="ml-0.5" />
                                                     </button>
                                                 )}
@@ -643,138 +598,9 @@ export default function SupportChat() {
                                 </form>
                             </>
                         )}
-
                     </div>
                 </div>
             )}
         </>
     );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-    container: {
-        position: 'fixed',
-        bottom: '100px',
-        right: '25px',
-        width: '320px',
-        height: '460px',
-        maxHeight: 'calc(100vh - 140px)',
-        background: '#fff',
-        borderRadius: '24px',
-        boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 9999,
-        overflow: 'hidden',
-        border: '1px solid #f1f5f9',
-        transformOrigin: 'bottom right',
-        animation: 'slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-        fontFamily: 'inherit'
-    },
-    header: {
-        padding: '12px 16px',
-        background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
-        color: '#fff',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        minHeight: '64px',
-        zIndex: 10
-    },
-    headerBackBtn: {
-        background: 'rgba(255,255,255,0.15)',
-        border: 'none',
-        color: '#fff',
-        cursor: 'pointer',
-        padding: '6px',
-        display: 'flex',
-        borderRadius: '8px',
-        backdropFilter: 'blur(4px)'
-    },
-    headerCloseBtn: {
-        background: 'rgba(255,255,255,0.15)',
-        border: 'none',
-        borderRadius: '8px',
-        width: '28px',
-        height: '28px',
-        color: '#fff',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backdropFilter: 'blur(4px)'
-    },
-    avatarContainer: {
-        width: '38px',
-        height: '38px',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        border: '1.5px solid rgba(255,255,255,0.3)',
-        background: '#fff'
-    },
-    menuContent: {
-        padding: '20px',
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        background: '#fff'
-    },
-    menuOptions: {
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '10px'
-    },
-    menuItem: {
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '12px',
-        borderRadius: '16px',
-        background: '#fff',
-        border: '1px solid #f1f5f9',
-        cursor: 'pointer',
-        transition: 'all 0.3s ease',
-    },
-    iconBox: {
-        width: '40px',
-        height: '40px',
-        borderRadius: '12px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    messagesArea: {
-        flex: 1,
-        background: '#fcfdfe',
-        padding: '14px',
-        overflowY: 'auto',
-    },
-    inputArea: {
-        padding: '12px',
-        background: '#fff',
-        borderTop: '1px solid #f1f5f9',
-    },
-    input: {
-        flex: 1,
-        padding: '10px 12px',
-        borderRadius: '10px',
-        border: 'none',
-        outline: 'none',
-        fontSize: '12px',
-        background: 'transparent',
-        color: '#0f172a',
-        fontWeight: 700,
-    },
-    actionBtn: {
-        width: '32px',
-        height: '32px',
-        borderRadius: '8px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        cursor: 'pointer',
-        border: 'none',
-        transition: 'all 0.2s',
-        margin: '3px'
-    }
-};

@@ -1,9 +1,7 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
-import { Inter } from "next/font/google";
 import { auth } from '@/auth';
-import "../globals.css";
 import SessionProviderWrapper from '@/components/SessionProviderWrapper';
 import QueryProvider from '@/components/QueryProvider';
 import { Toaster } from "@/components/ui/sonner";
@@ -13,8 +11,6 @@ import AdminSidebar from './admin/AdminSidebar';
 import AdminHeader from './admin/AdminHeader';
 import Admin2FAPage from './Admin2FAPage';
 import SplashScreen from '@/components/Effects/SplashScreen';
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
     title: 'Hadaf Admin Panel',
@@ -35,31 +31,25 @@ export default async function AdminLayout({
         // This is a safety check. Unauthorized users should be caught by middleware.
         // But if they reach here, we show nothing or redirect.
         return (
-            <html lang="uz" suppressHydrationWarning={true}>
-                <body suppressHydrationWarning={true}>
-                    <div className="flex items-center justify-center min-h-screen">
-                        <h1 className="text-2xl font-bold">Unauthorized</h1>
-                    </div>
-                </body>
-            </html>
+            <div className="flex items-center justify-center min-h-screen">
+                <h1 className="text-2xl font-bold">Unauthorized</h1>
+            </div>
         );
     }
 
     const resolvedParams = await params;
     const locale = resolvedParams?.locale || 'uz';
- 
+
     const is2faPassed = (session?.user as any)?.admin2fa;
     if (userRole === 'ADMIN' && !is2faPassed) {
         return (
-            <html lang={locale} suppressHydrationWarning={true}>
-                <body className={inter.className} suppressHydrationWarning={true}>
-                    <SessionProviderWrapper session={session}>
-                        <Toaster />
-                        <Admin2FAPage userId={(session.user as any).id} />
-                    </SessionProviderWrapper>
-                </body>
-            </html>
-        )
+            <>
+                <SessionProviderWrapper session={session}>
+                    <Toaster />
+                    <Admin2FAPage userId={(session.user as any).id} />
+                </SessionProviderWrapper>
+            </>
+        );
     }
 
     let messages;
@@ -70,24 +60,22 @@ export default async function AdminLayout({
     }
 
     return (
-        <html lang={locale} suppressHydrationWarning>
-            <body className={inter.className} style={{ display: 'flex', minHeight: '100vh', background: '#F2F6FA' }} suppressHydrationWarning>
-                <SessionProviderWrapper session={session}>
-                    <QueryProvider>
-                        <NextIntlClientProvider messages={messages} locale={locale}>
-                            <SplashScreen />
-                            <AdminSidebar />
-                            <AdminHeader />
+        <div style={{ display: 'flex', minHeight: '100vh', background: '#F2F6FA' }}>
+            <SessionProviderWrapper session={session}>
+                <QueryProvider>
+                    <NextIntlClientProvider messages={messages} locale={locale}>
+                        <SplashScreen />
+                        <AdminSidebar />
+                        <AdminHeader />
 
-                            {/* Main Content */}
-                            <main style={{ marginLeft: '270px', marginTop: '70px', flex: 1, padding: '30px', width: 'calc(100% - 270px)' }}>
-                                {children}
-                            </main>
-                            <Toaster />
-                        </NextIntlClientProvider>
-                    </QueryProvider>
-                </SessionProviderWrapper>
-            </body>
-        </html>
+                        {/* Main Content */}
+                        <main style={{ marginLeft: '270px', marginTop: '70px', flex: 1, padding: '30px', width: 'calc(100% - 270px)' }}>
+                            {children}
+                        </main>
+                        <Toaster />
+                    </NextIntlClientProvider>
+                </QueryProvider>
+            </SessionProviderWrapper>
+        </div>
     );
 }

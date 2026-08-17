@@ -1,10 +1,16 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+    const session = await auth();
+    if (session?.user?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const users = await prisma.user.findMany({
             select: {

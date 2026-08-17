@@ -1,5 +1,5 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
+
 
 import { useState } from "react";
 import { Trash2, Loader2, Trash } from "lucide-react";
@@ -36,6 +36,7 @@ export default function SoftDeleteButton({ productId }: { productId: string }) {
             disabled={loading}
             className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-red-50 text-red-500 font-bold text-xs hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             title="O'chirish"
+            aria-label="Mahsulotni o'chirish"
         >
             {loading ? <Loader2 className="animate-spin" size={14} /> : <Trash size={14} strokeWidth={2.5} />}
             <span className="sr-only">O'chirish</span>

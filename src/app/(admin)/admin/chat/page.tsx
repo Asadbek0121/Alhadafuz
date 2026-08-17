@@ -2,6 +2,8 @@
 
 "use client";
 
+import styles from './ChatPage.module.css';
+
 import { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
@@ -153,10 +155,10 @@ export default function AdminChatPage() {
     };
 
     return (
-        <div style={{ display: 'flex', height: 'calc(100vh - 100px)', background: '#fff', borderRadius: '12px', overflow: 'hidden', boxShadow: '0 0 20px rgba(0,0,0,0.05)' }}>
+        <div className={styles.chatContainer}>
 
             {/* Sidebar List */}
-            <div className={`chat-sidebar ${mobileSidebarOpen ? 'open' : ''}`} style={{ width: '320px', borderRight: '1px solid #e5eaef', display: 'flex', flexDirection: 'column' }}>
+            <div className={`${styles.sidebar} ${mobileSidebarOpen ? styles.sidebarOpen : ''}`}>
 
                 {/* User Profile Header */}
                 <div style={{ padding: '20px', borderBottom: '1px solid #e5eaef', display: 'flex', alignItems: 'center', gap: '15px' }}>
@@ -168,7 +170,7 @@ export default function AdminChatPage() {
                         <h4 style={{ margin: 0, fontSize: '16px', color: '#2A3547' }}>{session?.user?.name || "Admin"}</h4>
                         <span style={{ fontSize: '12px', color: '#5A6A85' }}>Boshqaruvchi</span>
                     </div>
-                    {mobileSidebarOpen && <button onClick={() => setMobileSidebarOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none' }}><X /></button>}
+                    {mobileSidebarOpen && <button onClick={() => setMobileSidebarOpen(false)} style={{ marginLeft: 'auto', background: 'none', border: 'none' }} title="Yopish"><X /></button>}
                 </div>
 
                 {/* Search */}
@@ -220,7 +222,7 @@ export default function AdminChatPage() {
                         {/* Header */}
                         <div style={{ padding: '15px 20px', borderBottom: '1px solid #e5eaef', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                <button className="mobile-menu-btn" onClick={() => setMobileSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'none' }}>
+                                <button className="mobile-menu-btn" onClick={() => setMobileSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'none' }} title="Menyu">
                                     <Menu />
                                 </button>
                                 <img alt="Rasm" src={selectedUser.image} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
@@ -342,7 +344,7 @@ export default function AdminChatPage() {
                                     placeholder="Javob yozish..."
                                     style={{ flex: 1, padding: '12px 18px', borderRadius: '10px', border: '1px solid #e5eaef', outline: 'none', fontSize: '15px' }}
                                 />
-                                <button type="submit" style={{ background: '#0085db', border: 'none', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,133,219,0.2)' }}>
+                                <button type="submit" style={{ background: '#0085db', border: 'none', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,133,219,0.2)' }} title="Yuborish">
                                     <Send size={20} />
                                 </button>
                             </form>

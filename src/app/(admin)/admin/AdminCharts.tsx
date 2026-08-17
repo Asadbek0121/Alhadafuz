@@ -1,5 +1,4 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
@@ -42,16 +41,16 @@ export default function AdminCharts({ stats, chartData = [] }: { stats: any, cha
     const COLORS = ['#0085db', '#e6fffa', '#ffae1f'];
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '30px', marginBottom: '30px' }}>
+        <div className="grid grid-cols-12 gap-[30px] mb-[30px]">
             {/* Revenue Updates - Area Chart */}
-            <div style={{ gridColumn: 'span 8', background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div className="col-span-12 lg:col-span-8 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                <div className="flex justify-between mb-5">
                     <div>
-                        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2A3547', margin: 0 }}>Tushum statistikasi</h3>
-                        <p style={{ margin: 0, fontSize: '14px', color: '#5A6A85' }}>Kunlik daromad (so'nggi 7 kun)</p>
+                        <h3 className="text-lg font-bold text-slate-800 m-0">Tushum statistikasi</h3>
+                        <p className="m-0 text-sm text-slate-500">Kunlik daromad (so'nggi 7 kun)</p>
                     </div>
                 </div>
-                <div style={{ height: '300px' }}>
+                <div className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <AreaChart data={dataRevenue.length ? dataRevenue : [{ name: 'Mavjud emas', uv: 0 }]}>
                             <defs>
@@ -71,18 +70,18 @@ export default function AdminCharts({ stats, chartData = [] }: { stats: any, cha
             </div>
 
             {/* Yearly Breakup - Pie Chart & Cancelled Orders Bar */}
-            <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            <div className="col-span-12 lg:col-span-4 flex flex-col gap-[30px]">
                 {/* Pie Chart: General Stats */}
-                <div style={{ flex: 1, background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)', position: 'relative', overflow: 'hidden' }}>
-                    <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2A3547', margin: 0 }}>Umumiy holat</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '30px', marginTop: '20px' }}>
+                <div className="flex-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100 relative overflow-hidden">
+                    <h3 className="text-lg font-bold text-slate-800 m-0">Umumiy holat</h3>
+                    <div className="flex items-center gap-[30px] mt-5">
                         <div>
-                            <h2 suppressHydrationWarning style={{ fontSize: '24px', fontWeight: '800', color: '#2A3547', margin: 0 }}>
+                            <h2 suppressHydrationWarning className="text-2xl font-extrabold text-slate-800 m-0">
                                 {new Intl.NumberFormat('uz-UZ').format(stats.totalRevenue)}
                             </h2>
-                            <p style={{ margin: 0, fontSize: '12px', color: '#5A6A85' }}>Umumiy tushum</p>
+                            <p className="m-0 text-xs text-slate-500">Umumiy tushum</p>
                         </div>
-                        <div style={{ width: '120px', height: '120px' }}>
+                        <div className="w-[120px] h-[120px]">
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie data={dataBreakup} innerRadius={35} outerRadius={55} paddingAngle={5} dataKey="value">
@@ -97,14 +96,14 @@ export default function AdminCharts({ stats, chartData = [] }: { stats: any, cha
                 </div>
 
                 {/* Cancelled Orders - Bar Chart */}
-                <div style={{ flex: 1, background: '#fff', borderRadius: '12px', padding: '24px', boxShadow: '0 0 20px rgba(0,0,0,0.03)' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <h3 style={{ fontSize: '18px', fontWeight: '700', color: '#2A3547', margin: 0 }}>Bekor qilingan</h3>
-                        <span className="text-xs font-semibold bg-red-100 text-red-600 px-2 py-1 rounded-full">
+                <div className="flex-1 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-lg font-bold text-slate-800 m-0">Bekor qilingan</h3>
+                        <span className="text-xs font-semibold bg-red-100 text-red-600 px-2.5 py-1 rounded-full">
                             {dataCancelled.reduce((a: any, b: any) => a + b.uv, 0)} ta
                         </span>
                     </div>
-                    <div style={{ marginTop: '20px', height: '60px' }}>
+                    <div className="mt-5 h-[60px]">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={dataCancelled.length ? dataCancelled : [{ name: 'Bo\'sh', uv: 0 }]}>
                                 <Bar dataKey="uv" fill="#ef4444" radius={[3, 3, 0, 0]} />

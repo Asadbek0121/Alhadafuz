@@ -1,5 +1,4 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useState } from "react";
 import {
@@ -231,12 +230,15 @@ export default function PaymentMethodsPage() {
                 {/* Search and List */}
                 <div className="lg:col-span-3 space-y-6">
                     <div className="relative group max-w-md">
+                        <label htmlFor="payment-search" className="sr-only">To'lov tizimlarini qidirish</label>
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
                         <input
+                            id="payment-search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Metod nomi yoki provider bo'yicha qidirish..."
                             className="w-full pl-11 pr-4 py-4 bg-white/80 backdrop-blur border border-gray-100 rounded-[24px] shadow-sm outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-gray-900 italic"
+                            aria-label="Metod nomi yoki provider bo'yicha qidirish"
                         />
                     </div>
 
@@ -302,6 +304,8 @@ export default function PaymentMethodsPage() {
                                         }}
                                         variant="ghost"
                                         className="rounded-2xl h-14 w-14 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                        title="O'chirish"
+                                        aria-label={`${method.name} tizimini o'chirish`}
                                     >
                                         <Trash2 size={20} />
                                     </Button>
@@ -373,8 +377,9 @@ export default function PaymentMethodsPage() {
 
                                 <div className="space-y-5">
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ekranda ko'rinuvchi nom</label>
+                                        <label htmlFor="method-name" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ekranda ko'rinuvchi nom</label>
                                         <input
+                                            id="method-name"
                                             type="text"
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
@@ -385,9 +390,10 @@ export default function PaymentMethodsPage() {
 
                                     <div className="grid grid-cols-2 gap-5">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tizim (Provider)</label>
+                                            <label htmlFor="method-provider" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tizim (Provider)</label>
                                             <div className="relative">
                                                 <select
+                                                    id="method-provider"
                                                     value={formData.provider}
                                                     onChange={e => setFormData({ ...formData, provider: e.target.value })}
                                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 appearance-none italic"
@@ -402,9 +408,10 @@ export default function PaymentMethodsPage() {
                                             </div>
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ulanish turi</label>
+                                            <label htmlFor="method-type" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ulanish turi</label>
                                             <div className="relative">
                                                 <select
+                                                    id="method-type"
                                                     value={formData.type}
                                                     onChange={e => setFormData({ ...formData, type: e.target.value })}
                                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 appearance-none italic"
@@ -419,11 +426,12 @@ export default function PaymentMethodsPage() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex justify-between items-center">
+                                        <label htmlFor="method-details" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex justify-between items-center">
                                             <span>Raqam / Details</span>
                                             {formData.provider === 'CARD' && <span className={`text-[9px] px-2 py-0.5 rounded ${formData.details?.length === 16 ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>{formData.details?.length || 0}/16</span>}
                                         </label>
                                         <input
+                                            id="method-details"
                                             type="text"
                                             value={formData.details}
                                             onChange={e => {
@@ -439,9 +447,10 @@ export default function PaymentMethodsPage() {
                                     <div className="space-y-2">
                                         <div className="flex items-center gap-2 ml-1">
                                             <Laptop size={14} className="text-gray-400" />
-                                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">JSON Konfiguratsiya (Maxfiy)</label>
+                                            <label htmlFor="method-config" className="text-[10px] font-black text-gray-400 uppercase tracking-widest">JSON Konfiguratsiya (Maxfiy)</label>
                                         </div>
                                         <textarea
+                                            id="method-config"
                                             value={formData.config}
                                             onChange={e => setFormData({ ...formData, config: e.target.value })}
                                             placeholder='{"service_id": "...", "merchant_id": "..."}'
@@ -455,8 +464,11 @@ export default function PaymentMethodsPage() {
                                             <span className="text-xs font-black text-gray-900 uppercase italic tracking-tighter">{formData.isActive ? "Tizim hozirda ochiq" : "Tizim vaqtincha yopiq"}</span>
                                         </div>
                                         <button
+                                            type="button"
                                             onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
                                             className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                                            title={formData.isActive ? "Tizimni o'chirish" : "Tizimni yoqish"}
+                                            aria-label={formData.isActive ? "Tizimni o'chirish" : "Tizimni yoqish"}
                                         >
                                             <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 ${formData.isActive ? 'translate-x-6' : 'translate-x-0'}`} />
                                         </button>

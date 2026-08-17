@@ -1,4 +1,3 @@
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import AdminCharts from "./AdminCharts";
 import RecentOrdersTable from "./RecentOrdersTable";
@@ -349,6 +348,7 @@ export default async function AdminDashboard() {
                                 boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
                             }}
                             className="hover-action"
+                            aria-label={action.label}
                         >
                             <div style={{ color: action.color }}>
                                 <action.icon size={26} strokeWidth={2} />
@@ -378,7 +378,7 @@ export default async function AdminDashboard() {
                                 <div key={msg.id} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                                     <div style={{ width: '40px', height: '40px', borderRadius: '10px', overflow: 'hidden', background: '#f5f7fb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {msg.sender?.image ? (
-                                            <img src={msg.sender.image} alt={msg.sender.name || ''} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                            <img src={msg.sender.image} alt={msg.sender.name || 'Foydalanuvchi'} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
                                             <UserCircle size={24} color="#5A6A85" />
                                         )}
@@ -409,7 +409,7 @@ export default async function AdminDashboard() {
                     {topProducts.map((p: any, i: number) => (
                         <div key={i} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
                             <div style={{ width: '50px', height: '50px', borderRadius: '10px', background: '#f5f7fb', overflow: 'hidden', padding: '4px' }}>
-                                <img src={p.image} alt={p.title} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                <img src={p.image} alt={p.title || 'Mahsulot'} style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                             </div>
                             <div style={{ flex: 1, overflow: 'hidden' }}>
                                 <h6 style={{ margin: 0, fontSize: '13px', fontWeight: '600', color: '#2A3547', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{p.title}</h6>

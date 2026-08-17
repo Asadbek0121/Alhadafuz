@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { products } from '@/data/products';
+import { mapProductMarketing } from '@/lib/data';
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -61,23 +62,9 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 }
             }
 
-            // Extract marketing flags from attributes JSON
-            let isNew = true; // Default
-            let freeDelivery = false;
-            let hasVideo = false;
-            let hasGift = false;
-            let showLowStock = false;
-            let allowInstallment = false;
-
-            if (specs) {
-                const s = specs as any;
-                if (typeof s.isNew !== 'undefined') isNew = s.isNew;
-                if (typeof s.freeDelivery !== 'undefined') freeDelivery = s.freeDelivery;
-                if (typeof s.hasVideo !== 'undefined') hasVideo = s.hasVideo;
-                if (typeof s.hasGift !== 'undefined') hasGift = s.hasGift;
-                if (typeof s.showLowStock !== 'undefined') showLowStock = s.showLowStock;
-                if (typeof s.allowInstallment !== 'undefined') allowInstallment = s.allowInstallment;
-            }
+            // Extract marketing flags from attributes JSON (default false)
+            const marketing = mapProductMarketing(dbProduct);
+            const { isNew, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment } = marketing;
 
             // Calculate dynamic rating
             const reviewsCount = reviews.length;
@@ -85,6 +72,19 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewsCount
                 : (dbProduct.rating || 0);
             const rating = parseFloat(rawRating.toFixed(1));
+
+            // Fetch category slug for breadcrumb / related products links
+            let categorySlug: string | null = null;
+            if (dbProduct.categoryId) {
+                try {
+                    const cat = await (prisma as any).category.findUnique({
+                        where: { id: dbProduct.categoryId }
+                    });
+                    categorySlug = cat?.slug || null;
+                } catch (e) {
+                    console.error("Failed to fetch category for product", id);
+                }
+            }
 
             return NextResponse.json({
                 ...dbProduct,
@@ -101,7 +101,8 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 reviews,
                 oldPrice: dbProduct.oldPrice,
                 discount: dbProduct.discount,
-                stock: dbProduct.stock
+                stock: dbProduct.stock,
+                categorySlug
             });
         }
     } catch (error) {
