@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { normalizeUzPhone } from "@/lib/phone";
 
 const registerSchema = z.object({
     name: z.string().min(2, "Ism kamida 2 ta harf bo'lishi kerak"),
@@ -37,6 +38,17 @@ export async function POST(req: Request) {
         }
 
         const { name, email, password, phone } = result.data;
+
+        // Telefon berilgan bo'lsa formatini tekshirish
+        if (phone) {
+            const normalizedPhone = normalizeUzPhone(phone);
+            if (!normalizedPhone) {
+                return NextResponse.json(
+                    { message: "Telefon raqam noto'g'ri formatda (998 XX XXX XX XX)", code: "PHONE_INVALID" },
+                    { status: 400 }
+                );
+            }
+        }
 
         // CHECK FOR DISPOSABLE/FAKE EMAILS
         const { isDisposableEmail } = await import("@/lib/email-check");

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/ratelimit";
+import { normalizeUzPhone } from "@/lib/phone";
 
 export async function POST(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
@@ -18,13 +19,16 @@ export async function POST(req: Request) {
         const { phone, isRegister } = body;
 
         if (!phone) {
-            return NextResponse.json({ message: "Telefon raqam kiritilishi shart" }, { status: 400 });
+            return NextResponse.json({ message: "Telefon raqam kiritilishi shart", code: "PHONE_INVALID" }, { status: 400 });
         }
 
-        // Normalize Phone Number (+998...)
-        let normalizedPhone = phone.replace(/[^0-9+]/g, '');
-        if (normalizedPhone.startsWith('998') && normalizedPhone.length === 12) {
-            normalizedPhone = '+' + normalizedPhone;
+        // Normalize va formatni tekshirish (+998 XX XXX XX XX)
+        const normalizedPhone = normalizeUzPhone(phone);
+        if (!normalizedPhone) {
+            return NextResponse.json(
+                { message: "Telefon raqam noto'g'ri formatda (998 XX XXX XX XX)", code: "PHONE_INVALID" },
+                { status: 400 }
+            );
         }
 
         const existingUser = await prisma.user.findFirst({

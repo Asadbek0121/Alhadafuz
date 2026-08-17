@@ -3,31 +3,39 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
-import { X, Mail, Lock, User, Loader2, Eye, EyeOff, Phone, Fingerprint, CheckCircle2 } from 'lucide-react';
+import { X, Loader2, Phone } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Link, useRouter } from '@/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PhoneInput } from '@/components/ui/phone-input';
-import Image from 'next/image';
 import { useTranslations } from 'next-intl';
 import Lottie from 'lottie-react';
 import successAnimation from '@/components/success-animation.json';
 import styles from './AuthModal.module.css';
 
+// Faqat shu sayt ichidagi manzillarga yo'naltirish — open-redirect himoyasi
+const getSafeCallbackUrl = () => {
+    const params = new URLSearchParams(window.location.search);
+    const cb = params.get('callbackUrl');
+    if (!cb) return null;
+    try {
+        const u = new URL(cb, window.location.origin);
+        if (u.origin !== window.location.origin) return null;
+        return u.pathname + u.search + u.hash;
+    } catch {
+        return null;
+    }
+};
+
 export default function AuthModal() {
     const t = useTranslations('Auth');
-    const tp = useTranslations('Profile');
     const router = useRouter();
     const { isModalOpen, closeAuthModal, openAuthModal } = useUserStore();
-    const { data: session, status } = useSession();
+    const { data: session } = useSession();
 
     const [mode, setMode] = useState<'login' | 'register'>('login');
     const [isLoading, setIsLoading] = useState(false);
-    const [isBiometricLoading, setIsBiometricLoading] = useState(false);
-    const [showPassword, setShowPassword] = useState(false);
-    const [isBiometricSupported, setIsBiometricSupported] = useState(false);
-    const [biometricLinked, setBiometricLinked] = useState(false);
     const redirectTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
     // Handle Query Params (e.g. ?auth=login or ?auth=register)
@@ -57,12 +65,17 @@ export default function AuthModal() {
                 window.location.reload();
             }, 5000);
         }
-
-        if (typeof window !== "undefined" && (window as any).PublicKeyCredential) {
-            (window as any).PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-                .then((available: boolean) => setIsBiometricSupported(available));
-        }
     }, [openAuthModal]);
+
+    // Escape bilan yopish
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') closeAuthModal();
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isModalOpen, closeAuthModal]);
 
     // Form states
     const [name, setName] = useState('');
@@ -114,8 +127,7 @@ export default function AuthModal() {
         setIsSuccess(true);
         if (message) toast.success(message);
 
-        const params = new URLSearchParams(window.location.search);
-        const callbackUrl = params.get('callbackUrl');
+        const callbackUrl = getSafeCallbackUrl();
 
         if (!callbackUrl && window.location.pathname !== '/') {
             router.push('/');
@@ -135,11 +147,12 @@ export default function AuthModal() {
         if (!termsAccepted) {
             setShowTermsWarning(true);
             setTimeout(() => setShowTermsWarning(false), 2000);
-            toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
+            toast.error(t('terms_required'));
             return;
         }
-        if (!phone || phone.length < 9) {
-            toast.error("Telefon raqamni to'g'ri kiriting");
+        const phoneDigits = (phone || '').replace(/\D/g, '');
+        if (phoneDigits.length < 12) {
+            toast.error(t('phone_invalid'));
             return;
         }
         setIsLoading(true);
@@ -154,15 +167,19 @@ export default function AuthModal() {
             const data = await res.json();
 
             if (!res.ok) {
-                toast.error(data.message || "Xatolik yuz berdi");
+                if (data.code === 'PHONE_INVALID') {
+                    toast.error(t('phone_invalid'));
+                } else {
+                    toast.error(data.message || t('system_error'));
+                }
                 return;
             }
 
             setTimeLeft(120);
             setIsVerifying(true);
-            toast.success("Tasdiqlash kodi telefoningizga yuborildi");
+            toast.success(t('code_sent_ok'));
         } catch (error) {
-            toast.error("Server xatosi");
+            toast.error(t('system_error'));
         } finally {
             setIsLoading(false);
         }
@@ -197,21 +214,24 @@ export default function AuthModal() {
 
             if (result?.error) {
                 if (result.error.includes("ACCOUNT_LOCKED")) {
-                    toast.error("Xavfsizlik: Hisobingiz bloklandi!");
+                    toast.error(t('account_locked'));
                 } else if (result.error.includes("OTP_INVALID")) {
-                    toast.error("Tasdiqlash kodi noto'g'ri");
-                    setOtp(""); // Clear input on error as requested
+                    toast.error(t('otp_invalid'));
+                    setOtp("");
                 } else if (result.error.includes("USER_NOT_FOUND")) {
-                    toast.error("Hisob topilmadi. Iltimos ro'yxatdan o'ting.");
+                    toast.error(t('user_not_found'));
+                } else if (result.error.includes("INVALID_NAME")) {
+                    toast.error(t('name_invalid'));
+                    setIsVerifying(false);
                 } else {
-                    toast.error("Kirishda xatolik yuz berdi");
+                    toast.error(t('login_error_generic'));
                 }
                 localStorage.removeItem('mergeCartOnLogin');
             } else {
-                handleSuccess(mode === 'login' ? "Xush kelibsiz!" : "Muvaffaqiyatli ro'yxatdan o'tdingiz!");
+                handleSuccess(mode === 'login' ? t('welcome') : t('register_success'));
             }
         } catch (error) {
-            toast.error("Tasdiqlashda xatolik");
+            toast.error(t('verify_error'));
             localStorage.removeItem('mergeCartOnLogin');
         } finally {
             setIsLoading(false);
@@ -223,7 +243,7 @@ export default function AuthModal() {
         if (otp.length === 6) {
             await performVerification(otp);
         } else {
-            toast.error("Iltimos, 6 xonali kodni to'liq kiriting");
+            toast.error(t('code_incomplete'));
         }
     };
 
@@ -238,27 +258,26 @@ export default function AuthModal() {
         if (!termsAccepted) {
             setShowTermsWarning(true);
             setTimeout(() => setShowTermsWarning(false), 2000);
-            toast.error("Iltimos, ommaviy oferta va maxfiylik siyosatiga rozilik bildiring");
+            toast.error(t('terms_required'));
             return;
         }
         if (provider === 'Google') {
             setIsLoading(true);
             try {
                 localStorage.setItem('mergeCartOnLogin', 'true');
-                const params = new URLSearchParams(window.location.search);
-                const callbackUrl = params.get('callbackUrl') || window.location.origin;
+                const callbackUrl = getSafeCallbackUrl() || window.location.origin;
 
                 await signIn('google', {
                     callbackUrl,
                     redirect: true
                 });
             } catch (error) {
-                toast.error("Google orqali kirishda xatolik");
+                toast.error(t('google_error'));
                 localStorage.removeItem('mergeCartOnLogin');
                 setIsLoading(false);
             }
         } else {
-            toast.info(`${provider} orqali kirish tez orada qo'shiladi`);
+            toast.info(t('provider_soon', { provider }));
         }
     };
 
@@ -271,13 +290,23 @@ export default function AuthModal() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
                         onClick={closeAuthModal}
                         className={styles.overlay}
                     />
 
                     {/* Modal Wrapper */}
-                    <div className={styles.modalWrapper}>
-                        <button title="Yopish" aria-label="Yopish" onClick={closeAuthModal} className={styles.closeBtn}>
+                    <motion.div
+                        initial={{ x: '-50%', y: '-50%', opacity: 0, scale: 0.92, filter: 'blur(8px)' }}
+                        animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1, filter: 'blur(0px)' }}
+                        exit={{ x: '-50%', y: '-50%', opacity: 0, scale: 0.95, filter: 'blur(4px)' }}
+                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        className={styles.modalWrapper}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t('title')}
+                    >
+                        <button title={t('close')} aria-label={t('close')} onClick={closeAuthModal} className={styles.closeBtn}>
                             <X size={20} />
                         </button>
                         {/* 1. Left Panel: Branding & Promo */}
@@ -291,34 +320,32 @@ export default function AuthModal() {
                                 >
                                     <div className={styles.lottieContainer}>
                                         {lockAnimationData && (
-                                            <Lottie 
-                                                animationData={lockAnimationData} 
+                                            <Lottie
+                                                animationData={lockAnimationData}
                                                 loop={true}
                                                 className="w-full h-full"
                                             />
                                         )}
                                     </div>
                                 </motion.div>
-                                
+
                                 <motion.div
                                     initial={{ y: 30, opacity: 0, filter: 'blur(10px)' }}
                                     animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
                                     transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
                                 >
                                     <h2 className={styles.promoTitle}>
-                                        {mode === 'login' ? 'Tizimga qaytish' : 'Hadaf oilasiga marhamat'}
+                                        {mode === 'login' ? t('title_login') : t('title_register')}
                                         <span>
                                             {mode === 'login' ? (
-                                                <>Sizni sog'indik, <br /> xaridni davom ettiramizmi?</>
+                                                <>{t('sub_login')}</>
                                             ) : (
-                                                "Sifat va ishonch — sizning tanlovingiz"
+                                                t('sub_register')
                                             )}
                                         </span>
                                     </h2>
                                     <p className={styles.promoDesc}>
-                                        {mode === 'login' 
-                                            ? 'Hisobingizga kiring va barcha imkoniyatlardan foydalaning.' 
-                                            : "Ro'yxatdan o'ting va biz bilan yangi marralarni zabt eting."}
+                                        {mode === 'login' ? t('desc_login') : t('desc_register')}
                                     </p>
                                 </motion.div>
                             </div>
@@ -342,15 +369,15 @@ export default function AuthModal() {
                                         <p className="text-slate-500 font-medium">{t('success_message')}</p>
                                     </motion.div>
                                 ) : (
-                                    <motion.div 
+                                    <motion.div
                                         key="form-view"
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         className="flex-1 flex flex-col justify-center"
                                     >
                                         <div className={styles.formHeader}>
-                                            <h2>{isVerifying ? 'Tasdiqlash' : (mode === 'login' ? 'Kirish' : "Ro'yxatdan o'tish")}</h2>
-                                            <p>{isVerifying ? 'SMS kodni kiriting' : 'Ma\'lumotlarni kiriting'}</p>
+                                            <h2>{isVerifying ? t('verify_title') : (mode === 'login' ? t('login_title') : t('register'))}</h2>
+                                            <p>{isVerifying ? t('enter_code') : t('enter_info')}</p>
                                         </div>
 
                                         <form onSubmit={isVerifying ? handleVerifyOTP : handleSendOTP} className="space-y-2 lg:space-y-4">
@@ -361,11 +388,11 @@ export default function AuthModal() {
                                                             <Phone size={18} className="text-blue-600" />
                                                             <span className="font-bold text-slate-700">{phone}</span>
                                                         </div>
-                                                        <button type="button" onClick={() => setIsVerifying(false)} className="text-[10px] font-black uppercase text-blue-600 hover:underline">O'zgartirish</button>
+                                                        <button type="button" onClick={() => setIsVerifying(false)} className="text-[10px] font-black uppercase text-blue-600 hover:underline">{t('change_number')}</button>
                                                     </div>
 
                                                     <div className={styles.inputGroup}>
-                                                        <label className={styles.inputLabel}>SMS KOD</label>
+                                                        <label className={styles.inputLabel}>{t('sms_code')}</label>
                                                         <input
                                                             type="text"
                                                             placeholder="······"
@@ -378,20 +405,20 @@ export default function AuthModal() {
 
                                                     <div className="space-y-3">
                                                         <button type="submit" className={styles.primaryBtn} disabled={isLoading}>
-                                                            {isLoading ? <Loader2 className="animate-spin" /> : 'Tasdiqlash'}
+                                                            {isLoading ? <Loader2 className="animate-spin" /> : t('confirm')}
                                                         </button>
 
                                                         {timeLeft > 0 ? (
                                                             <div className="text-center text-xs font-bold text-slate-400">
-                                                                Kodni qayta yuborish: <span className="text-blue-600 ml-1">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
+                                                                {t('resend_in')} <span className="text-blue-600 ml-1">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
                                                             </div>
                                                         ) : (
-                                                            <button type="button" onClick={handleSendOTP} className="w-full text-center text-xs font-black text-blue-600 hover:underline">KODNI QAYTA YUBORISH</button>
+                                                            <button type="button" onClick={handleSendOTP} className="w-full text-center text-xs font-black text-blue-600 hover:underline uppercase">{t('resend')}</button>
                                                         )}
 
                                                         <div className="relative py-2">
                                                             <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                                                            <div className="relative flex justify-center text-[10px] font-black text-slate-300 uppercase"><span className="bg-white px-2">Yoki</span></div>
+                                                            <div className="relative flex justify-center text-[10px] font-black text-slate-300 uppercase"><span className="bg-white px-2">{t('or_continue')}</span></div>
                                                         </div>
 
                                                         <a
@@ -401,7 +428,7 @@ export default function AuthModal() {
                                                             className="w-full h-12 flex items-center justify-center gap-2 bg-[#2ba6e1] text-white rounded-xl font-bold text-sm shadow-lg shadow-blue-500/20 hover:opacity-90 transition-all"
                                                         >
                                                             <svg fill="currentColor" viewBox="0 0 24 24" className="w-5 h-5"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.774-.417-1.2.258-1.902.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.445.895-.694 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" /></svg>
-                                                            Telegramdan bepul olish
+                                                            {t('via_telegram')}
                                                         </a>
                                                     </div>
                                                 </div>
@@ -410,32 +437,32 @@ export default function AuthModal() {
                                                     {mode === 'register' && (
                                                         <div className="grid grid-cols-2 gap-3">
                                                             <div className={styles.inputGroup}>
-                                                                  <label className={styles.inputLabel}>ISM</label>
-                                                                  <input
-                                                                      type="text"
-                                                                      placeholder="Aziz"
-                                                                      value={name}
-                                                                      onChange={(e) => setName(e.target.value)}
-                                                                      required
-                                                                      className={styles.inputField}
-                                                                  />
+                                                                <label className={styles.inputLabel}>{t('first_name')}</label>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Aziz"
+                                                                    value={name}
+                                                                    onChange={(e) => setName(e.target.value)}
+                                                                    required
+                                                                    className={styles.inputField}
+                                                                />
                                                             </div>
                                                             <div className={styles.inputGroup}>
-                                                                  <label className={styles.inputLabel}>FAMILIYA</label>
-                                                                  <input
-                                                                      type="text"
-                                                                      placeholder="Rahimov"
-                                                                      value={surname}
-                                                                      onChange={(e) => setSurname(e.target.value)}
-                                                                      required
-                                                                      className={styles.inputField}
-                                                                  />
+                                                                <label className={styles.inputLabel}>{t('last_name')}</label>
+                                                                <input
+                                                                    type="text"
+                                                                    placeholder="Rahimov"
+                                                                    value={surname}
+                                                                    onChange={(e) => setSurname(e.target.value)}
+                                                                    required
+                                                                    className={styles.inputField}
+                                                                />
                                                             </div>
                                                         </div>
                                                     )}
 
                                                     <div className={styles.inputGroup}>
-                                                        <label className={styles.inputLabel}>TELEFON RAQAM</label>
+                                                        <label className={styles.inputLabel}>{t('phone_label')}</label>
                                                         <PhoneInput
                                                             value={phone}
                                                             onChange={setPhone}
@@ -456,17 +483,20 @@ export default function AuthModal() {
                                                             className="w-4 h-4 rounded border-slate-300 text-blue-600 mt-1 cursor-pointer"
                                                         />
                                                         <label htmlFor="terms" className={`text-[10px] font-medium leading-normal cursor-pointer ${showTermsWarning ? 'text-red-500' : 'text-slate-400'}`}>
-                                                            Men <Link href="/terms" className="text-blue-600 font-bold hover:underline">Ommaviy oferta</Link> va <Link href="/privacy" className="text-blue-600 font-bold hover:underline">Maxfiylik siyosati</Link>ga roziman.
+                                                            {t.rich('terms', {
+                                                                oferta: (chunks) => <Link href="/terms" className="text-blue-600 font-bold hover:underline">{chunks}</Link>,
+                                                                siyosat: (chunks) => <Link href="/privacy" className="text-blue-600 font-bold hover:underline">{chunks}</Link>,
+                                                            })}
                                                         </label>
                                                     </div>
 
-                                                    <button 
-                                                        type="submit" 
-                                                        className={styles.primaryBtn} 
+                                                    <button
+                                                        type="submit"
+                                                        className={styles.primaryBtn}
                                                         disabled={isLoading || (!termsAccepted && !isVerifying)}
                                                         style={{ marginTop: '4px' }}
                                                     >
-                                                        {isLoading ? <Loader2 className="animate-spin" /> : (mode === 'login' ? 'Kodni olish' : "Ro'yxatdan o'tish")}
+                                                        {isLoading ? <Loader2 className="animate-spin" /> : (mode === 'login' ? t('get_code') : t('register_btn'))}
                                                     </button>
                                                 </>
                                             )}
@@ -476,7 +506,7 @@ export default function AuthModal() {
                                             <>
                                                 <div className="relative py-2">
                                                     <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-slate-100"></div></div>
-                                                    <div className="relative flex justify-center text-[10px] font-black text-slate-300 uppercase"><span className="bg-white px-3">Yoki</span></div>
+                                                    <div className="relative flex justify-center text-[10px] font-black text-slate-300 uppercase"><span className="bg-white px-3">{t('or_continue')}</span></div>
                                                 </div>
 
                                                 <div className="grid grid-cols-1">
@@ -490,18 +520,18 @@ export default function AuthModal() {
                                                             <path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/>
                                                             <path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C40.483,35.58,44,30.208,44,24C44,22.659,43.862,21.35,43.611,20.083z"/>
                                                         </svg>
-                                                        Google orqali kirish
+                                                        {t('google_login')}
                                                     </button>
                                                 </div>
 
                                                 <p className="mt-4 text-center text-xs font-medium text-slate-400">
-                                                    {mode === 'login' ? "Hisobingiz yo'qmi?" : "Allaqachon hisobingiz bormi?"}
+                                                    {mode === 'login' ? t('no_account') : t('have_account')}
                                                     <button
                                                         type="button"
                                                         onClick={() => setMode(mode === 'login' ? 'register' : 'login')}
                                                         className="ml-2 text-blue-600 font-black hover:underline"
                                                     >
-                                                        {mode === 'login' ? "Ro'yxatdan o'tish" : "Kirish"}
+                                                        {mode === 'login' ? t('register') : t('login_title')}
                                                     </button>
                                                 </p>
                                             </>
@@ -510,10 +540,9 @@ export default function AuthModal() {
                                 )}
                             </AnimatePresence>
                         </div>
-                    </div>
+                    </motion.div>
                 </>
             )}
         </AnimatePresence>
     );
 }
-

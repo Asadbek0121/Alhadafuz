@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
+import { normalizeUzPhone } from "@/lib/phone";
 
 import { checkRateLimit } from "@/lib/ratelimit";
 import { logActivity } from "@/lib/security";
@@ -14,11 +15,28 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { token, email, password } = await req.json();
+        const { phone, token, password } = await req.json();
 
-        if (!token || !email || !password) {
+        if (!token || !password) {
             return NextResponse.json(
                 { message: "Barcha maydonlar to'ldirilishi shart" },
+                { status: 400 }
+            );
+        }
+
+        // Telefon formatini tekshirish
+        const normalizedPhone = normalizeUzPhone(phone);
+        if (!normalizedPhone) {
+            return NextResponse.json(
+                { message: "Telefon raqam noto'g'ri formatda (998 XX XXX XX XX)", code: "PHONE_INVALID" },
+                { status: 400 }
+            );
+        }
+
+        // Parol uzunligini tekshirish
+        if (typeof password !== "string" || password.length < 6) {
+            return NextResponse.json(
+                { message: "Parol kamida 6 ta belgi bo'lishi kerak", code: "PASSWORD_SHORT" },
                 { status: 400 }
             );
         }
@@ -26,14 +44,14 @@ export async function POST(req: Request) {
         // 1. Tokenni tekshirish
         const verificationToken = await prisma.verificationToken.findFirst({
             where: {
-                identifier: email,
+                identifier: normalizedPhone,
                 token: token,
             },
         });
 
         if (!verificationToken) {
             return NextResponse.json(
-                { message: "Token mos kelmadi yoki yaroqsiz" },
+                { message: "Token mos kelmadi yoki yaroqsiz", code: "TOKEN_INVALID" },
                 { status: 400 }
             );
         }
@@ -45,25 +63,25 @@ export async function POST(req: Request) {
             await prisma.verificationToken.delete({
                 where: {
                     identifier_token: {
-                        identifier: email,
+                        identifier: normalizedPhone,
                         token: token,
                     },
                 },
             });
             return NextResponse.json(
-                { message: "Tokenning muddati tugagan" },
+                { message: "Tokenning muddati tugagan", code: "TOKEN_EXPIRED" },
                 { status: 400 }
             );
         }
 
         // 3. Foydalanuvchini topish va parolni yangilash
         const user = await prisma.user.findUnique({
-            where: { email },
+            where: { phone: normalizedPhone },
         });
 
         if (!user) {
             return NextResponse.json(
-                { message: "Foydalanuvchi topilmadi" },
+                { message: "Foydalanuvchi topilmadi", code: "USER_NOT_FOUND" },
                 { status: 404 }
             );
         }
@@ -71,7 +89,7 @@ export async function POST(req: Request) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         await prisma.user.update({
-            where: { email },
+            where: { id: user.id },
             data: {
                 hashedPassword: hashedPassword,
                 password: null // Clear plain password if exists for security
@@ -84,20 +102,20 @@ export async function POST(req: Request) {
         await prisma.verificationToken.delete({
             where: {
                 identifier_token: {
-                    identifier: email,
+                    identifier: normalizedPhone,
                     token: token,
                 },
             },
         });
 
         return NextResponse.json(
-            { message: "Parol yangilandi" },
+            { message: "Parol yangilandi", success: true },
             { status: 200 }
         );
     } catch (error) {
         console.error("RESET_PASSWORD_ERROR:", error);
         return NextResponse.json(
-            { message: "Tizim xatosi yuz berdi" },
+            { message: "Tizim xatosi yuz berdi", code: "SERVER_ERROR" },
             { status: 500 }
         );
     }

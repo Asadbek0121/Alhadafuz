@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import crypto from "crypto";
+import { normalizeUzPhone } from "@/lib/phone";
 
 import { checkRateLimit } from "@/lib/ratelimit";
-import { logActivity } from "@/lib/security";
 
 export async function POST(req: Request) {
     // 1. RATE LIMITING
@@ -14,23 +13,25 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { email } = await req.json();
+        const { phone } = await req.json();
 
-        if (!email) {
+        // Telefon formatini tekshirish
+        const normalizedPhone = normalizeUzPhone(phone);
+        if (!normalizedPhone) {
             return NextResponse.json(
-                { message: "Email kiritilishi shart" },
+                { message: "Telefon raqam noto'g'ri formatda (998 XX XXX XX XX)", code: "PHONE_INVALID" },
                 { status: 400 }
             );
         }
 
         const user = await prisma.user.findUnique({
-            where: { email },
+            where: { phone: normalizedPhone },
         });
 
         if (!user) {
             // Xavfsizlik uchun foydalanuvchi topilmaganini aytmaymiz
             return NextResponse.json(
-                { message: "Agar ushbu email ro'yxatdan o'tgan bo'lsa, biz ko'rsatmalarni yuboramiz." },
+                { message: "Agar ushbu raqam ro'yxatdan o'tgan bo'lsa, biz kodni yuboramiz.", success: true },
                 { status: 200 }
             );
         }
@@ -39,52 +40,46 @@ export async function POST(req: Request) {
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 daqiqa
 
-        // Bazaga saqlash
-        await prisma.verificationToken.upsert({
-            where: {
-                identifier_token: {
-                    identifier: email,
-                    token: otp, // We can reuse this field or delete old ones first if needed. 
-                    // Actually, since identifier_token is unique composite, using the OTP as token might conflict if multiple OTPs exist?
-                    // But usually, we should clean up old tokens for this user first or just upsert.
-                    // Wait, upsert needs a unique where. So if we use `email` + `otp` as key, that's fine. 
-                    // But if user requests again, we want to replace the old token? 
-                    // Currently schema is unique([identifier, token]). 
-                    // So we can insert multiple tokens for same email? 
-                    // Ideally we should delete old tokens for this email first.
-                },
-            },
-            create: {
-                identifier: email,
+        // Eski tokenlarni tozalab, yangisini saqlash
+        await prisma.verificationToken.deleteMany({
+            where: { identifier: normalizedPhone }
+        });
+
+        await prisma.verificationToken.create({
+            data: {
+                identifier: normalizedPhone,
                 token: otp,
-                expires: expires,
-            },
-            update: {
                 expires: expires,
             },
         });
 
-        // Old tokens cleanup for this user/email to avoid clutter (Optional but good practice)
-        // await prisma.verificationToken.deleteMany({ where: { identifier: email, token: { not: otp } } });
+        // 1. Log to console for development/debug
+        console.log(`[PAROL TIKLASH KODI] Raqam: ${normalizedPhone}, Kod: ${otp}`);
 
-        try {
-            const { sendResetPasswordEmail } = await import("@/lib/mail");
-            // We'll update the mail function signature to accept (email, otp) or just pass otp in resetLink param for now
-            // But better to update mail.ts as well.
-            // For now, let's keep the parameter name but pass the code.
-            await sendResetPasswordEmail(email, otp);
-        } catch (error) {
-            console.error("Failed to send email:", error);
+        // 2. Telegram orqali yuborish (ulangan bo'lsa)
+        let sentViaTelegram = false;
+        if (user.telegramId) {
+            try {
+                const { sendTelegramMessage } = await import("@/lib/telegram-bot");
+                await sendTelegramMessage(
+                    user.telegramId,
+                    `🔐 <b>Hadaf Market — parolni tiklash</b>\n\nTasdiqlash kodingiz: <b>${otp}</b>\n\n<code>Kod 10 daqiqa davomida amal qiladi.</code>`,
+                    { parse_mode: 'HTML' }
+                );
+                sentViaTelegram = true;
+            } catch (tgError) {
+                console.error("Failed to send Telegram OTP:", tgError);
+            }
         }
 
         return NextResponse.json(
-            { message: "Tasdiqlash kodi yuborildi." },
+            { message: "Tasdiqlash kodi yuborildi.", success: true, sentViaTelegram },
             { status: 200 }
         );
     } catch (error) {
         console.error("FORGOT_PASSWORD_ERROR:", error);
         return NextResponse.json(
-            { message: "Tizim xatosi yuz berdi" },
+            { message: "Tizim xatosi yuz berdi", code: "SERVER_ERROR" },
             { status: 500 }
         );
     }

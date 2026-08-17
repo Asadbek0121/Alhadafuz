@@ -9,8 +9,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Link } from "@/navigation";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import { Lock, Loader2, ArrowRight, Eye, EyeOff, CheckCircle2 } from "lucide-react";
-import { useTranslations } from 'next-intl';
+import { Lock, Loader2, Eye, EyeOff } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,21 +25,21 @@ import {
 } from "@/components/ui/card";
 
 const formSchema = z.object({
-    password: z.string().min(6, { message: "Kamida 6 ta belgi bo'lishi shart" }),
+    password: z.string().min(6, { message: "short" }),
     confirmPassword: z.string().min(6),
 }).refine((data) => data.password === data.confirmPassword, {
-    message: "Parollar mos kelmadi",
+    message: "mismatch",
     path: ["confirmPassword"],
 });
 
 export default function ResetPasswordPage() {
+    const t = useTranslations("Auth");
     const router = useRouter();
     const searchParams = useSearchParams();
+    const phone = searchParams.get("phone");
     const token = searchParams.get("token");
-    const email = searchParams.get("email");
 
     const [isLoading, setIsLoading] = useState(false);
-    const [isSuccess, setIsSuccess] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
 
     const form = useForm<z.infer<typeof formSchema>>({
@@ -51,11 +51,11 @@ export default function ResetPasswordPage() {
     });
 
     useEffect(() => {
-        if (!token || !email) {
-            toast.error("Yaroqsiz havola");
-            router.push("/?auth=login");
+        if (!token || !phone) {
+            toast.error(t("invalid_link"));
+            router.replace("/auth/forgot-password");
         }
-    }, [token, email, router]);
+    }, [token, phone, router, t]);
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
         setIsLoading(true);
@@ -64,49 +64,24 @@ export default function ResetPasswordPage() {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    phone,
                     token,
-                    email,
                     password: values.password,
                 }),
             });
+            const data = await res.json();
 
             if (res.ok) {
-                toast.success("Parol muvaffaqiyatli yangilandi!");
+                toast.success(t("reset_success"));
                 window.location.href = "/?resetSuccess=true";
             } else {
-                const data = await res.json();
-                toast.error(data.message || "Xatolik yuz berdi");
+                toast.error(data.message || t("system_error"));
             }
         } catch (error) {
-            toast.error("Tizim xatosi yuz berdi");
+            toast.error(t("system_error"));
         } finally {
             setIsLoading(false);
         }
-    }
-
-    if (isSuccess) {
-        return (
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="w-full max-w-[440px] px-4"
-            >
-                <Card className="border shadow-2xl rounded-3xl p-10 text-center bg-white">
-                    <div className="mx-auto w-20 h-20 bg-green-50 rounded-full flex items-center justify-center mb-6 text-green-500">
-                        <CheckCircle2 size={48} />
-                    </div>
-                    <h2 className="text-3xl font-black text-gray-900 mb-4">Tayyor!</h2>
-                    <p className="text-gray-500 text-lg mb-8">
-                        Sizning parolingiz muvaffaqiyatli o'zgartirildi. 3 soniyadan so'ng kirish sahifasiga yo'naltirilasiz...
-                    </p>
-                    <Link href="/?auth=login" className="w-full">
-                        <Button className="w-full h-12 rounded-xl bg-blue-600 hover:bg-blue-700">
-                            Hoziroq kirish
-                        </Button>
-                    </Link>
-                </Card>
-            </motion.div>
-        );
     }
 
     return (
@@ -117,18 +92,21 @@ export default function ResetPasswordPage() {
         >
             <Card className="border shadow-2xl rounded-3xl overflow-hidden bg-white">
                 <CardHeader className="text-center pt-8 pb-4">
+                    <div className="mx-auto w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center mb-4 text-blue-600">
+                        <Lock size={28} />
+                    </div>
                     <CardTitle className="text-3xl font-black text-gray-900 mb-2">
-                        Yangi parol
+                        {t("new_password")}
                     </CardTitle>
                     <CardDescription className="text-base text-gray-500">
-                        Iltimos, o'zingiz uchun yangi va xavfsiz parol o'rnating.
+                        {t("reset_page_desc")}
                     </CardDescription>
                 </CardHeader>
 
                 <CardContent className="space-y-6 px-8">
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
                         <div className="space-y-2">
-                            <Label className="text-sm font-bold text-gray-700 ml-1">Yangi parol</Label>
+                            <Label className="text-sm font-bold text-gray-700 ml-1">{t("new_password")}</Label>
                             <div className="relative">
                                 <Input
                                     type={showPassword ? "text" : "password"}
@@ -141,17 +119,18 @@ export default function ResetPasswordPage() {
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
                                     className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"
+                                    aria-label={showPassword ? "hide" : "show"}
                                 >
                                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                                 </button>
                             </div>
                             {form.formState.errors.password && (
-                                <p className="text-xs text-red-500 font-medium italic">{form.formState.errors.password.message}</p>
+                                <p className="text-xs text-red-500 font-medium italic">{t("password_short")}</p>
                             )}
                         </div>
 
                         <div className="space-y-2">
-                            <Label className="text-sm font-bold text-gray-700 ml-1">Parolni tasdiqlang</Label>
+                            <Label className="text-sm font-bold text-gray-700 ml-1">{t("confirm_password")}</Label>
                             <Input
                                 type={showPassword ? "text" : "password"}
                                 placeholder="********"
@@ -160,7 +139,7 @@ export default function ResetPasswordPage() {
                                 className="h-14 bg-gray-50 border-gray-200 rounded-2xl focus:border-blue-500 transition-all"
                             />
                             {form.formState.errors.confirmPassword && (
-                                <p className="text-xs text-red-500 font-medium italic">{form.formState.errors.confirmPassword.message}</p>
+                                <p className="text-xs text-red-500 font-medium italic">{t("password_mismatch")}</p>
                             )}
                         </div>
 
@@ -172,11 +151,17 @@ export default function ResetPasswordPage() {
                             {isLoading ? (
                                 <Loader2 className="animate-spin h-6 w-6" />
                             ) : (
-                                "Parolni saqlash"
+                                t("reset_btn")
                             )}
                         </Button>
                     </form>
                 </CardContent>
+
+                <CardFooter className="py-6 bg-gray-50/50 border-t border-gray-100 flex justify-center">
+                    <Link href="/auth/forgot-password" className="text-sm font-bold text-gray-500 hover:text-blue-600 transition-all">
+                        {t("forgot_title")}
+                    </Link>
+                </CardFooter>
             </Card>
         </motion.div>
     );

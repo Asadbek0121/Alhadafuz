@@ -10,6 +10,7 @@ import { z } from "zod";
 import { generateNextUniqueId } from "@/lib/id-generator";
 import { logActivity, checkRisk } from "@/lib/security";
 import { verifyTelegramLogin } from "@/lib/telegram-auth";
+import { normalizeUzPhone, isValidUserName } from "@/lib/phone";
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
     ...authConfig,
@@ -49,6 +50,12 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                     // --- Phone OTP Flow ---
                     if (otp) {
+                        // Telefon formatini qat'iy tekshirish
+                        const normalizedPhone = normalizeUzPhone(login);
+                        if (!normalizedPhone) {
+                            throw new Error("PHONE_INVALID");
+                        }
+
                         const tokenRecord = await prisma.verificationToken.findFirst({
                             where: { identifier: normalizedPhone, token: otp }
                         });
@@ -70,12 +77,17 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                             if (!name) {
                                 throw new Error("USER_NOT_FOUND");
                             }
+                            // Yangi foydalanuvchi yaratishdan oldin ismni tekshirish
+                            const trimmedName = name.trim();
+                            if (!isValidUserName(trimmedName)) {
+                                throw new Error("INVALID_NAME");
+                            }
                             // Register new user
                             const uniqueId = await generateNextUniqueId("USER");
                             user = await prisma.user.create({
                                 data: {
                                     phone: normalizedPhone,
-                                    name: name,
+                                    name: trimmedName,
                                     uniqueId,
                                     role: "USER"
                                 }
