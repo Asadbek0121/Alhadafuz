@@ -205,7 +205,11 @@ export default function ForgotPasswordPage() {
                                 <Button
                                     type="button"
                                     variant="outline"
-                                    onClick={() => window.open("https://t.me/Hadaf_supportbot?start=reset_password", "_blank")}
+                                    onClick={() => {
+                                        const digits = (phoneForm.watch("phone") || "").replace(/\D/g, "");
+                                        const startParam = digits.length === 12 ? `reset_password_${digits}` : "reset_password";
+                                        window.open(`https://t.me/Hadaf_supportbot?start=${startParam}`, "_blank");
+                                    }}
                                     className="w-full h-14 rounded-2xl border-2 border-blue-50 hover:bg-blue-50 hover:border-blue-100 text-blue-600 font-bold text-lg flex items-center justify-center gap-3 transition-all"
                                 >
                                     <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none">

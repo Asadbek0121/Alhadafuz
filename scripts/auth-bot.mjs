@@ -21,6 +21,37 @@ bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const text = msg.text;
 
+    // Handle /reset command (direct) or /start reset_password[_<phone>] deep link
+    if (text === '/reset' || (text && text.startsWith('/start reset_password'))) {
+        const payload = text.split(' ')[1] || '';
+        let phoneToVerify = null;
+
+        // Deep link from forgot-password page may carry the phone: reset_password_998901234567
+        if (payload.startsWith('reset_password_')) {
+            const digits = payload.replace('reset_password_', '').trim();
+            if (/^998\d{9}$/.test(digits)) {
+                phoneToVerify = '+' + digits;
+            }
+        }
+
+        userState.set(chatId, { resetPassword: true, phoneToVerify });
+
+        const intro = phoneToVerify
+            ? `🔐 <b>Parolni tiklash</b>\n\nRaqamingiz: <b>${phoneToVerify}</b>\n\nTasdiqlash uchun pastdagi tugmani bosing va telefon raqamingizni yuboring:`
+            : `🔐 <b>Parolni tiklash</b>\n\nRaqamingizni tasdiqlash uchun pastdagi tugmani bosing va telefon raqamingizni yuboring:`;
+
+        return bot.sendMessage(chatId, intro, {
+            parse_mode: 'HTML',
+            reply_markup: {
+                keyboard: [
+                    [{ text: '📱 Raqamni yuborish', request_contact: true }]
+                ],
+                one_time_keyboard: true,
+                resize_keyboard: true
+            }
+        });
+    }
+
     // Handle /start verify_998901234567
     if (text && text.startsWith('/start verify_')) {
         const payload = text.split(' ')[1]; // "verify_998336862001"
@@ -111,6 +142,64 @@ bot.on('contact', async (msg) => {
         }
         // If they match without symbols, update contactPhone to match state to proceed
         contactPhone = state.phoneToVerify;
+    }
+
+    // PASSWORD RESET FLOW: /reset or /start reset_password
+    if (state.resetPassword) {
+        userState.delete(chatId);
+
+        try {
+            // 1. Check the number is registered
+            const existingUser = await prisma.user.findFirst({ where: { phone: contactPhone } });
+            if (!existingUser) {
+                return bot.sendMessage(chatId, `❌ <b>${contactPhone}</b> raqami ro'yxatdan o'tmagan.\n\nAvval saytda ro'yxatdan o'ting yoki raqamni tekshiring.`, {
+                    parse_mode: 'HTML',
+                    reply_markup: { remove_keyboard: true }
+                });
+            }
+
+            // 2. Generate 6-digit OTP (10 minutes) — same as /api/auth/forgot-password
+            const otp = Math.floor(100000 + Math.random() * 900000).toString();
+            const expires = new Date(Date.now() + 10 * 60 * 1000);
+
+            await prisma.verificationToken.deleteMany({
+                where: { identifier: contactPhone }
+            });
+            await prisma.verificationToken.create({
+                data: {
+                    identifier: contactPhone,
+                    token: otp,
+                    expires: expires,
+                },
+            });
+
+            // 3. Send OTP + deep-link button to reset-password page
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://uzm.uz';
+            const resetUrl = `${appUrl}/uz/auth/reset-password?phone=${encodeURIComponent(contactPhone)}&token=${otp}`;
+
+            console.log(`🔑 [BOT] Reset OTP generated for ${contactPhone}: ${otp}`);
+
+            return bot.sendMessage(
+                chatId,
+                `🔐 <b>Parolni tiklash</b>\n\nTasdiqlash kodingiz: <b>${otp}</b>\n\n<code>Kod 10 daqiqa davomida amal qiladi.</code>\n\nPastdagi tugmani bosing, yangi parol o'rnating:`,
+                {
+                    parse_mode: 'HTML',
+                    reply_markup: {
+                        remove_keyboard: true,
+                        inline_keyboard: [
+                            [
+                                { text: '🔑 Parolni tiklash', url: resetUrl }
+                            ]
+                        ]
+                    }
+                }
+            );
+        } catch (error) {
+            console.error("❌ [BOT] Reset password error:", error);
+            return bot.sendMessage(chatId, "Serverda xatolik yuz berdi. Iltimos qaytadan urinib ko'ring.", {
+                reply_markup: { remove_keyboard: true }
+            });
+        }
     }
 
     // Look up the actual code from Next.js Prisma Database

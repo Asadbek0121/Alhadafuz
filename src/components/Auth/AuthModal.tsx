@@ -38,6 +38,12 @@ export default function AuthModal() {
     const [isLoading, setIsLoading] = useState(false);
     const redirectTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
+    // Fokus boshqaruvi (a11y)
+    const modalRef = React.useRef<HTMLDivElement>(null);
+    const phoneInputRef = React.useRef<HTMLInputElement>(null);
+    const otpInputRef = React.useRef<HTMLInputElement>(null);
+    const openedByRef = React.useRef<HTMLElement | null>(null);
+
     // Handle Query Params (e.g. ?auth=login or ?auth=register)
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -103,19 +109,96 @@ export default function AuthModal() {
         return () => clearInterval(timerId);
     }, [isVerifying, timeLeft]);
 
+    // Scroll-lock: modal ochiq paytida fon sahifa scroll qilinmaydi (iOS uchun ham)
     useEffect(() => {
         if (isModalOpen) {
+            const originalOverflow = document.body.style.overflow;
+            const originalPaddingRight = document.body.style.paddingRight;
+            const originalPosition = document.body.style.position;
+            const originalTop = document.body.style.top;
+            const originalWidth = document.body.style.width;
+            const scrollY = window.scrollY;
+            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+
             document.body.style.overflow = 'hidden';
+            // Scrollbar yo'qolishi tufayli layout sakrashini kompensatsiya qilish
+            if (scrollbarWidth > 0) {
+                document.body.style.paddingRight = `${scrollbarWidth}px`;
+            }
+            // iOS Safari: overflow:hidden yetarli emas — body'ni fixed qilib scroll pozitsiyani saqlaymiz
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${scrollY}px`;
+            document.body.style.width = '100%';
+
+            return () => {
+                document.body.style.overflow = originalOverflow;
+                document.body.style.paddingRight = originalPaddingRight;
+                document.body.style.position = originalPosition;
+                document.body.style.top = originalTop;
+                document.body.style.width = originalWidth;
+                window.scrollTo(0, scrollY);
+            };
         } else {
-            document.body.style.overflow = 'unset';
             setTimeout(() => {
                 setIsVerifying(false);
                 setOtp('');
                 setIsSuccess(false);
             }, 300);
         }
-        return () => { document.body.style.overflow = 'unset'; };
     }, [isModalOpen]);
+
+    // Fokus: ochilganda telefon maydoniga, yopilganda ochgan tugmaga qaytarish
+    useEffect(() => {
+        if (isModalOpen) {
+            openedByRef.current = document.activeElement as HTMLElement | null;
+            const t = setTimeout(() => {
+                if (isVerifying) {
+                    otpInputRef.current?.focus();
+                } else if (phoneInputRef.current) {
+                    phoneInputRef.current.focus();
+                } else {
+                    modalRef.current?.focus();
+                }
+            }, 150);
+            return () => clearTimeout(t);
+        } else {
+            const opener = openedByRef.current;
+            openedByRef.current = null;
+            if (opener && typeof opener.focus === 'function' && document.contains(opener)) {
+                opener.focus();
+            }
+        }
+    }, [isModalOpen]);
+
+    // Tasdiqlash (OTP) bosqichiga o'tganda kod maydoniga fokus
+    useEffect(() => {
+        if (isVerifying) {
+            const t = setTimeout(() => otpInputRef.current?.focus(), 150);
+            return () => clearTimeout(t);
+        }
+    }, [isVerifying]);
+
+    // Focus trap: Tab modal ichida qoladi, oxirgi elementdan keyin boshiga qaytadi
+    const handleTabKey = (e: React.KeyboardEvent) => {
+        if (e.key !== 'Tab' || !modalRef.current) return;
+        const focusables = Array.from(
+            modalRef.current.querySelectorAll<HTMLElement>(
+                'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])'
+            )
+        ).filter((el) => el.offsetParent !== null || el === document.activeElement);
+        if (focusables.length === 0) return;
+
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === modalRef.current)) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+        }
+    };
 
     useEffect(() => {
         if (session?.user && isModalOpen && !isSuccess) {
@@ -305,6 +388,9 @@ export default function AuthModal() {
                         role="dialog"
                         aria-modal="true"
                         aria-label={t('title')}
+                        ref={modalRef}
+                        tabIndex={-1}
+                        onKeyDown={handleTabKey}
                     >
                         <button title={t('close')} aria-label={t('close')} onClick={closeAuthModal} className={styles.closeBtn}>
                             <X size={20} />
@@ -394,6 +480,7 @@ export default function AuthModal() {
                                                     <div className={styles.inputGroup}>
                                                         <label className={styles.inputLabel}>{t('sms_code')}</label>
                                                         <input
+                                                            ref={otpInputRef}
                                                             type="text"
                                                             placeholder="······"
                                                             value={otp}
@@ -464,6 +551,7 @@ export default function AuthModal() {
                                                     <div className={styles.inputGroup}>
                                                         <label className={styles.inputLabel}>{t('phone_label')}</label>
                                                         <PhoneInput
+                                                            ref={phoneInputRef}
                                                             value={phone}
                                                             onChange={setPhone}
                                                             required
