@@ -460,9 +460,9 @@ export default function Header() {
                             }}
                         >
                             <div 
-                                className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center cursor-pointer"
+                                className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center w-10 h-10 cursor-pointer"
                             >
-                                <NotificationIcon size={28} />
+                                <NotificationIcon size={24} />
                                 {unreadCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{unreadCount}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('bildirishnoma')}</span>
@@ -542,7 +542,7 @@ export default function Header() {
 
                         {/* Favorites */}
                         <Link href="/favorites" className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-red-500 transition-all">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-red-500 transition-all flex items-center justify-center w-10 h-10">
                                 <Heart size={24} strokeWidth={2} className="text-slate-600 group-hover:text-red-500 transition-colors" />
                                 {wishlist.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{wishlist.length}</span>}
                             </div>
@@ -551,7 +551,7 @@ export default function Header() {
 
                         {/* Cart */}
                         <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer" title="Savatcha" aria-label="Savatchani ochish">
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all flex items-center justify-center w-10 h-10">
                                 <ShoppingBag size={24} strokeWidth={2} className="text-slate-600 group-hover:text-emerald-600 transition-colors" />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
@@ -562,7 +562,7 @@ export default function Header() {
 
                         {/* Profile */}
                         <Link href="/profile" onClick={handleProfileClick} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center w-10 h-10">
                                 {user?.image ? (
                                     <img src={user.image} alt={user.name || "User"} className="w-6 h-6 rounded-full object-cover" />
                                 ) : (
