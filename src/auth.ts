@@ -11,6 +11,24 @@ import { generateNextUniqueId } from "@/lib/id-generator";
 import { logActivity, checkRisk } from "@/lib/security";
 import { verifyTelegramLogin } from "@/lib/telegram-auth";
 import { normalizeUzPhone, isValidUserName } from "@/lib/phone";
+import { CredentialsSignin } from "@auth/core/errors";
+
+// next-auth v5 xato kodlarini client'ga uzatish uchun maxsus xatolar.
+// Oddiy `Error` chaqirilsa next-auth uni "CredentialsSignin"ga o'raydi va
+// client `result.error.includes("OTP_INVALID")` hech qachon mos kelmaydi.
+// `code` maydoni orqali aniq kod client'ga yetib boradi.
+class PhoneInvalidError extends CredentialsSignin {
+    constructor() { super(); this.code = "PHONE_INVALID"; }
+}
+class OtpInvalidError extends CredentialsSignin {
+    constructor() { super(); this.code = "OTP_INVALID"; }
+}
+class UserNotFoundError extends CredentialsSignin {
+    constructor() { super(); this.code = "USER_NOT_FOUND"; }
+}
+class InvalidNameError extends CredentialsSignin {
+    constructor() { super(); this.code = "INVALID_NAME"; }
+}
 
 export const { auth, signIn, signOut, handlers } = NextAuth({
     ...authConfig,
@@ -53,7 +71,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         // Telefon formatini qat'iy tekshirish
                         const normalizedPhone = normalizeUzPhone(login);
                         if (!normalizedPhone) {
-                            throw new Error("PHONE_INVALID");
+                            throw new PhoneInvalidError();
                         }
 
                         const tokenRecord = await prisma.verificationToken.findFirst({
@@ -61,7 +79,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         });
 
                         if (!tokenRecord || tokenRecord.expires < new Date()) {
-                            throw new Error("OTP_INVALID");
+                            throw new OtpInvalidError();
                         }
 
                         // OTP is valid, delete it
@@ -75,12 +93,12 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
 
                         if (!user) {
                             if (!name) {
-                                throw new Error("USER_NOT_FOUND");
+                                throw new UserNotFoundError();
                             }
                             // Yangi foydalanuvchi yaratishdan oldin ismni tekshirish
                             const trimmedName = name.trim();
                             if (!isValidUserName(trimmedName)) {
-                                throw new Error("INVALID_NAME");
+                                throw new InvalidNameError();
                             }
                             // Register new user
                             const uniqueId = await generateNextUniqueId("USER");

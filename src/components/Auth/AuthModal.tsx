@@ -43,6 +43,7 @@ export default function AuthModal() {
     const modalRef = React.useRef<HTMLDivElement>(null);
     const phoneInputRef = React.useRef<HTMLInputElement>(null);
     const otpInputRef = React.useRef<HTMLInputElement>(null);
+    const confirmBtnRef = React.useRef<HTMLButtonElement>(null);
     const openedByRef = React.useRef<HTMLElement | null>(null);
 
     // Handle Query Params (e.g. ?auth=login or ?auth=register)
@@ -274,14 +275,20 @@ export default function AuthModal() {
             });
 
             if (result?.error) {
-                if (result.error.includes("ACCOUNT_LOCKED")) {
+                // next-auth v5: aniq xato kodi `result.code`'da keladi (masalan "OTP_INVALID"),
+                // eski versiyalarda `result.error` ichida bo'lardi — ikkalasini ham tekshiramiz
+                const err = result?.code || result.error || "";
+                const hasErr = (s: string) => err.includes(s) || (result.error || "").includes(s);
+                if (hasErr("ACCOUNT_LOCKED")) {
                     toast.error(t('account_locked'));
-                } else if (result.error.includes("OTP_INVALID")) {
+                } else if (hasErr("OTP_INVALID")) {
                     toast.error(t('otp_invalid'));
                     setOtp("");
-                } else if (result.error.includes("USER_NOT_FOUND")) {
+                    // Xato kodda fokusni yana OTP maydoniga qaytarish (klaviatura flow)
+                    setTimeout(() => otpInputRef.current?.focus(), 100);
+                } else if (hasErr("USER_NOT_FOUND")) {
                     toast.error(t('user_not_found'));
-                } else if (result.error.includes("INVALID_NAME")) {
+                } else if (hasErr("INVALID_NAME")) {
                     toast.error(t('name_invalid'));
                     setIsVerifying(false);
                 } else {
@@ -314,6 +321,14 @@ export default function AuthModal() {
             performVerification(otp);
         }
     }, [otp, isVerifying]);
+
+    // 6 raqam to'liq kiritilganda fokusni "Tasdiqlash" tugmasiga o'tkazish —
+    // Enter bilan ham tasdiqlash mumkin (klaviatura flow)
+    useEffect(() => {
+        if (otp.length === 6 && isVerifying && !isLoading) {
+            confirmBtnRef.current?.focus();
+        }
+    }, [otp, isVerifying, isLoading]);
 
     const handleSocialLogin = async (provider: string) => {
         if (!termsAccepted) {
@@ -469,7 +484,9 @@ export default function AuthModal() {
                                                     </div>
 
                                                     <div className="space-y-3">
-                                                        <button type="submit" className={styles.primaryBtn} disabled={isLoading}>
+                                                        {/* disabled emas — aks holda auto-verify paytida fokus tugmadan tushib ketadi.
+                                                            Double-submit performVerification ichidagi isLoading guard bilan himoyalangan. */}
+                                                        <button ref={confirmBtnRef} type="submit" aria-busy={isLoading} className={styles.primaryBtn}>
                                                             {isLoading ? <Loader2 className="animate-spin" /> : t('confirm')}
                                                         </button>
 
