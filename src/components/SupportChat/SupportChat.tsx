@@ -301,11 +301,6 @@ export default function SupportChat() {
         <>
             <style dangerouslySetInnerHTML={{
                 __html: `
-                @keyframes pulse-ring {
-                    0% { transform: scale(0.8); opacity: 0.5; }
-                    100% { transform: scale(1.3); opacity: 0; }
-                }
-
                 @keyframes slide-up {
                     from { opacity: 0; transform: translateY(40px) scale(0.9); }
                     to { opacity: 1; transform: translateY(0) scale(1); }
@@ -328,17 +323,6 @@ export default function SupportChat() {
                     justify-content: center;
                     z-index: 9999;
                     transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-                }
-
-                .support-fab::before {
-                    content: '';
-                    position: absolute;
-                    inset: -4px;
-                    background: inherit;
-                    border-radius: inherit;
-                    z-index: -1;
-                    opacity: 0.4;
-                    animation: pulse-ring 2s infinite;
                 }
 
                 .support-fab-lottie {
