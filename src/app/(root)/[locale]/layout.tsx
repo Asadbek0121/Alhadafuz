@@ -14,8 +14,7 @@ import MapModal from "@/components/LocationPicker/MapModal";
 import Script from "next/script";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
 import PinLock from "@/components/Auth/PinLock";
-import OfflineOverlay from "@/components/OfflineOverlay";
-import SplashScreen from "@/components/Effects/SplashScreen";
+import OfflineOverlayLazy from "@/components/OfflineOverlayLazy";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
@@ -61,7 +60,6 @@ export default async function LocaleLayout({
           <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
           <SessionSync />
           <TelegramAuthSync />
-          <SplashScreen />
           <Header />
           <div className="min-h-screen flex flex-col">
             {children}
@@ -73,7 +71,7 @@ export default async function LocaleLayout({
           <AuthModal />
           <PinLock />
           <MapModal />
-          <OfflineOverlay />
+          <OfflineOverlayLazy />
           <Analytics />
           <SpeedInsights />
         </ClientProviders>
