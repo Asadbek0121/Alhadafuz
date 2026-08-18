@@ -19,7 +19,6 @@ import { useSession } from "next-auth/react";
 import { useUIStore } from "@/store/useUIStore";
 import { useWishlist } from "@/context/WishlistContext";
 import { useCartStore } from '@/store/useCartStore';
-import LordIcon from '../ui/LordIcon';
 
 function cn(...inputs: any[]) {
     return twMerge(clsx(inputs));
@@ -36,11 +35,11 @@ export default function BottomNav() {
     const { wishlist } = useWishlist();
 
     const navItems = [
-        { label: t('bosh_sahifa'), icon: Home, lord: "/icons/lordicon/home.json", href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru") && !isCatalogOpen, action: () => closeCatalog() },
-        { label: t('katalog'), icon: LayoutGrid, lord: null, href: null, isActive: isCatalogOpen, action: () => toggleCatalog() },
-        { label: t('savatcha'), icon: ShoppingBag, lord: "/icons/lordicon/cart_premium.json", href: "/cart", isActive: pathname === "/cart" && !isCatalogOpen, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
-        { label: t('sevimlilar'), icon: Heart, lord: "/icons/lordicon/heart_premium.json", href: "/favorites", isActive: pathname === "/favorites" && !isCatalogOpen, action: () => closeCatalog(), badge: wishlist.length },
-        { label: t('kabinet'), icon: isAuthenticated ? User : UserCircle, lord: "/icons/lordicon/user.json", href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogOpen, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
+        { label: t('bosh_sahifa'), icon: Home, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru") && !isCatalogOpen, action: () => closeCatalog() },
+        { label: t('katalog'), icon: LayoutGrid, href: null, isActive: isCatalogOpen, action: () => toggleCatalog() },
+        { label: t('savatcha'), icon: ShoppingBag, href: "/cart", isActive: pathname === "/cart" && !isCatalogOpen, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
+        { label: t('sevimlilar'), icon: Heart, href: "/favorites", isActive: pathname === "/favorites" && !isCatalogOpen, action: () => closeCatalog(), badge: wishlist.length },
+        { label: t('kabinet'), icon: isAuthenticated ? User : UserCircle, href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogOpen, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
     ];
 
     if (pathname.includes('/product/') || pathname === '/checkout') return null;
@@ -69,20 +68,10 @@ export default function BottomNav() {
                                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                                 className="relative flex items-center justify-center"
                             >
-                                {item.lord ? (
-                                    <LordIcon 
-                                        src={item.lord}
-                                        trigger={active ? "loop" : "hover"}
-                                        size={24}
-                                        colors={active ? "primary:#1e293b,secondary:#2563eb" : "primary:#94a3b8,secondary:#94a3b8"}
-                                        fallback={<Icon size={24} strokeWidth={active ? 2.5 : 2} className={active ? "text-[#FFCA6C]" : "text-slate-400"} />}
-                                    />
-                                ) : (
-                                    <Icon
-                                        size={24}
-                                        strokeWidth={active ? 2.5 : 2}
-                                    />
-                                )}
+                                <Icon
+                                    size={24}
+                                    strokeWidth={active ? 2.5 : 2}
+                                />
                                 {(item.badge || 0) > 0 && (
                                     <span className={cn(
                                         "absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white",

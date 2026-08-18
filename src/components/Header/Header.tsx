@@ -26,7 +26,6 @@ import CartDrawer from '../Cart/CartDrawer';
 import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
-import LordIcon from '../ui/LordIcon';
 import dynamic from 'next/dynamic';
 
 const NotificationIcon = dynamic(() => import('../ui/NotificationIcon'), { ssr: false });
@@ -127,7 +126,6 @@ export default function Header() {
     const { activeMenu, toggleMenu, closeAllMenus, isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
 
     const notifOpen = activeMenu === 'notifications';
-    const lottieRef = useRef(null);
 
     const [menuMode, setMenuMode] = useState<'full' | 'catalog'>('full');
 
@@ -545,14 +543,7 @@ export default function Header() {
                         {/* Favorites */}
                         <Link href="/favorites" className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-red-500 transition-all">
-                                <LordIcon 
-                                    src="/icons/lordicon/heart_premium.json"
-                                    trigger="hover"
-                                    size={24}
-                                    colors="primary:#1e293b,secondary:#ef4444"
-                                    stroke="32"
-                                    fallback={<Heart size={24} strokeWidth={2} className="text-slate-600 group-hover:text-red-500" />}
-                                />
+                                <Heart size={24} strokeWidth={2} className="text-slate-600 group-hover:text-red-500 transition-colors" />
                                 {wishlist.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{wishlist.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('sevimlilar')}</span>
@@ -561,14 +552,7 @@ export default function Header() {
                         {/* Cart */}
                         <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer" title="Savatcha" aria-label="Savatchani ochish">
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all">
-                                <LordIcon 
-                                    src="/icons/lordicon/cart_premium.json"
-                                    trigger="hover"
-                                    size={24}
-                                    colors="primary:#1e293b,secondary:#2563eb"
-                                    stroke="32"
-                                    fallback={<ShoppingBag size={24} strokeWidth={2} className="text-slate-600 group-hover:text-emerald-600" />}
-                                />
+                                <ShoppingBag size={24} strokeWidth={2} className="text-slate-600 group-hover:text-emerald-600 transition-colors" />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors hidden md:block">{t('savatcha')}</span>
@@ -582,13 +566,7 @@ export default function Header() {
                                 {user?.image ? (
                                     <img src={user.image} alt={user.name || "User"} className="w-6 h-6 rounded-full object-cover" />
                                 ) : (
-                                    <LordIcon 
-                                        src="/icons/lordicon/user.json"
-                                        trigger="hover"
-                                        size={24}
-                                        colors="primary:#1e293b,secondary:#2563eb"
-                                        fallback={<UserCircle size={24} strokeWidth={2} className="text-slate-600 group-hover:text-blue-600" />}
-                                    />
+                                    <UserCircle size={24} strokeWidth={2} className="text-slate-600 group-hover:text-blue-600 transition-colors" />
                                 )}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors max-w-[80px] truncate">
