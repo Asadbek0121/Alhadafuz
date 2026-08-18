@@ -354,6 +354,13 @@ export default function SupportChat() {
                     animation: slide-up 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1);
                 }
 
+                /* Below lg (1024px): BottomNav is visible — lift FAB above it */
+                @media (max-width: 1023px) {
+                    .support-fab, .support-fab-lottie {
+                        bottom: 100px !important;
+                    }
+                }
+
                 @media (max-width: 480px) {
                     .support-window {
                         bottom: 0 !important;
@@ -364,7 +371,7 @@ export default function SupportChat() {
                         border-radius: 0 !important;
                     }
                     .support-fab, .support-fab-lottie {
-                        bottom: 20px !important;
+                        bottom: 100px !important;
                         right: 20px !important;
                     }
                 }
