@@ -26,9 +26,7 @@ import CartDrawer from '../Cart/CartDrawer';
 import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
-import dynamic from 'next/dynamic';
-
-const NotificationIcon = dynamic(() => import('../ui/NotificationIcon'), { ssr: false });
+import NotificationIcon from '../ui/NotificationIcon';
 
 
 
