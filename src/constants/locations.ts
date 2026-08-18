@@ -1,4 +1,6 @@
 export const regions = [
+    // Asosiy hudud — Surxondaryo, Termiz
+    { id: "surxondaryo", name: "Surxondaryo viloyati" },
     { id: "toshkent_sh", name: "Toshkent shahri" },
     { id: "toshkent_vil", name: "Toshkent viloyati" },
     { id: "andijon", name: "Andijon viloyati" },
@@ -11,7 +13,6 @@ export const regions = [
     { id: "qoraqalpogiston", name: "Qoraqalpog‘iston Respublikasi" },
     { id: "samarqand", name: "Samarqand viloyati" },
     { id: "sirdaryo", name: "Sirdaryo viloyati" },
-    { id: "surxondaryo", name: "Surxondaryo viloyati" },
     { id: "xorazm", name: "Xorazm viloyati" }
 ];
 
@@ -69,8 +70,8 @@ export const districts: { [key: string]: string[] } = {
         "Boyovut", "Guliston", "Sayhunobod", "Mirzaobod", "Sirdaryo", "Sardoba", "Oqoltin", "Xovos"
     ],
     "surxondaryo": [
-        "Angor", "Boysun", "Denov", "Jarqo‘rg‘on", "Qiziriq", "Qumqo‘rg‘on",
-        "Muzrabot", "Oltinsoy", "Sariosiyo", "Sherobod", "Sho‘rchi", "Termiz shahri", "Termiz tumani", "Uzun"
+        "Termiz shahri", "Termiz tumani", "Angor", "Boysun", "Denov", "Jarqo‘rg‘on", "Qiziriq", "Qumqo‘rg‘on",
+        "Muzrabot", "Oltinsoy", "Sariosiyo", "Sherobod", "Sho‘rchi", "Uzun"
     ],
     "xorazm": [
         "Bog‘ot", "Gurlan", "Qo‘shko‘pir", "Shovot", "Urganch", "Xazarasp",

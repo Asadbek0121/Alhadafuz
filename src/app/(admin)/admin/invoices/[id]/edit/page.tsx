@@ -10,8 +10,8 @@ export default function EditInvoicePage() {
     const router = useRouter();
     const [status, setStatus] = useState("Pending");
     const [issueDate, setIssueDate] = useState("2023-11-20");
-    const [billFrom, setBillFrom] = useState({ name: "Hadaf Market", address: "Termez, Surxondaryo", email: "info@hadaf.uz", phone: "+998 71 200 01 05" });
-    const [billTo, setBillTo] = useState({ name: "Asadbek Davronov", address: "Tashkent, Uzbekistan", email: "asadbek2001@gmail.com", phone: "+998 93 077 01 23" });
+    const [billFrom, setBillFrom] = useState({ name: "Hadaf Market", address: "Termez, Surxondaryo", email: "info@hadaf.uz", phone: "+998 76 200 01 05" });
+    const [billTo, setBillTo] = useState({ name: "Asadbek Davronov", address: "Termiz, O'zbekiston", email: "asadbek2001@gmail.com", phone: "+998 93 077 01 23" });
 
     // Mock Items to simulate edit
     const [items, setItems] = useState([

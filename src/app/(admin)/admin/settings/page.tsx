@@ -154,7 +154,7 @@ export default function AdminSettingsPage() {
                                     id="shop-phone"
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+998 71 123 45 67"
+                                    placeholder="+998 76 123 45 67"
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
@@ -176,7 +176,7 @@ export default function AdminSettingsPage() {
                                     id="shop-address"
                                     value={formData.address}
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
-                                    placeholder="Toshkent shahri, ..."
+                                    placeholder="Termiz shahri, ..."
                                     rows={2}
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[24px] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 resize-none"
                                 />

@@ -36,11 +36,11 @@ export async function GET(request: Request) {
             if (isLocal) {
                 return NextResponse.json({
                     source: 'yandex-default',
-                    address: "Toshkent, O'zbekiston",
-                    city: "Toshkent",
+                    address: "Termiz, O'zbekiston",
+                    city: "Termiz",
                     district: null,
-                    lat: 41.3111,
-                    lng: 69.2406
+                    lat: 37.2242,
+                    lng: 67.2783
                 });
             }
 
@@ -76,7 +76,7 @@ export async function GET(request: Request) {
             const province = components.find((c: any) => c.kind === 'province');
             const locality = components.find((c: any) => c.kind === 'locality');
             const area = components.find((c: any) => c.kind === 'area'); // District inside Region (e.g. Qibray)
-            const districtNode = components.find((c: any) => c.kind === 'district'); // District inside City (e.g. Yunusobod)
+            const districtNode = components.find((c: any) => c.kind === 'district'); // District inside City (e.g. Termiz shahri)
 
             // Determine City (System expects Region/Province or major City)
             const parsedCity = province?.name || locality?.name;

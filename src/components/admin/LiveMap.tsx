@@ -100,7 +100,7 @@ export default function LiveMap() {
         ymaps.ready(() => {
             if (!mapRef.current) {
                 mapRef.current = new ymaps.Map("live-map-container", {
-                    center: [41.311081, 69.240562], // Tashkent Center
+                    center: [37.2242, 67.2783], // Termiz Center
                     zoom: 12,
                     controls: ['zoomControl', 'fullscreenControl', 'typeSelector'],
                     behaviors: ['default', 'scrollZoom']

@@ -378,7 +378,7 @@ export default function AdminStoresPage() {
                                         value={formData.name}
                                         onChange={e => setFormData({ ...formData, name: e.target.value })}
                                         className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium"
-                                        placeholder="Masalan: HADAF - Chilonzor"
+                                        placeholder="Masalan: HADAF - At-Termiziy"
                                     />
                                 </div>
 
@@ -390,7 +390,7 @@ export default function AdminStoresPage() {
                                         onChange={e => setFormData({ ...formData, address: e.target.value })}
                                         rows={3}
                                         className="w-full px-5 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium resize-none"
-                                        placeholder="Masalan: Toshkent sh., Chilonzor tumani, Bunyodkor ko'chasi, 2-uy"
+                                        placeholder="Masalan: Termiz sh., At-Termiziy ko'chasi, 24"
                                     />
                                 </div>
 

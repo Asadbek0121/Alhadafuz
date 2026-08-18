@@ -46,7 +46,7 @@ export default function CheckoutPage() {
     const [formData, setFormData] = useState({
         phone: user?.phone || '',
         name: user?.name || '',
-        city: 'toshkent_sh',
+        city: 'surxondaryo', // Asosiy hudud — Surxondaryo, Termiz
         district: '',
         address: '',
         comment: '',
@@ -599,7 +599,7 @@ export default function CheckoutPage() {
                                                     className={`cursor-pointer p-4 rounded-2xl border-2 border-dashed border-slate-200 hover:border-blue-400 hover:bg-blue-50/30 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all ${selectedAddressId === null ? 'bg-slate-50/50' : ''}`}
                                                     onClick={() => {
                                                         setSelectedAddressId(null);
-                                                        setFormData(prev => ({ ...prev, address: '', district: '', city: 'toshkent_sh' }));
+                                                        setFormData(prev => ({ ...prev, address: '', district: '', city: 'surxondaryo' }));
                                                         setTimeout(() => {
                                                             addressFormRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                                                             citySelectRef.current?.focus();

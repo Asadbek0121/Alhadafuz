@@ -28,7 +28,7 @@ export default function Footer() {
         youtube: 'https://youtube.com'
     });
     const [contact, setContact] = useState({
-        phone: '+998 71 200 01 05',
+        phone: '+998 76 200 01 05',
         address: "Termiz sh, At-Termiziy ko'chasi",
         email: 'info@hadaf.uz'
     });

@@ -20,7 +20,7 @@ async function getSettings() {
     if (!/^https?:\/\//i.test(telegram)) telegram = `https://t.me/${telegram.replace(/^@/, '')}`;
 
     const contactInfo = {
-        phone: settings?.phone || "+998 71 200 01 05",
+        phone: settings?.phone || "+998 76 200 01 05",
         email: settings?.email || "info@hadaf.uz",
         workingHours: "24/7",
         telegramUsername: telegram.split('/').pop() || "@hadaf_uz"
@@ -30,7 +30,7 @@ async function getSettings() {
         phone: contactInfo.phone,
         email: contactInfo.email,
         telegram,
-        address: settings?.address || "Toshkent shahri",
+        address: settings?.address || "Termiz shahri",
         telegramUsername: contactInfo.telegramUsername,
         workingHours: contactInfo.workingHours
     };

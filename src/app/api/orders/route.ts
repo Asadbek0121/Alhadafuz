@@ -209,7 +209,7 @@ export async function POST(req: Request) {
                 ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
             `,
                 orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
-                deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Toshkent',
+                deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',
                 deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
                 deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
                 lat || null, lng || null, validatedCoupon?.code || null, discountAmount

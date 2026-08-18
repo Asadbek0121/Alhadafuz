@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
 const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong&load=package.full";
-const DEFAULT_COORDS = [41.311081, 69.240562]; // Tashkent
+const DEFAULT_COORDS = [37.2242, 67.2783]; // Termiz (asosiy hudud)
 
 export default function MapModal() {
     const { isMapOpen, closeMap } = useMapStore();

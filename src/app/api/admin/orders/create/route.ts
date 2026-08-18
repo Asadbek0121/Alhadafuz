@@ -49,7 +49,7 @@ export async function POST(req: Request) {
                 creatorId: session.user.id,
                 createdVia: 'ADMIN_PANEL',
 
-                shippingCity: 'Toshkent', // Default or from form if needed
+                shippingCity: 'Termiz', // Default or from form if needed
                 shippingDistrict: deliveryAddress?.district || '',
                 shippingAddress: deliveryAddress?.address || '',
                 shippingName: deliveryAddress?.name || '',

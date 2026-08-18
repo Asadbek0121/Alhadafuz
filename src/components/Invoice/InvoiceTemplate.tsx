@@ -212,7 +212,7 @@ export default function InvoiceTemplate({ order, settings, subTotal, grandTotal,
             <div className="footer">
                 <div className="footer-grid">
                     <div className="footer-item">
-                        <span style={{ color: '#2563eb', marginRight: '8px' }}>☎</span> {settings?.phone || "+998 71 200 01 05"}
+                        <span style={{ color: '#2563eb', marginRight: '8px' }}>☎</span> {settings?.phone || "+998 76 200 01 05"}
                     </div>
                     <div className="footer-item" style={{ justifyContent: 'center' }}>
                         <span style={{ color: '#2563eb', marginRight: '8px' }}>✉</span> {settings?.email || "info@hadaf.uz"}
