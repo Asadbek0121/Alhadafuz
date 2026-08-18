@@ -1,14 +1,11 @@
 "use client";
 
-import { ChevronRight, ChevronLeft, Clock, Zap, TrendingUp, ShoppingCart } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, TrendingUp, ShoppingCart } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from '@/navigation';
 import Image from 'next/image';
-import Lottie from 'lottie-react';
 import styles from './Hero.module.css';
-import timerAnimation from './timer-animation.json';
 
 const DEFAULT_COUNTDOWN = 24 * 60 * 60 * 1000; // 24h fallback
 
@@ -33,7 +30,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     const [imageError, setImageError] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Mount Logic
+    // Mount Logic (faqat countdown kabi client-ga bog'liq qismlar uchun)
     useEffect(() => {
         setIsMounted(true);
     }, []);
@@ -44,7 +41,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
             if (res.ok) {
                 const data = await res.json();
                 setBanners(data);
-                
+
                 // Identify side banner for countdown
                 const side = data.find((b: any) => b.position === 'HOME_SIDE' && b.isActive !== false);
                 if (side?.endDate) {
@@ -82,10 +79,10 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         let h = Math.floor(ms / (1000 * 60 * 60));
         const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((ms % (1000 * 60)) / 1000);
-        
+
         // Cap hours to 99 for clean UI if it's too large
         if (h > 99) h = 99;
-        
+
         return { h, m, s };
     };
 
@@ -122,22 +119,6 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     }, [mainBanners.length]);
 
     const { h, m, s } = formatTime(timeLeft);
-
-    // If not mounted, show exactly what server rendered
-    if (!isMounted) {
-        return (
-            <div className={styles.heroWrapper}>
-                <div className={`container ${styles.heroContent}`}>
-                    <div className={styles.sliderContainer}>
-                        <div className="animate-pulse bg-gray-100 w-full h-full"></div>
-                    </div>
-                    <div className={styles.hotDealCard}>
-                        <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
-                    </div>
-                </div>
-            </div>
-        );
-    }
 
     return (
         <div className={styles.heroWrapper}>
@@ -183,55 +164,37 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                         </div>
                     ) : (
                         <div className="w-full h-full relative">
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={mainBanners.length > 0 ? mainBanners[currentIndex]?.id : 'default'}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    transition={{ duration: 0.8 }}
-                                    className={styles.slider}
-                                >
-                                    {mainBanners.length > 0 && mainBanners[currentIndex]?.image && (
-                                        <Image
-                                            src={mainBanners[currentIndex].image}
-                                            alt={mainBanners[currentIndex]?.title || "Banner"}
-                                            fill
-                                            priority={currentIndex === 0}
-                                            className="object-cover"
-                                            sizes="(max-width: 1024px) 100vw, (max-width: 1440px) 1200px, 1600px"
-                                            quality={90}
-                                        />
-                                    )}
-                                    <div className={styles.sliderOverlay}></div>
-                                    <div className={styles.sliderContent}>
-                                        <motion.div
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.2, duration: 0.6 }}
-                                        >
-                                            <h1 className={styles.sliderTitle}>
-                                                {mainBanners[currentIndex]?.title || t('slider_title')}
-                                            </h1>
-                                        </motion.div>
+                            <div
+                                key={mainBanners.length > 0 ? mainBanners[currentIndex]?.id : 'default'}
+                                className={`${styles.slider} ${styles.sliderFade}`}
+                            >
+                                {mainBanners.length > 0 && mainBanners[currentIndex]?.image && (
+                                    <Image
+                                        src={mainBanners[currentIndex].image}
+                                        alt={mainBanners[currentIndex]?.title || "Banner"}
+                                        fill
+                                        priority={currentIndex === 0}
+                                        className="object-cover"
+                                        sizes="(max-width: 1024px) 100vw, (max-width: 1440px) 1200px, 1600px"
+                                        quality={90}
+                                    />
+                                )}
+                                <div className={styles.sliderOverlay}></div>
+                                <div className={styles.sliderContent}>
+                                    <h1 className={styles.sliderTitle}>
+                                        {mainBanners[currentIndex]?.title || t('slider_title')}
+                                    </h1>
 
-                                        <motion.div
-                                            initial={{ y: 20, opacity: 0 }}
-                                            animate={{ y: 0, opacity: 1 }}
-                                            transition={{ delay: 0.4, duration: 0.6 }}
-                                        >
-                                            <Link
-                                                href={mainBanners[currentIndex]?.link || '/'}
-                                                className={styles.sliderBtn}
-                                                onClick={() => trackBannerClick(mainBanners[currentIndex]?.id)}
-                                            >
-                                                {tCommon('batafsil')}
-                                                <ChevronRight size={14} />
-                                            </Link>
-                                        </motion.div>
-                                    </div>
-                                </motion.div>
-                            </AnimatePresence>
+                                    <Link
+                                        href={mainBanners[currentIndex]?.link || '/'}
+                                        className={styles.sliderBtn}
+                                        onClick={() => trackBannerClick(mainBanners[currentIndex]?.id)}
+                                    >
+                                        {tCommon('batafsil')}
+                                        <ChevronRight size={14} />
+                                    </Link>
+                                </div>
+                            </div>
 
                             {mainBanners.length > 1 && (
                                 <div className={styles.sliderDots}>
@@ -264,20 +227,17 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                 >
                                 <div className={styles.hotDealImageWrapper}>
                                     {(sideBanner?.image && !imageError) ? (
-                                        <motion.div 
-                                            whileHover={{ scale: 1.05 }}
-                                            className="w-full h-full relative"
-                                        >
-                                            <Image 
-                                                src={sideBanner.image} 
-                                                alt={sideBanner?.title || "Hot product"} 
+                                        <div className="w-full h-full relative">
+                                            <Image
+                                                src={sideBanner.image}
+                                                alt={sideBanner?.title || "Hot product"}
                                                 fill
                                                 priority
                                                 className={styles.hotDealImage}
                                                 sizes="(max-width: 640px) 150px, (max-width: 1024px) 200px, 300px"
                                                 onError={() => setImageError(true)}
                                             />
-                                        </motion.div>
+                                        </div>
                                     ) : (
                                         <div className="w-full h-full bg-gradient-to-br from-blue-50 to-indigo-50 flex items-center justify-center">
                                             <TrendingUp size={32} className="text-blue-200" />
@@ -290,12 +250,12 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                     )}
                                 </div>
                                 </Link>
-                                
+
                                 <div className={styles.hotDealInfo}>
-                                    {hasCountdown && !isExpired && (
+                                    {isMounted && hasCountdown && !isExpired && (
                                         <>
                                         <div className={styles.countdownHead}>
-                                            <Lottie animationData={timerAnimation} className={styles.countdownIcon} loop autoplay />
+                                            <Clock size={18} className={styles.countdownIcon} />
                                             {t('tugash')}
                                         </div>
                                         <div className={styles.countdown}>
