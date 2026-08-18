@@ -530,6 +530,7 @@ model ShippingZone {
   name              String
   district          String?
   price             Float    @default(0)
+  deliveryTime      String?
   freeFrom          Float?
   freeFromQty       Int?
   freeIfHasDiscount Boolean  @default(false)

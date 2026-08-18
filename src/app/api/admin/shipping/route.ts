@@ -19,6 +19,7 @@ export async function GET() {
                         "name" TEXT NOT NULL,
                         "district" TEXT,
                         "price" DOUBLE PRECISION NOT NULL DEFAULT 0,
+                        "deliveryTime" TEXT,
                         "freeFrom" DOUBLE PRECISION,
                         "freeFromQty" INTEGER,
                         "freeIfHasDiscount" BOOLEAN NOT NULL DEFAULT false,
@@ -30,6 +31,15 @@ export async function GET() {
                     );
                 `);
             }
+        }
+
+        // deliveryTime ustuni mavjud bo'lmasa qo'shish (eski jadvallar uchun)
+        try {
+            await (prisma as any).$executeRawUnsafe(`
+                ALTER TABLE "ShippingZone" ADD COLUMN IF NOT EXISTS "deliveryTime" TEXT;
+            `);
+        } catch (e) {
+            console.warn("deliveryTime column check failed:", e);
         }
 
         // Fallback to raw SQL if model is not generated in client
@@ -49,7 +59,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, district, price, freeFrom, freeFromQty, freeIfHasDiscount, isActive } = body;
+        const { name, district, price, deliveryTime, freeFrom, freeFromQty, freeIfHasDiscount, isActive } = body;
 
         // Validation
         if (!name) {
@@ -68,12 +78,14 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Narx noto\'g\'ri kiritildi' }, { status: 400 });
         }
 
+        const time = deliveryTime ? String(deliveryTime) : null;
+
         // Use raw SQL to bypass the missing model issue
         await (prisma as any).$executeRawUnsafe(`
             INSERT INTO "ShippingZone" 
-            ("id", "name", "district", "price", "freeFrom", "freeFromQty", "freeIfHasDiscount", "freeDiscountType", "isActive", "createdAt", "updatedAt")
+            ("id", "name", "district", "price", "deliveryTime", "freeFrom", "freeFromQty", "freeIfHasDiscount", "freeDiscountType", "isActive", "createdAt", "updatedAt")
             VALUES 
-            ('${id}', '${name}', '${district}', ${priceNum}, ${freeFromNum !== null ? freeFromNum : 'NULL'}, ${freeFromQtyNum !== null ? freeFromQtyNum : 'NULL'}, ${freeDisc}, '${discType}', ${active}, NOW(), NOW())
+            ('${id}', '${name}', '${district}', ${priceNum}, ${time !== null ? `'${time}'` : 'NULL'}, ${freeFromNum !== null ? freeFromNum : 'NULL'}, ${freeFromQtyNum !== null ? freeFromQtyNum : 'NULL'}, ${freeDisc}, '${discType}', ${active}, NOW(), NOW())
         `);
 
         return NextResponse.json({ id, name, success: true });

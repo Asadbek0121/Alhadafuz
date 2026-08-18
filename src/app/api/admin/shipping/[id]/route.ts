@@ -13,7 +13,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     try {
         const body = await req.json();
-        const { name, district, price, freeFrom, freeFromQty, freeIfHasDiscount, isActive } = body;
+        const { name, district, price, deliveryTime, freeFrom, freeFromQty, freeIfHasDiscount, isActive } = body;
 
         // Validation
         if (!name) {
@@ -31,12 +31,15 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             return NextResponse.json({ error: 'Narx noto\'g\'ri kiritildi' }, { status: 400 });
         }
 
+        const time = deliveryTime ? String(deliveryTime) : null;
+
         await (prisma as any).$executeRawUnsafe(`
             UPDATE "ShippingZone" 
             SET 
                 "name" = '${name}', 
                 "district" = '${district}', 
                 "price" = ${priceNum}, 
+                "deliveryTime" = ${time !== null ? `'${time}'` : 'NULL'},
                 "freeFrom" = ${freeFromNum !== null ? freeFromNum : 'NULL'}, 
                 "freeFromQty" = ${freeFromQtyNum !== null ? freeFromQtyNum : 'NULL'},
                 "freeIfHasDiscount" = ${freeDisc}, 

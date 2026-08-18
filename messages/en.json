@@ -115,7 +115,8 @@
     "pay_click": "Pay online via Click",
     "pay_payme": "Pay online via Payme",
     "pay_uzum": "Pay online via Uzum",
-    "pay_p2p": "Card transfer"
+    "pay_p2p": "Card transfer",
+    "delivery_eta": "Delivery time"
   },
   "Product": {
     "loading": "Loading...",

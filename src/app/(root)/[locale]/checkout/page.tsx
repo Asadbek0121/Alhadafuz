@@ -17,7 +17,7 @@ import { useMapStore } from '@/store/useMapStore';
 import { useLocationStore } from '@/store/useLocationStore';
 
 export default function CheckoutPage() {
-    const { items, total, clearCart } = useCartStore();
+    const { items, total, clearCart, isHydrated } = useCartStore();
     const { user, isAuthenticated, openAuthModal } = useUserStore();
     const tCheckout = useTranslations('Checkout');
     const tCart = useTranslations('Cart');
@@ -41,6 +41,7 @@ export default function CheckoutPage() {
     // Shipping Zones State
     const [shippingZones, setShippingZones] = useState<any[]>([]);
     const [deliveryFee, setDeliveryFee] = useState(0);
+    const [deliveryTime, setDeliveryTime] = useState('');
 
     // Form state
     const [formData, setFormData] = useState({
@@ -276,6 +277,10 @@ export default function CheckoutPage() {
 
     // 2. Auth/Cart check and Addresses
     useEffect(() => {
+        // localStorage'dan cart hali yuklanmagan bo'lsa redirect qilma — aks holda
+        // sahifa yangi ochilganda har doim bosh sahifaga qaytib ketardi
+        if (!isHydrated) return;
+
         if (items.length === 0) {
             router.replace('/');
             return;
@@ -293,34 +298,36 @@ export default function CheckoutPage() {
                 })
                 .catch(err => console.error(err));
         }
-    }, [items.length, router, isAuthenticated]);
+    }, [items.length, router, isAuthenticated, isHydrated]);
 
     // 3. Dynamic Delivery Fee Calculation
     useEffect(() => {
         if (deliveryMethod === 'pickup') {
             setDeliveryFee(0);
+            setDeliveryTime('');
             return;
         }
 
         // According to user request: Show 0 until district is selected
         if (!formData.district) {
             setDeliveryFee(0);
+            setDeliveryTime('');
             return;
         }
 
         const currentTotal = total();
-        const cityName = safeTranslate(formData.city);
 
+        // Zonalar region ID bilan saqlanadi (tilga bog'liq emas) — formData.city ham ID
         // Try to find a specific zone for this district first
         let selectedZone = shippingZones.find(z =>
-            (z.name === cityName || z.name === formData.city) &&
+            z.name === formData.city &&
             z.district === formData.district
         );
 
         // If no district zone, fall back to the city/region zone
         if (!selectedZone) {
             selectedZone = shippingZones.find(z =>
-                (z.name === cityName || z.name === formData.city) &&
+                z.name === formData.city &&
                 (!z.district || z.district === "")
             );
         }
@@ -344,9 +351,11 @@ export default function CheckoutPage() {
             } else {
                 setDeliveryFee(selectedZone.price);
             }
+            setDeliveryTime(selectedZone.deliveryTime || '');
         } else {
             // Default if no zone matches
             setDeliveryFee(0);
+            setDeliveryTime('');
         }
     }, [formData.city, formData.district, deliveryMethod, shippingZones, total, items]);
 
@@ -412,8 +421,6 @@ export default function CheckoutPage() {
                 }
             }
 
-            const cityName = safeTranslate(formData.city);
-
             const response = await fetch('/api/orders', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -431,7 +438,8 @@ export default function CheckoutPage() {
                     couponCode: appliedCoupon?.code,
                     discountAmount: appliedCoupon?.discountAmount || 0,
                     deliveryAddress: {
-                        city: cityName,
+                        // Region ID yuboriladi — server zone'larni ID bilan moslashtiradi (tilga bog'liq emas)
+                        city: formData.city,
                         district: formData.district,
                         address: formData.address,
                         comment: formData.comment,
@@ -969,6 +977,14 @@ export default function CheckoutPage() {
                                         </span>
                                     )}
                                 </div>
+                                {deliveryMethod === 'courier' && deliveryTime && (
+                                    <div className="flex justify-between items-center text-blue-600 animate-fade-in">
+                                        <span className="font-black text-[10px] uppercase tracking-widest flex items-center gap-1">
+                                            <Clock size={11} /> {tCheckout('delivery_eta')}
+                                        </span>
+                                        <span className="text-xs font-black">{deliveryTime}</span>
+                                    </div>
+                                )}
 
                                 {appliedCoupon && (
                                     <div className="flex justify-between items-center text-emerald-500 animate-fade-in group">

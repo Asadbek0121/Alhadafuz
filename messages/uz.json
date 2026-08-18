@@ -113,7 +113,8 @@
     "pay_click": "Click orqali onlayn to'lov",
     "pay_payme": "Payme orqali onlayn to'lov",
     "pay_uzum": "Uzum orqali onlayn to'lov",
-    "pay_p2p": "Kartaga pul o'tkazish"
+    "pay_p2p": "Kartaga pul o'tkazish",
+    "delivery_eta": "Yetkazish muddati"
   },
   "Product": {
     "loading": "Yuklanmoqda...",

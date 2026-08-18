@@ -24,6 +24,7 @@ export default function AdminShippingPage() {
         name: '',
         district: '',
         price: '',
+        deliveryTime: '',
         freeFrom: '',
         freeFromQty: '',
         freeIfHasDiscount: false,
@@ -176,6 +177,7 @@ export default function AdminShippingPage() {
                 name: zone.name,
                 district: zone.district || '',
                 price: zone.price.toString(),
+                deliveryTime: zone.deliveryTime || '',
                 freeFrom: zone.freeFrom?.toString() || '',
                 freeFromQty: zone.freeFromQty?.toString() || '',
                 freeIfHasDiscount: zone.freeIfHasDiscount || false,
@@ -185,7 +187,7 @@ export default function AdminShippingPage() {
         } else {
             setEditingZone(null);
             setFormData({
-                name: '', district: '', price: '0', freeFrom: '', freeFromQty: '',
+                name: '', district: '', price: '0', deliveryTime: '', freeFrom: '', freeFromQty: '',
                 freeIfHasDiscount: false, freeDiscountType: 'ANY', isActive: true
             });
         }
@@ -555,7 +557,7 @@ export default function AdminShippingPage() {
 
                                 <div className="space-y-2">
                                     <h3 className="text-2xl font-black text-blue-600 uppercase tracking-tight leading-tight">
-                                        {zone.name} {zone.district && <span className="text-gray-300 font-medium">/ {zone.district}</span>}
+                                        {(regions.find(r => r.id === zone.name)?.name || zone.name)} {zone.district && <span className="text-gray-300 font-medium">/ {zone.district}</span>}
                                     </h3>
                                     <div className="flex items-center gap-2">
                                         <div className={`w-2.5 h-2.5 rounded-full ${zone.isActive ? 'bg-emerald-500' : 'bg-gray-300'} animate-pulse`} />
@@ -571,6 +573,13 @@ export default function AdminShippingPage() {
                                         {zone.price.toLocaleString()} <span className="text-sm font-bold text-gray-800 lowercase">so'm</span>
                                     </span>
                                 </div>
+
+                                {zone.deliveryTime && (
+                                    <div className="mt-3 flex items-center gap-2 text-blue-600 bg-blue-50/40 rounded-2xl px-4 py-2.5 border border-blue-100">
+                                        <Clock size={14} />
+                                        <span className="text-sm font-black tracking-tight">Muddati: {zone.deliveryTime}</span>
+                                    </div>
+                                )}
 
                                 <div className="mt-6 space-y-4">
                                     {zone.freeFrom > 0 && (
@@ -716,14 +725,14 @@ export default function AdminShippingPage() {
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Viloyat / Shahar</label>
                                         <select required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all">
                                             <option value="">Tanlang</option>
-                                            {regions.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+                                            {regions.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                                         </select>
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tuman / Shahar <span className="text-red-500">*</span></label>
                                         <select value={formData.district} onChange={e => setFormData({ ...formData, district: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all">
                                             <option value="">Tanlang</option>
-                                            {formData.name && (districts[regions.find(r => r.name === formData.name)?.id || ''] || []).map(d => <option key={d} value={d}>{d}</option>)}
+                                            {formData.name && (districts[formData.name] || []).map(d => <option key={d} value={d}>{d}</option>)}
                                         </select>
                                     </div>
                                 </div>
@@ -732,6 +741,10 @@ export default function AdminShippingPage() {
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Narxi (SO'M)</label>
                                         <input type="number" placeholder="0" required value={formData.price} onChange={e => setFormData({ ...formData, price: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Yetkazib berish muddati</label>
+                                        <input type="text" placeholder="2-6 soat / 2-3 kun" value={formData.deliveryTime} onChange={e => setFormData({ ...formData, deliveryTime: e.target.value })} className="w-full bg-gray-50 p-4 rounded-2xl outline-none font-bold text-gray-900 border-2 border-transparent focus:border-blue-500 transition-all" />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Bepul (SO'M)</label>
