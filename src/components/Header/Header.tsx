@@ -551,6 +551,7 @@ export default function Header() {
                                     size={24}
                                     colors="primary:#1e293b,secondary:#ef4444"
                                     stroke="32"
+                                    fallback={<Heart size={24} strokeWidth={2} className="text-slate-600 group-hover:text-red-500" />}
                                 />
                                 {wishlist.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{wishlist.length}</span>}
                             </div>
@@ -566,6 +567,7 @@ export default function Header() {
                                     size={24}
                                     colors="primary:#1e293b,secondary:#2563eb"
                                     stroke="32"
+                                    fallback={<ShoppingBag size={24} strokeWidth={2} className="text-slate-600 group-hover:text-emerald-600" />}
                                 />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
@@ -585,6 +587,7 @@ export default function Header() {
                                         trigger="hover"
                                         size={24}
                                         colors="primary:#1e293b,secondary:#2563eb"
+                                        fallback={<UserCircle size={24} strokeWidth={2} className="text-slate-600 group-hover:text-blue-600" />}
                                     />
                                 )}
                             </div>

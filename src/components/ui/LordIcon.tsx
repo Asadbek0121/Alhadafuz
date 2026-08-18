@@ -37,6 +37,8 @@ interface LordIconProps {
   size?: number | string;
   className?: string;
   stroke?: number | string;
+  /** Animatsiya JSON'i yuklanguncha (yoki yuklana olmasa) ko'rsatiladigan statik ikonka */
+  fallback?: React.ReactNode;
 }
 
 // ---------------------------------------------------------------------------
@@ -278,6 +280,7 @@ const LordIcon: React.FC<LordIconProps> = ({
   colors,
   size = 24,
   className,
+  fallback,
 }) => {
   const [data, setData] = useState<any>(null);
   const [failed, setFailed] = useState(false);
@@ -308,17 +311,27 @@ const LordIcon: React.FC<LordIconProps> = ({
         className={className}
         aria-hidden="true"
       >
-        <svg viewBox="0 0 24 24" width={Number(size) * 0.6} height={Number(size) * 0.6} fill="none" stroke="currentColor" strokeWidth={2}>
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 8v4M12 16h.01" strokeLinecap="round" />
-        </svg>
+        {fallback ?? (
+          <svg viewBox="0 0 24 24" width={Number(size) * 0.6} height={Number(size) * 0.6} fill="none" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="10" />
+            <path d="M12 8v4M12 16h.01" strokeLinecap="round" />
+          </svg>
+        )}
       </div>
     );
   }
 
   if (!data) {
-    // Yuklanayotganda joy egallab turadi — layout siljimaydi
-    return <div style={{ width: size, height: size }} className={className} aria-hidden="true" />;
+    // Yuklanayotganda darhol statik ikonka ko'rinadi — layout siljimaydi, bo'sh joy bo'lmaydi
+    return (
+      <div
+        style={{ width: size, height: size, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+        className={className}
+        aria-hidden="true"
+      >
+        {fallback ?? null}
+      </div>
+    );
   }
 
   return <LottieIconInner data={data} trigger={trigger} delay={delay} size={size} className={className} />;

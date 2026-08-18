@@ -75,6 +75,7 @@ export default function BottomNav() {
                                         trigger={active ? "loop" : "hover"}
                                         size={24}
                                         colors={active ? "primary:#1e293b,secondary:#2563eb" : "primary:#94a3b8,secondary:#94a3b8"}
+                                        fallback={<Icon size={24} strokeWidth={active ? 2.5 : 2} className={active ? "text-[#FFCA6C]" : "text-slate-400"} />}
                                     />
                                 ) : (
                                     <Icon
