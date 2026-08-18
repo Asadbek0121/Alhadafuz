@@ -58,8 +58,8 @@ export default async function LocaleLayout({
 
   return (
     <ClientProviders messages={messages} locale={locale} session={session}>
-          <Script src="https://cdn.lordicon.com/lordicon.js" strategy="beforeInteractive" />
-          <Script src="https://cdn.lordicon.com/bhenfmcm.js" strategy="beforeInteractive" />
+          {/* Lordicon player self-hosted — CDN sekin/bloklansa ikonkalar ko'rinmay qolardi */}
+          <Script src="/js/lordicon.js" strategy="beforeInteractive" />
           <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
           <SessionSync />
           <TelegramAuthSync />

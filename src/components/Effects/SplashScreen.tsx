@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import LordIcon from "../ui/LordIcon";
+import { Truck } from "lucide-react";
 
 export default function SplashScreen() {
   const [show, setShow] = useState(false);
@@ -11,19 +11,20 @@ export default function SplashScreen() {
   useEffect(() => {
     // Only show splash screen once per session
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
-    if (hasSeenSplash) {
-      setShow(false);
-      return;
-    }
+    if (hasSeenSplash) return;
 
-    setShow(true);
+    // setState rAF ichida (async) — synchronous setState effect ichida taqiqlangan
+    const raf = requestAnimationFrame(() => setShow(true));
     // Reduced duration for better UX/Performance score
     const timer = setTimeout(() => {
       setShow(false);
       sessionStorage.setItem('hasSeenSplash', 'true');
     }, 2000);
 
-    return () => clearTimeout(timer);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
@@ -64,20 +65,19 @@ export default function SplashScreen() {
           {/* 2. Main Content Container */}
           <div className="relative z-10 flex flex-col items-center">
             
-            {/* Animated Icon from Lordicon */}
+            {/* Animated Icon — lokal, tashqi resursga bog'liq emas (avvalgi delivery.json buzilgan edi) */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5, duration: 1 }}
               className="mb-4"
             >
-              <LordIcon 
-                src="/icons/lordicon/delivery.json"
-                trigger="loop"
-                size={80}
-                colors="primary:#ffffff,secondary:#3b82f6"
-                stroke="25"
-              />
+              <motion.div
+                animate={{ y: [0, -6, 0] }}
+                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
+              >
+                <Truck size={64} className="text-blue-400" strokeWidth={1.5} />
+              </motion.div>
             </motion.div>
 
             {/* Logo Ring (Radial Progress) */}
