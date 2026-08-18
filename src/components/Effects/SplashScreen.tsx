@@ -3,7 +3,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { Truck } from "lucide-react";
 
 export default function SplashScreen() {
   const [show, setShow] = useState(false);
@@ -65,21 +64,6 @@ export default function SplashScreen() {
           {/* 2. Main Content Container */}
           <div className="relative z-10 flex flex-col items-center">
             
-            {/* Animated Icon — lokal, tashqi resursga bog'liq emas (avvalgi delivery.json buzilgan edi) */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.5, duration: 1 }}
-              className="mb-4"
-            >
-              <motion.div
-                animate={{ y: [0, -6, 0] }}
-                transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <Truck size={64} className="text-blue-400" strokeWidth={1.5} />
-              </motion.div>
-            </motion.div>
-
             {/* Logo Ring (Radial Progress) */}
             <div className="relative w-32 h-32 md:w-48 md:h-48 flex items-center justify-center">
               <svg className="absolute inset-0 w-full h-full -rotate-90">
