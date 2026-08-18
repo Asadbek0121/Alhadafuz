@@ -19,7 +19,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     <div className="pb-[60px] md:pb-0">
       <Hero initialBanners={banners} fallbackProducts={products} />
 
-      <section className="container">
+      <section className="container pb-8 md:pb-12">
         <h2 className="text-2xl font-bold mb-6 mt-10 text-slate-900">
           {t('ommabop_mahsulotlar')}
         </h2>
