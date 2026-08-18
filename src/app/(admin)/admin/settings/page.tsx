@@ -4,12 +4,14 @@ import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import {
     Save, Loader2, Store, Phone, Mail, MapPin,
-    Globe, Facebook, Instagram, Youtube, Send,
+    Globe,
     Settings, LayoutDashboard, MessageCircle, CreditCard
 } from 'lucide-react';
+import { SocialIcon } from '@/components/SocialIcons';
 import TelegramSettings from '@/components/admin/TelegramSettings';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { normalizeSocialLinks, serializeSocialLinks } from '@/lib/social-links';
 
 export default function AdminSettingsPage() {
     const [loading, setLoading] = useState(true);
@@ -33,10 +35,8 @@ export default function AdminSettingsPage() {
             const res = await fetch('/api/admin/settings');
             if (res.ok) {
                 const data = await res.json();
-                let social = { telegram: '', instagram: '', facebook: '', youtube: '', supportTelegram: '' };
-                if (data.socialLinks) {
-                    try { social = { ...social, ...JSON.parse(data.socialLinks) }; } catch (e) { }
-                }
+                // normalizeSocialLinks legacy formatlarni ham taniydi ("0": {platform,url}, array, ...)
+                const social = normalizeSocialLinks(data.socialLinks);
                 setFormData({
                     siteName: data.siteName || '',
                     phone: data.phone || '',
@@ -60,7 +60,7 @@ export default function AdminSettingsPage() {
         try {
             const payload = {
                 ...formData,
-                socialLinks: JSON.stringify(formData.socialLinks)
+                socialLinks: serializeSocialLinks(normalizeSocialLinks(formData.socialLinks))
             };
             const res = await fetch('/api/admin/settings', {
                 method: 'POST',
@@ -254,9 +254,7 @@ export default function AdminSettingsPage() {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
                                 <label htmlFor="social-telegram" className="sr-only">Telegram</label>
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shrink-0">
-                                    <Send size={18} />
-                                </div>
+                                <SocialIcon brand="telegram" size={40} />
                                 <input
                                     id="social-telegram"
                                     value={formData.socialLinks.telegram}
@@ -268,9 +266,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <label htmlFor="social-instagram" className="sr-only">Instagram</label>
-                                <div className="w-10 h-10 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shrink-0">
-                                    <Instagram size={18} />
-                                </div>
+                                <SocialIcon brand="instagram" size={40} />
                                 <input
                                     id="social-instagram"
                                     value={formData.socialLinks.instagram}
@@ -282,9 +278,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <label htmlFor="social-facebook" className="sr-only">Facebook</label>
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
-                                    <Facebook size={18} />
-                                </div>
+                                <SocialIcon brand="facebook" size={40} />
                                 <input
                                     id="social-facebook"
                                     value={formData.socialLinks.facebook}
@@ -296,9 +290,7 @@ export default function AdminSettingsPage() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <label htmlFor="social-youtube" className="sr-only">Youtube</label>
-                                <div className="w-10 h-10 rounded-xl bg-red-50 flex items-center justify-center text-red-500 shrink-0">
-                                    <Youtube size={18} />
-                                </div>
+                                <SocialIcon brand="youtube" size={40} />
                                 <input
                                     id="social-youtube"
                                     value={formData.socialLinks.youtube}

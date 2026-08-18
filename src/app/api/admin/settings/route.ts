@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { normalizeSocialLinks, serializeSocialLinks } from '@/lib/social-links';
 
 
 export async function GET() {
@@ -27,6 +28,18 @@ export async function GET() {
         if (!settings) {
             settings = await (prisma as any).storeSettings.create({ data: { id: 'default' } });
         }
+
+        // Migrate legacy social-links formats ("0": { platform, url }, array, ...) to canonical shape
+        if (typeof settings.socialLinks === 'string' && settings.socialLinks.trim()) {
+            const canonical = serializeSocialLinks(normalizeSocialLinks(settings.socialLinks));
+            if (canonical !== settings.socialLinks) {
+                settings = await (prisma as any).storeSettings.update({
+                    where: { id: 'default' },
+                    data: { socialLinks: canonical }
+                });
+            }
+        }
+
         return NextResponse.json(settings);
     } catch (e) {
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
@@ -61,7 +74,7 @@ export async function POST(req: Request) {
         if (phone !== undefined) updateData.phone = phone;
         if (email !== undefined) updateData.email = email;
         if (address !== undefined) updateData.address = address;
-        if (socialLinks !== undefined) updateData.socialLinks = socialLinks;
+        if (socialLinks !== undefined) updateData.socialLinks = serializeSocialLinks(normalizeSocialLinks(socialLinks));
         if (telegramBotToken !== undefined) updateData.telegramBotToken = telegramBotToken;
         if (telegramAdminIds !== undefined) updateData.telegramAdminIds = telegramAdminIds;
         if (courierFeePerOrder !== undefined) updateData.courierFeePerOrder = Number(courierFeePerOrder);

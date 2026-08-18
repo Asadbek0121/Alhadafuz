@@ -1,33 +1,35 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
+import type { ComponentType } from "react";
 import { Mail, Phone, MapPin, MessageCircle, HelpCircle, ChevronRight } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getTranslations } from "next-intl/server";
 import Link from "next/link";
 import ChatTrigger from "@/components/SupportChat/ChatTrigger";
+import { normalizeSocialLinks } from "@/lib/social-links";
+import { SocialIcon, type BrandName } from "@/components/SocialIcons";
 
 async function getSettings() {
     const settings = await prisma.storeSettings.findUnique({
         where: { id: "default" }
     });
 
-    let socialLinks: any = { telegram: '', instagram: '', facebook: '', youtube: '', supportTelegram: '' };
-    if (settings?.socialLinks) {
-        try { socialLinks = JSON.parse(settings.socialLinks); } catch (e) { }
-    }
+    const socialLinks = normalizeSocialLinks(settings?.socialLinks);
 
-    const telegramLink = socialLinks.supportTelegram || socialLinks.telegram || "https://t.me/hadaf_uz";
+    // supportTelegram username ko'rinishida saqlanadi — to'liq URL'ga aylantiramiz
+    let telegram = socialLinks.supportTelegram || socialLinks.telegram || "https://t.me/hadaf_uz";
+    if (!/^https?:\/\//i.test(telegram)) telegram = `https://t.me/${telegram.replace(/^@/, '')}`;
 
     const contactInfo = {
         phone: settings?.phone || "+998 71 200 01 05",
         email: settings?.email || "info@hadaf.uz",
         workingHours: "24/7",
-        telegramUsername: telegramLink.split('/').pop() || "@hadaf_uz"
+        telegramUsername: telegram.split('/').pop() || "@hadaf_uz"
     };
 
     return {
         phone: contactInfo.phone,
         email: contactInfo.email,
-        telegram: telegramLink,
+        telegram,
         address: settings?.address || "Toshkent shahri",
         telegramUsername: contactInfo.telegramUsername,
         workingHours: contactInfo.workingHours
@@ -38,7 +40,18 @@ export default async function SupportPage() {
     const settings = await getSettings();
     const t = await getTranslations('Support');
 
-    const contactMethods = [
+    type ContactMethod = {
+        icon: ComponentType<{ size?: number | string; strokeWidth?: number | string }>;
+        brand?: BrandName;
+        title: string;
+        desc: string;
+        value: string;
+        href: string;
+        color: string;
+        bg: string;
+    };
+
+    const contactMethods: ContactMethod[] = [
         {
             icon: Phone,
             title: t('call_us'),
@@ -50,6 +63,7 @@ export default async function SupportPage() {
         },
         {
             icon: MessageCircle,
+            brand: 'telegram' as BrandName,
             title: t('telegram'),
             desc: t('telegram_desc'),
             value: settings.telegramUsername,
@@ -80,7 +94,7 @@ export default async function SupportPage() {
                 {contactMethods.map((method, idx) => (
                     <div key={idx} className="bg-white p-8 rounded-3xl border border-gray-100 shadow-sm text-center hover:shadow-md transition-shadow group">
                         <div className={`w-16 h-16 ${method.bg} ${method.color} rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform`}>
-                            <method.icon size={32} />
+                            {method.brand ? <SocialIcon brand={method.brand} size={48} /> : <method.icon size={32} />}
                         </div>
                         <h3 className="text-xl font-bold mb-2">{method.title}</h3>
                         <p className="text-gray-500 mb-4 text-sm">{method.desc}</p>
@@ -96,7 +110,7 @@ export default async function SupportPage() {
                 {contactMethods.map((method, idx) => (
                     <a key={idx} href={method.href} className="flex items-center gap-3 p-2.5 bg-white rounded-2xl border border-gray-100 shadow-sm active:scale-[0.97] transition-all group">
                         <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform group-active:scale-90 ${method.bg} ${method.color} border border-white/50 shadow-sm`}>
-                            <method.icon size={16} strokeWidth={2.5} />
+                            {method.brand ? <SocialIcon brand={method.brand} size={30} /> : <method.icon size={16} strokeWidth={2.5} />}
                         </div>
                         <div className="flex-1 min-w-0 pr-1">
                             <h3 className="font-bold text-[12px] text-gray-900 leading-tight truncate">{method.title}</h3>

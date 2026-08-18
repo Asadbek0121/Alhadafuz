@@ -444,8 +444,14 @@ Quyidagi menyudan foydalaning:`;
                 try {
                     if (s.socialLinks) {
                         const links = JSON.parse(s.socialLinks);
-                        const tg = links.find(l => l.platform === 'telegram' || l.platform === 'Telegram');
-                        if (tg) adminUser = tg.url.split('/').pop() || adminUser;
+                        let tgUrl = null;
+                        if (Array.isArray(links)) {
+                            const tg = links.find(l => l && (l.platform === 'telegram' || l.platform === 'Telegram'));
+                            if (tg) tgUrl = tg.url;
+                        } else if (links && typeof links === 'object') {
+                            tgUrl = links.telegram || (links['0'] && links['0'].url);
+                        }
+                        if (tgUrl) adminUser = tgUrl.split('/').pop() || adminUser;
                         if (!adminUser.startsWith('@')) adminUser = '@' + adminUser;
                     }
                 } catch (e) { }

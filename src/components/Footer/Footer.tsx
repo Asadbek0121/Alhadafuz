@@ -1,7 +1,7 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { Phone, Mail, MapPin, Facebook, Instagram, Send, Youtube } from 'lucide-react';
+import { Phone, Mail, MapPin } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -11,6 +11,8 @@ import InstallAppButtons from '../InstallAppButtons';
 import VendorApplicationModal from '../VendorApplicationModal';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
+import { normalizeSocialLinks } from '@/lib/social-links';
+import { SocialLink } from '@/components/SocialIcons';
 
 const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
@@ -40,10 +42,15 @@ export default function Footer() {
             .then(res => res.json())
             .then(data => {
                 if (data.socialLinks) {
-                    try {
-                        const parsed = JSON.parse(data.socialLinks);
-                        setSocials(prev => ({ ...prev, ...parsed }));
-                    } catch (e) { }
+                    // normalizeSocialLinks legacy formatlarni ham taniydi ("0": {platform,url}, array, ...)
+                    const parsed = normalizeSocialLinks(data.socialLinks);
+                    setSocials(prev => ({
+                        ...prev,
+                        telegram: parsed.telegram || prev.telegram,
+                        instagram: parsed.instagram || prev.instagram,
+                        facebook: parsed.facebook || prev.facebook,
+                        youtube: parsed.youtube || prev.youtube
+                    }));
                 }
                 if (data.phone) setContact(prev => ({ ...prev, phone: data.phone }));
                 if (data.address) setContact(prev => ({ ...prev, address: data.address }));
@@ -99,10 +106,10 @@ export default function Footer() {
                             {t('download_app_desc')}
                         </p>
                         <div className="flex gap-4">
-                            <SocialLink href={socials.facebook} icon={<Facebook size={20} />} color="hover:text-blue-500" label="Facebook" />
-                            <SocialLink href={socials.instagram} icon={<Instagram size={20} />} color="hover:text-pink-500" label="Instagram" />
-                            <SocialLink href={socials.telegram} icon={<Send size={20} />} color="hover:text-blue-400" label="Telegram" />
-                            <SocialLink href={socials.youtube} icon={<Youtube size={20} />} color="hover:text-red-500" label="YouTube" />
+                            <SocialLink href={socials.facebook} brand="facebook" label="Facebook" />
+                            <SocialLink href={socials.instagram} brand="instagram" label="Instagram" />
+                            <SocialLink href={socials.telegram} brand="telegram" label="Telegram" />
+                            <SocialLink href={socials.youtube} brand="youtube" label="YouTube" />
                         </div>
                     </div>
 
@@ -191,21 +198,6 @@ export default function Footer() {
                 onClose={() => setIsVendorModalOpen(false)}
             />
         </footer>
-    );
-}
-
-function SocialLink({ href, icon, color, label }: { href: string, icon: React.ReactNode, color: string, label: string }) {
-    return (
-        <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            title={label}
-            aria-label={label}
-            className={`w-10 h-10 rounded-full bg-gray-800 flex items-center justify-center text-gray-400 transition-all transform hover:scale-110 hover:bg-white ${color}`}
-        >
-            {icon}
-        </a>
     );
 }
 
