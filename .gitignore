@@ -61,3 +61,6 @@ next-env.d.ts
 # Temp files
 next-env.d 2.ts
 public/compare_820.html
+
+# Bot logs
+scripts/logs/
