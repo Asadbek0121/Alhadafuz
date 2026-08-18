@@ -462,7 +462,7 @@ export default function Header() {
                             <div 
                                 className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center cursor-pointer"
                             >
-                                <NotificationIcon size={24} />
+                                <NotificationIcon size={28} />
                                 {unreadCount > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{unreadCount}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('bildirishnoma')}</span>
