@@ -4,6 +4,7 @@
 import { useEffect, useState } from 'react';
 import { Download, X, Apple, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function InstallAppButtons() {
     const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -33,6 +34,9 @@ export default function InstallAppButtons() {
             setShowAndroidInstructions(true);
         }
     };
+
+    // Yo'riqnoma modali ochiq paytida fon sahifa scroll qilinmaydi
+    useScrollLock(showIosInstructions || showAndroidInstructions);
 
     if (!isInBrowser) return null;
 

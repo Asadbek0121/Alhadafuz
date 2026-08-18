@@ -7,11 +7,15 @@ import { X, Trash2, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Link } from '@/navigation';
 import Image from "next/image";
 import { useTranslations } from 'next-intl';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 export default function CartDrawer() {
     const { items, isOpen, closeCart, removeFromCart, updateQuantity, total, isHydrated } = useCartStore();
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
+
+    // Drawer ochiq paytida fon sahifa scroll qilinmaydi
+    useScrollLock(isOpen);
 
     if (!isOpen) return null;
 

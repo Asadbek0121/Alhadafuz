@@ -8,6 +8,7 @@ import { X, MapPin, Search, Navigation, Loader2, Info } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Script from 'next/script';
 import { toast } from 'sonner';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong&load=package.full";
 const DEFAULT_COORDS = [41.311081, 69.240562]; // Tashkent
@@ -15,6 +16,9 @@ const DEFAULT_COORDS = [41.311081, 69.240562]; // Tashkent
 export default function MapModal() {
     const { isMapOpen, closeMap } = useMapStore();
     const { setLocation, lat: storedLat, lng: storedLng } = useLocationStore();
+
+    // Modal ochiq paytida fon sahifa scroll qilinmaydi
+    useScrollLock(isMapOpen);
 
     const [mapLoaded, setMapLoaded] = useState(false);
     const [isSearching, setIsSearching] = useState(false);

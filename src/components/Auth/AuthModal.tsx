@@ -12,6 +12,7 @@ import { PhoneInput } from '@/components/ui/phone-input';
 import { useTranslations } from 'next-intl';
 import Lottie from 'lottie-react';
 import successAnimation from '@/components/success-animation.json';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import styles from './AuthModal.module.css';
 
 // Faqat shu sayt ichidagi manzillarga yo'naltirish — open-redirect himoyasi
@@ -110,40 +111,17 @@ export default function AuthModal() {
     }, [isVerifying, timeLeft]);
 
     // Scroll-lock: modal ochiq paytida fon sahifa scroll qilinmaydi (iOS uchun ham)
+    useScrollLock(isModalOpen);
+
+    // Yopilganda form holatini tozalash
     useEffect(() => {
-        if (isModalOpen) {
-            const originalOverflow = document.body.style.overflow;
-            const originalPaddingRight = document.body.style.paddingRight;
-            const originalPosition = document.body.style.position;
-            const originalTop = document.body.style.top;
-            const originalWidth = document.body.style.width;
-            const scrollY = window.scrollY;
-            const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-
-            document.body.style.overflow = 'hidden';
-            // Scrollbar yo'qolishi tufayli layout sakrashini kompensatsiya qilish
-            if (scrollbarWidth > 0) {
-                document.body.style.paddingRight = `${scrollbarWidth}px`;
-            }
-            // iOS Safari: overflow:hidden yetarli emas — body'ni fixed qilib scroll pozitsiyani saqlaymiz
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${scrollY}px`;
-            document.body.style.width = '100%';
-
-            return () => {
-                document.body.style.overflow = originalOverflow;
-                document.body.style.paddingRight = originalPaddingRight;
-                document.body.style.position = originalPosition;
-                document.body.style.top = originalTop;
-                document.body.style.width = originalWidth;
-                window.scrollTo(0, scrollY);
-            };
-        } else {
-            setTimeout(() => {
+        if (!isModalOpen) {
+            const t = setTimeout(() => {
                 setIsVerifying(false);
                 setOtp('');
                 setIsSuccess(false);
             }, 300);
+            return () => clearTimeout(t);
         }
     }, [isModalOpen]);
 

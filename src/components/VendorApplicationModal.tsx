@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, CheckCircle, Send, ShoppingBag, Truck, BarChart3, Clock } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 interface VendorApplicationModalProps {
     isOpen: boolean;
@@ -15,6 +16,9 @@ export default function VendorApplicationModal({ isOpen, onClose }: VendorApplic
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
     const t = useTranslations('Vendor');
+
+    // Modal ochiq paytida fon sahifa scroll qilinmaydi
+    useScrollLock(isOpen);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();

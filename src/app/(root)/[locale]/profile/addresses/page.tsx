@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslations, useLocale, useMessages } from "next-intl";
+import { useScrollLock } from "@/hooks/useScrollLock";
 
 interface Address {
     id: string;
@@ -30,6 +31,9 @@ export default function AddressBookPage() {
     const messages = useMessages() as any;
     const queryClient = useQueryClient();
     const [isModalOpen, setIsModalOpen] = useState(false);
+
+    // Modal ochiq paytida fon sahifa scroll qilinmaydi
+    useScrollLock(isModalOpen);
 
     // Safe translation helper that accesses messages directly
     const safeTranslate = (key: string) => {
