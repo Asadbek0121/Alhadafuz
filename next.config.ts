@@ -34,7 +34,7 @@ const cspHeader = [
   // keep static rendering and lock down everything else instead.
   "script-src 'self' 'unsafe-inline'" +
     (isDev ? " 'unsafe-eval'" : "") +
-    " https://cdn.lordicon.com https://telegram.org https://api-maps.yandex.ru" +
+    " https://telegram.org https://api-maps.yandex.ru" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net https://unpkg.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net",
