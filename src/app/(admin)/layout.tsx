@@ -12,8 +12,15 @@ import AdminHeader from './admin/AdminHeader';
 import Admin2FAPage from './Admin2FAPage';
 
 export const metadata: Metadata = {
-    title: 'Hadaf Admin Panel',
+    title: {
+        default: 'Hadaf Admin Panel',
+        // Each admin route sets a bare title; the suffix keeps admin tabs
+        // distinguishable from storefront tabs.
+        template: '%s | Hadaf Admin',
+    },
     description: 'Control center for Hadaf Marketplace',
+    // The whole panel is behind a login — keep it out of search results.
+    robots: { index: false, follow: false, nocache: true, googleBot: { index: false, follow: false } },
 };
 
 export default async function AdminLayout({

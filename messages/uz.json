@@ -1,7 +1,143 @@
 {
   "Meta": {
     "title": "Hadaf Market",
-    "description": "O'zbekistondagi eng katta online bozor"
+    "description": "O'zbekistondagi eng katta online bozor",
+    "home": {
+      "title": "Hadaf Market — Onlayn savdo va tezkor yetkazib berish",
+      "description": "HADAF Marketpleys: minglab mahsulot bir joyda. Termiz va Surxondaryo bo'ylab tezkor yetkazib berish, respublika bo'ylab pochta, xavfsiz to'lov va muddatli to'lov imkoniyati."
+    },
+    "about": {
+      "title": "Biz haqimizda",
+      "description": "HADAF Marketpleys tarixi, jamoasi va qadriyatlari. Surxondaryo va butun O'zbekiston aholisi uchun qulaylik, tezkorlik va halollik standartlarini belgilovchi platforma."
+    },
+    "delivery": {
+      "title": "Yetkazib berish",
+      "description": "Termiz shahri ichida tezkor yetkazib berish, Surxondaryo tumanlariga kuryerlik xizmati va respublika bo'ylab pochta orqali jo'natish. Muddatlar va narxlar."
+    },
+    "faq": {
+      "title": "Ko'p beriladigan savollar",
+      "description": "Buyurtma berish, to'lov, yetkazib berish va mahsulotni qaytarish bo'yicha eng ko'p so'raladigan savollarga javoblar."
+    },
+    "returns": {
+      "title": "Qaytarish va almashtirish",
+      "description": "Mahsulotni qaytarish va almashtirish tartibi: muddatlar, shartlar va pul mablag'ini qaytarish jarayoni."
+    },
+    "stores": {
+      "title": "Do'konlarimiz",
+      "description": "HADAF do'konlari manzillari, ish vaqti va telefon raqamlari. Sizga eng yaqin filialni xaritada toping."
+    },
+    "support": {
+      "title": "Yordam markazi",
+      "description": "HADAF qo'llab-quvvatlash xizmati bilan telefon, Telegram yoki email orqali bog'laning. Onlayn chat ham mavjud."
+    },
+    "privacy": {
+      "title": "Maxfiylik siyosati",
+      "description": "Shaxsiy ma'lumotlaringizni qanday yig'amiz, saqlaymiz, ishlatamiz va himoya qilamiz — to'liq bayonot."
+    },
+    "terms": {
+      "title": "Ommaviy oferta",
+      "description": "HADAF Marketpleysidan foydalanish shartlari, tomonlarning huquq va majburiyatlari, tranzaksiyalarni tartibga soluvchi huquqiy hujjat."
+    },
+    "cart": {
+      "title": "Savatcha",
+      "description": "Savatchangizdagi mahsulotlar va buyurtma summasi."
+    },
+    "checkout": {
+      "title": "Buyurtmani rasmiylashtirish",
+      "description": "Yetkazib berish manzili va to'lov usulini tanlash."
+    },
+    "favorites": {
+      "title": "Sevimlilar",
+      "description": "Siz saqlab qo'ygan mahsulotlar."
+    },
+    "orderSuccess": {
+      "title": "Buyurtma qabul qilindi",
+      "description": "Buyurtmangiz qabul qilindi va qayta ishlanmoqda."
+    },
+    "track": {
+      "title": "Buyurtmani kuzatish",
+      "description": "Buyurtmangiz qayerda — real vaqtda holatini kuzatib boring."
+    },
+    "auth": {
+      "title": "Kirish",
+      "description": "Hisobingizga kiring yoki yangi hisob yarating."
+    },
+    "profile": {
+      "title": "Shaxsiy kabinet",
+      "description": "Buyurtmalar, manzillar, bonuslar va hisob sozlamalari."
+    },
+    "profileInfo": {
+      "title": "Shaxsiy ma'lumotlar",
+      "description": "Ism, telefon raqami va boshqa hisob ma'lumotlarini tahrirlash."
+    },
+    "profileOrders": {
+      "title": "Mening buyurtmalarim",
+      "description": "Barcha buyurtmalaringiz tarixi va holati."
+    },
+    "profileInvoice": {
+      "title": "Hisob-faktura",
+      "description": "Buyurtma uchun hisob-faktura."
+    },
+    "profileAddresses": {
+      "title": "Mening manzillarim",
+      "description": "Yetkazib berish manzillarini qo'shish va tahrirlash."
+    },
+    "profileNotifications": {
+      "title": "Bildirishnomalar",
+      "description": "Buyurtma va aksiyalar haqidagi xabarlar."
+    },
+    "profileSecurity": {
+      "title": "Xavfsizlik",
+      "description": "PIN kod, parol va hisobga kirish xavfsizligi sozlamalari."
+    },
+    "profileSettings": {
+      "title": "Sozlamalar",
+      "description": "Til, bildirishnoma va ilova sozlamalari."
+    },
+    "courier": {
+      "title": "Kuryer paneli",
+      "description": "Kuryerlar uchun ish paneli."
+    },
+    "courierReport": {
+      "title": "Kuryer hisoboti",
+      "description": "Yetkazilgan buyurtmalar va inkassa hisoboti."
+    },
+    "courierScan": {
+      "title": "QR kodni skanerlash",
+      "description": "Buyurtma QR kodini skanerlab holatini yangilash."
+    },
+    "product": {
+      "title": "Mahsulot",
+      "description": "HADAF Marketpleysdagi mahsulot: narx, tavsif, xususiyatlar va sharhlar."
+    },
+    "category": {
+      "title": "Katalog",
+      "description": "HADAF Marketpleys katalogi — kategoriya bo'yicha mahsulotlar."
+    },
+    "categoryPage": {
+      "title": "{name} — narxlari va katalogi",
+      "description": "{name} toifasidagi mahsulotlar HADAF Marketpleysda: narxlar, tavsiflar va tezkor yetkazib berish."
+    },
+    "productPage": {
+      "title": "{title}",
+      "description": "{title} — HADAF Marketpleysda arzon narxda. Tezkor yetkazib berish, xavfsiz to'lov va muddatli to'lov imkoniyati."
+    },
+    "authLogin": {
+      "title": "Kirish",
+      "description": "Telefon raqamingiz orqali HADAF hisobingizga kiring."
+    },
+    "authRegister": {
+      "title": "Ro'yxatdan o'tish",
+      "description": "Yangi HADAF hisobini yaratib, buyurtmalarni kuzatib boring."
+    },
+    "authForgotPassword": {
+      "title": "Parolni tiklash",
+      "description": "Parolni tiklash uchun telefon raqamingizni kiriting."
+    },
+    "authResetPassword": {
+      "title": "Yangi parol",
+      "description": "Hisobingiz uchun yangi parol o'rnating."
+    }
   },
   "Header": {
     "search_placeholder": "Mahsulotlarni qidirish...",

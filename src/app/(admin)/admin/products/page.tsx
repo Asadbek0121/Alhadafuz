@@ -4,6 +4,11 @@ import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Package, Tag, AlertCircl
 import SoftDeleteButton from "./SoftDeleteButton";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Mahsulotlar",
+};
 
 const getProducts = async (skip: number, take: number, vendorId?: string, query?: string) => {
     try {

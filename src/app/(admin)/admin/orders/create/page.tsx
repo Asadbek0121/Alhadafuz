@@ -1,6 +1,11 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { prisma } from "@/lib/prisma";
 import CreateOrderForm from "./CreateOrderForm";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Yangi buyurtma",
+};
 
 export default async function CreateOrderPage() {
     const users = await prisma.user.findMany({

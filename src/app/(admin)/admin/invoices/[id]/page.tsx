@@ -7,6 +7,11 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import PrintButton from "./PrintButton";
 import InvoiceTemplate from "@/components/Invoice/InvoiceTemplate";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Hisob-faktura",
+};
 
 export default async function ViewInvoicePage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

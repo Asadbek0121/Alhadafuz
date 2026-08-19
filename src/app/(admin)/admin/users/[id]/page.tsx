@@ -8,6 +8,11 @@ import { User, ShoppingCart, Heart, MapPin, Trash2, Clock, Package } from "lucid
 import DeleteUserButton from "./DeleteUserButton";
 import UserRoleSwitcher from "./UserRoleSwitcher";
 import { auth } from "@/auth";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Foydalanuvchi",
+};
 
 export default async function UserDetailPage(props: { params: Promise<{ id: string }> }) {
     const params = await props.params;

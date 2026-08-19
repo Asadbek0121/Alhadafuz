@@ -4,6 +4,11 @@ import LiveMap from "@/components/admin/LiveMap";
 import { Suspense } from "react";
 import { ChevronLeft, Activity } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Yetkazib berish xaritasi",
+};
 
 export default function AdminMapPage() {
     return (

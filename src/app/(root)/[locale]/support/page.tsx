@@ -7,6 +7,13 @@ import Link from "next/link";
 import ChatTrigger from "@/components/SupportChat/ChatTrigger";
 import { normalizeSocialLinks } from "@/lib/social-links";
 import { SocialIcon, type BrandName } from "@/components/SocialIcons";
+import type { Metadata } from "next";
+import { translatedPageMetadata } from "@/lib/seo";
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+    const { locale } = await params;
+    return translatedPageMetadata("support", { locale, path: "/support" });
+}
 
 async function getSettings() {
     const settings = await prisma.storeSettings.findUnique({

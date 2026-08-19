@@ -1,10 +1,16 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import type { Metadata } from "next";
+import { translatedPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-    title: "Kirish | Hadaf Market",
-    description: "Hisobingizga kiring yoki yangi hisob yarating",
-};
+// Shared default for the auth screens; each screen below narrows the title.
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+    const { locale } = await params;
+    return translatedPageMetadata("auth", { locale, path: "/auth/login", noindex: true });
+}
 
 export default function AuthLayout({
     children,

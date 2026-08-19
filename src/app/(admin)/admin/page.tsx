@@ -7,6 +7,11 @@ import {
     Package, Plus, TrendingUp, MessageSquare, Tag, Image as ImageIcon,
     Settings as SettingsIcon, FileText
 } from 'lucide-react';
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Boshqaruv paneli",
+};
 
 async function getData(userRole: string, userId: string) {
     const today = new Date();

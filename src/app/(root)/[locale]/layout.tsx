@@ -19,14 +19,24 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
 
 import { ClientProviders } from "@/providers/ClientProviders";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Meta' });
 
   return {
-    title: t('title'),
+    // Lets every page below use relative paths for canonical, hreflang and OG
+    // image URLs; without it a relative URL in those fields is a build error.
+    metadataBase: new URL(SITE_URL),
+    title: {
+      default: t('title'),
+      // Applies to child segments only, so the home page (same segment as this
+      // layout) sets its own full title.
+      template: `%s | ${SITE_NAME}`,
+    },
     description: t('description'),
+    applicationName: SITE_NAME,
     manifest: '/manifest.json',
     // The tab icon comes from src/app/favicon.ico (Next.js file convention).
     // Declaring another `icon` here would emit a second, competing <link rel="icon">.
@@ -37,6 +47,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       capable: true,
       statusBarStyle: 'default',
       title: 'Hadaf Market',
+    },
+    formatDetection: {
+      // Stops iOS Safari turning prices and order numbers into phone links.
+      telephone: false,
     },
   };
 }

@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, User, Shield, Calendar, Mail } from "lucide-react";
 import CreateUserModal from "./CreateUserModal";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Foydalanuvchilar",
+};
 
 async function getUsers(where: any, skip: number, take: number) {
     return await Promise.all([

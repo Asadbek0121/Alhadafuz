@@ -8,6 +8,11 @@ import ExportInvoicesButton from "./ExportInvoicesButton";
 import StatusFilter from "./StatusFilter";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Hisob-fakturalar",
+};
 
 export default async function AdminInvoicesPage({
     searchParams,

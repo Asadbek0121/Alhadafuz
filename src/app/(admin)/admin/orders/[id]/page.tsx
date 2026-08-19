@@ -9,6 +9,11 @@ import OrderStatusSelect from "../OrderStatusSelect";
 import CourierSelector from "@/components/admin/CourierSelector";
 import { auth } from "@/auth";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Buyurtma tafsilotlari",
+};
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

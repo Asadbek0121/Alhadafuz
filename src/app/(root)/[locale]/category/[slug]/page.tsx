@@ -1,16 +1,17 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
+import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { prisma } from '@/lib/prisma';
+import { translatedPageMetadata } from '@/lib/seo';
 import CategoryContent from './CategoryContent';
 
-export default async function CategoryPage({
-    params,
-}: {
-    params: Promise<{ slug: string }>;
-}) {
-    const { slug } = await params;
-
-    const category = await (prisma as any).category.findFirst({
+/**
+ * Memoized so generateMetadata and the page body share a single query instead of
+ * hitting the database twice per request.
+ */
+const getCategory = cache(async (slug: string) => {
+    return (prisma as any).category.findFirst({
         where: { slug: slug },
         include: {
             parent: {
@@ -26,6 +27,38 @@ export default async function CategoryPage({
             }
         }
     });
+});
+
+export async function generateMetadata({
+    params,
+}: {
+    params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+    const { locale, slug } = await params;
+    const category = await getCategory(slug);
+
+    // Guard for a category row with no usable name, so the title never
+    // interpolates undefined. A slug that matches nothing renders notFound(),
+    // and Next.js supplies its own noindex metadata for that response.
+    if (!category?.name) {
+        return translatedPageMetadata('category', { locale, path: `/category/${slug}`, noindex: true });
+    }
+
+    return translatedPageMetadata('categoryPage', {
+        locale,
+        path: `/category/${slug}`,
+        values: { name: category.name },
+    });
+}
+
+export default async function CategoryPage({
+    params,
+}: {
+    params: Promise<{ slug: string }>;
+}) {
+    const { slug } = await params;
+
+    const category = await getCategory(slug);
 
     if (!category) {
         notFound();

@@ -108,3 +108,45 @@ for (const [size, path] of [
     await writeFile(path, await squareMark(source, size));
     console.log(`${path} — ${size}x${size}`);
 }
+
+/**
+ * The Open Graph / Twitter card image, shown whenever a link to the site is
+ * shared. 1200x630 is the size both platforms crop to.
+ *
+ * The text is drawn as SVG rather than composited from a pre-rendered asset so
+ * the wording can be edited here. Only Latin characters are used, which the
+ * system Helvetica covers — do not put Cyrillic in here without checking that
+ * the rendering font has those glyphs.
+ */
+const OG = { width: 1200, height: 630 };
+
+// Sampled from the logo: the cart is this blue, the H is this orange.
+const BRAND_BLUE = '#3973f8';
+const BRAND_ORANGE = '#f37409';
+
+const ogText = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.width}" height="${OG.height}">
+  <text x="600" y="454" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="76" font-weight="700" fill="#0f172a" letter-spacing="-1">Hadaf Market</text>
+  <text x="600" y="516" text-anchor="middle" font-family="Helvetica, Arial, sans-serif"
+        font-size="32" font-weight="500" fill="#64748b">Onlayn savdo va tezkor yetkazib berish</text>
+  <rect x="0" y="${OG.height - 10}" width="${OG.width}" height="10" fill="${BRAND_BLUE}"/>
+  <rect x="0" y="${OG.height - 10}" width="${OG.width / 3}" height="10" fill="${BRAND_ORANGE}"/>
+</svg>`);
+
+const ogMark = await sharp(source).resize(232, 232).png().toBuffer();
+
+await sharp({
+    create: {
+        width: OG.width,
+        height: OG.height,
+        channels: 4,
+        background: { r: 255, g: 255, b: 255, alpha: 1 },
+    },
+})
+    .composite([
+        { input: ogMark, top: 118, left: Math.round((OG.width - 232) / 2) },
+        { input: ogText, top: 0, left: 0 },
+    ])
+    .png({ compressionLevel: 9 })
+    .toFile('public/og-image.png');
+console.log(`public/og-image.png — ${OG.width}x${OG.height}`);

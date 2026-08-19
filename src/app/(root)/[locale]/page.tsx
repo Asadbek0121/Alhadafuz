@@ -2,8 +2,17 @@ import Hero from "@/components/Hero/Hero";
 import ProductCard from "@/components/ProductCard/ProductCard";
 import { getTranslations } from 'next-intl/server';
 import { getCachedProducts, getCachedBanners } from '@/lib/data';
+import type { Metadata } from 'next';
+import { translatedPageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  // The home title already reads as a full title, so it opts out of the
+  // `%s | Hadaf Market` template rather than repeating the brand twice.
+  return translatedPageMetadata('home', { locale, path: '', absoluteTitle: true });
+}
 
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;

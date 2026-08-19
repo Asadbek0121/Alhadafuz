@@ -1,7 +1,143 @@
 {
   "Meta": {
     "title": "Hadaf Market",
-    "description": "The largest online marketplace in Uzbekistan"
+    "description": "The largest online marketplace in Uzbekistan",
+    "home": {
+      "title": "Hadaf Market — Online shopping with fast delivery",
+      "description": "HADAF marketplace: thousands of products in one place. Fast delivery across Termez and Surkhandarya, nationwide post, secure payment and instalments."
+    },
+    "about": {
+      "title": "About us",
+      "description": "The story, team and values behind HADAF marketplace — a platform setting the standard for convenience, speed and fairness in Surkhandarya and across Uzbekistan."
+    },
+    "delivery": {
+      "title": "Delivery",
+      "description": "Fast delivery within Termez, courier service across Surkhandarya districts and nationwide shipping by post. Timeframes and pricing."
+    },
+    "faq": {
+      "title": "Frequently asked questions",
+      "description": "Answers to the most common questions about ordering, payment, delivery and returns."
+    },
+    "returns": {
+      "title": "Returns and exchanges",
+      "description": "How to return or exchange a product: deadlines, conditions and the refund process."
+    },
+    "stores": {
+      "title": "Our stores",
+      "description": "HADAF store addresses, opening hours and phone numbers. Find your nearest branch on the map."
+    },
+    "support": {
+      "title": "Help centre",
+      "description": "Reach HADAF support by phone, Telegram or email. Live chat is available too."
+    },
+    "privacy": {
+      "title": "Privacy policy",
+      "description": "How we collect, store, use and protect your personal data — the full statement."
+    },
+    "terms": {
+      "title": "Public offer",
+      "description": "Terms of use for the HADAF marketplace, the rights and obligations of each party, and the legal document governing all transactions."
+    },
+    "cart": {
+      "title": "Cart",
+      "description": "The products in your cart and your order total."
+    },
+    "checkout": {
+      "title": "Checkout",
+      "description": "Choose your delivery address and payment method."
+    },
+    "favorites": {
+      "title": "Favourites",
+      "description": "The products you have saved."
+    },
+    "orderSuccess": {
+      "title": "Order received",
+      "description": "Your order has been received and is being processed."
+    },
+    "track": {
+      "title": "Track order",
+      "description": "Where your order is — follow its status in real time."
+    },
+    "auth": {
+      "title": "Sign in",
+      "description": "Sign in to your account or create a new one."
+    },
+    "profile": {
+      "title": "My account",
+      "description": "Orders, addresses, bonuses and account settings."
+    },
+    "profileInfo": {
+      "title": "Personal details",
+      "description": "Edit your name, phone number and other account details."
+    },
+    "profileOrders": {
+      "title": "My orders",
+      "description": "The history and status of all your orders."
+    },
+    "profileInvoice": {
+      "title": "Invoice",
+      "description": "The invoice for your order."
+    },
+    "profileAddresses": {
+      "title": "My addresses",
+      "description": "Add and edit your delivery addresses."
+    },
+    "profileNotifications": {
+      "title": "Notifications",
+      "description": "Messages about your orders and promotions."
+    },
+    "profileSecurity": {
+      "title": "Security",
+      "description": "PIN code, password and sign-in security settings."
+    },
+    "profileSettings": {
+      "title": "Settings",
+      "description": "Language, notification and app settings."
+    },
+    "courier": {
+      "title": "Courier panel",
+      "description": "The working panel for couriers."
+    },
+    "courierReport": {
+      "title": "Courier report",
+      "description": "Report on delivered orders and cash collection."
+    },
+    "courierScan": {
+      "title": "Scan QR code",
+      "description": "Scan an order QR code to update its status."
+    },
+    "product": {
+      "title": "Product",
+      "description": "A product on the HADAF marketplace: price, description, specs and reviews."
+    },
+    "category": {
+      "title": "Catalogue",
+      "description": "The HADAF marketplace catalogue — products by category."
+    },
+    "categoryPage": {
+      "title": "{name} — prices and catalogue",
+      "description": "Products in the {name} category on the HADAF marketplace: prices, descriptions and fast delivery."
+    },
+    "productPage": {
+      "title": "{title}",
+      "description": "{title} — at a great price on the HADAF marketplace. Fast delivery, secure payment and instalments."
+    },
+    "authLogin": {
+      "title": "Sign in",
+      "description": "Sign in to your HADAF account with your phone number."
+    },
+    "authRegister": {
+      "title": "Sign up",
+      "description": "Create a HADAF account and keep track of your orders."
+    },
+    "authForgotPassword": {
+      "title": "Reset password",
+      "description": "Enter your phone number to reset your password."
+    },
+    "authResetPassword": {
+      "title": "New password",
+      "description": "Set a new password for your account."
+    }
   },
   "Header": {
     "search_placeholder": "Search products...",

@@ -10,6 +10,11 @@ import OrderScanner from "@/components/admin/OrderScanner";
 import CancelOrderButton from "./CancelOrderButton";
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+    title: "Buyurtmalar",
+};
 
 export const dynamic = 'force-dynamic';
 
