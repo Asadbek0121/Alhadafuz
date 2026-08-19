@@ -28,10 +28,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: t('title'),
     description: t('description'),
     manifest: '/manifest.json',
+    // The tab icon comes from src/app/favicon.ico (Next.js file convention).
+    // Declaring another `icon` here would emit a second, competing <link rel="icon">.
     icons: {
-      icon: '/logo.png',
-      apple: '/logo.png',
-      shortcut: '/logo.png',
+      apple: '/apple-touch-icon.png',
     },
     appleWebApp: {
       capable: true,
