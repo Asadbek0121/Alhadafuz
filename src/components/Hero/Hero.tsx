@@ -9,6 +9,21 @@ import styles from './Hero.module.css';
 
 const DEFAULT_COUNTDOWN = 24 * 60 * 60 * 1000; // 24h fallback
 
+/**
+ * Yon banner tugash vaqtini banner ro'yxatidan ajratib oladi.
+ *
+ * Server ham, klient ham bir xil props'dan bir xil natija chiqaradi, shu
+ * sababli countdown bloki birinchi render'dan boshlab joyida bo'ladi.
+ * Ilgari bu qiymat faqat klient tomonidagi /api/banners javobidan keyin
+ * o'rnatilardi — natijada blok keyinroq paydo bo'lib, pastdagi butun
+ * kontentni surib yuborardi (CLS'ning asosiy sababi).
+ */
+function findCountdownEnd(list: any[]): number | null {
+    const side = list.find((b: any) => b.position === 'HOME_SIDE' && b.isActive !== false);
+    if (!side?.endDate) return null;
+    return new Date(side.endDate).getTime();
+}
+
 interface FallbackProduct {
     id: string;
     title: string;
@@ -25,7 +40,8 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [timeLeft, setTimeLeft] = useState(DEFAULT_COUNTDOWN);
-    const [countdownEnd, setCountdownEnd] = useState<number | null>(null);
+    // Serverdan kelgan banner'lardan darhol hisoblanadi — fetch'ni kutmaydi
+    const [countdownEnd, setCountdownEnd] = useState<number | null>(() => findCountdownEnd(initialBanners));
     const [isMounted, setIsMounted] = useState(false);
     const [imageError, setImageError] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
@@ -43,11 +59,9 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                 setBanners(data);
 
                 // Identify side banner for countdown
-                const side = data.find((b: any) => b.position === 'HOME_SIDE' && b.isActive !== false);
-                if (side?.endDate) {
-                    const target = new Date(side.endDate).getTime();
-                    const now = new Date().getTime();
-                    const diff = target - now;
+                const target = findCountdownEnd(data);
+                if (target !== null) {
+                    const diff = target - new Date().getTime();
                     setCountdownEnd(target);
                     setTimeLeft(diff > 0 ? diff : 0);
                 } else {
@@ -61,9 +75,14 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         }
     }, []);
 
+    // Server allaqachon getCachedBanners() orqali banner'larni bergan bo'lsa,
+    // /api/banners aynan shu funksiyani va shu keshni (revalidate: 3600)
+    // chaqiradi — ya'ni bir xil ma'lumot. Shu sababli so'rov faqat server
+    // bo'sh qaytargan holatda (masalan DB xatosi) zaxira sifatida yuboriladi.
     useEffect(() => {
+        if (initialBanners.length > 0) return;
         fetchData();
-    }, [fetchData]);
+    }, [fetchData, initialBanners.length]);
 
     // Countdown Ticker (runs only while a side banner with an end date is active)
     useEffect(() => {
@@ -252,7 +271,14 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                 </Link>
 
                                 <div className={styles.hotDealInfo}>
-                                    {isMounted && hasCountdown && !isExpired && (
+                                    {/* Tuzilma serverda ham render bo'ladi (isMounted bilan
+                                        o'ralmagan) — shu sababli joy band bo'lib turadi va
+                                        hidratsiyadan keyin hech narsa siljimaydi. Faqat
+                                        raqamlar mount'dan keyin to'ladi: server va brauzer
+                                        vaqti farq qiladi, aks holda hidratsiya xatosi bo'ladi.
+                                        .timeBox 30x30px belgilangani uchun `--` va `08` bir
+                                        xil joy egallaydi. */}
+                                    {hasCountdown && !isExpired && (
                                         <>
                                         <div className={styles.countdownHead}>
                                             <Clock size={18} className={styles.countdownIcon} />
@@ -260,17 +286,17 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                         </div>
                                         <div className={styles.countdown}>
                                             <div className={styles.timeUnit}>
-                                                <div className={styles.timeBox}><span>{String(h).padStart(2, '0')}</span></div>
+                                                <div className={styles.timeBox}><span>{isMounted ? String(h).padStart(2, '0') : '--'}</span></div>
                                                 <span className={styles.timeLabel}>{t('soat')}</span>
                                             </div>
                                             <span className={styles.timeSep}>:</span>
                                             <div className={styles.timeUnit}>
-                                                <div className={styles.timeBox}><span>{String(m).padStart(2, '0')}</span></div>
+                                                <div className={styles.timeBox}><span>{isMounted ? String(m).padStart(2, '0') : '--'}</span></div>
                                                 <span className={styles.timeLabel}>{t('minut')}</span>
                                             </div>
                                             <span className={styles.timeSep}>:</span>
                                             <div className={styles.timeUnit}>
-                                                <div className={styles.timeBox}><span>{String(s).padStart(2, '0')}</span></div>
+                                                <div className={styles.timeBox}><span>{isMounted ? String(s).padStart(2, '0') : '--'}</span></div>
                                                 <span className={styles.timeLabel}>{t('sekund')}</span>
                                             </div>
                                         </div>

@@ -4,10 +4,27 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(8, 12, 30, 0.7);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    background: rgba(8, 12, 30, 0.72);
+    /* DIQQAT: `-webkit-backdrop-filter`ni qo'lda yozmang. lightningcss (Turbopack)
+       ikkisi birga yozilganda standart `backdrop-filter`ni tashlab, faqat
+       `-webkit-` variantni qoldiradi — Chrome esa uni butunlay e'tiborsiz
+       qoldiradi. Natijada blur Chrome'da ishlamaydi, iOS'da ishlaydi.
+       Faqat standart xususiyat yozilsa, kompilyator kerakli prefiksni o'zi
+       qo'shadi va ikki platformada bir xil ko'rinadi.
+       Radius 12px emas, 6px: fon allaqachon 72% qorong'i, farq ko'zga
+       ilinmaydi, lekin butun ekranni blurlash har kadrda GPU ishi. */
+    backdrop-filter: blur(6px);
     z-index: 10000;
+    /* Alohida compositor qatlamiga chiqarish */
+    will-change: opacity;
+}
+
+/* Mobil GPU'lar uchun yengilroq: blur o'rniga bir oz to'qroq fon */
+@media (max-width: 991px) {
+    .overlay {
+        background: rgba(8, 12, 30, 0.8);
+        backdrop-filter: blur(2px);
+    }
 }
 
 .modalWrapper {
@@ -23,6 +40,9 @@
     overflow: hidden;
     display: flex;
     box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.4);
+    /* Ichki gradient va setka naqshi tashqariga chiqmaydi — brauzer
+       qayta bo'yash maydonini modal bilan cheklaydi */
+    contain: paint;
 }
 
 /* Left Branding Side */
@@ -170,7 +190,7 @@
     background: none;
     border: none;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease, color 0.2s ease;
     z-index: 100;
 }
 
@@ -225,7 +245,9 @@
     font-weight: 700;
     color: #0f172a;
     outline: none;
-    transition: all 0.3s;
+    /* `all` o'rniga aniq xususiyatlar: brauzer har bir animatsiyalanadigan
+       xususiyatni tekshirib chiqmaydi */
+    transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .inputField:focus {
@@ -245,7 +267,7 @@
     font-size: 17px;
     font-weight: 800;
     cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1), filter 0.2s ease, background-color 0.2s ease, color 0.2s ease;
     margin-top: 24px;
     box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4);
     position: relative;
@@ -378,5 +400,21 @@
     }
     .promoTitle {
         font-size: 18px;
+    }
+}
+
+/* Animatsiyani kamaytirishni so'ragan foydalanuvchilar uchun: hamma narsa
+   ko'rinadi, faqat o'tishlar bir zumda bo'ladi. */
+@media (prefers-reduced-motion: reduce) {
+    .inputField,
+    .primaryBtn,
+    .closeBtn {
+        transition: none;
+    }
+
+    .closeBtn:hover,
+    .primaryBtn:hover:not(:disabled),
+    .primaryBtn:active:not(:disabled) {
+        transform: none;
     }
 }

@@ -41,7 +41,9 @@ export default function SupportChat() {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-        fetch('https://lottie.host/37c09846-80d2-4b2e-ba16-eeb292525d27/g8BUGOhwGd.json')
+        // O'z domenimizdan: lottie.host'ga uchinchi tomon DNS + TLS qo'l siqishi
+        // har bir sahifa yuklanishida kritik yo'lga tushardi. Fayl bir xil.
+        fetch('/animations/support-chat.json')
             .then(res => res.json())
             .then(data => setSupportAnimationData(data))
             .catch(() => {});
@@ -322,7 +324,11 @@ export default function SupportChat() {
                     align-items: center;
                     justify-content: center;
                     z-index: 9999;
-                    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    /* "all" emas: sinf .support-fab dan .support-fab-lottie ga
+                       o'tganda width/height/border-radius ham tween bo'lib,
+                       yarim soniya davomida layout qayta hisoblanardi. Ochish/
+                       yopishdagi burilish (transform) va hover soyasi saqlanadi. */
+                    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                 }
 
                 .support-fab-lottie {
@@ -339,10 +345,15 @@ export default function SupportChat() {
                     align-items: center;
                     justify-content: center;
                     z-index: 9999;
-                    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
                     padding: 0;
                     border: none;
                     overflow: hidden;
+                    /* Lottie ichida 169 ta SVG elementi bor va har kadrda
+                       o'zgaradi. "contain" brauzerga ular tashqi layout'ga
+                       ta'sir qilmasligini aytadi — animatsiya ko'rinishi bir xil,
+                       lekin har kadrdagi layout tekshiruvi tugaydi. */
+                    contain: layout paint;
                 }
 
                 .support-fab:hover, .support-fab-lottie:hover {

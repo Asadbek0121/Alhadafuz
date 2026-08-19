@@ -9,7 +9,7 @@ import { Toaster } from "@/components/ui/sonner";
 import SupportChat from "@/components/SupportChat/SupportChat";
 import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
-import AuthModal from "@/components/Auth/AuthModal";
+import AuthModalGate from "@/components/Auth/AuthModalGate";
 import MapModal from "@/components/LocationPicker/MapModal";
 import Script from "next/script";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
@@ -82,7 +82,7 @@ export default async function LocaleLayout({
           <BottomNav />
           <Toaster />
           <SupportChat />
-          <AuthModal />
+          <AuthModalGate />
           <PinLock />
           <MapModal />
           <OfflineOverlayLazy />

@@ -7,11 +7,12 @@ import { X, Loader2, Phone } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { Link, useRouter } from '@/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { PhoneInput } from '@/components/ui/phone-input';
 import { useTranslations } from 'next-intl';
 import Lottie from 'lottie-react';
 import successAnimation from '@/components/success-animation.json';
+import lockAnimation from './lock-animation.json';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import styles from './AuthModal.module.css';
 
@@ -29,13 +30,32 @@ const getSafeCallbackUrl = () => {
     }
 };
 
-export default function AuthModal() {
+/**
+ * Kirish/ro'yxatdan o'tish modali.
+ *
+ * Bu komponent faqat modal ochilganda mount qilinadi (AuthModalGate orqali),
+ * shu sababli lottie-react va framer-motion boshlang'ich bundle'ga tushmaydi.
+ * `?auth=login` kabi havolalarni AuthModalGate hal qiladi va boshlang'ich
+ * holatni props orqali beradi.
+ */
+export default function AuthModal({
+    initialMode = 'login',
+    initialSuccess = false,
+}: {
+    initialMode?: 'login' | 'register';
+    initialSuccess?: boolean;
+} = {}) {
     const t = useTranslations('Auth');
     const router = useRouter();
-    const { isModalOpen, closeAuthModal, openAuthModal } = useUserStore();
+    const { isModalOpen, closeAuthModal } = useUserStore();
     const { data: session } = useSession();
 
-    const [mode, setMode] = useState<'login' | 'register'>('login');
+    // Tizim sozlamasida animatsiya kamaytirilgan bo'lsa, o'tishlar bir zumda
+    // bo'ladi — barcha element ko'rinadi, faqat harakat yo'q.
+    const reduceMotion = useReducedMotion();
+    const enterDuration = reduceMotion ? 0 : 0.22;
+
+    const [mode, setMode] = useState<'login' | 'register'>(initialMode);
     const [isLoading, setIsLoading] = useState(false);
     const redirectTimerRef = React.useRef<NodeJS.Timeout | null>(null);
 
@@ -46,34 +66,14 @@ export default function AuthModal() {
     const confirmBtnRef = React.useRef<HTMLButtonElement>(null);
     const openedByRef = React.useRef<HTMLElement | null>(null);
 
-    // Handle Query Params (e.g. ?auth=login or ?auth=register)
+    // `?resetSuccess=true` bilan kelganda muvaffaqiyat ekrani ko'rsatiladi va
+    // sessiya yangilanishi uchun sahifa qayta yuklanadi (AuthModalGate URL'ni tozalaydi).
     useEffect(() => {
-        const params = new URLSearchParams(window.location.search);
-        const authParam = params.get('auth');
-        if (authParam === 'login') {
-            setMode('login');
-            openAuthModal();
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-        } else if (authParam === 'register') {
-            setMode('register');
-            openAuthModal();
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-        }
+        if (!initialSuccess) return;
+        const timer = setTimeout(() => window.location.reload(), 5000);
+        return () => clearTimeout(timer);
+    }, [initialSuccess]);
 
-        const resetSuccess = params.get('resetSuccess');
-        if (resetSuccess === 'true') {
-            setIsSuccess(true);
-            openAuthModal();
-            const newUrl = window.location.pathname;
-            window.history.replaceState({}, '', newUrl);
-
-            setTimeout(() => {
-                window.location.reload();
-            }, 5000);
-        }
-    }, [openAuthModal]);
 
     // Escape bilan yopish
     useEffect(() => {
@@ -93,17 +93,9 @@ export default function AuthModal() {
     const [otp, setOtp] = useState('');
     const [timeLeft, setTimeLeft] = useState(120);
 
-    const [isSuccess, setIsSuccess] = useState(false);
+    const [isSuccess, setIsSuccess] = useState(initialSuccess);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [showTermsWarning, setShowTermsWarning] = useState(false);
-    const [lockAnimationData, setLockAnimationData] = useState(null);
-
-    useEffect(() => {
-        fetch('https://lottie.host/57aade87-a0a9-462d-a009-d61c31c649f7/jQGgTt7tQc.json')
-            .then(res => res.json())
-            .then(data => setLockAnimationData(data))
-            .catch(() => {});
-    }, []);
 
     useEffect(() => {
         if (!isVerifying || timeLeft <= 0) return;
@@ -366,17 +358,22 @@ export default function AuthModal() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.3 }}
+                        transition={{ duration: reduceMotion ? 0 : 0.18 }}
                         onClick={closeAuthModal}
                         className={styles.overlay}
                     />
 
                     {/* Modal Wrapper */}
+                    {/* Faqat opacity va scale animatsiya qilinadi — ikkisi ham
+                        compositor'da ishlaydi. Ilgari filter: blur() ham
+                        animatsiya qilinardi, bu esa har kadrda butun modal
+                        yuzasini (gradient va setka naqshi bilan) qaytadan
+                        rasterizatsiya qilishga majbur qilardi. */}
                     <motion.div
-                        initial={{ x: '-50%', y: '-50%', opacity: 0, scale: 0.92, filter: 'blur(8px)' }}
-                        animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1, filter: 'blur(0px)' }}
-                        exit={{ x: '-50%', y: '-50%', opacity: 0, scale: 0.95, filter: 'blur(4px)' }}
-                        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                        initial={{ x: '-50%', y: '-50%', opacity: 0, scale: 0.94 }}
+                        animate={{ x: '-50%', y: '-50%', opacity: 1, scale: 1 }}
+                        exit={{ x: '-50%', y: '-50%', opacity: 0, scale: 0.96 }}
+                        transition={{ duration: enterDuration, ease: [0.16, 1, 0.3, 1] }}
                         className={styles.modalWrapper}
                         role="dialog"
                         aria-modal="true"
@@ -392,26 +389,26 @@ export default function AuthModal() {
                         <div className={styles.leftPanel}>
                             <div className={styles.brandContent}>
                                 <motion.div
-                                    initial={{ y: 20, opacity: 0 }}
+                                    initial={{ y: 12, opacity: 0 }}
                                     animate={{ y: 0, opacity: 1 }}
-                                    transition={{ delay: 0.2, duration: 0.5 }}
+                                    transition={{ delay: reduceMotion ? 0 : 0.06, duration: reduceMotion ? 0 : 0.24 }}
                                     className="flex justify-start mb-6"
                                 >
                                     <div className={styles.lottieContainer}>
-                                        {lockAnimationData && (
-                                            <Lottie
-                                                animationData={lockAnimationData}
-                                                loop={true}
-                                                className="w-full h-full"
-                                            />
-                                        )}
+                                        <Lottie
+                                            animationData={lockAnimation}
+                                            loop={true}
+                                            className="w-full h-full"
+                                        />
                                     </div>
                                 </motion.div>
 
+                                {/* blur o'rniga faqat y + opacity: matn 1.1s emas,
+                                    0.3s ichida joyiga tushadi */}
                                 <motion.div
-                                    initial={{ y: 30, opacity: 0, filter: 'blur(10px)' }}
-                                    animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-                                    transition={{ delay: 0.3, duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                                    initial={{ y: 14, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    transition={{ delay: reduceMotion ? 0 : 0.1, duration: reduceMotion ? 0 : 0.28, ease: [0.16, 1, 0.3, 1] }}
                                 >
                                     <h2 className={styles.promoTitle}>
                                         {mode === 'login' ? t('title_login') : t('title_register')}
