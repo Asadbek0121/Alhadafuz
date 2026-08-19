@@ -143,7 +143,7 @@ export async function POST(req: Request) {
 
         revalidatePath('/admin/products');
         revalidatePath('/', 'layout');
-        (revalidateTag as any)('products');
+        revalidateTag('products', { expire: 0 });
         return NextResponse.json(product);
     } catch (error: any) {
         console.error("Critical Product creation error:", error);

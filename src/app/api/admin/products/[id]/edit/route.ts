@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { revalidatePath, revalidateTag } from 'next/cache';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -63,6 +64,12 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
                 }
             });
         }
+
+        // Bu yo'lda ilgari revalidatsiya umuman yo'q edi: mahsulot bazada
+        // o'zgarardi, lekin bosh sahifadagi getCachedProducts() keshi
+        // (revalidate: 3600) eski qiymatni ushlab turardi.
+        revalidatePath('/admin/products');
+        revalidateTag('products', { expire: 0 });
 
         return NextResponse.json(product);
     } catch (error) {

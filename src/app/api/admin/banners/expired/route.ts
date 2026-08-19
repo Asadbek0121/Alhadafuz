@@ -20,7 +20,7 @@ export async function POST() {
 
         if (result.count > 0) {
             revalidatePath('/');
-            (revalidateTag as any)('banners');
+            revalidateTag('banners', { expire: 0 });
         }
 
         return NextResponse.json({ success: true, count: result.count });

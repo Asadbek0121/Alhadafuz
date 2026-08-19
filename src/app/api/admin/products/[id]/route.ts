@@ -234,7 +234,16 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
         });
 
         revalidatePath('/admin/products');
-        revalidatePath(`/product/${id}`);
+        // Public keshni tag bo'yicha bo'shatamiz, yo'l bo'yicha emas.
+        // `revalidatePath` URL bilan emas, route fayl tuzilishi bilan ishlaydi;
+        // public sahifalar `[locale]` segmenti ichida bo'lgani uchun
+        // `revalidatePath('/product/${id}')` hech qanday sahifaga mos kelmasdi
+        // va jimgina hech nima qilmasdi. Natijada getCachedProducts()
+        // (tags: ['products'], revalidate: 3600) tahrirdan keyin ham bir soatga
+        // qadar eski narx/nomni berardi.
+        // `{ expire: 0 }` — Route Handler'dan darhol kuchga kirishi uchun;
+        // bir argumentli `revalidateTag(tag)` shakli Next 16'da eskirgan.
+        revalidateTag('products', { expire: 0 });
 
         return NextResponse.json(updatedProduct);
     } catch (error: any) {
@@ -288,6 +297,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
 
         revalidatePath('/admin/products');
         revalidatePath('/', 'layout'); // Force refresh all pages
+        // Yo'l bo'yicha to'liq tozalash keshlangan ma'lumotni ham qamrab oladi,
+        // lekin tag'ni aniq chaqirish o'chirishning PUT bilan bir xil ishlashini
+        // kafolatlaydi (va kelajakda yo'l qatori o'zgarsa ham buzilmaydi).
+        revalidateTag('products', { expire: 0 });
         return NextResponse.json({ success: true });
     } catch (error) {
         return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
