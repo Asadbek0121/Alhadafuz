@@ -18,79 +18,47 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+// Qidiruv sharti. Ilgari VENDOR tarmog'i buni xom SQL'ga `'%${search}%'` ko'rinishida
+// qo'shardi: apostrofli ism ("Sa'dulla") so'rovni buzib, `catch` xatoni yutgani uchun
+// sahifa "buyurtma yo'q" deb ko'rsatardi. ADMIN tarmog'i esa Prisma ishlatardi —
+// ya'ni bir sahifada ikki xil xatti-harakat. Endi ikkisi ham shu funksiyani ishlatadi.
+function buildSearchFilter(search: string) {
+    if (!search) return {};
+    return {
+        OR: [
+            { id: search },
+            ...(search.length < 20 ? [{ id: { endsWith: search, mode: 'insensitive' as const } }] : []),
+            { user: { name: { contains: search, mode: 'insensitive' as const } } },
+            { user: { phone: { contains: search, mode: 'insensitive' as const } } },
+        ]
+    };
+}
+
+// Sotuvchi faqat o'z mahsuloti bor buyurtmalarni ko'radi
+function vendorScope(userId: string) {
+    return { items: { some: { product: { vendorId: userId } } } };
+}
+
 async function getOrders(where: any, skip: number, take: number, search: string, userId: string, userRole: string) {
     const isVendor = userRole === "VENDOR";
 
-    if (isVendor) {
-        const columns: any[] = await (prisma as any).$queryRawUnsafe(`
-            SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
-        `);
-        const hasVendorId = columns.map(c => c.column_name).includes('vendorId');
-        const joinCondition = hasVendorId ? `WHERE p."vendorId" = '${userId}'` : `WHERE 1=0`;
-
-        let sql = `
-            SELECT o.*, 
-                JSON_AGG(oi.*) as items,
-                u.name as "userName", u.email as "userEmail", u.phone as "userPhone"
-            FROM "Order" o
-            JOIN "OrderItem" oi ON o.id = oi."orderId"
-            JOIN "Product" p ON oi."productId" = p.id
-            LEFT JOIN "User" u ON o."userId" = u.id
-            ${joinCondition}
-        `;
-
-        if (where.status) {
-            sql += ` AND o.status = '${where.status}'`;
-        }
-
-        if (search) {
-            sql += ` AND (o.id ILIKE '%${search}%' OR u.name ILIKE '%${search}%' OR u.phone ILIKE '%${search}%')`;
-        }
-
-        sql += ` GROUP BY o.id, u.id ORDER BY o."createdAt" DESC LIMIT ${take} OFFSET ${skip}`;
-
-        let countSql = `
-            SELECT COUNT(DISTINCT o.id)::int as count 
-            FROM "Order" o
-            JOIN "OrderItem" oi ON o.id = oi."orderId"
-            JOIN "Product" p ON oi."productId" = p.id
-            LEFT JOIN "User" u ON o."userId" = u.id
-            ${joinCondition}
-        `;
-        if (where.status) countSql += ` AND o.status = '${where.status}'`;
-        if (search) countSql += ` AND (o.id ILIKE '%${search}%' OR u.name ILIKE '%${search}%' OR u.phone ILIKE '%${search}%')`;
-
-        const [orders, countResult]: [any[], any[]] = await Promise.all([
-            (prisma as any).$queryRawUnsafe(sql),
-            (prisma as any).$queryRawUnsafe(countSql)
-        ]);
-
-        const mappedOrders = orders.map(order => ({
-            ...order,
-            user: { name: (order as any).userName, email: (order as any).userEmail, phone: (order as any).userPhone }
-        }));
-
-        return [mappedOrders, countResult[0]?.count || 0];
-    }
-
-    const baseWhere: any = {};
     const finalWhere: any = {
         ...where,
-        ...baseWhere,
-        ...(search ? {
-            OR: [
-                { id: search },
-                ...(search.length < 20 ? [{ id: { endsWith: search } }] : []),
-                { user: { name: { contains: search } } },
-                { user: { phone: { contains: search } } },
-            ]
-        } : {})
+        ...(isVendor ? vendorScope(userId) : {}),
+        ...buildSearchFilter(search)
     };
 
     return await Promise.all([
         (prisma as any).order.findMany({
             where: finalWhere,
-            include: { user: true, items: true },
+            include: {
+                user: true,
+                // Sotuvchiga faqat O'ZINING mahsulotlari ko'rinadi — boshqa
+                // sotuvchilarning mahsulotlari buyurtma ichida yashiriladi
+                items: isVendor
+                    ? { where: { product: { vendorId: userId } } }
+                    : true
+            },
             orderBy: { createdAt: "desc" },
             skip,
             take,
@@ -122,50 +90,46 @@ export default async function AdminOrdersPage({
 
     let orders: any[] = [];
     let total = 0;
-    let columns: any[] = [];
-    let statsResult: any[] = [];
+    let statusCounts: Record<string, number> = {};
+    let allCount = 0;
 
     try {
+        // Yuqoridagi tablar uchun sanoq. Status bo'yicha filtr ATAYIN qo'llanmaydi —
+        // aks holda "Yangi" tabida turganda boshqa tablarning soni 0 bo'lib qolardi.
+        const statsWhere: any = isVendor
+            ? { ...vendorScope(userId), ...buildSearchFilter(search) }
+            : {};
+
         // Run all independent queries in parallel to speed up page load and release connections faster
-        const results = await Promise.all([
+        const [ordersResult, grouped] = await Promise.all([
             getOrders(where, skip, limit, search, userId, userRole),
-            (prisma as any).$queryRawUnsafe(`
-                SELECT column_name FROM information_schema.columns WHERE table_name = 'Product'
-            `),
-            (prisma as any).$queryRawUnsafe(`
-                SELECT 
-                    COUNT(DISTINCT o.id)::int as "all_count",
-                    COUNT(DISTINCT CASE WHEN o.status = 'PENDING' THEN o.id END)::int as "pending_count",
-                    COUNT(DISTINCT CASE WHEN o.status = 'PROCESSING' THEN o.id END)::int as "processing_count",
-                    COUNT(DISTINCT CASE WHEN o.status = 'SHIPPING' THEN o.id END)::int as "shipping_count",
-                    COUNT(DISTINCT CASE WHEN o.status = 'DELIVERED' THEN o.id END)::int as "delivered_count"
-                FROM "Order" o
-                ${isVendor ? 'JOIN "OrderItem" oi ON o.id = oi."orderId" JOIN "Product" p ON oi."productId" = p.id' : ''}
-                ${isVendor ? (search ? `LEFT JOIN "User" u ON o."userId" = u.id` : '') : ''}
-                WHERE 1=1
-                ${isVendor ? (search ? `AND (o.id ILIKE '%${search}%' OR u.name ILIKE '%${search}%' OR u.phone ILIKE '%${search}%')` : '') : ''}
-                ${isVendor ? `AND EXISTS (SELECT 1 FROM "OrderItem" oi_v JOIN "Product" p_v ON oi_v."productId" = p_v.id WHERE oi_v."orderId" = o.id AND p_v."vendorId" = '${userId}')` : ''}
-            `)
+            (prisma as any).order.groupBy({
+                by: ['status'],
+                _count: { _all: true },
+                where: statsWhere
+            })
         ]);
 
-        [orders, total] = results[0];
-        columns = results[1] as any[];
-        statsResult = results[2] as any[];
+        [orders, total] = ordersResult;
+
+        for (const g of grouped as any[]) {
+            const n = g._count?._all || 0;
+            statusCounts[g.status] = n;
+            allCount += n;
+        }
     } catch (e) {
         console.error("Error fetching orders data:", e);
     }
 
-    const hasVendorId = columns.map(c => c.column_name).includes('vendorId');
     const totalPages = Math.ceil(total / limit);
     const safeOrders = JSON.parse(JSON.stringify(orders));
 
-    const statsData = statsResult[0] || {};
     const stats = [
-        { label: "Barchasi", value: "ALL", count: statsData.all_count || 0 },
-        { label: "Yangi", value: "PENDING", count: statsData.pending_count || 0 },
-        { label: "Jarayonda", value: "PROCESSING", count: statsData.processing_count || 0 },
-        { label: "Yo'lda", value: "SHIPPING", count: statsData.shipping_count || 0 },
-        { label: "Yetkazildi", value: "DELIVERED", count: statsData.delivered_count || 0 },
+        { label: "Barchasi", value: "ALL", count: allCount },
+        { label: "Yangi", value: "PENDING", count: statusCounts.PENDING || 0 },
+        { label: "Jarayonda", value: "PROCESSING", count: statusCounts.PROCESSING || 0 },
+        { label: "Yo'lda", value: "SHIPPING", count: statusCounts.SHIPPING || 0 },
+        { label: "Yetkazildi", value: "DELIVERED", count: statusCounts.DELIVERED || 0 },
     ];
 
     return (

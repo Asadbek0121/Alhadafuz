@@ -33,21 +33,23 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
         const time = deliveryTime ? String(deliveryTime) : null;
 
-        await (prisma as any).$executeRawUnsafe(`
-            UPDATE "ShippingZone" 
-            SET 
-                "name" = '${name}', 
-                "district" = '${district}', 
-                "price" = ${priceNum}, 
-                "deliveryTime" = ${time !== null ? `'${time}'` : 'NULL'},
-                "freeFrom" = ${freeFromNum !== null ? freeFromNum : 'NULL'}, 
-                "freeFromQty" = ${freeFromQtyNum !== null ? freeFromQtyNum : 'NULL'},
-                "freeIfHasDiscount" = ${freeDisc}, 
-                "freeDiscountType" = '${discType}', 
-                "isActive" = ${active}, 
-                "updatedAt" = NOW()
-            WHERE "id" = '${id}'
-        `);
+        // Ilgari bu xom SQL edi va qiymatlar qo'shtirnoq orasiga to'g'ridan-to'g'ri
+        // qo'yilardi. "Yetkazish vaqti" — erkin matn maydoni, o'zbekcha matnda esa
+        // apostrof odatiy ("so'ng", "qo'ng'iroq") — u SQL'ni buzib, 500 xatosi berardi.
+        await prisma.shippingZone.update({
+            where: { id },
+            data: {
+                name: String(name),
+                district: district ? String(district) : '',
+                price: priceNum,
+                deliveryTime: time,
+                freeFrom: freeFromNum,
+                freeFromQty: freeFromQtyNum,
+                freeIfHasDiscount: freeDisc,
+                freeDiscountType: String(discType),
+                isActive: active
+            }
+        });
 
         return NextResponse.json({ id, name, success: true });
     } catch (error: any) {
@@ -68,10 +70,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
     const { id } = await params;
 
     try {
-        await (prisma as any).$executeRawUnsafe(`DELETE FROM "ShippingZone" WHERE "id" = '${id}'`);
+        await prisma.shippingZone.delete({ where: { id } });
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error("Delete Shipping Zone Error (Raw):", error);
+        console.error("Delete Shipping Zone Error:", error);
         return NextResponse.json({ error: 'Failed to delete', details: error.message }, { status: 500 });
     }
 }

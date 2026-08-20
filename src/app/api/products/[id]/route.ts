@@ -22,14 +22,15 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 return NextResponse.json({ error: 'Product not found (deleted)' }, { status: 404 });
             }
 
-            // Allow fetching adminReply by bypassing stale schema
-            const rawReviews: any[] = await (prisma as any).$queryRawUnsafe(`
+            // `id` URL'dan keladi — parametrlangan `$queryRaw` (teg shabloni)
+            // ishlatiladi, `$queryRawUnsafe`ga qo'lda qo'shish emas.
+            const rawReviews: any[] = await (prisma as any).$queryRaw`
                 SELECT r.*, u.name as "userName", u.image as "userImage"
                 FROM "Review" r
                 LEFT JOIN "User" u ON r."userId" = u.id
-                WHERE r."productId" = '${id}' AND r."status" = 'APPROVED'
+                WHERE r."productId" = ${id} AND r."status" = 'APPROVED'
                 ORDER BY r."createdAt" DESC
-            `);
+            `;
 
             const reviews = rawReviews.map(r => ({
                 id: r.id,
@@ -53,13 +54,29 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 }
             }
 
-            let specs = {};
+            let specs: Record<string, any> = {};
             if (dbProduct.attributes) {
                 try {
                     specs = JSON.parse(dbProduct.attributes);
                 } catch (e) {
                     console.error("Failed to parse attributes JSON for product", id);
                 }
+            }
+
+            // Teglar `Product` jadvalida ustunga ega emas, shuning uchun ular
+            // `attributes._tags` ichida saqlanadi. Ularni yuqori darajaga
+            // chiqaramiz — mahsulot sahifasi SEO kalit so'zlari uchun o'qiydi.
+            // `specs`dan ham olib tashlanadi, aks holda texnik xususiyatlar
+            // jadvalida "_tags" qatori paydo bo'lardi.
+            const rawTags = specs?._tags;
+            const tags: string[] = Array.isArray(rawTags)
+                ? rawTags.map((t: any) => String(t).trim()).filter(Boolean)
+                : typeof rawTags === 'string'
+                    ? rawTags.split(',').map((t) => t.trim()).filter(Boolean)
+                    : [];
+            if ('_tags' in specs) {
+                const { _tags, ...rest } = specs;
+                specs = rest;
             }
 
             // Extract marketing flags from attributes JSON (default false)
@@ -90,6 +107,7 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 ...dbProduct,
                 images,
                 specs,
+                tags,
                 isNew,
                 freeDelivery,
                 hasVideo,

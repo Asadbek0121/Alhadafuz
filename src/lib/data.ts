@@ -61,27 +61,66 @@ export const getCachedProducts = unstable_cache(
     { revalidate: 3600, tags: ['products'] }
 );
 
-export const getCachedBanners = unstable_cache(
+/**
+ * Saytda banner render qilish uchun kerak bo'lgan maydonlar.
+ *
+ * `clickCount` / `impressionCount` ataylab yo'q — bu statistika faqat admin
+ * panelga tegishli, brauzerga uzatilishi kerak emas. `variant` ham yo'q:
+ * admin paneli uni endi yozmaydi va sayt hech qachon o'qimagan.
+ */
+const BANNER_SITE_FIELDS = {
+    id: true,
+    title: true,
+    description: true,
+    image: true,
+    link: true,
+    position: true,
+    isActive: true,
+    order: true,
+    price: true,
+    oldPrice: true,
+    discount: true,
+    startDate: true,
+    endDate: true,
+    productId: true
+} as const;
+
+/**
+ * Faol banner'lar keshi. Bu ro'yxat faqat admin banner tahrirlaganda
+ * o'zgaradi — shu sababli `revalidateTag('banners')` bilan aniq yangilanadi.
+ *
+ * DIQQAT: sana bo'yicha filtr bu yerda EMAS. Ilgari `new Date()` aynan shu
+ * keshlangan funksiya ichida solishtirilardi, ya'ni jadval bo'yicha
+ * ko'rsatish (startDate/endDate) 1 soatgacha kechikardi: muddati tugagan
+ * banner saytda turib qolar, boshlanish vaqti kelgani esa paydo bo'lmasdi.
+ */
+const getCachedActiveBanners = unstable_cache(
     async () => {
         try {
-            const now = new Date();
-            const banners = await (prisma as any).banner.findMany({
-                where: {
-                    isActive: true,
-                    AND: [
-                        // Not started yet -> hidden
-                        { OR: [{ startDate: null }, { startDate: { lte: now } }] },
-                        // Expired -> hidden
-                        { OR: [{ endDate: null }, { endDate: { gte: now } }] }
-                    ]
-                },
-                orderBy: { order: 'asc' }
+            return await (prisma as any).banner.findMany({
+                where: { isActive: true },
+                orderBy: { order: 'asc' },
+                select: BANNER_SITE_FIELDS
             });
-            return banners;
         } catch (err) {
             return [];
         }
     },
-    ['banners-list'],
+    ['banners-site'],
     { revalidate: 3600, tags: ['banners'] }
 );
+
+/**
+ * Hozir ko'rinishi kerak bo'lgan banner'lar. Jadval filtri keshdan tashqarida
+ * qo'llanadi, shu sababli startDate/endDate soniyaga aniq ishlaydi.
+ */
+export async function getCachedBanners() {
+    const banners = await getCachedActiveBanners();
+    const now = Date.now();
+
+    return banners.filter((banner: any) => {
+        if (banner.startDate && new Date(banner.startDate).getTime() > now) return false;
+        if (banner.endDate && new Date(banner.endDate).getTime() < now) return false;
+        return true;
+    });
+}

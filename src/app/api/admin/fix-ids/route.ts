@@ -4,7 +4,10 @@ import { prisma } from '@/lib/prisma';
 import { generateNextUniqueId } from '@/lib/id-generator';
 import { auth } from '@/auth';
 
-export async function GET() {
+// Bu route har bir foydalanuvchining `uniqueId`sini qayta yozadi. GET bo'lsa
+// oddiy havolaga bosish yoki brauzer prefetch'i ham uni ishga tushirar edi
+// (SameSite=Lax GET navigatsiyasini to'smaydi) — shuning uchun POST.
+export async function POST() {
     const session = await auth();
     if (session?.user?.role !== 'ADMIN') {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

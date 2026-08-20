@@ -22,8 +22,14 @@ const getCategory = cache(async (slug: string) => {
             },
             banners: {
                 where: {
-                    isActive: true
-                }
+                    isActive: true,
+                    // Admin panelda joylashuv "Kategoriya Sahifasi - Yuqori Banner"
+                    // deb tanlangan bannerlar. Bu filtrsiz, masalan, bosh sahifa
+                    // slider banneri kategoriyaga bog'lansa u ham shu yerda
+                    // chiqib ketardi.
+                    position: 'CATEGORY_TOP'
+                },
+                orderBy: { order: 'asc' }
             }
         }
     });
@@ -84,7 +90,15 @@ export default async function CategoryPage({
         if (banner.startDate && new Date(banner.startDate) > now) return false;
         if (banner.endDate && new Date(banner.endDate) < now) return false;
         return true;
-    });
+    }).map((banner: any) => ({
+        // Klientga faqat render uchun kerak bo'lgan maydonlar uzatiladi —
+        // bosishlar/ko'rishlar statistikasi brauzerga chiqmaydi.
+        id: banner.id,
+        title: banner.title,
+        description: banner.description,
+        image: banner.image,
+        link: banner.link ?? undefined
+    }));
 
     return <CategoryContent category={category} banners={activeBanners} products={products} />;
 }

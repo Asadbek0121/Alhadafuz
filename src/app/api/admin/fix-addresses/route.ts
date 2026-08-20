@@ -1,10 +1,20 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request) {
+// DIQQAT: bu route takrorlangan manzillarni O'CHIRADI. Ilgari u himoyasiz GET
+// bo'lgan — ya'ni istalgan tashqi so'rov (hatto brauzer prefetch'i yoki
+// qidiruv robotining indekslashi) ma'lumot o'chirishni ishga tushirar edi.
+// Shuning uchun: faqat ADMIN, va faqat POST.
+export async function POST() {
+    const session = await auth();
+    if ((session?.user as any)?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const addresses = await prisma.address.findMany({
             orderBy: { createdAt: 'asc' }

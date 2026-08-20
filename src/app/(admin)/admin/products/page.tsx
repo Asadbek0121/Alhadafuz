@@ -40,33 +40,13 @@ const getProducts = async (skip: number, take: number, vendorId?: string, query?
             where.title = { contains: query, mode: 'insensitive' };
         }
 
-        // 3. Query based on detected schema and vendorId
-        // We use queryRaw for vendor specific view to handle potential missing column errors better
-        if (vendorId && hasVendorId) {
-            try {
-                const searchFilter = query ? ` AND "title" ILIKE $4 ` : '';
-                const queryParams = query ? [vendorId, take, skip, `%${query}%`] : [vendorId, take, skip];
-
-                const products = await (prisma as any).$queryRawUnsafe(`
-                    SELECT * FROM "Product" 
-                    WHERE "isDeleted" = false AND "vendorId" = $1 ${searchFilter}
-                    ORDER BY "createdAt" DESC 
-                    LIMIT $2 OFFSET $3
-                `, ...queryParams);
-
-                const countResult = await (prisma as any).$queryRawUnsafe(`
-                    SELECT COUNT(*)::int as count FROM "Product" 
-                    WHERE "isDeleted" = false AND "vendorId" = $1 ${searchFilter}
-                `, vendorId, ...(query ? [`%${query}%`] : []));
-
-                return [products, countResult[0]?.count || 0, false] as [any[], number, boolean];
-            } catch (queryError) {
-                console.error("error in raw vendor query:", queryError);
-                // Fallback to prisma.findMany if raw query fails
-            }
-        }
-
-        // 4. Admin view or Vendor fallback if column missing or raw query failed
+        // 3. Bitta yo'l — Prisma. Ilgali sotuvchi uchun alohida xom SQL tarmog'i bor edi,
+        // lekin uning COUNT so'rovi `$4`ga murojaat qilib faqat 2 parametr uzatardi:
+        // sotuvchi mahsulot qidirganda PostgreSQL "could not determine data type of
+        // parameter $3" xatosini berardi. Xato `catch`da yutilib, quyidagi Prisma
+        // yo'liga o'tilardi — ya'ni qidiruv ishlagandek ko'rinsa ham, har safar
+        // ikkita so'rov behuda yiqilib log'ni to'ldirardi. Prisma yo'li `where`da
+        // vendorId va sarlavha qidiruvini allaqachon qo'llaydi, natija aynan bir xil.
         const [products, count] = await Promise.all([
             (prisma as any).product.findMany({
                 where,

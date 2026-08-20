@@ -47,6 +47,11 @@ export async function generateMetadata(
         if (metadata.twitter) metadata.twitter.description = description;
     }
 
+    // Admin panelda kiritilgan teglar (`attributes._tags`) kalit so'zlarga aylanadi.
+    if (Array.isArray(product.tags) && product.tags.length > 0) {
+        metadata.keywords = product.tags;
+    }
+
     return metadata;
 }
 

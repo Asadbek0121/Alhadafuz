@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { syncProductRating } from '@/lib/product-rating';
+import { revalidateTag } from 'next/cache';
 
 export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -35,6 +37,12 @@ export async function PATCH(req: Request, props: { params: Promise<{ id: string 
             }
         });
 
+        // Tasdiqlash/rad etish katalogdagi yulduzlarga ham ta'sir qilishi kerak
+        if (status) {
+            await syncProductRating(updatedReview.productId);
+            revalidateTag('products', { expire: 0 });
+        }
+
         return NextResponse.json(updatedReview);
     } catch (error) {
         console.error("Error updating review:", error);
@@ -64,9 +72,14 @@ export async function DELETE(req: Request, props: { params: Promise<{ id: string
             }
         }
 
-        await (prisma as any).review.delete({
+        const deleted = await (prisma as any).review.delete({
             where: { id: params.id }
         });
+
+        // O'chirilgan sharh tasdiqlangan bo'lsa, katalogdagi reyting eskirib qoladi
+        await syncProductRating(deleted.productId);
+        revalidateTag('products', { expire: 0 });
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Error deleting review:", error);

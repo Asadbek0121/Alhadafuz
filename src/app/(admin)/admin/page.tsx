@@ -201,20 +201,34 @@ async function getData(userRole: string, userId: string) {
                     LIMIT 5
                 `, userId);
             } else if (!isVendor) {
-                const orderItems = await (prisma as any).orderItem.findMany({
-                    take: 100,
-                    orderBy: { id: 'desc' },
-                    select: { title: true, price: true, quantity: true, productId: true, image: true }
+                // Butun jadval bo'yicha guruhlash — ilgari bu yerda faqat oxirgi
+                // 100 OrderItem olinardi, ya'ni 100 dan ortiq sotuvda "Top
+                // Mahsulotlar" haqiqiy top emas, tasodifiy kesim bo'lib qolardi.
+                // (VENDOR yo'li allaqachon barcha itemlarni hisoblaydi.)
+                const grouped = await (prisma as any).orderItem.groupBy({
+                    by: ['productId'],
+                    _sum: { quantity: true },
+                    orderBy: { _sum: { quantity: 'desc' } },
+                    take: 5
                 }).catch(() => []);
 
-                const productMap: any = {};
-                orderItems.forEach((item: any) => {
-                    if (!productMap[item.productId]) {
-                        productMap[item.productId] = { ...item, sales: 0 };
-                    }
-                    productMap[item.productId].sales += item.quantity;
-                });
-                topProducts = Object.values(productMap).sort((a: any, b: any) => b.sales - a.sales).slice(0, 5);
+                // Ko'rsatish uchun sarlavha/rasm — har bir productId bo'yicha bittasi
+                const details = await Promise.all(
+                    grouped.map((g: any) =>
+                        (prisma as any).orderItem.findFirst({
+                            where: { productId: g.productId },
+                            orderBy: { id: 'desc' },
+                            select: { title: true, price: true, image: true, productId: true }
+                        }).catch(() => null)
+                    )
+                );
+
+                topProducts = grouped
+                    .map((g: any, i: number) => details[i] && {
+                        ...details[i],
+                        sales: g._sum.quantity || 0
+                    })
+                    .filter(Boolean);
             }
         } catch (e) {
             topProducts = [];
