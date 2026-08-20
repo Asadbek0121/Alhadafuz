@@ -32,6 +32,8 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     const [activeIdx, setActiveIdx] = useState(0);
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    // Mobile drill-down: roots -> selected root children -> child page
+    const [selectedRoot, setSelectedRoot] = useState<any | null>(null);
 
     const { items, openCart } = useCartStore();
     const { wishlist } = useWishlist();
@@ -62,11 +64,28 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
 
     const handleCategoryClick = (cat: any, idx: number) => {
         if (window.innerWidth < 992) {
-            close();
-            router.push(`/category/${cat.slug}`);
+            // Mobile: root kategoriya bosilganda children ochiladi (drill-down),
+            // homepage'ga qaytarilmaydi. Child kategoriya bosilganda esa tegishli sahifa.
+            if (cat.children && cat.children.length > 0) {
+                setSelectedRoot(cat);
+                setActiveIdx(0);
+            } else {
+                close();
+                router.push(`/category/${cat.slug}`);
+            }
         } else {
             setActiveIdx(idx);
         }
+    };
+
+    const handleChildClick = (child: any) => {
+        close();
+        router.push(`/category/${child.slug}`);
+    };
+
+    const handleBackToRoots = () => {
+        setSelectedRoot(null);
+        setActiveIdx(0);
     };
 
     const handleAuth = () => {
@@ -131,6 +150,37 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                             <div className={styles.statusMessage}>{t('loading')}</div>
                         ) : categories.length === 0 ? (
                             <div className={styles.statusMessage}>{t('no_categories')}</div>
+                        ) : selectedRoot && window.innerWidth < 992 ? (
+                            // Mobile drill-down: children view
+                            <div className={styles.leftCol}>
+                                <button
+                                    type="button"
+                                    className={styles.catItem}
+                                    onClick={handleBackToRoots}
+                                    style={{ fontStyle: 'italic', opacity: 0.7 }}
+                                >
+                                    <span className={styles.catName}>← {selectedRoot.name}</span>
+                                </button>
+                                <Link
+                                    href={`/category/${selectedRoot.slug}`}
+                                    className={`${styles.catItem} ${styles.activeCat}`}
+                                    onClick={close}
+                                    style={{ color: 'var(--primary)' }}
+                                >
+                                    <span className={styles.catName}>{t('view_all')}</span>
+                                </Link>
+                                {selectedRoot.children?.map((child: any) => (
+                                    <button
+                                        key={child.id}
+                                        type="button"
+                                        className={styles.catItem}
+                                        onClick={() => handleChildClick(child)}
+                                    >
+                                        <span className={styles.catName}>{child.name}</span>
+                                        <ChevronRight size={16} className={styles.arrow} />
+                                    </button>
+                                ))}
+                            </div>
                         ) : (
                             <>
                                 <div className={styles.leftCol} role="tablist" aria-label={th('katalog')}>

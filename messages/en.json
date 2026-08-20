@@ -205,7 +205,9 @@
     "view_all": "View All",
     "recent_searches": "Recent searches",
     "popular_searches": "Popular searches",
-    "no_products": "No products available"
+    "no_products": "No products available",
+    "search_prompt": "Start searching",
+    "search_prompt_desc": "Type a product name or filter by category"
   },
   "Hero": {
     "slider_title": "Huge discounts started!",

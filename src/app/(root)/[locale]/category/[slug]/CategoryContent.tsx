@@ -287,10 +287,10 @@ export default function CategoryContent({ category, banners = [], products = [],
 
                 {/* List */}
                 <div className={styles.list}>
-                    {/* All Products Link (search page'ga yo'naltiriladi) */}
+                    {/* All Products — kategoriya sahifasining o'zi (barcha mahsulotlarni ko'rsatadi) */}
                     {category.children && category.children.length > 0 && (
                         <Link
-                            href={`/search?category=${category.slug}`}
+                            href={`/category/${category.slug}`}
                             className={`${styles.item} ${styles.allItem}`}
                         >
                             <div className="flex items-center gap-3">

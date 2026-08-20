@@ -45,10 +45,20 @@ export default function SearchClient() {
             const stored = localStorage.getItem(RECENT_KEY);
             if (stored) setRecentSearches(JSON.parse(stored));
         } catch { /* ignore */ }
-        // Fetch categories for filter
+        // Fetch categories for filter (root + children, flat tree)
         fetch('/api/categories')
             .then(r => r.json())
-            .then(data => setCategories(Array.isArray(data) ? data : []))
+            .then(data => {
+                const roots = Array.isArray(data) ? data : [];
+                const tree: { id: string; name: string; slug: string; depth: number }[] = [];
+                for (const root of roots) {
+                    tree.push({ id: root.id, name: root.name, slug: root.slug, depth: 0 });
+                    for (const child of root.children || []) {
+                        tree.push({ id: child.id, name: child.name, slug: child.slug, depth: 1 });
+                    }
+                }
+                setCategories(tree);
+            })
             .catch(() => {});
     }, []);
 
@@ -66,7 +76,9 @@ export default function SearchClient() {
         };
     }, [showFilters]);
 
-    // Fetch products
+    // Fetch products — faqat qidiruv yoki filter parametri bo'lsa.
+    // Bo'sh /search (query'siz, filter'siz) -> fetch qilinmaydi, prompt ko'rsatiladi.
+    const hasAnyFilter = !!(q || categorySlug || minPrice || maxPrice || discountOnly || (sort && sort !== 'recommended'));
     const fetchProducts = useCallback(async (abortSignal?: AbortSignal) => {
         setLoading(true);
         setError(null);
@@ -105,12 +117,20 @@ export default function SearchClient() {
     }, [q, sort, categorySlug, minPrice, maxPrice, discountOnly, page]);
 
     useEffect(() => {
+        // Bo'sh search (query'siz, filter'siz) -> fetch qilinmaydi
+        if (!hasAnyFilter) {
+            setProducts([]);
+            setTotal(0);
+            setTotalPages(1);
+            setLoading(false);
+            return;
+        }
         if (abortRef.current) abortRef.current.abort();
         const controller = new AbortController();
         abortRef.current = controller;
         fetchProducts(controller.signal);
         return () => controller.abort();
-    }, [fetchProducts]);
+    }, [fetchProducts, hasAnyFilter]);
 
     // Save recent search when user performs a search
     useEffect(() => {
@@ -281,8 +301,8 @@ export default function SearchClient() {
                         <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-3xl bg-slate-50">
                             <Search size={36} className="text-slate-300" />
                         </div>
-                        <h2 className="mb-2 text-xl font-bold text-slate-900">{t('no_results')}</h2>
-                        <p className="mb-8 max-w-sm text-sm font-medium text-slate-500">{t('no_results_desc')}</p>
+                        <h2 className="mb-2 text-xl font-bold text-slate-900">{t('search_prompt')}</h2>
+                        <p className="mb-8 max-w-sm text-sm font-medium text-slate-500">{t('search_prompt_desc')}</p>
 
                         {recentSearches.length > 0 && (
                             <div className="w-full max-w-md">
@@ -425,7 +445,9 @@ export default function SearchClient() {
                                             key={cat.id}
                                             onClick={() => navigate({ category: cat.slug, page: '1' })}
                                             className={`flex w-full items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-colors ${categorySlug === cat.slug ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                            style={{ paddingLeft: cat.depth ? '2.5rem' : undefined }}
                                         >
+                                            {cat.depth > 0 && <span className="mr-2 text-slate-300">└</span>}
                                             {cat.name}
                                         </button>
                                     ))}

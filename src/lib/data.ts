@@ -176,6 +176,39 @@ export const getCachedRootCategories = unstable_cache(
 );
 
 /**
+ * Search filter uchun to'liq kategoriya tree — ildiz va bolalar bir ro'yxatda.
+ * Har bir element `depth` bilan (0=root, 1=child), filter `indent` uchun.
+ */
+export const getCachedCategoryTree = unstable_cache(
+    async () => {
+        const flat: { id: string; name: string; slug: string; depth: number; parentId: string | null }[] = [];
+        try {
+            const roots = await (prisma as any).category.findMany({
+                where: { isActive: true, parentId: null },
+                orderBy: { order: 'asc' },
+                select: { id: true, name: true, slug: true, parentId: true },
+            });
+            for (const root of roots) {
+                flat.push({ ...root, depth: 0 });
+                const children = await (prisma as any).category.findMany({
+                    where: { parentId: root.id, isActive: true },
+                    orderBy: { name: 'asc' },
+                    select: { id: true, name: true, slug: true, parentId: true },
+                });
+                for (const child of children) {
+                    flat.push({ ...child, depth: 1 });
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch category tree:", e);
+        }
+        return flat;
+    },
+    ['category-tree'],
+    { revalidate: 3600, tags: ['categories'] }
+);
+
+/**
  * Saytda banner render qilish uchun kerak bo'lgan maydonlar.
  *
  * `clickCount` / `impressionCount` ataylab yo'q — bu statistika faqat admin

@@ -205,7 +205,9 @@
     "view_all": "Barchasini ko'rish",
     "recent_searches": "So'nggi qidiruvlar",
     "popular_searches": "Ommabop qidiruvlar",
-    "no_products": "Mahsulotlar mavjud emas"
+    "no_products": "Mahsulotlar mavjud emas",
+    "search_prompt": "Qidiruvni boshlang",
+    "search_prompt_desc": "Mahsulot nomini yozing yoki kategoriya bo'yicha filtrlang"
   },
   "Hero": {
     "slider_title": "Katta chegirmalar boshlandi!",
