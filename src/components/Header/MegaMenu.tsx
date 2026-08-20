@@ -140,7 +140,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     return (
         <>
             <div className={styles.overlay} onClick={close}></div>
-            <div className={styles.megaMenu} onKeyDown={handleMenuKeyDown}>
+            <div id="catalog-menu" className={styles.megaMenu} onKeyDown={handleMenuKeyDown}>
                 <div className="container">
                     {/* Mobile Navigation Header - Only show if mode is full */}
 

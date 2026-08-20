@@ -206,9 +206,11 @@ export default function Header() {
             const isInsideSearch = searchRef.current?.contains(target) || mobileSearchRef.current?.contains(target);
             const isInsideDropdown = dropdownRef.current?.contains(target);
             const isCatalogBtn = target.closest('#category-btn-trigger');
+            // MegaMenu ichidagi bosishlar menyuni yopmaydi — kategoriya tanlash uchun
+            const isInsideCatalogMenu = target.closest('#catalog-menu') !== null;
             
             if (!isInsideSearch) setSearchResults([]);
-            if (!isInsideDropdown && !isCatalogBtn) closeAllMenus();
+            if (!isInsideDropdown && !isCatalogBtn && !isInsideCatalogMenu) closeAllMenus();
         };
 
         const handleCloseMenu = () => closeAllMenus();
