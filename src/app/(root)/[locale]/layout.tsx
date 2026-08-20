@@ -21,6 +21,7 @@ import { Analytics } from "@vercel/analytics/next";
 import { ClientProviders } from "@/providers/ClientProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { routing } from "@/navigation";
+import { getCachedRootCategories } from '@/lib/data';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -64,11 +65,18 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [messages, session] = await Promise.all([getMessages(), auth()]);
+  const [messages, session, rootCategories] = await Promise.all([
+    getMessages(),
+    auth(),
+    getCachedRootCategories(),
+  ]);
 
   if (!['uz', 'ru', 'en'].includes(locale)) {
     notFound();
   }
+
+  // Katalog tugmasi to'g'ridan-to'g'ri birinchi root kategoriya sahifasiga o'tadi.
+  const firstRootSlug = (rootCategories && rootCategories[0]?.slug) || null;
 
   const jsonLdOrganization = {
     '@context': 'https://schema.org',
@@ -115,7 +123,7 @@ export default async function LocaleLayout({
             {children}
           </main>
           <Footer />
-          <BottomNav />
+          <BottomNav firstRootSlug={firstRootSlug} />
           <Toaster />
           <SupportChat />
           <AuthModalGate />

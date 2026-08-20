@@ -141,10 +141,6 @@
     "authResetPassword": {
       "title": "New password",
       "description": "Set a new password for your account."
-    },
-    "catalog": {
-      "title": "Catalog",
-      "description": "HADAF marketplace catalog — all categories and products."
     }
   },
   "Header": {
@@ -1335,11 +1331,5 @@
     "input_placeholder": "Write a message...",
     "error_send": "Error sending message",
     "error_fetch": "Error fetching conversations"
-  },
-  "Catalog": {
-    "title": "Catalog",
-    "back": "Back",
-    "view_all": "View All",
-    "empty": "No categories available."
   }
 }

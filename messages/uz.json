@@ -141,10 +141,6 @@
     "authResetPassword": {
       "title": "Yangi parol",
       "description": "Hisobingiz uchun yangi parol o'rnating."
-    },
-    "catalog": {
-      "title": "Katalog",
-      "description": "HADAF Marketpleys katalogi — barcha kategoriyalar va mahsulotlar."
     }
   },
   "Header": {
@@ -1130,11 +1126,5 @@
     "cat_appliances": "Maishiy texnika",
     "cat_home": "Uy va bog' uchun",
     "cat_other": "Boshqa..."
-  },
-  "Catalog": {
-    "title": "Katalog",
-    "back": "Orqaga",
-    "view_all": "Barchasini ko'rish",
-    "empty": "Kategoriyalar mavjud emas."
   }
 }
