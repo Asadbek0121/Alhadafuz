@@ -88,6 +88,14 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
         setActiveIdx(0);
     };
 
+    // Link onClick'da close() menyuni unmount qiladi — bu navigation'ni uzishi mumkin.
+    // Shu sababli preventDefault + router.push ishlatiladi (locate-aware).
+    const navigateToCategory = (e: React.MouseEvent, slug: string) => {
+        e.preventDefault();
+        close();
+        router.push(`/category/${slug}`);
+    };
+
     const handleAuth = () => {
         close();
         if (!user) openAuthModal();
@@ -164,7 +172,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                 <Link
                                     href={`/category/${selectedRoot.slug}`}
                                     className={`${styles.catItem} ${styles.activeCat}`}
-                                    onClick={close}
+                                    onClick={(e) => navigateToCategory(e, selectedRoot.slug)}
                                     style={{ color: 'var(--primary)' }}
                                 >
                                     <span className={styles.catName}>{t('view_all')}</span>
@@ -224,7 +232,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         <>
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
-                                                <Link href={`/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={close}>
+                                                <Link href={`/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={(e) => navigateToCategory(e, categories[activeIdx].slug)}>
                                                     {t('view_all')}
                                                 </Link>
                                             </div>
@@ -233,13 +241,13 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                 {categories[activeIdx].children && categories[activeIdx].children.length > 0 ? (
                                                     categories[activeIdx].children.map((sub: any) => (
                                                         <div key={sub.id} className={styles.subGroup}>
-                                                            <Link href={`/category/${sub.slug}`} className={styles.subTitle} onClick={close}>
+                                                            <Link href={`/category/${sub.slug}`} className={styles.subTitle} onClick={(e) => navigateToCategory(e, sub.slug)}>
                                                                 {sub.name}
                                                             </Link>
 
                                                             <div className={styles.microList}>
                                                                 {sub.children?.map((micro: any) => (
-                                                                    <Link key={micro.id} href={`/category/${micro.slug}`} className={styles.microLink} onClick={close}>
+                                                                    <Link key={micro.id} href={`/category/${micro.slug}`} className={styles.microLink} onClick={(e) => navigateToCategory(e, micro.slug)}>
                                                                         {micro.name}
                                                                     </Link>
                                                                 ))}
