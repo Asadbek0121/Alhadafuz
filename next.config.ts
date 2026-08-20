@@ -36,7 +36,8 @@ const cspHeader = [
   "script-src 'self' 'unsafe-inline'" +
     (isDev ? " 'unsafe-eval'" : " 'wasm-unsafe-eval'") +
     " https://telegram.org https://api-maps.yandex.ru" +
-    " https://*.yandex.ru https://*.yandex.net https://yastatic.net https://unpkg.com",
+    " https://*.yandex.ru https://*.yandex.net https://yastatic.net https://unpkg.com" +
+    " https://va.vercel-scripts.com https://*.vercel-scripts.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net",
   "font-src 'self' data: https://fonts.gstatic.com",
@@ -82,6 +83,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
+    unoptimized: process.env.NODE_ENV === 'development',
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,
     remotePatterns: [
