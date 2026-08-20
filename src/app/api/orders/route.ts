@@ -14,6 +14,7 @@ const orderItemSchema = z.object({
     price: z.number().nonnegative().optional(),
     title: z.string().optional(),
     image: z.string().optional(),
+    variant: z.string().optional(),
 });
 
 const createOrderSchema = z.object({
@@ -33,7 +34,32 @@ const createOrderSchema = z.object({
     storeId: z.string().nullable().optional(),
     lat: z.number().optional(),
     lng: z.number().optional(),
+    // Client-generated idempotency key — bitta checkout intent uchun barqaror.
+    // Retry/double-submit bir xil key yuboradi → duplicate order yaratilmaydi.
+    idempotencyKey: z.string().max(100).optional(),
 });
+
+/**
+ * Click to'lov URL — dedupe natijasida qaytarilgan order uchun ham ishlaydi.
+ * Allaqachon PAID bo'lgan order uchun qayta payment yaratilmaydi.
+ */
+function buildClickPaymentUrl(order: any): string | null {
+    if (String(order.paymentMethod || '').toLowerCase() === 'click'
+        && String(order.paymentStatus || '').toUpperCase() !== 'PAID'
+        && String(order.status || '').toUpperCase() !== 'CANCELLED') {
+        return `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
+    }
+    return null;
+}
+
+/** Order javobini yagona joydan quradi — yangi va dedupe'da bir xil format. */
+function buildOrderResponse(order: any): { success: boolean; order: any; paymentUrl: string | null } {
+    return {
+        success: true,
+        order,
+        paymentUrl: buildClickPaymentUrl(order),
+    };
+}
 
 import { checkRateLimit } from '@/lib/ratelimit';
 import { autoDispatchOrder } from '@/lib/dispatch';
@@ -60,7 +86,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Invalid input', details: result.error.format() }, { status: 400 });
         }
 
-        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode, storeId, lat, lng } = result.data;
+        const { items, paymentMethod, deliveryAddress, deliveryMethod, couponCode, storeId, lat, lng, idempotencyKey } = result.data;
 
         // 2. Fetch products to prevent price tampering
         let dbProducts: any[] = [];
@@ -79,9 +105,19 @@ export async function POST(req: Request) {
 
         for (const item of items) {
             const dbProduct = dbProducts.find((p: any) => p.id === item.id);
-            const price = dbProduct ? dbProduct.price : (item.price || 0);
-            const title = dbProduct ? dbProduct.title : (item.title || "Unknown Product");
-            const image = dbProduct ? dbProduct.image : (item.image || "");
+
+            // Product topilmasa yoki o'chirilgan bo'lsa — buyurtma qabul qilinmaydi.
+            // Client yuborgan price/title authoritative EMAS, serverdan olinadi.
+            if (!dbProduct || dbProduct.isDeleted) {
+                return NextResponse.json({
+                    error: `Mahsulot topilmadi yoki sotuvdan olib tashlangan`,
+                    details: { productId: item.id }
+                }, { status: 400 });
+            }
+
+            const price = dbProduct.price;
+            const title = dbProduct.title;
+            const image = dbProduct.image;
 
             calculatedTotal += price * item.quantity;
 
@@ -90,7 +126,8 @@ export async function POST(req: Request) {
                 title,
                 price,
                 quantity: item.quantity,
-                image
+                image,
+                variant: item.variant || null
             });
         }
 
@@ -181,39 +218,58 @@ export async function POST(req: Request) {
 
         const finalTotal = calculatedTotal + deliveryFee - discountAmount;
 
+        // --- IDEMPOTENCY (client-generated key) ---
+        // Client bitta checkout intent uchun barqaror `idempotencyKey` yuboradi.
+        // Retry / network retry / double-submit bir xil key bilan keladi →
+        // mavjud order qaytariladi, yangi order yaratilmaydi.
+        if (idempotencyKey) {
+            const existing = await (prisma as any).order.findFirst({
+                where: {
+                    userId: session.user.id,
+                    idempotencyKey,
+                },
+                include: { items: true },
+            });
+            if (existing) {
+                return NextResponse.json(buildOrderResponse(existing));
+            }
+        }
+
         // Determine initial status based on payment method
         const method = paymentMethod.toLowerCase();
         const initialStatus = method === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
 
         // 4. Create Order using Raw SQL for the main table to avoid "Unknown argument lat" errors
         // but keeping it inside a transaction for data integrity.
-        const order = await prisma.$transaction(async (tx: any) => {
-            // Update coupon usage count if used
-            if (validatedCoupon && discountAmount > 0) {
-                await (tx as any).coupon.update({
-                    where: { id: validatedCoupon.id },
-                    data: { usedCount: { increment: 1 } }
-                });
-            }
+        let order: any;
+        try {
+            order = await prisma.$transaction(async (tx: any) => {
+                // Update coupon usage count if used
+                if (validatedCoupon && discountAmount > 0) {
+                    await (tx as any).coupon.update({
+                        where: { id: validatedCoupon.id },
+                        data: { usedCount: { increment: 1 } }
+                    });
+                }
 
-            // Generate a random ID for the order (Prisma uses cuid)
-            const orderId = `order_${Math.random().toString(36).slice(2, 11)}`;
+                // Generate a random ID for the order (Prisma uses cuid)
+                const orderId = `order_${Math.random().toString(36).slice(2, 11)}`;
 
-            // USE RAW SQL to bypass Prisma client limitations with lat/lng
-            await tx.$executeRawUnsafe(`
-                INSERT INTO "Order" (
-                    "id", "userId", "total", "deliveryFee", "status", "paymentMethod", 
-                    "deliveryMethod", "storeId", "shippingCity", "shippingDistrict", 
-                    "shippingAddress", "comment", "shippingPhone", "shippingName", 
-                    "lat", "lng", "couponCode", "discountAmount", "updatedAt"
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, NOW())
-            `,
-                orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
-                deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',
-                deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
-                deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
-                lat || null, lng || null, validatedCoupon?.code || null, discountAmount
-            );
+                // USE RAW SQL to bypass Prisma client limitations with lat/lng
+                await tx.$executeRawUnsafe(`
+                    INSERT INTO "Order" (
+                        "id", "userId", "total", "deliveryFee", "status", "paymentMethod",
+                        "deliveryMethod", "storeId", "shippingCity", "shippingDistrict",
+                        "shippingAddress", "comment", "shippingPhone", "shippingName",
+                        "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "updatedAt"
+                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+                `,
+                    orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
+                    deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',
+                    deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
+                    deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
+                    lat || null, lng || null, validatedCoupon?.code || null, discountAmount, idempotencyKey || null
+                );
 
             // Create items and decrease stock
             for (const item of finalOrderItems) {
@@ -242,6 +298,7 @@ export async function POST(req: Request) {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.image,
+                        variant: item.variant,
                     }
                 });
             }
@@ -261,6 +318,22 @@ export async function POST(req: Request) {
 
             return { ...fetchedOrder, items };
         });
+        } catch (txError: any) {
+            // Parallel request race: ikkala request bir vaqtda findFirst'dan
+            // bo'sh qaytarib, keyin ikkalasi insert qilmoqchi bo'lganda
+            // unique constraint (userId, idempotencyKey) birinchi yutadi,
+            // ikkinchisi 23505 / P2002 xatosi oladi.
+            if (idempotencyKey && (txError?.code === '23505' || txError?.code === 'P2002')) {
+                const existing = await (prisma as any).order.findFirst({
+                    where: { userId: session.user.id, idempotencyKey },
+                    include: { items: true },
+                });
+                if (existing) {
+                    return NextResponse.json(buildOrderResponse(existing));
+                }
+            }
+            throw txError;
+        }
 
         // Notify Admins
         try {
@@ -273,13 +346,6 @@ export async function POST(req: Request) {
             console.error("Notification error", e);
         }
 
-        let paymentUrl = null;
-        if (method === 'click') {
-            // Updated to the link requested by the user
-            // We append amount and order ID (transaction_param) for better user experience
-            paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
-        }
-
         // Try Auto-Assignment if it's a courier delivery
         if (deliveryMethod === 'COURIER') {
             try {
@@ -289,7 +355,7 @@ export async function POST(req: Request) {
             }
         }
 
-        return NextResponse.json({ success: true, order, paymentUrl });
+        return NextResponse.json(buildOrderResponse(order));
 
     } catch (error: any) {
         console.error("Order creation error:", error);

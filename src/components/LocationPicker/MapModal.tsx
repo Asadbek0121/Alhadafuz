@@ -1,6 +1,7 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
+import { YANDEX_MAPS_KEY } from "@/lib/maps";
 import React, { useEffect, useRef, useState } from 'react';
 import { useMapStore } from '@/store/useMapStore';
 import { useLocationStore } from '@/store/useLocationStore';
@@ -10,7 +11,7 @@ import Script from 'next/script';
 import { toast } from 'sonner';
 import { useScrollLock } from '@/hooks/useScrollLock';
 
-const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong&load=package.full";
+const YANDEX_MAPS_URL = `https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=${YANDEX_MAPS_KEY}&coordorder=latlong&load=package.full`;
 const DEFAULT_COORDS = [37.2242, 67.2783]; // Termiz (asosiy hudud)
 
 export default function MapModal() {

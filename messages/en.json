@@ -122,6 +122,10 @@
       "title": "{title}",
       "description": "{title} — at a great price on the HADAF marketplace. Fast delivery, secure payment and instalments."
     },
+    "search": {
+      "title": "Search",
+      "description": "Search products on the HADAF marketplace: filter by price, discount and category."
+    },
     "authLogin": {
       "title": "Sign in",
       "description": "Sign in to your HADAF account with your phone number."
@@ -167,7 +171,41 @@
     "kabinet": "Profile",
     "yetkazib_berish_manzili": "Delivery Address",
     "joylashuvni_aniqlash": "Detect Location",
-    "tanlash": "Select"
+    "tanlash": "Select",
+    "kategoriyalar": "Categories",
+    "chegirmalar": "Deals",
+    "recent_searches": "Recent searches",
+    "language_switcher": "Select language"
+  },
+  "Home": {
+    "warranty_desc": "Every product comes with an official warranty",
+    "quality_desc": "Original products from verified sellers"
+  },
+  "Search": {
+    "title": "Search",
+    "placeholder": "Search products...",
+    "results": "{count} products found",
+    "no_results": "Nothing found",
+    "no_results_desc": "Try a different search term or browse the catalog",
+    "sort": "Sort",
+    "sort_recommended": "Recommended",
+    "sort_price_asc": "Price: Low to High",
+    "sort_price_desc": "Price: High to Low",
+    "sort_newest": "Newest",
+    "sort_discount": "Discount",
+    "filters": "Filters",
+    "category": "Category",
+    "all_categories": "All categories",
+    "price": "Price",
+    "min_price": "Min price",
+    "max_price": "Max price",
+    "discount_only": "Discounts only",
+    "clear_filters": "Clear filters",
+    "apply_filters": "Apply",
+    "view_all": "View All",
+    "recent_searches": "Recent searches",
+    "popular_searches": "Popular searches",
+    "no_products": "No products available"
   },
   "Hero": {
     "slider_title": "Huge discounts started!",
@@ -193,7 +231,8 @@
     "start_shopping": "Start Shopping",
     "cart_title": "Cart",
     "items_count": "item(s)",
-    "pcs": "pcs"
+    "pcs": "pcs",
+    "close": "Close"
   },
   "Checkout": {
     "contact_info": "Contact Information",
@@ -252,7 +291,10 @@
     "pay_payme": "Pay online via Payme",
     "pay_uzum": "Pay online via Uzum",
     "pay_p2p": "Card transfer",
-    "delivery_eta": "Delivery time"
+    "delivery_eta": "Delivery time",
+    "delivery_calculated": "Delivery fee is calculated at checkout",
+    "delivery_unavailable": "Delivery is not available to the selected location",
+    "to_pay": "Proceed to Pay"
   },
   "Product": {
     "loading": "Loading...",
@@ -286,7 +328,11 @@
     "link_copied": "Link copied",
     "share": "Share",
     "no_reviews_short": "No reviews yet",
-    "zoom_hint": "Zoom image"
+    "zoom_hint": "Zoom image",
+    "delivery_info": "Delivery",
+    "delivery_free": "Free delivery",
+    "delivery_calculated": "Delivery fee is calculated at checkout",
+    "delivery_termiz": "Fast delivery across Termez"
   },
   "Marketing": {
     "isNew": "NEW ARRIVAL",
@@ -651,7 +697,12 @@
       "books": "Books",
       "auto": "Auto Accessories",
       "gaming": "For Gamers"
-    }
+    },
+    "loading": "Loading...",
+    "no_categories": "No categories available.",
+    "view_all": "View All",
+    "no_subcategories": "No subcategories in this section yet.",
+    "subcategories": "Subcategories"
   },
   "OrderSuccess": {
     "title": "Thank you for your order!",

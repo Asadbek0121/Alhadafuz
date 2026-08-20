@@ -171,7 +171,7 @@ export default function OrderInvoicePage() {
                         <div className="w-px h-8 bg-slate-200"></div>
                         <div className="text-center">
                             <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Sayt</p>
-                            <p className="text-[10px] font-bold">uzm.uz</p>
+                            <p className="text-[10px] font-bold">www.alhadaf.uz</p>
                         </div>
                     </div>
                 </div>

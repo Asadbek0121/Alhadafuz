@@ -1,10 +1,13 @@
 import type { Metadata } from 'next';
-import { metaDescription, translatedPageMetadata } from '@/lib/seo';
+import { cache } from 'react';
+import { getTranslations } from 'next-intl/server';
+import { metaDescription, translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
+import { SITE_NAME } from '@/lib/seo';
 import ProductContent from './ProductContent';
 
 const BASE_URL = process.env.NEXTAUTH_URL || process.env.APP_URL || 'http://localhost:3000';
 
-async function fetchProduct(id: string) {
+const fetchProduct = cache(async (id: string) => {
     try {
         const res = await fetch(`${BASE_URL}/api/products/${id}`, { cache: 'no-store' });
         if (!res.ok) return null;
@@ -12,7 +15,7 @@ async function fetchProduct(id: string) {
     } catch {
         return null;
     }
-}
+});
 
 export async function generateMetadata(
     { params }: { params: Promise<{ locale: string; id: string }> }
@@ -22,8 +25,6 @@ export async function generateMetadata(
     const path = `/product/${id}`;
 
     if (!product?.title) {
-        // The product could not be loaded (deleted, or the API is down). Generic
-        // copy, and noindex so a broken page does not end up in search results.
         return translatedPageMetadata('product', { locale, path, noindex: true });
     }
 
@@ -39,7 +40,6 @@ export async function generateMetadata(
         images,
     });
 
-    // The seller's own description beats the generated template when there is one.
     if (ownDescription) {
         const description = metaDescription(ownDescription);
         metadata.description = description;
@@ -47,7 +47,6 @@ export async function generateMetadata(
         if (metadata.twitter) metadata.twitter.description = description;
     }
 
-    // Admin panelda kiritilgan teglar (`attributes._tags`) kalit so'zlarga aylanadi.
     if (Array.isArray(product.tags) && product.tags.length > 0) {
         metadata.keywords = product.tags;
     }
@@ -55,6 +54,95 @@ export async function generateMetadata(
     return metadata;
 }
 
-export default function ProductPage() {
-    return <ProductContent />;
+export default async function ProductPage({
+    params,
+}: {
+    params: Promise<{ locale: string; id: string }>;
+}) {
+    const { locale, id } = await params;
+    // React.cache() Next.js bilan bir so'rov ichida deduplicate qiladi —
+    // generateMetadata bilan bir xil fetch ishlatiladi, ikkinchi marta
+    // API chaqirilmaydi (double-fetch tuzatildi).
+    const product = await fetchProduct(id);
+
+    const tHeader = await getTranslations({ locale, namespace: 'Header' });
+
+    // Product JSON-LD — faqat real ma'lumotlar asosida (fake rating yozilmaydi)
+    let jsonLdProduct: Record<string, unknown> | null = null;
+    if (product?.title) {
+        const price = Number(product.price);
+        const img = Array.isArray(product.images) && product.images[0]
+            ? product.images[0]
+            : product.image;
+
+        const offers: Record<string, unknown> = {
+            '@type': 'Offer',
+            priceCurrency: 'UZS',
+            price: price,
+            availability: (product.stock > 0 && !['inactive', 'draft'].includes(String(product.status || '').toLowerCase()))
+                ? 'https://schema.org/InStock'
+                : 'https://schema.org/OutOfStock',
+            url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz'}/product/${id}`,
+        };
+        if (product.oldPrice && Number(product.oldPrice) > price) {
+            offers.priceSpecification = {
+                '@type': 'PriceSpecification',
+                price: price,
+                priceCurrency: 'UZS',
+            };
+        }
+
+        jsonLdProduct = {
+            '@context': 'https://schema.org',
+            '@type': 'Product',
+            name: product.title,
+            image: img,
+            description: (product.description || '').slice(0, 500),
+            sku: id,
+            brand: product.brand ? { '@type': 'Brand', name: product.brand } : undefined,
+            offers,
+            // aggregateRating faqat real database rating/reviews mavjud bo'lsa qo'shiladi —
+            // fake rating yozilmaydi.
+            ...(product.reviewsCount > 0 && product.rating > 0
+                ? {
+                    aggregateRating: {
+                        '@type': 'AggregateRating',
+                        ratingValue: product.rating,
+                        reviewCount: product.reviewsCount,
+                    },
+                }
+                : {}),
+        };
+    }
+
+    // BreadcrumbList JSON-LD — Home → Category → Product (faqat real route'lar)
+    let jsonLdBreadcrumb: Record<string, unknown> | null = null;
+    if (product?.title) {
+        const breadcrumbItems = [
+            { name: tHeader('bosh_sahifa'), path: '' },
+            ...(product.categorySlug && product.category
+                ? [{ name: product.category, path: `/category/${product.categorySlug}` }]
+                : []),
+            { name: product.title, path: `/product/${id}` },
+        ];
+        jsonLdBreadcrumb = breadcrumbJsonLd(breadcrumbItems, locale);
+    }
+
+    return (
+        <>
+            {jsonLdProduct && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdProduct) }}
+                />
+            )}
+            {jsonLdBreadcrumb && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdBreadcrumb) }}
+                />
+            )}
+            <ProductContent initialProduct={product} />
+        </>
+    );
 }

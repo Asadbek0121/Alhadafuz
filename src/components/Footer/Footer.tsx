@@ -186,9 +186,9 @@ export default function Footer() {
 
                     <div className="flex items-center gap-3 opacity-70 hover:opacity-100 transition-opacity">
                         <PaymentIcon src="/click_logo_final.png" alt="Click" />
-                        <PaymentIcon src="https://asaxiy.uz/custom-assets/images/payme.svg" alt="Payme" />
-                        <PaymentIcon src="https://asaxiy.uz/custom-assets/images/uzcard.svg" alt="Uzcard" />
-                        <PaymentIcon src="https://asaxiy.uz/custom-assets/images/humo.svg" alt="Humo" />
+                        <PaymentIcon src="/payme.svg" alt="Payme" />
+                        <PaymentIcon src="/uzcard.svg" alt="Uzcard" />
+                        <PaymentIcon src="/humo.svg" alt="Humo" />
                     </div>
                 </div>
             </div>

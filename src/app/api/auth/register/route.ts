@@ -119,8 +119,8 @@ export async function POST(req: Request) {
         return NextResponse.json(
             {
                 message: "Server xatosi yuz berdi",
-                debug: error.message,
-                stack: error.stack
+                
+                
             },
             { status: 500 }
         );

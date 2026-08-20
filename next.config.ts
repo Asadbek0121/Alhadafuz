@@ -32,8 +32,9 @@ const cspHeader = [
   // and next/font styles) unless nonces are used. Nonces would force every page
   // into dynamic rendering, killing static optimization + CDN caching, so we
   // keep static rendering and lock down everything else instead.
+  // 'wasm-unsafe-eval' — dotlottie (admin 2FA animatsiyasi) WebAssembly ishlatadi.
   "script-src 'self' 'unsafe-inline'" +
-    (isDev ? " 'unsafe-eval'" : "") +
+    (isDev ? " 'unsafe-eval'" : " 'wasm-unsafe-eval'") +
     " https://telegram.org https://api-maps.yandex.ru" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net https://unpkg.com",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com" +

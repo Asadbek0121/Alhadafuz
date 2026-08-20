@@ -1,13 +1,25 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useCartStore } from '@/store/useCartStore';
+import { useCartStore, cartItemKey } from '@/store/useCartStore';
 import styles from './CartDrawer.module.css';
 import { X, Trash2, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Link } from '@/navigation';
 import Image from "next/image";
 import { useTranslations } from 'next-intl';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import { useFocusTrap } from '@/hooks/useFocusTrap';
+
+/** Tanlangan variant JSON'ni o'qib chiqadi */
+function parseVariantLabel(variant?: string): string | null {
+    if (!variant) return null;
+    try {
+        const obj = JSON.parse(variant);
+        return Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(' · ');
+    } catch {
+        return variant;
+    }
+}
 
 export default function CartDrawer() {
     const { items, isOpen, closeCart, removeFromCart, updateQuantity, total, isHydrated } = useCartStore();
@@ -16,19 +28,20 @@ export default function CartDrawer() {
 
     // Drawer ochiq paytida fon sahifa scroll qilinmaydi
     useScrollLock(isOpen);
+    const drawerRef = useFocusTrap(isOpen, closeCart);
 
     if (!isOpen) return null;
 
     return (
         <>
             <div className={styles.overlay} onClick={closeCart}></div>
-            <div className={styles.drawer}>
+            <div className={styles.drawer} ref={drawerRef} role="dialog" aria-modal="true" aria-label={tCart('cart_title')}>
                 <div className={styles.header}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <h3>{tHeader('savatcha')}</h3>
                         <span style={{ background: '#eee', padding: '2px 8px', borderRadius: '12px', fontSize: '14px', fontWeight: '600' }}>{isHydrated ? items.length : 0}</span>
                     </div>
-                    <button onClick={closeCart} className={styles.closeBtn} title="Yopish" aria-label="Savatchani yopish"><X size={24} /></button>
+                    <button onClick={closeCart} className={styles.closeBtn} title={tCart('close')} aria-label={tCart('close')}><X size={24} /></button>
                 </div>
 
                 <div className={styles.items}>
@@ -37,17 +50,17 @@ export default function CartDrawer() {
                             <div style={{ marginBottom: '24px' }}>
                                 <ShoppingCart size={100} strokeWidth={0} fill="#3b82f6" style={{ filter: 'drop-shadow(0 10px 20px rgba(59, 130, 246, 0.3))' }} />
                             </div>
-                            <h3 style={{ fontSize: '19px', fontWeight: '700', marginBottom: '12px', color: '#000' }}>Savatda hozircha mahsulot yo‘q</h3>
+                            <h3 style={{ fontSize: '19px', fontWeight: '700', marginBottom: '12px', color: '#000' }}>{tCart('empty_title')}</h3>
                             <p style={{ color: '#888', fontSize: '15px', maxWidth: '280px', lineHeight: '1.4', margin: '0 auto 32px' }}>
-                                Bosh sahifadagi termalardan boshlang yoki kerakli mahsulotni qidiruv orqali toping
+                                {tCart('empty_desc')}
                             </p>
                             <Link href="/" onClick={closeCart} className={styles.btnContinue} style={{ width: '160px', borderRadius: '12px', background: '#007aff', textAlign: 'center', display: 'flex', justifyContent: 'center', alignItems: 'center', textDecoration: 'none' }}>
-                                Asosiy
+                                {tCart('back_home')}
                             </Link>
                         </div>
                     ) : (
                         items.map(item => (
-                            <div key={item.id} className={styles.item}>
+                            <div key={cartItemKey(item)} className={styles.item}>
                                 <Image
                                     src={item.image}
                                     alt={item.title}
@@ -57,16 +70,19 @@ export default function CartDrawer() {
                                 />
                                 <div className={styles.details}>
                                     <div className={styles.title}>{item.title}</div>
+                                    {parseVariantLabel(item.variant) && (
+                                        <div className={styles.variant}>{parseVariantLabel(item.variant)}</div>
+                                    )}
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
                                         <div className={styles.controls}>
-                                            <button onClick={() => updateQuantity(item.id, -1)} title="Kamaytirish" aria-label="Mahsulot sonini kamaytirish">-</button>
+                                            <button onClick={() => updateQuantity(item.id, -1, item.variant)} title="Kamaytirish" aria-label="Mahsulot sonini kamaytirish">-</button>
                                             <span>{item.quantity}</span>
-                                            <button onClick={() => updateQuantity(item.id, 1)} title="Ko'paytirish" aria-label="Mahsulot sonini ko'paytirish">+</button>
+                                            <button onClick={() => updateQuantity(item.id, 1, item.variant)} title="Ko'paytirish" aria-label="Mahsulot sonini ko'paytirish">+</button>
                                         </div>
                                         <div className={styles.price}>{(item.price * item.quantity).toLocaleString()} {tHeader('som')}</div>
                                     </div>
                                 </div>
-                                <button className={styles.remove} onClick={() => removeFromCart(item.id)} title="O'chirish" aria-label="Mahsulotni savatdan o'chirish">
+                                <button className={styles.remove} onClick={() => removeFromCart(item.id, item.variant)} title="O'chirish" aria-label="Mahsulotni savatdan o'chirish">
                                     <Trash2 size={18} />
                                 </button>
                             </div>

@@ -93,7 +93,7 @@ export async function POST(req: Request) {
         console.error("WebAuthn Login Options Error:", error);
         return NextResponse.json({
             error: "Failed to generate options",
-            details: error.message
+            
         }, { status: 500 });
     }
 }

@@ -86,7 +86,7 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
         });
     } catch (error: any) {
         console.error("Fetch product error:", error);
-        return NextResponse.json({ error: 'Failed to fetch product', details: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 });
     }
 }
 

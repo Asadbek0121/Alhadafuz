@@ -1,8 +1,9 @@
 "use client";
 
-import { ChevronRight, ChevronLeft, Clock, TrendingUp, ShoppingCart } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Clock, TrendingUp, ShoppingCart, Pause, Play } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { Link } from '@/navigation';
 import Image from 'next/image';
 import styles from './Hero.module.css';
@@ -39,6 +40,9 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     const [loading, setLoading] = useState(initialBanners.length === 0);
 
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [paused, setPaused] = useState(false);
+    // Foydalanuvchi motion kamaytirishni so'ragan bo'lsa autoplay ishlamaydi
+    const reduceMotion = useReducedMotion();
     const [timeLeft, setTimeLeft] = useState(DEFAULT_COUNTDOWN);
     // Serverdan kelgan banner'lardan darhol hisoblanadi — fetch'ni kutmaydi
     const [countdownEnd, setCountdownEnd] = useState<number | null>(() => findCountdownEnd(initialBanners));
@@ -137,14 +141,14 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         fetch(`/api/admin/banners/${bannerId}/click`, { method: 'POST' }).catch(() => { });
     };
 
-    // Auto-play
+    // Auto-play — prefers-reduced-motion yoki pause'da ishlamaydi
     useEffect(() => {
-        if (mainBanners.length <= 1) return;
+        if (mainBanners.length <= 1 || paused || reduceMotion) return;
         const timer = setInterval(() => {
             setCurrentIndex((prev) => (prev + 1) % mainBanners.length);
         }, 6000);
         return () => clearInterval(timer);
-    }, [mainBanners.length]);
+    }, [mainBanners.length, paused, reduceMotion]);
 
     const { h, m, s } = formatTime(timeLeft);
 
@@ -152,7 +156,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         <div className={styles.heroWrapper}>
             <div className={`container ${styles.heroContent} ${isFallbackMode ? styles.fallbackLayout : ''}`}>
                 {/* 1. Main Premium Slider */}
-                <div className={styles.sliderContainer}>
+                <div className={styles.sliderContainer} role="region" aria-roledescription="carousel" aria-label="Bannerlar">
                     {loading ? (
                         <div className="animate-pulse bg-gray-100 w-full h-full"></div>
                     ) : mainBanners.length === 0 && fallbackProducts.length > 0 ? (
@@ -234,16 +238,28 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                             </div>
 
                             {mainBanners.length > 1 && (
-                                <div className={styles.sliderDots}>
-                                    {mainBanners.map((_, i) => (
-                                        <button
-                                            key={i}
-                                            onClick={() => setCurrentIndex(i)}
-                                            className={`${styles.dot} ${i === currentIndex ? styles.activeDot : ''}`}
-                                            title={`Slayd ${i + 1}`}
-                                            aria-label={`${i + 1}-slaydga o'tish`}
-                                        />
-                                    ))}
+                                <div className={styles.sliderControls}>
+                                    <div className={styles.sliderDots}>
+                                        {mainBanners.map((_, i) => (
+                                            <button
+                                                key={i}
+                                                onClick={() => setCurrentIndex(i)}
+                                                className={`${styles.dot} ${i === currentIndex ? styles.activeDot : ''}`}
+                                                title={`Slayd ${i + 1}`}
+                                                aria-label={`${i + 1}-slaydga o'tish`}
+                                                aria-current={i === currentIndex}
+                                            />
+                                        ))}
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setPaused(p => !p)}
+                                        className={styles.pauseBtn}
+                                        aria-label={paused ? "Avtomatik aylanishni davom ettirish" : "Avtomatik aylanishni to'xtatish"}
+                                        aria-pressed={paused}
+                                    >
+                                        {paused ? <Play size={14} /> : <Pause size={14} />}
+                                    </button>
                                 </div>
                             )}
                         </div>

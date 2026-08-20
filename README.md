@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Hadaf Market
 
-## Getting Started
+O'zbekiston bozori (Surxondaryo, Termiz) uchun zamonaviy onlayn savdo platformasi. Next.js 16, PostgreSQL, PWA, Telegram botlar bilan integratsiyalashgan.
 
-First, run the development server:
+## Loyiha tuzilishi
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+src/
+├── app/
+│   ├── (root)/[locale]/   # Public sahifalar (i18n bilan)
+│   ├── (admin)/admin/     # Admin panel (localizatsiya qilinmaydi)
+│   ├── print/             # Invoice/print (localizatsiya qilinmaydi)
+│   └── api/               # REST API (~110 route)
+├── components/            # UI komponentlar
+├── lib/                   # Biznes-logika, prisma, security, telegram
+├── services/              # Order, Dispatch, Notification, Analytics, QR
+├── providers/             # React providerlar
+├── store/                 # Zustand store'lar
+├── i18n/                  # next-intl konfiguratsiyasi
+├── proxy.ts               # Middleware (NextAuth + next-intl)
+├── auth.ts                # NextAuth konfiguratsiyasi
+└── auth.config.ts         # Sayt auth sozlamalari
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tez boshlash
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Node 22 LTS ishlatish (Node 25 bilan Turbopack osilib qoladi)
+nvm use 22
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# O'rnatish
+npm install
 
-## Learn More
+# Prisma client sinxronlash
+npx prisma generate
 
-To learn more about Next.js, take a look at the following resources:
+# Dev server
+npm run dev
+# -> http://localhost:3000
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Asosiy texnologiyalar
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Texnologiya | Versiya |
+|-------------|---------|
+| Next.js | 16.3.1 (App Router, Turbopack) |
+| React | 19.2 |
+| Database | PostgreSQL (Neon) + Prisma 5.22 |
+| Auth | NextAuth v5 (JWT, OTP, Google, Telegram, WebAuthn) |
+| i18n | next-intl v4 (uz/ru/en) |
+| PWA | @ducanh2912/next-pwa |
+| Monitoring | Sentry + Vercel Analytics/SpeedInsights |
+| State | Zustand (persist localStorage), TanStack Query |
+| UI | Tailwind CSS 4, framer-motion, recharts, lucide-react, sonner |
 
-## Deploy on Vercel
+## Environment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+`.env` gitignore'da — `.env.example` ga qarang. Muhim variable'lar:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Variable | Majburiy | Izoh |
+|----------|----------|------|
+| `DATABASE_URL` | Ha | Neon PostgreSQL |
+| `AUTH_SECRET` | Ha | NextAuth secret |
+| `TELEGRAM_BOT_TOKEN` | Ha | Support/auth bot |
+| `COURIER_BOT_TOKEN` | Ha | Courier bot |
+| `NEXTAUTH_URL` | Ha | `http://localhost:3000` |
+| `NEXT_PUBLIC_APP_URL` | Yo'q | Canonical/OG URL (default: `https://www.alhadaf.uz`) |
+
+## Scripts
+
+| Komanda | Izoh |
+|---------|------|
+| `npm run dev` | Dev server (port 3000) |
+| `npm run build` | Prisma push + Next build |
+| `npm run lint` | ESLint |
+| `npm run bot` | Courier bot (polling) |
+| `npm run bot:auth` | Support/auth bot (polling) |
+
+## Muhim
+
+- **Node 22 LTS** ishlatish kerak (Node 25 bilan Turbopack osilib qoladi).
+- `.env` commit qilmaslik — `.env` masofaviy Neon DB'ga ulangan.
+- `delivery-app/` alohida Express ilova — Next.js app bilan ishlamaydi.
+- AI kontekst fayllari: `AGENTS.md`, `PROJECT_STATE.md`, `CHANGELOG.md`.

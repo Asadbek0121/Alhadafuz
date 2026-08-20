@@ -2,6 +2,7 @@
 
 "use client";
 
+import { YANDEX_MAPS_KEY } from "@/lib/maps";
 import { useEffect, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import { Package, Truck, CheckCircle2, MapPin, Phone, User, ChevronLeft } from "lucide-react";
@@ -14,9 +15,11 @@ export default function CustomerTrackingPage() {
     const id = params.id as string;
     const router = useRouter();
     const [ymapsLoaded, setYmapsLoaded] = useState(false);
-    const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong&load=package.full";
+    const YANDEX_MAPS_URL = `https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=${YANDEX_MAPS_KEY}&coordorder=latlong&load=package.full`;
     const [data, setData] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [networkError, setNetworkError] = useState(false);
+    const [retryCount, setRetryCount] = useState(0);
     const mapRef = useRef<any>(null);
     const courierPlacemarkRef = useRef<any>(null);
     const destPlacemarkRef = useRef<any>(null);
@@ -31,29 +34,48 @@ export default function CustomerTrackingPage() {
         return () => clearInterval(interval);
     }, []);
 
-    // Fetch Data Effect
+    // Fetch Data Effect — order terminal holatga yetganda (DELIVERED/COMPLETED/CANCELLED)
+    // polling to'xtaydi. Network error'da ham davom ettirilmaydi — user "Qayta urinish"
+    // tugmasi orqali qayta boshlaydi.
     useEffect(() => {
+        let cancelled = false;
+        let interval: ReturnType<typeof setInterval> | null = null;
+
+        const isTerminal = (status?: string) =>
+            status === 'DELIVERED' || status === 'COMPLETED' || status === 'CANCELLED';
+
+        const stopPolling = () => { if (interval) { clearInterval(interval); interval = null; } };
+
         const fetchData = async () => {
             try {
                 const res = await fetch(`/api/orders/${id}/track`);
                 const d = await res.json();
-                console.log("Tracking Data:", d);
+                if (cancelled) return;
                 setData((prev: any) => {
                     if (prev && prev.orderLat && !d.orderLat && prev.shippingAddress === d.shippingAddress) {
                         return { ...d, orderLat: prev.orderLat, orderLng: prev.orderLng };
                     }
                     return d;
                 });
-                setLoading(false);
+                setNetworkError(false);
+                // Terminal status → polling to'xtaydi (takroriy request bo'lmaydi)
+                if (isTerminal(d.status)) stopPolling();
             } catch (e) {
+                if (cancelled) return;
                 console.error("Tracking Error:", e);
+                setData((prev: any) => prev ?? null);
+                setNetworkError(true);
+                // Network error → polling to'xtaydi, infinite retry qilinmaydi
+                stopPolling();
+            } finally {
+                if (!cancelled) setLoading(false);
             }
         };
 
-        const interval = setInterval(fetchData, 10000);
         fetchData();
-        return () => clearInterval(interval);
-    }, [id]);
+        interval = setInterval(fetchData, 10000);
+        return () => { cancelled = true; stopPolling(); };
+    }, [id, retryCount]);
 
     // Yandex Maps Init & Update
     useEffect(() => {
@@ -122,6 +144,20 @@ export default function CustomerTrackingPage() {
             <div className="flex flex-col items-center gap-4">
                 <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
                 <p className="font-black text-[10px] uppercase tracking-widest text-slate-400">Kuzatuv tizimi yuklanmoqda...</p>
+            </div>
+        </div>
+    );
+
+    if (networkError) return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 text-center p-8">
+            <div className="w-24 h-24 bg-white rounded-[32px] shadow-sm flex items-center justify-center mb-6">
+                <Truck size={40} className="text-slate-200" />
+            </div>
+            <h1 className="text-2xl font-black text-slate-900 mb-2 uppercase tracking-tight">Aloqa uzildi</h1>
+            <p className="text-slate-500 font-bold text-xs mb-8 uppercase tracking-widest">Buyurtma holatini yuklab bo'lmadi. Iltimos, qayta urinib ko'ring.</p>
+            <div className="flex gap-4">
+                <button onClick={() => { setNetworkError(false); setRetryCount(c => c + 1); }} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-blue-200">Qayta urinish</button>
+                <button onClick={() => router.push('/')} className="bg-slate-900 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest active:scale-95 transition-all shadow-xl shadow-slate-200">Bosh sahifaga</button>
             </div>
         </div>
     );

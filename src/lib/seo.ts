@@ -19,7 +19,7 @@ import { routing } from '@/navigation';
 export const SITE_NAME = 'Hadaf Market';
 
 /** Same env var and fallback as src/app/api/admin/orders/create/route.ts. */
-export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://uzm.uz').replace(/\/+$/, '');
+export const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz').replace(/\/+$/, '');
 
 /** og:locale wants a full territory tag, not the bare language code. */
 const OG_LOCALE: Record<string, string> = {
@@ -194,4 +194,28 @@ export async function translatedPageMetadata(
         description: t(`${key}.description`, values),
         ...rest,
     });
+}
+
+/**
+ * JSON-LD BreadcrumbList quruvchisi (foundation).
+ *
+ * Kategoriya/mahsulot kabi ierarxik sahifalarda quyidagicha ishlatiladi:
+ *   <script type="application/ld+json"
+ *     dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([...], locale)) }} />
+ * `path` locale prefiksidan keyin keladigan yo'l ('/category/elektronika' kabi).
+ */
+export function breadcrumbJsonLd(
+    items: { name: string; path: string }[],
+    locale: string
+): Record<string, unknown> {
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: items.map((item, i) => ({
+            '@type': 'ListItem',
+            position: i + 1,
+            name: item.name,
+            item: `${SITE_URL}/${locale}${item.path}`,
+        })),
+    };
 }

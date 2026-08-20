@@ -182,18 +182,19 @@ export default function ProductCard(props: ProductProps) {
             </Link>
 
             {/* Wishlist Button */}
-            <div
-                className={`absolute top-2 right-2 z-30 p-1.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all duration-300 cursor-pointer group/heart ${activeWishlist ? 'bg-red-50 text-red-500' : 'text-slate-400 hover:text-red-500 hover:bg-white'}`}
+            <button
+                type="button"
                 onClick={handleToggleWishlist}
-                role="button"
-                aria-label="Sevimlilarga qo'shish"
+                className={`absolute top-2 right-2 z-30 p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all duration-300 cursor-pointer group/heart ${activeWishlist ? 'bg-red-50 text-red-500' : 'text-slate-400 hover:text-red-500 hover:bg-white'}`}
+                aria-pressed={activeWishlist}
+                aria-label={activeWishlist ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo'shish"}
             >
                 <Heart
                     size={18}
                     className={`${activeWishlist ? 'fill-current' : ''} transition-transform duration-300 group-hover/heart:scale-110`}
                     strokeWidth={activeWishlist ? 0 : 2}
                 />
-            </div>
+            </button>
 
             {/* Content */}
             <div className="p-3 md:p-4 flex flex-col flex-1">

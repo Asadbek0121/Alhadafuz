@@ -130,9 +130,35 @@ export default function Header() {
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState(false);
+    const [recentSearches, setRecentSearches] = useState<string[]>([]);
+    const [activeIndex, setActiveIndex] = useState(-1);
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
     const searchRef = useRef<HTMLDivElement>(null);
     const mobileSearchRef = useRef<HTMLDivElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
+    const searchAbortRef = useRef<AbortController | null>(null);
+    const resultsContainerRef = useRef<HTMLDivElement>(null);
+
+    // Load recent searches from localStorage on mount
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem('hadaf-recent-searches');
+            if (stored) setRecentSearches(JSON.parse(stored));
+        } catch { /* ignore */ }
+    }, []);
+
+    // Save a recent search term
+    const saveRecentSearch = (term: string) => {
+        const trimmed = term.trim();
+        if (!trimmed) return;
+        setRecentSearches(prev => {
+            const next = [trimmed, ...prev.filter(s => s !== trimmed)].slice(0, 5);
+            try { localStorage.setItem('hadaf-recent-searches', JSON.stringify(next)); } catch { /* ignore */ }
+            return next;
+        });
+    };
 
     // Notification State
     const [notifications, setNotifications] = useState<any[]>([]);
@@ -196,22 +222,85 @@ export default function Header() {
         };
     }, [closeCatalog]);
 
-    const handleSearch = async (query: string) => {
+    const handleSearch = (query: string) => {
         setSearchQuery(query);
+        setActiveIndex(-1);
+        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+
         if (query.length > 1) {
             setIsSearching(true);
-            try {
-                const res = await fetch(`/api/products?q=${query}`);
-                const data = await res.json();
-                setSearchResults(data);
-            } catch (error) {
-                console.error("Search error:", error);
-            } finally {
-                setIsSearching(false);
-            }
+            searchDebounceRef.current = setTimeout(async () => {
+                if (searchAbortRef.current) searchAbortRef.current.abort();
+                const controller = new AbortController();
+                searchAbortRef.current = controller;
+                setSearchError(false);
+                try {
+                    const res = await fetch(`/api/products?q=${encodeURIComponent(query)}&limit=8`, {
+                        signal: controller.signal,
+                    });
+                    const data = await res.json();
+                    if (controller.signal.aborted) return;
+                    // Handle both old format (array) and new format ({ products, total })
+                    if (Array.isArray(data)) {
+                        setSearchResults(data);
+                    } else {
+                        setSearchResults(data.products || []);
+                    }
+                } catch (error: any) {
+                    if (error.name === 'AbortError') return;
+                    console.error("Search error:", error);
+                    setSearchError(true);
+                } finally {
+                    if (!controller.signal.aborted) setIsSearching(false);
+                }
+            }, 300);
         } else {
             setSearchResults([]);
+            setIsSearching(false);
+            setSearchError(false);
         }
+    };
+
+    const handleSearchSubmit = () => {
+        const term = searchQuery.trim();
+        if (term.length < 2) return;
+        saveRecentSearch(term);
+        setSearchResults([]);
+        setSearchQuery('');
+        router.push(`/search?q=${encodeURIComponent(term)}`);
+    };
+
+    const handleRecentSearchClick = (term: string) => {
+        saveRecentSearch(term);
+        setSearchResults([]);
+        setSearchQuery('');
+        router.push(`/search?q=${encodeURIComponent(term)}`);
+    };
+
+    const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            if (activeIndex >= 0 && searchResults[activeIndex]) {
+                handleSearchResultClick(searchResults[activeIndex]);
+            } else {
+                handleSearchSubmit();
+            }
+        } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            const max = searchResults.length + recentSearches.length;
+            setActiveIndex(prev => (prev < max - 1 ? prev + 1 : 0));
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(prev => (prev > 0 ? prev - 1 : -1));
+        } else if (e.key === 'Escape') {
+            setSearchResults([]);
+        }
+    };
+
+    const handleSearchResultClick = (product: any) => {
+        saveRecentSearch(product.title);
+        setSearchResults([]);
+        setSearchQuery('');
     };
 
     const handleGetLocation = () => {
@@ -392,42 +481,88 @@ export default function Header() {
                             <input
                                 type="text"
                                 name="search-input"
-                                autoComplete="one-time-code"
+                                autoComplete="off"
                                 placeholder={t('search_placeholder')}
                                 className="w-full bg-slate-50 border border-slate-200 text-slate-900 placeholder-slate-400 px-5 py-3 pr-14 rounded-2xl outline-none focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 transition-all font-medium"
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
+                                onKeyDown={handleSearchKeyDown}
+                                onFocus={() => setIsSearchFocused(true)}
+                                onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                                aria-label={t('search_placeholder')}
+                                role="combobox"
+                                aria-expanded={searchQuery.length > 1 || (isSearchFocused && recentSearches.length > 0)}
+                                aria-haspopup="listbox"
+                                aria-controls="search-dropdown"
+                                aria-activedescendant={activeIndex >= 0 && searchResults[activeIndex] ? `search-option-${activeIndex}` : undefined}
                             />
-                            <button className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm" title="Qidirish" aria-label="Qidirish">
+                            <button
+                                onClick={handleSearchSubmit}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                                title={t('katalog')}
+                                aria-label={t('search_placeholder')}
+                            >
                                 <Search size={20} strokeWidth={2.5} />
                             </button>
                         </div>
 
                         {/* Search Dropdown */}
-                        {searchQuery.length > 0 && (
-                            <div className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden py-2 animate-fade-in-up">
-                                {isSearching ? (
+                        {(searchQuery.length > 0 || (isSearchFocused && recentSearches.length > 0)) && (
+                            <div id="search-dropdown" ref={resultsContainerRef} className="absolute top-full left-0 right-0 mt-3 bg-white rounded-2xl shadow-xl border border-slate-100 overflow-hidden py-2 animate-fade-in-up">
+                                {searchQuery.length === 0 && recentSearches.length > 0 ? (
+                                    <>
+                                        <div className="px-4 py-2 text-[11px] font-black uppercase tracking-widest text-slate-400">{t('recent_searches')}</div>
+                                        {recentSearches.map((term, idx) => (
+                                            <button
+                                                key={term}
+                                                onClick={() => handleRecentSearchClick(term)}
+                                                className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium transition-colors ${activeIndex === idx ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
+                                            >
+                                                <Search size={14} className="text-slate-400" />
+                                                {term}
+                                            </button>
+                                        ))}
+                                    </>
+                                ) : isSearching ? (
                                     <div className="p-8 text-center text-slate-500">
                                         <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
                                         {t('loading')}
                                     </div>
-                                ) : searchResults.length > 0 ? (
-                                    searchResults.map((product) => (
-                                        <Link
-                                            key={product.id}
-                                            href={`/product/${product.id}`}
-                                            className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 transition-colors border-b border-slate-50 last:border-0"
-                                            onClick={() => { setSearchResults([]); setSearchQuery(''); }}
-                                        >
-                                            <img src={product.image} alt={product.title} className="w-12 h-12 object-contain rounded-lg bg-white p-1 border border-slate-100" />
-                                            <div>
-                                                <div className="font-medium text-slate-900 line-clamp-1">{product.title}</div>
-                                                <div className="text-blue-600 font-bold text-sm">{product.price.toLocaleString()} {t('som')}</div>
-                                            </div>
-                                        </Link>
-                                    ))
-                                ) : (
+                                ) : searchError ? (
                                     <div className="p-8 text-center text-slate-500">
+                                        <Search size={24} className="mx-auto mb-2 opacity-50" />
+                                        {t('not_found')}
+                                    </div>
+                                ) : searchResults.length > 0 ? (
+                                    <>
+                                        <div className="max-h-[50vh] overflow-y-auto" role="listbox" aria-label={t('search_placeholder')}>
+                                            {searchResults.map((product, idx) => (
+                                                <Link
+                                                    key={product.id}
+                                                    href={`/product/${product.id}`}
+                                                    role="option"
+                                                    id={`search-option-${idx}`}
+                                                    aria-selected={activeIndex === idx}
+                                                    className={`flex items-center gap-4 px-4 py-3 transition-colors border-b border-slate-50 last:border-0 ${activeIndex === idx ? 'bg-blue-50' : 'hover:bg-slate-50'}`}
+                                                    onClick={() => handleSearchResultClick(product)}
+                                                >
+                                                    <img src={product.image} alt={product.title} className="w-12 h-12 object-contain rounded-lg bg-white p-1 border border-slate-100" />
+                                                    <div>
+                                                        <div className="font-medium text-slate-900 line-clamp-1">{product.title}</div>
+                                                        <div className="text-blue-600 font-bold text-sm">{product.price.toLocaleString()} {t('som')}</div>
+                                                    </div>
+                                                </Link>
+                                            ))}
+                                        </div>
+                                        <button
+                                            onClick={handleSearchSubmit}
+                                            className="w-full flex items-center justify-center gap-2 px-4 py-3 text-sm font-bold text-blue-600 hover:bg-blue-50 transition-colors"
+                                        >
+                                            {t('barchasini_korish')} "{searchQuery}"
+                                        </button>
+                                    </>
+                                ) : (
+                                    <div className="p-6 text-center text-slate-500">
                                         <Search size={24} className="mx-auto mb-2 opacity-50" />
                                         {t('not_found')}
                                     </div>
@@ -586,15 +721,21 @@ export default function Header() {
                             <input
                                 type="text"
                                 name="mobile-search-input"
-                                autoComplete="one-time-code"
+                                autoComplete="off"
                                 placeholder={t('search_placeholder')}
                                 className="w-full bg-slate-100/80 border-2 border-transparent focus:border-blue-500/20 focus:bg-white px-10 py-2 rounded-2xl outline-none text-sm font-medium placeholder-slate-500 transition-all shadow-sm"
                                 value={searchQuery}
                                 onChange={(e) => handleSearch(e.target.value)}
+                                onKeyDown={handleSearchKeyDown}
+                                aria-label={t('search_placeholder')}
+                                role="combobox"
+                                aria-expanded={searchQuery.length > 1}
+                                aria-haspopup="listbox"
+                                aria-controls="mobile-search-dropdown"
                             />
                             {searchQuery && (
                                 <button
-                                    onClick={() => setSearchQuery('')}
+                                    onClick={() => { setSearchQuery(''); setSearchResults([]); }}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200/50 rounded-full text-slate-500"
                                     title="Tozalash"
                                     aria-label="Qidiruv maydonini tozalash"
@@ -611,20 +752,27 @@ export default function Header() {
 
                 {/* Mobile Search Dropdown */}
                 {searchQuery.length > 0 && (
-                    <div className="absolute top-full left-4 right-4 mt-2 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden py-3 z-[70] animate-fade-in-up">
+                    <div id="mobile-search-dropdown" className="absolute top-full left-4 right-4 mt-2 bg-white rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.15)] border border-slate-100 overflow-hidden py-3 z-[70] animate-fade-in-up">
                         {isSearching ? (
                             <div className="p-10 text-center text-slate-500">
                                 <div className="w-8 h-8 border-[3px] border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
                                 <span className="text-sm font-medium">{t('loading')}</span>
                             </div>
+                        ) : searchError ? (
+                            <div className="p-10 text-center text-slate-500">
+                                <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <Search size={28} className="opacity-20" />
+                                </div>
+                                <span className="text-sm font-semibold">{t('not_found')}</span>
+                            </div>
                         ) : searchResults.length > 0 ? (
                             <div className="max-h-[60vh] overflow-y-auto px-2">
-                                {searchResults.map((product) => (
+                                {searchResults.map((product, idx) => (
                                     <Link
                                         key={product.id}
                                         href={`/product/${product.id}`}
-                                        className="flex items-center gap-4 px-4 py-3 hover:bg-slate-50 active:bg-slate-100/50 rounded-2xl transition-all border-b border-slate-50 last:border-0"
-                                        onClick={() => { setSearchResults([]); setSearchQuery(''); }}
+                                        className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all border-b border-slate-50 last:border-0 ${activeIndex === idx ? 'bg-blue-50' : 'hover:bg-slate-50 active:bg-slate-100/50'}`}
+                                        onClick={() => handleSearchResultClick(product)}
                                     >
                                         <div className="shrink-0 w-12 h-12 rounded-xl bg-white border border-slate-100 p-1 flex items-center justify-center">
                                             <img src={product.image} alt={product.title} className="w-full h-full object-contain" />
@@ -636,6 +784,12 @@ export default function Header() {
                                         <ChevronRight size={16} className="text-slate-300" />
                                     </Link>
                                 ))}
+                                <button
+                                    onClick={handleSearchSubmit}
+                                    className="w-full flex items-center justify-center gap-2 px-4 py-3.5 text-sm font-bold text-blue-600 hover:bg-blue-50 rounded-2xl transition-colors"
+                                >
+                                    {t('barchasini_korish')} "{searchQuery}"
+                                </button>
                             </div>
                         ) : (
                             <div className="p-10 text-center text-slate-500">

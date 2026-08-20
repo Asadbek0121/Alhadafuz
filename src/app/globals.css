@@ -3,6 +3,10 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
+  /* `xs:` klasslari kodda ishlatiladi (Header, MapModal, profile/orders) —
+     Tailwind v4 default'da yo'q edi, shuning uchun aniq konfiguratsiya qo'shildi. */
+  --breakpoint-xs: 480px;
+
   --color-primary: var(--primary);
   --color-primary-foreground: #ffffff;
   --color-secondary: var(--secondary);
@@ -281,9 +285,19 @@ button {
 
 @media (max-width: 992px) {
   body {
-    padding-bottom: 70px;
-    /* Space for BottomNav */
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+    /* Space for BottomNav + iOS safe area */
   }
+}
+
+/* Horizontal scroll row'lar uchun scrollbar yashirish (kategoriya va deals row) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 /* Custom Animations */

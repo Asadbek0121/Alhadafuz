@@ -122,6 +122,10 @@
       "title": "{title}",
       "description": "{title} — по выгодной цене на маркетплейсе HADAF. Быстрая доставка, безопасная оплата и рассрочка."
     },
+    "search": {
+      "title": "Поиск",
+      "description": "Поиск товаров на маркетплейсе HADAF: фильтрация по цене, скидке и категории."
+    },
     "authLogin": {
       "title": "Вход",
       "description": "Войдите в аккаунт HADAF по номеру телефона."
@@ -167,7 +171,41 @@
     "kabinet": "Кабинет",
     "yetkazib_berish_manzili": "Адрес доставки",
     "joylashuvni_aniqlash": "Определить местоположение",
-    "tanlash": "Выбрать"
+    "tanlash": "Выбрать",
+    "kategoriyalar": "Категории",
+    "chegirmalar": "Скидки",
+    "recent_searches": "Недавние поиски",
+    "language_switcher": "Выберите язык"
+  },
+  "Home": {
+    "warranty_desc": "Все товары имеют официальную гарантию",
+    "quality_desc": "Оригинальные товары от проверенных продавцов"
+  },
+  "Search": {
+    "title": "Поиск",
+    "placeholder": "Поиск товаров...",
+    "results": "Найдено {count} товаров",
+    "no_results": "Ничего не найдено",
+    "no_results_desc": "Попробуйте другой запрос или выберите из каталога",
+    "sort": "Сортировка",
+    "sort_recommended": "Рекомендуемые",
+    "sort_price_asc": "Сначала дешевые",
+    "sort_price_desc": "Сначала дорогие",
+    "sort_newest": "Новые",
+    "sort_discount": "Со скидкой",
+    "filters": "Фильтры",
+    "category": "Категория",
+    "all_categories": "Все категории",
+    "price": "Цена",
+    "min_price": "Мин. цена",
+    "max_price": "Макс. цена",
+    "discount_only": "Только со скидкой",
+    "clear_filters": "Очистить фильтры",
+    "apply_filters": "Применить",
+    "view_all": "Посмотреть все",
+    "recent_searches": "Недавние поиски",
+    "popular_searches": "Популярные поиски",
+    "no_products": "Нет доступных товаров"
   },
   "Hero": {
     "slider_title": "Начались большие скидки!",
@@ -193,7 +231,8 @@
     "start_shopping": "Начните покупки",
     "cart_title": "Корзина",
     "items_count": "товар(ов)",
-    "pcs": "шт"
+    "pcs": "шт",
+    "close": "Закрыть"
   },
   "Checkout": {
     "contact_info": "Контактная информация",
@@ -250,7 +289,10 @@
     "pay_payme": "Онлайн-оплата через Payme",
     "pay_uzum": "Онлайн-оплата через Uzum",
     "pay_p2p": "Перевод на карту",
-    "delivery_eta": "Срок доставки"
+    "delivery_eta": "Срок доставки",
+    "delivery_calculated": "Стоимость доставки рассчитывается при оформлении",
+    "delivery_unavailable": "Доставка в выбранный регион пока недоступна",
+    "to_pay": "Перейти к оплате"
   },
   "Product": {
     "loading": "Загрузка...",
@@ -284,7 +326,11 @@
     "link_copied": "Ссылка скопирована",
     "share": "Поделиться",
     "no_reviews_short": "Отзывов пока нет",
-    "zoom_hint": "Увеличить изображение"
+    "zoom_hint": "Увеличить изображение",
+    "delivery_info": "Доставка",
+    "delivery_free": "Бесплатная доставка",
+    "delivery_calculated": "Стоимость доставки рассчитывается при оформлении",
+    "delivery_termiz": "Быстрая доставка по Термезу"
   },
   "Marketing": {
     "isNew": "НОВИНКА",
@@ -628,7 +674,12 @@
       "books": "Книги",
       "auto": "Автотовары",
       "gaming": "Для геймеров"
-    }
+    },
+    "loading": "Загрузка...",
+    "no_categories": "Категории отсутствуют.",
+    "view_all": "Посмотреть все",
+    "no_subcategories": "В этом разделе пока нет подкатегорий.",
+    "subcategories": "Подкатегории"
   },
   "OrderSuccess": {
     "title": "Спасибо за ваш заказ!",

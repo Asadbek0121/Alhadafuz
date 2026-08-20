@@ -20,6 +20,7 @@ import { Analytics } from "@vercel/analytics/next";
 
 import { ClientProviders } from "@/providers/ClientProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import { routing } from "@/navigation";
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -69,15 +70,50 @@ export default async function LocaleLayout({
     notFound();
   }
 
+  const jsonLdOrganization = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE_NAME,
+    url: SITE_URL,
+    logo: `${SITE_URL}/logo.png`,
+    // sameAs ataylab qo'shilmagan — haqiqiy ijtimoiy tarmoq profillari
+    // mavjud bo'lmaguncha generic/fake linklar ko'rsatilmaydi.
+  };
+
+  const jsonLdWebsite = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: SITE_NAME,
+    url: SITE_URL,
+    inLanguage: [routing.locales[0], ...routing.locales.slice(1)],
+    potentialAction: {
+      '@type': 'SearchAction',
+      target: {
+        '@type': 'EntryPoint',
+        urlTemplate: `${SITE_URL}/${routing.defaultLocale}/search?q={search_term_string}`,
+      },
+      'query-input': 'required name=search_term_string',
+    },
+  };
+
   return (
+    <>
+      <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
+      />
     <ClientProviders messages={messages} locale={locale} session={session}>
-          <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
           <SessionSync />
           <TelegramAuthSync />
           <Header />
-          <div className="min-h-screen flex flex-col">
+          <main className="min-h-screen flex flex-col">
             {children}
-          </div>
+          </main>
           <Footer />
           <BottomNav />
           <Toaster />
@@ -89,6 +125,7 @@ export default async function LocaleLayout({
           <Analytics />
           <SpeedInsights />
         </ClientProviders>
+    </>
   );
 }
 

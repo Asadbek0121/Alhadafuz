@@ -2,11 +2,12 @@
 
 "use client";
 
+import { YANDEX_MAPS_KEY } from "@/lib/maps";
 import React, { useEffect, useState, useRef } from 'react';
 import Script from 'next/script';
 import { Truck, Activity, Package, Phone } from 'lucide-react';
 
-const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong&load=package.full";
+const YANDEX_MAPS_URL = `https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=${YANDEX_MAPS_KEY}&coordorder=latlong&load=package.full`;
 
 export default function AdminDeliveryMonitor() {
     const [orders, setOrders] = useState<any[]>([]);

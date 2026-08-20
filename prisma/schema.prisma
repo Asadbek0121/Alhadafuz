@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -145,6 +146,7 @@ model Order {
   paymentScreenshot String?
   paymentVerifiedAt DateTime?
   paymentVerifiedBy String?
+  idempotencyKey    String?
   dispatchLogs      DispatchLog[]
   earnings          Earning[]
   courier           User?         @relation("CourierOrders", fields: [courierId], references: [id])
@@ -153,6 +155,8 @@ model Order {
   store             Store?        @relation(fields: [storeId], references: [id])
   user              User          @relation("CustomerOrders", fields: [userId], references: [id])
   items             OrderItem[]
+
+  @@unique([userId, idempotencyKey])
 }
 
 model DispatchLog {
@@ -283,6 +287,7 @@ model OrderItem {
   price     Float
   quantity  Int
   image     String
+  variant   String?
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id])
 
@@ -375,6 +380,46 @@ model Banner {
   product          Product?       @relation(fields: [productId], references: [id])
   targetCategory   Category?      @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
   categories       Category[]     @relation("BannerToCategory")
+  events           BannerEvent[]
+}
+
+/// Banner ko'rish/bosishlarining VAQT BELGILI jurnali.
+///
+/// Nima uchun kerak: `Banner.clickCount` / `impressionCount` — jamlanma
+/// sanoqchilar, ya'ni ularda vaqt o'lchami YO'Q. Ular faqat "jami qancha"
+/// deb aytadi, "qachon" deb aytmaydi, shuning uchun ular bilan vaqt bo'yicha
+/// grafik chizish mumkin emas — kechagi va bugungi natijani ajratishning yo'li
+/// yo'q. Har bir hodisa alohida qator sifatida yozilganda esa istalgan davr
+/// bo'yicha guruhlash mumkin bo'ladi.
+///
+/// Sanoqchilar ATAYIN saqlanadi: bu jadval joriy etilishidan oldingi tarix
+/// faqat ularda qolgan (hodisalar orqaga qarab tiklanmaydi), va sahifadagi
+/// mavjud ustunlar ularga tayanadi.
+model BannerEvent {
+  id       String          @id @default(cuid())
+  bannerId String
+  type     BannerEventType
+
+  /// Takroriy ko'rishlarni ajratish uchun brauzer sessiyasi belgisi.
+  /// Yagona tashrifchilarni sanashga imkon beradi; shaxsni aniqlamaydi.
+  sessionId String?
+
+  createdAt DateTime @default(now())
+
+  /// Banner qattiq o'chiriladi (`banner.delete`), shuning uchun `Cascade`
+  /// shart — aks holda tashqi kalit o'chirishni butunlay bloklaydi.
+  banner Banner @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+
+  /// Asosiy so'rov shakli — bitta banner uchun davr bo'yicha tanlash.
+  @@index([bannerId, createdAt])
+  /// Barcha bannerlar bo'yicha kunlik yig'ma uchun.
+  @@index([type, createdAt])
+  @@index([sessionId])
+}
+
+enum BannerEventType {
+  IMPRESSION
+  CLICK
 }
 
 model Review {
@@ -433,6 +478,7 @@ model CartItem {
   cartId    String
   productId String
   quantity  Int
+  variant   String?
   cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 

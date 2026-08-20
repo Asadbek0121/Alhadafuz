@@ -55,8 +55,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     } catch (error: any) {
         console.error("Update Shipping Zone Error (Raw):", error);
         return NextResponse.json({
-            error: error.message || 'Failed to update',
-            details: error.stack
+            error: 'Failed to update shipping zone'
         }, { status: 500 });
     }
 }
@@ -74,6 +73,6 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error("Delete Shipping Zone Error:", error);
-        return NextResponse.json({ error: 'Failed to delete', details: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to delete' }, { status: 500 });
     }
 }

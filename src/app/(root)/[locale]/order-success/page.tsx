@@ -6,20 +6,28 @@ import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { useCartStore } from '@/store/useCartStore';
 
 export default function OrderSuccessPage() {
     const searchParams = useSearchParams();
     const orderId = searchParams.get('orderId');
     const t = useTranslations('OrderSuccess');
-    
+    const { isHydrated, clearCart } = useCartStore();
+
     const [order, setOrder] = useState<any>(null);
     const [settings, setSettings] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [orderError, setOrderError] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [isUploaded, setIsUploaded] = useState(false);
 
     useEffect(() => {
-        if (!orderId) return;
+        // orderId bo'lmasa loading holatini darhol yakunlaymiz — cheksiz spinner bo'lmasin.
+        if (!orderId) {
+            setLoading(false);
+            setOrderError(true);
+            return;
+        }
 
         const fetchData = async () => {
             try {
@@ -30,22 +38,30 @@ export default function OrderSuccessPage() {
                     setOrder(orderData);
                     setIsUploaded(!!orderData.paymentScreenshot);
 
+                    // Buyurtma tasdiqlangandan keyin savatni tozalaymiz. Bu Click
+                    // to'lovida muhim: savat redirectdan oldin tozalanmaydi, faqat
+                    // buyurtma mavjudligi tasdiqlangandan so'ng bo'shatiladi.
+                    clearCart();
+
                     // Fetch store settings for card info
                     const settingsRes = await fetch('/api/settings');
                     if (settingsRes.ok) {
                         const settingsData = await settingsRes.json();
                         setSettings(settingsData);
                     }
+                } else {
+                    setOrderError(true);
                 }
             } catch (err) {
                 console.error("Fetch error:", err);
+                setOrderError(true);
             } finally {
                 setLoading(false);
             }
         };
 
         fetchData();
-    }, [orderId]);
+    }, [orderId, clearCart]);
 
     const copyToClipboard = (text: string, label: string) => {
         if (!text) return;
@@ -95,6 +111,24 @@ export default function OrderSuccessPage() {
         return (
             <div className="min-h-[70vh] flex items-center justify-center">
                 <Loader2 className="animate-spin text-blue-600" size={40} />
+            </div>
+        );
+    }
+
+    // orderId bo'lmasa yoki buyurtma topilmasa — tushunarli empty state.
+    if (!orderId || orderError) {
+        return (
+            <div className="min-h-screen bg-[#fafafb] py-12 md:py-24 px-4 font-sans flex items-center justify-center">
+                <div className="max-w-md w-full text-center">
+                    <div className="w-24 h-24 bg-white rounded-[2rem] border border-slate-100 shadow-sm flex items-center justify-center mx-auto mb-8">
+                        <Package size={44} className="text-slate-300" />
+                    </div>
+                    <h1 className="text-2xl md:text-3xl font-black text-slate-900 tracking-tight mb-4">Buyurtma topilmadi</h1>
+                    <p className="text-base text-slate-500 font-medium mb-8">Buyurtma raqami ko'rsatilmagan. Iltimos, buyurtmalaringizni tekshiring.</p>
+                    <Link href="/" className="inline-flex items-center justify-center gap-2 h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-[20px] shadow-xl shadow-blue-600/20 font-black text-sm uppercase tracking-wider transition-all">
+                        {t('btn_home')}
+                    </Link>
+                </div>
             </div>
         );
     }

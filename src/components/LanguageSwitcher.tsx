@@ -1,29 +1,39 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useState, useRef, useEffect } from "react";
-import { useLocale } from "next-intl";
+import { useRef, useEffect } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { usePathname, useRouter } from "@/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { useUIStore } from "@/store/useUIStore";
-import { Globe, Check, Languages } from "lucide-react";
+import { Check } from "lucide-react";
 
 export default function LanguageSwitcher({ minimal = false }: { minimal?: boolean }) {
     const locale = useLocale();
     const router = useRouter();
     const pathname = usePathname();
+    const t = useTranslations('Header');
     const { activeMenu, toggleMenu, closeAllMenus } = useUIStore();
     const isOpen = activeMenu === 'language';
     const ref = useRef<HTMLDivElement>(null);
 
     const languages = [
-        { code: "uz", label: "O'zbek", short: "UZ", flag: "🇺🇿", img: "/assets/flags/uz.png" },
-        { code: "ru", label: "Русский", short: "RU", flag: "🇷🇺", img: "/assets/flags/ru.png" },
-        { code: "en", label: "English", short: "EN", flag: "🇺🇸", img: "/assets/flags/en.png" },
+        { code: "uz", label: "O'zbek", short: "UZ", img: "/assets/flags/uz.png" },
+        { code: "ru", label: "Русский", short: "RU", img: "/assets/flags/ru.png" },
+        { code: "en", label: "English", short: "EN", img: "/assets/flags/en.png" },
     ];
 
     const activeLang = languages.find(l => l.code === locale) || languages[0];
 
+    // Tashqariga bosilganda yopiladi
+    useEffect(() => {
+        const handleOutside = (e: MouseEvent) => {
+            if (ref.current && !ref.current.contains(e.target as Node)) {
+                closeAllMenus();
+            }
+        };
+        document.addEventListener("mousedown", handleOutside);
+        return () => document.removeEventListener("mousedown", handleOutside);
+    }, [closeAllMenus]);
 
     const handleSwitch = (newLocale: string) => {
         router.replace(pathname, { locale: newLocale });
@@ -33,17 +43,8 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
     return (
         <div className="relative" ref={ref} style={{ zIndex: 100 }}>
             <button
-                onClick={() => {
-                    // Mobile cycling logic (width < 768px)
-                    if (typeof window !== 'undefined' && window.innerWidth < 768) {
-                        const currentIndex = languages.findIndex(l => l.code === locale);
-                        const nextIndex = (currentIndex + 1) % languages.length;
-                        handleSwitch(languages[nextIndex].code);
-                    } else {
-                        // Dropdown logic for Tablet/PC
-                        toggleMenu('language');
-                    }
-                }}
+                type="button"
+                onClick={() => toggleMenu('language')}
                 style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -65,6 +66,10 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                     boxShadow: minimal ? '0 4px 15px rgba(0,0,0,0.08)' : 'none'
                 }}
                 className={minimal ? "active:scale-90 hover:shadow-md" : "hover:bg-black/5 active:scale-95"}
+                aria-label={`${t('language_switcher')}: ${activeLang.label}`}
+                aria-haspopup="menu"
+                aria-expanded={isOpen}
+                aria-controls="language-menu"
             >
                 {minimal ? (
                     <div style={{ width: '28px', height: '28px', position: 'relative' }}>
@@ -80,10 +85,6 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                                 border: '1px solid rgba(0,0,0,0.05)'
                             }}
                         />
-                        {/* Mobile indicator that it cycles */}
-                        <div className="md:hidden absolute -bottom-1 -right-1 w-3 h-3 bg-blue-600 rounded-full border-2 border-white flex items-center justify-center">
-                           <div className="w-1 h-1 bg-white rounded-full"></div>
-                        </div>
                     </div>
                 ) : (
                     <img
@@ -106,10 +107,12 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                 )}
             </button>
 
-            {/* Dropdown - Only for Non-Mobile (Tablet/PC) */}
+            {/* Dropdown — barcha ekran o'lchamlarida (mobil aylanish o'rniga) */}
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
+                        id="language-menu"
+                        role="menu"
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -129,11 +132,13 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
                         }}
                     >
                         <div style={{ padding: '8px 12px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', color: '#94a3b8', letterSpacing: '0.05em' }}>
-                            Tilni tanlang
+                            {t('language_switcher')}
                         </div>
                         {languages.map((lang) => (
                             <button
                                 key={lang.code}
+                                role="menuitemradio"
+                                aria-checked={locale === lang.code}
                                 onClick={() => handleSwitch(lang.code)}
                                 style={{
                                     display: 'flex',

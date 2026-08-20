@@ -2,8 +2,9 @@
 import type { Metadata } from "next";
 import { cache } from "react";
 import { notFound } from "next/navigation";
+import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
-import { translatedPageMetadata } from '@/lib/seo';
+import { translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
 import CategoryContent from './CategoryContent';
 
 /**
@@ -59,10 +60,13 @@ export async function generateMetadata({
 
 export default async function CategoryPage({
     params,
+    searchParams,
 }: {
-    params: Promise<{ slug: string }>;
+    params: Promise<{ locale: string; slug: string }>;
+    searchParams?: Promise<{ sort?: string }>;
 }) {
-    const { slug } = await params;
+    const { locale, slug } = await params;
+    const resolvedSearch = searchParams ? await searchParams : {};
 
     const category = await getCategory(slug);
 
@@ -70,19 +74,51 @@ export default async function CategoryPage({
         notFound();
     }
 
+    const tHeader = await getTranslations({ locale, namespace: 'Header' });
+
+    // BreadcrumbList JSON-LD — Home → Parent → Category (faqat real route'lar)
+    const breadcrumbItems = [
+        { name: tHeader('bosh_sahifa'), path: '' },
+        ...(category.parent ? [{ name: category.parent.name, path: `/category/${category.parent.slug}` }] : []),
+        { name: category.name, path: `/category/${category.slug}` },
+    ];
+
+    // Sort parametriga qarab tartib
+    const sortMap: Record<string, any> = {
+        price_asc: { price: 'asc' },
+        price_desc: { price: 'desc' },
+        newest: { createdAt: 'desc' },
+        discount: [{ discount: 'desc' }, { createdAt: 'desc' }],
+    };
+    const defaultOrder = { createdAt: 'desc' };
+    const orderBy = sortMap[resolvedSearch.sort || 'newest'] || defaultOrder;
+
     // Fetch products for this category (and its children)
     const categoryIds = [category.id, ...(category.children?.map((c: any) => c.id) || [])];
-    const products = await (prisma as any).product.findMany({
-        where: {
-            categories: {
-                some: {
-                    id: { in: categoryIds }
+    const [products, totalCount] = await Promise.all([
+        (prisma as any).product.findMany({
+            where: {
+                isDeleted: false,
+                OR: [{ status: 'published' }, { status: 'ACTIVE' }],
+                categories: {
+                    some: {
+                        id: { in: categoryIds }
+                    }
+                }
+            },
+            take: 50,
+            orderBy,
+        }),
+        (prisma as any).product.count({
+            where: {
+                isDeleted: false,
+                OR: [{ status: 'published' }, { status: 'ACTIVE' }],
+                categories: {
+                    some: { id: { in: categoryIds } }
                 }
             }
-        },
-        take: 50,
-        orderBy: { createdAt: 'desc' }
-    });
+        }),
+    ]);
 
     // Filter banners by scheduling
     const now = new Date();
@@ -100,5 +136,15 @@ export default async function CategoryPage({
         link: banner.link ?? undefined
     }));
 
-    return <CategoryContent category={category} banners={activeBanners} products={products} />;
+    return (
+        <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(breadcrumbJsonLd(breadcrumbItems, locale))
+                }}
+            />
+            <CategoryContent category={category} banners={activeBanners} products={products} totalCount={totalCount} />
+        </>
+    );
 }

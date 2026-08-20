@@ -9,6 +9,18 @@ export interface CartItem {
     quantity: number;
     hasDiscount?: boolean;
     discountType?: string;
+    /** Eskirgan narx — chegirma ko'rsatish uchun. Agar `oldPrice > price` bo'lsa real chegirma. */
+    oldPrice?: number;
+    /** Tanlangan variant JSON (masalan: `{"Rang":"Qizil","Xotira":"128GB"}`). Variant bo'lmasa undefined. */
+    variant?: string;
+}
+
+/**
+ * Cart item identifikatori: `productId + variant`.
+ * Variant `undefined` bo'lsa — variant-siz product alohida identity hisoblanadi.
+ */
+export function cartItemKey(item: Pick<CartItem, 'id' | 'variant'>): string {
+    return item.variant ? `${item.id}::${item.variant}` : item.id;
 }
 
 interface CartState {
@@ -18,8 +30,8 @@ interface CartState {
 
     // Actions
     addToCart: (product: Omit<CartItem, 'quantity'>, openDrawer?: boolean, qty?: number) => void;
-    removeFromCart: (id: string) => void;
-    updateQuantity: (id: string, delta: number) => void;
+    removeFromCart: (id: string, variant?: string) => void;
+    updateQuantity: (id: string, delta: number, variant?: string) => void;
     clearCart: () => void;
     setItems: (items: CartItem[]) => void;
 
@@ -31,6 +43,8 @@ interface CartState {
     // Computed
     total: () => number;
     itemCount: () => number;
+    /** Real chegirma summasi: `(oldPrice - price) * qty` — faqat oldPrice > price bo'lsa. */
+    discount: () => number;
 }
 
 export const useCartStore = create<CartState>()(
@@ -41,11 +55,12 @@ export const useCartStore = create<CartState>()(
             isHydrated: false,
 
             addToCart: (product, openDrawer = true, qty = 1) => set((state) => {
-                const existing = state.items.find(item => item.id === product.id);
+                const key = cartItemKey(product);
+                const existing = state.items.find(item => cartItemKey(item) === key);
                 if (existing) {
                     return {
                         items: state.items.map(item =>
-                            item.id === product.id
+                            cartItemKey(item) === key
                                 ? { ...item, quantity: item.quantity + qty }
                                 : item
                         ),
@@ -58,19 +73,23 @@ export const useCartStore = create<CartState>()(
                 };
             }),
 
-            removeFromCart: (id) => set((state) => ({
-                items: state.items.filter(item => item.id !== id)
-            })),
+            removeFromCart: (id, variant) => set((state) => {
+                const key = variant ? `${id}::${variant}` : id;
+                return {
+                    items: state.items.filter(item => cartItemKey(item) !== key)
+                };
+            }),
 
-            updateQuantity: (id, delta) => set((state) => ({
-                items: state.items.map(item => {
-                    if (item.id === id) {
+            updateQuantity: (id, delta, variant) => set((state) => {
+                const key = variant ? `${id}::${variant}` : id;
+                return {
+                    items: state.items.map(item => {
+                        if (cartItemKey(item) !== key) return item;
                         const newQty = Math.max(1, item.quantity + delta);
                         return { ...item, quantity: newQty };
-                    }
-                    return item;
-                })
-            })),
+                    })
+                };
+            }),
 
             clearCart: () => set({ items: [] }),
             setItems: (items) => set({ items }),
@@ -81,6 +100,12 @@ export const useCartStore = create<CartState>()(
 
             total: () => get().items.reduce((sum, item) => sum + (item.price * item.quantity), 0),
             itemCount: () => get().items.reduce((sum, item) => sum + item.quantity, 0),
+            discount: () => get().items.reduce((sum, item) => {
+                if (item.oldPrice && item.oldPrice > item.price) {
+                    return sum + ((item.oldPrice - item.price) * item.quantity);
+                }
+                return sum;
+            }, 0),
         }),
         {
             name: 'hadaf-market-cart-v1', // More unique name to avoid localhost collisions

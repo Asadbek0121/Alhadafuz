@@ -122,6 +122,10 @@
       "title": "{title}",
       "description": "{title} — HADAF Marketpleysda arzon narxda. Tezkor yetkazib berish, xavfsiz to'lov va muddatli to'lov imkoniyati."
     },
+    "search": {
+      "title": "Qidiruv",
+      "description": "HADAF Marketpleysda mahsulotlarni qidirish: narx, chegirma va kategoriya bo'yicha filtrlash."
+    },
     "authLogin": {
       "title": "Kirish",
       "description": "Telefon raqamingiz orqali HADAF hisobingizga kiring."
@@ -167,7 +171,41 @@
     "kabinet": "Kabinet",
     "yetkazib_berish_manzili": "Yetkazib berish manzili",
     "joylashuvni_aniqlash": "Joylashuvni aniqlash",
-    "tanlash": "Tanlash"
+    "tanlash": "Tanlash",
+    "kategoriyalar": "Kategoriyalar",
+    "chegirmalar": "Chegirmalar",
+    "recent_searches": "So'nggi qidiruvlar",
+    "language_switcher": "Tilni tanlang"
+  },
+  "Home": {
+    "warranty_desc": "Barcha mahsulotlar rasmiy kafolatga ega",
+    "quality_desc": "Tasdiqlangan sotuvchilardan original tovarlar"
+  },
+  "Search": {
+    "title": "Qidiruv",
+    "placeholder": "Mahsulotlarni qidirish...",
+    "results": "{count} ta mahsulot topildi",
+    "no_results": "Hech narsa topilmadi",
+    "no_results_desc": "Boshqa so'z bilan qidirib ko'ring yoki katalogdan tanlang",
+    "sort": "Saralash",
+    "sort_recommended": "Tavsiya etilgan",
+    "sort_price_asc": "Eng arzon",
+    "sort_price_desc": "Eng qimmat",
+    "sort_newest": "Eng yangi",
+    "sort_discount": "Chegirma",
+    "filters": "Filtrlash",
+    "category": "Kategoriya",
+    "all_categories": "Barcha kategoriyalar",
+    "price": "Narx",
+    "min_price": "Min narx",
+    "max_price": "Maks narx",
+    "discount_only": "Faqat chegirma",
+    "clear_filters": "Filtrlarni tozalash",
+    "apply_filters": "Qo'llash",
+    "view_all": "Barchasini ko'rish",
+    "recent_searches": "So'nggi qidiruvlar",
+    "popular_searches": "Ommabop qidiruvlar",
+    "no_products": "Mahsulotlar mavjud emas"
   },
   "Hero": {
     "slider_title": "Katta chegirmalar boshlandi!",
@@ -193,7 +231,8 @@
     "start_shopping": "Xaridni boshlang",
     "cart_title": "Savatcha",
     "items_count": "mahsulot",
-    "pcs": "dona"
+    "pcs": "dona",
+    "close": "Yopish"
   },
   "Checkout": {
     "contact_info": "Aloqa ma'lumotlari",
@@ -250,7 +289,10 @@
     "pay_payme": "Payme orqali onlayn to'lov",
     "pay_uzum": "Uzum orqali onlayn to'lov",
     "pay_p2p": "Kartaga pul o'tkazish",
-    "delivery_eta": "Yetkazish muddati"
+    "delivery_eta": "Yetkazish muddati",
+    "delivery_calculated": "Yetkazib berish narxi buyurtma jarayonida hisoblanadi",
+    "delivery_unavailable": "Tanlangan hududga yetkazib berish hozircha mavjud emas",
+    "to_pay": "To'lovga o'tish"
   },
   "Product": {
     "loading": "Yuklanmoqda...",
@@ -284,7 +326,11 @@
     "link_copied": "Havola nusxalandi",
     "share": "Ulashish",
     "no_reviews_short": "Hozircha sharhlar yo'q",
-    "zoom_hint": "Rasmni kattalashtirish"
+    "zoom_hint": "Rasmni kattalashtirish",
+    "delivery_info": "Yetkazib berish",
+    "delivery_free": "Bepul yetkazib berish",
+    "delivery_calculated": "Yetkazib berish narxi buyurtma jarayonida hisoblanadi",
+    "delivery_termiz": "Termiz shahri bo'ylab tezkor yetkazib berish"
   },
   "Marketing": {
     "isNew": "YANGI KELGAN",
@@ -652,7 +698,12 @@
       "books": "Kitoblar",
       "auto": "Avto jihozlar",
       "gaming": "Geymerlar uchun"
-    }
+    },
+    "loading": "Yuklanmoqda...",
+    "no_categories": "Kategoriyalar mavjud emas.",
+    "view_all": "Barchasini ko'rish",
+    "no_subcategories": "Ushbu bo'limda hozircha ichki kategoriyalar yo'q.",
+    "subcategories": "Ichki bo'limlar"
   },
   "OrderSuccess": {
     "title": "Buyurtmangiz uchun rahmat!",

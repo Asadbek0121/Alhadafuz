@@ -152,7 +152,7 @@ export async function POST(req: NextRequest) {
         console.error('Error sending support message:', error);
         return NextResponse.json({
             error: 'Internal server error',
-            details: error.message
+            
         }, { status: 500 });
     }
 }

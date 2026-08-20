@@ -1,7 +1,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { auth } from "@/auth";
 
 export const dynamic = 'force-dynamic';
+
+/** Telefon raqamni maskalaydi: +998 76 *** ** 05 (oxirgi 2 raqam ko'rinadi). */
+function maskPhone(phone?: string | null): string | null {
+    if (!phone) return null;
+    const digits = phone.replace(/\D/g, '');
+    if (digits.length < 4) return null;
+    return `${phone.slice(0, -2)}**`;
+}
 
 export async function GET(
     req: Request,
@@ -10,18 +19,24 @@ export async function GET(
     const { id } = await params;
 
     try {
-        console.log("Tracking request for id:", id);
-
         // 1. Get Order (Raw SQL backup due to Prisma Client sync issues)
         const orders: any[] = await prisma.$queryRaw`SELECT * FROM "Order" WHERE "id" = ${id}`;
         const order = orders[0];
 
         if (!order) {
-            console.log("Order not found in DB");
             return NextResponse.json({ error: "Order not found" }, { status: 404 });
         }
 
-        console.log("Order found (Raw):", order.id, "Status:", order.status, "CourierId:", order.courierId);
+        // Privacy: courier telefon raqami faqat order egasi yoki ADMIN'ga to'liq
+        // ko'rinadi. Anonymous tracking'da maskalangan raqam qaytariladi.
+        let canSeeFullPhone = false;
+        try {
+            const session = await auth();
+            if (session?.user) {
+                canSeeFullPhone = order.userId === session.user.id
+                    || (session.user as any).role === 'ADMIN';
+            }
+        } catch { /* auth mavjud bo'lmasa anonymous */ }
 
         let courierData: any = null;
 
@@ -48,7 +63,7 @@ export async function GET(
             shippingCity: order.shippingCity,
             shippingDistrict: order.shippingDistrict,
             courierName: courierData?.name,
-            courierPhone: courierData?.phone,
+            courierPhone: canSeeFullPhone ? courierData?.phone : maskPhone(courierData?.phone),
             courierLat: courierData?.courierProfile?.currentLat,
             courierLng: courierData?.courierProfile?.currentLng,
             courierLevel: courierData?.courierProfile?.courierLevel,
@@ -73,8 +88,7 @@ export async function GET(
     } catch (error: any) {
         console.error("Tracking API Error Details:", error);
         return NextResponse.json({
-            error: "Internal Error",
-            details: error?.message || String(error)
+            error: "Internal Error"
         }, { status: 500 });
     }
 }

@@ -2,6 +2,7 @@
 
 "use client";
 
+import { YANDEX_MAPS_KEY } from "@/lib/maps";
 import { useEffect, useState, useRef } from "react";
 import { Truck, MapPin, Navigation, User, Search, Star, Layers, Target, Phone, Activity, Globe, Zap } from "lucide-react";
 import Script from "next/script";
@@ -47,7 +48,7 @@ export default function LiveMap() {
     const mapRef = useRef<any>(null);
     const courierCollectionRef = useRef<any>(null);
     const orderCollectionRef = useRef<any>(null);
-    const YANDEX_MAPS_URL = "https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=02bff7ee-f3da-4c8b-b0d6-b83dd0d38066&coordorder=latlong";
+    const YANDEX_MAPS_URL = `https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=${YANDEX_MAPS_KEY}&coordorder=latlong`;
 
     const fetchTrackingData = async () => {
         try {

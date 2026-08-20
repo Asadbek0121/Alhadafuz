@@ -5,7 +5,11 @@ import { ShieldCheck, ShieldAlert, Shield, Loader2, CheckCircle2, AlertCircle } 
 import { toast } from 'sonner';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { DotLottieReact, setWasmUrl } from '@lottiefiles/dotlottie-react';
+
+// WASM'ni cdn.jsdelivr.net dan yuklash o'rniga lokal self-host qilamiz —
+// CDN mavjud bo'lmaganda "Primary WASM URL failed" xatosi chiqardi.
+setWasmUrl('/dotlottie-player.wasm');
 
 export default function Admin2FAPage({ userId }: { userId: string }) {
     const { update } = useSession();

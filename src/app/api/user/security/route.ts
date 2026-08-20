@@ -135,7 +135,7 @@ export async function POST(req: Request) {
         console.error('Security API error:', error);
         return NextResponse.json({
             error: 'Internal server error',
-            details: error.message
+            
         }, { status: 500 });
     }
 }

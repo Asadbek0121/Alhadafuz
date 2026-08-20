@@ -57,7 +57,7 @@ export async function GET() {
         return NextResponse.json(zones);
     } catch (error: any) {
         console.error("Fetch Zones Error:", error);
-        return NextResponse.json({ error: 'Failed to fetch shipping zones', details: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to fetch shipping zones' }, { status: 500 });
     }
 }
 

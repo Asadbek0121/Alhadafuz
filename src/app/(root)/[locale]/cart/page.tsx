@@ -1,19 +1,47 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useCartStore } from '@/store/useCartStore';
-import { Trash2, ShoppingCart, Heart, Minus, Plus, ArrowRight } from 'lucide-react';
+import { useCartStore, cartItemKey } from '@/store/useCartStore';
+import { Trash2, ShoppingCart, Minus, Plus, ArrowRight, Loader2 } from 'lucide-react';
+import Image from 'next/image';
 import { Link, useRouter } from '@/navigation';
 import { useUserStore } from '@/store/useUserStore';
 import { useTranslations } from 'next-intl';
 
+/** Tanlangan variant JSON'ni o'qib chiqadi (masalan: `{"Rang":"Qizil"}` → "Rang: Qizil") */
+function parseVariantLabel(variant?: string): string | null {
+    if (!variant) return null;
+    try {
+        const obj = JSON.parse(variant);
+        return Object.entries(obj)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(' · ');
+    } catch {
+        return variant;
+    }
+}
+
 export default function CartPage() {
-    const { items, removeFromCart, updateQuantity, total, clearCart } = useCartStore();
+    const { items, removeFromCart, updateQuantity, total, clearCart, isHydrated, discount } = useCartStore();
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
     const tCheckout = useTranslations('Checkout');
     const router = useRouter();
     const { isAuthenticated } = useUserStore();
+
+    const savings = discount();
+
+    // Hydration tugamaguncha empty state ko'rsatilmaydi — misleading empty cart oldini olish
+    if (!isHydrated) {
+        return (
+            <div className="container min-h-[60vh] flex items-center justify-center">
+                <div className="flex flex-col items-center gap-4">
+                    <Loader2 className="animate-spin text-blue-600" size={36} />
+                    <p className="text-sm font-bold text-slate-500">{tHeader('loading')}</p>
+                </div>
+            </div>
+        );
+    }
 
     if (items.length === 0) {
         return (
@@ -52,11 +80,19 @@ export default function CartPage() {
                     </div>
 
                     <div className="flex flex-col gap-0">
-                        {items.map(item => (
-                            <div key={item.id} className="flex gap-3 md:gap-6 py-3 md:py-6 border-b border-slate-100 last:border-0 group">
+                        {items.map(item => {
+                            const variantLabel = parseVariantLabel(item.variant);
+                            return (
+                            <div key={cartItemKey(item)} className="flex gap-3 md:gap-6 py-3 md:py-6 border-b border-slate-100 last:border-0 group">
                                 {/* Image */}
                                 <div className="shrink-0 w-16 md:w-28 aspect-square bg-slate-50 rounded-xl p-2 flex items-center justify-center relative overflow-hidden">
-                                    <img src={item.image} alt={item.title} className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500" />
+                                    <Image
+                                        src={item.image}
+                                        alt={item.title}
+                                        fill
+                                        sizes="(max-width: 768px) 64px, 112px"
+                                        className="object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500 p-1"
+                                    />
                                 </div>
 
                                 {/* Content */}
@@ -64,11 +100,14 @@ export default function CartPage() {
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="flex flex-col gap-0.5">
                                             <h3 className="text-xs md:text-lg font-bold text-slate-900 line-clamp-2 leading-snug">{item.title}</h3>
-                                            <span className="text-[10px] md:text-xs text-slate-400 font-medium bg-slate-100 px-1.5 py-0.5 rounded w-fit">Apple</span>
+                                            {variantLabel && (
+                                                <span className="text-[10px] md:text-xs text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded w-fit">{variantLabel}</span>
+                                            )}
                                         </div>
                                         <button
-                                            onClick={() => removeFromCart(item.id)}
+                                            onClick={() => removeFromCart(item.id, item.variant)}
                                             className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                                            aria-label={tCart('clear_all')}
                                         >
                                             <Trash2 size={16} />
                                         </button>
@@ -78,9 +117,10 @@ export default function CartPage() {
                                         {/* Controls */}
                                         <div className="flex items-center gap-1 md:gap-2 bg-slate-50 rounded-xl p-1 border border-slate-100">
                                             <button
-                                                onClick={() => updateQuantity(item.id, -1)}
+                                                onClick={() => updateQuantity(item.id, -1, item.variant)}
                                                 disabled={item.quantity <= 1}
                                                 className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
+                                                aria-label="-"
                                             >
                                                 <Minus size={14} strokeWidth={3} />
                                             </button>
@@ -91,8 +131,9 @@ export default function CartPage() {
                                                 className="w-6 md:w-10 text-center bg-transparent font-bold text-slate-900 text-xs md:text-base outline-none"
                                             />
                                             <button
-                                                onClick={() => updateQuantity(item.id, 1)}
+                                                onClick={() => updateQuantity(item.id, 1, item.variant)}
                                                 className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 transition-all active:scale-95"
+                                                aria-label="+"
                                             >
                                                 <Plus size={14} strokeWidth={3} />
                                             </button>
@@ -106,7 +147,8 @@ export default function CartPage() {
                                     </div>
                                 </div>
                             </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </div>
 
@@ -120,13 +162,15 @@ export default function CartPage() {
                                 <span>{tHeader('mahsulotlar')} ({items.length}):</span>
                                 <span className="font-medium text-slate-900">{total().toLocaleString()} {tHeader('som')}</span>
                             </div>
-                            <div className="flex justify-between text-slate-500 text-xs md:text-sm">
-                                <span>{tCart('discount')}:</span>
-                                <span className="font-bold text-red-500">-0 {tHeader('som')}</span>
-                            </div>
+                            {savings > 0 && (
+                                <div className="flex justify-between text-slate-500 text-xs md:text-sm">
+                                    <span>{tCart('discount')}:</span>
+                                    <span className="font-bold text-red-500">-{savings.toLocaleString()} {tHeader('som')}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-slate-500 text-xs md:text-sm">
                                 <span>{tHeader('yetkazib_berish')}:</span>
-                                <span className="font-bold text-slate-900">0 <span className="text-[10px] md:text-xs font-normal text-slate-500">{tHeader('som')}</span></span>
+                                <span className="font-bold text-slate-400">{tCheckout('delivery_calculated')}</span>
                             </div>
                             <div className="border-t border-dashed border-slate-200 my-2"></div>
                             <div className="flex justify-between text-base md:text-lg font-black text-slate-900">

@@ -93,28 +93,59 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
         return <Package size={20} />;
     };
 
+    // Keyboard navigation — ArrowDown/Up kategoriyalar orasida, Escape yopadi
+    const handleKeyDown = (e: React.KeyboardEvent, idx: number, total: number) => {
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setActiveIdx((idx + 1) % total);
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setActiveIdx((idx - 1 + total) % total);
+                break;
+            case 'Escape':
+                e.preventDefault();
+                close();
+                break;
+        }
+    };
+
+    // Menu container — Escape bilan yopish
+    const handleMenuKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            close();
+        }
+    };
+
     return (
         <>
             <div className={styles.overlay} onClick={close}></div>
-            <div className={styles.megaMenu}>
+            <div className={styles.megaMenu} onKeyDown={handleMenuKeyDown}>
                 <div className="container">
                     {/* Mobile Navigation Header - Only show if mode is full */}
 
 
                     <div className={styles.menuGrid}>
                         {loading ? (
-                            <div className={styles.statusMessage}>Yuklanmoqda...</div>
+                            <div className={styles.statusMessage}>{t('loading')}</div>
                         ) : categories.length === 0 ? (
-                            <div className={styles.statusMessage}>Kategoriyalar mavjud emas.</div>
+                            <div className={styles.statusMessage}>{t('no_categories')}</div>
                         ) : (
                             <>
-                                <div className={styles.leftCol}>
+                                <div className={styles.leftCol} role="tablist" aria-label={th('katalog')}>
                                     {categories.map((cat, idx) => (
-                                        <div
+                                        <button
                                             key={cat.id}
+                                            type="button"
                                             className={`${styles.catItem} ${activeIdx === idx ? styles.activeCat : ''}`}
                                             onMouseEnter={() => setActiveIdx(idx)}
+                                            onFocus={() => setActiveIdx(idx)}
                                             onClick={() => handleCategoryClick(cat, idx)}
+                                            onKeyDown={(e) => handleKeyDown(e, idx, categories.length)}
+                                            role="tab"
+                                            aria-selected={activeIdx === idx}
                                             style={{
                                                 '--cat-gradient': GRADIENTS[idx % GRADIENTS.length]
                                             } as React.CSSProperties}
@@ -136,7 +167,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             </span>
 
                                             <ChevronRight size={16} className={styles.arrow} />
-                                        </div>
+                                        </button>
                                     ))}
                                 </div>
                                 <div className={styles.rightCol}>
@@ -145,7 +176,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
                                                 <Link href={`/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={close}>
-                                                    Barchasini ko'rish
+                                                    {t('view_all')}
                                                 </Link>
                                             </div>
 
@@ -168,7 +199,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                     ))
                                                 ) : (
                                                     <div className={styles.noSubCategories}>
-                                                        Ushbu bo'limda hozircha ichki kategoriyalar yo'q.
+                                                        {t('no_subcategories')}
                                                     </div>
                                                 )}
                                             </div>

@@ -35,17 +35,19 @@ export default function BottomNav() {
     const { wishlist } = useWishlist();
 
     const navItems = [
-        { label: t('bosh_sahifa'), icon: Home, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru") && !isCatalogOpen, action: () => closeCatalog() },
+        { label: t('bosh_sahifa'), icon: Home, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru" || pathname === "/en") && !isCatalogOpen, action: () => closeCatalog() },
         { label: t('katalog'), icon: LayoutGrid, href: null, isActive: isCatalogOpen, action: () => toggleCatalog() },
         { label: t('savatcha'), icon: ShoppingBag, href: "/cart", isActive: pathname === "/cart" && !isCatalogOpen, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
         { label: t('sevimlilar'), icon: Heart, href: "/favorites", isActive: pathname === "/favorites" && !isCatalogOpen, action: () => closeCatalog(), badge: wishlist.length },
         { label: t('kabinet'), icon: isAuthenticated ? User : UserCircle, href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogOpen, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
     ];
 
-    if (pathname.includes('/product/') || pathname === '/checkout') return null;
+    // Checkout o'z fokusli flow'iga ega (o'z mobile sticky CTA) — BottomNav u yerda ko'rsatilmaydi.
+    // Product sahifasida esa BottomNav ko'rsatiladi (sticky CTA uning ustiga chiqariladi).
+    if (pathname === '/checkout') return null;
 
     return (
-        <nav className="lg:hidden fixed bottom-4 left-4 right-4 bg-white/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex items-center justify-around h-[65px] z-[100] rounded-[24px] px-2">
+        <nav className="lg:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 bg-white/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex items-center justify-around h-[65px] z-[100] rounded-[24px] px-2" aria-label={t('katalog')}>
             {navItems.map((item, idx) => {
                 const Icon = item.icon;
                 const active = item.isActive;
@@ -59,6 +61,9 @@ export default function BottomNav() {
                                 if (item.action) item.action(e);
                                 if (!item.href) e.preventDefault();
                             }}
+                            aria-current={active ? 'page' : undefined}
+                            aria-expanded={item.href === null && active ? true : undefined}
+                            aria-label={item.label}
                         >
                             <motion.div
                                 animate={{ 

@@ -70,7 +70,7 @@ export async function POST(req: Request) {
 
         if (targetUser?.telegramId) {
             const { sendTelegramMessage } = await import('@/lib/telegram-bot');
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://uzm.uz';
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz';
 
             await sendTelegramMessage(
                 targetUser.telegramId,

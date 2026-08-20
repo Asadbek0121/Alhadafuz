@@ -510,6 +510,14 @@
     border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
 
+/* Mobil'da BottomNav mavjudligi sababli sticky CTA uning ustida joylashadi.
+   BottomNav balandligi ~65px + 16px offset = 81px, 8px gap bilan 89px. */
+@media (max-width: 1023px) {
+    .stickyBar {
+        bottom: calc(89px + env(safe-area-inset-bottom));
+    }
+}
+
 @media (min-width: 992px) {
     .stickyBar {
         display: none;

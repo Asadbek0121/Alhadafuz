@@ -8,6 +8,7 @@ import { useCartStore } from '@/store/useCartStore';
 import { useTranslations } from 'next-intl';
 import { Star, ShoppingCart, Share2, User as UserIcon, ChevronDown, ChevronUp, Check, Truck, Play, Gift, AlertTriangle, X, Minus, Plus, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
+import Image from 'next/image';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { discountPercent, hasRealDiscount } from '@/lib/product-discount';
 import styles from './page.module.css';
@@ -48,14 +49,15 @@ interface Product {
     categoryId?: string;
 }
 
-export default function ProductContent() {
+export default function ProductContent({ initialProduct = null }: { initialProduct?: Product | null }) {
     const { id } = useParams();
     const router = useRouter();
-    const [product, setProduct] = useState<Product | null>(null);
+    const [product, setProduct] = useState<Product | null>(initialProduct);
     const [activeImage, setActiveImage] = useState(0);
     const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
     const { addToCart } = useCartStore();
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(initialProduct ? false : true);
+    const [buying, setBuying] = useState<'cart' | 'buy' | null>(null);
     const tProduct = useTranslations('Product');
     const tHeader = useTranslations('Header');
     const tMarketing = useTranslations('Marketing');
@@ -77,7 +79,39 @@ export default function ProductContent() {
     // Quantity + Lightbox + Related
     const [quantity, setQuantity] = useState(1);
     const [lightboxOpen, setLightboxOpen] = useState(false);
+    const [imgError, setImgError] = useState(false);
+    const lightboxCloseRef = useRef<HTMLButtonElement>(null);
+    const galleryTriggerRef = useRef<HTMLButtonElement>(null);
+
+    // Lightbox: focus close tugmasiga, Escape bilan yopiladi, yopilganda fokus qaytadi
+    useEffect(() => {
+        if (lightboxOpen) {
+            lightboxCloseRef.current?.focus();
+            const handler = (e: KeyboardEvent) => {
+                if (e.key === 'Escape') setLightboxOpen(false);
+            };
+            document.addEventListener('keydown', handler);
+            return () => document.removeEventListener('keydown', handler);
+        }
+        galleryTriggerRef.current?.focus();
+    }, [lightboxOpen]);
     const [related, setRelated] = useState<any[]>([]);
+    const touchStartX = useRef<number | null>(null);
+
+    // Mobile gallery swipe
+    const handleTouchStart = (e: React.TouchEvent) => {
+        touchStartX.current = e.touches[0].clientX;
+    };
+    const handleTouchEnd = (e: React.TouchEvent) => {
+        if (touchStartX.current === null) return;
+        const delta = e.changedTouches[0].clientX - touchStartX.current;
+        touchStartX.current = null;
+        if (Math.abs(delta) < 50) return;
+        const images = product?.images || [];
+        if (images.length <= 1) return;
+        if (delta < 0) setActiveImage(prev => (prev + 1) % images.length);
+        else setActiveImage(prev => (prev - 1 + images.length) % images.length);
+    };
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -127,75 +161,83 @@ export default function ProductContent() {
         }
     };
 
-    useEffect(() => {
-        if (id) {
-            fetch(`/api/products/${id}`)
-                .then(async res => {
-                    if (res.status === 404) return { error: 'Not found' };
-                    if (!res.ok) {
-                        console.error("Product fetch error status:", res.status);
-                        return { error: 'Server error' };
-                    }
-                    return res.json();
-                })
-                .then(data => {
-                    if (data.error) {
-                        setProduct(null);
-                    } else {
-                        // Ensure images array exists
-                        if (!data.images && data.image) {
-                            data.images = [data.image];
-                        } else if (!data.images) {
-                            data.images = [];
-                        }
-                        setProduct(data);
-                        setQuantity(1);
+    // Specs/attributes'dan tanlanadigan variantlar va static xususiyatlarni ajratadi
+    const parseSpecs = (data: Product) => {
+        const specsSource = (data as any).specs || (data as any).attributes;
+        let parsedSpecs: Record<string, string | string[]> | null = null;
 
-                        // Parse specs to separate selections
-                        const specsSource = data.specs || data.attributes;
-                        let parsedSpecs: Record<string, string | string[]> | null = null;
-
-                        if (typeof specsSource === 'string') {
-                            try {
-                                parsedSpecs = JSON.parse(specsSource);
-                            } catch (e) { console.error("Specs parse error", e); }
-                        } else if (typeof specsSource === 'object') {
-                            parsedSpecs = specsSource;
-                        }
-
-                        if (parsedSpecs) {
-                            const sels: [string, string[]][] = [];
-                            const stats: [string, string][] = [];
-                            const marketingKeys = ['isNew', 'freeDelivery', 'hasVideo', 'hasGift', 'showLowStock', 'allowInstallment'];
-
-                            Object.entries(parsedSpecs).forEach(([key, value]) => {
-                                // Skip marketing boolean flags from technical specs table
-                                if (marketingKeys.includes(key)) return;
-
-                                if (Array.isArray(value) && value.length > 1) {
-                                    sels.push([key, value]);
-                                    // Default select first option
-                                    if (value.length > 0) {
-                                        setSelectedOptions(prev => ({ ...prev, [key]: value[0] }));
-                                    }
-                                } else {
-                                    const valStr = Array.isArray(value) ? value[0] : String(value);
-                                    if (valStr) stats.push([key, valStr]);
-                                }
-                            });
-                            setSelections(sels);
-                            setStaticSpecs(stats);
-                        }
-                    }
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error("Failed to fetch product:", err);
-                    setProduct(null);
-                    setLoading(false);
-                });
+        if (typeof specsSource === 'string') {
+            try { parsedSpecs = JSON.parse(specsSource); } catch (e) { console.error("Specs parse error", e); }
+        } else if (typeof specsSource === 'object') {
+            parsedSpecs = specsSource;
         }
-    }, [id]);
+
+        if (parsedSpecs) {
+            const sels: [string, string[]][] = [];
+            const stats: [string, string][] = [];
+            const marketingKeys = ['isNew', 'freeDelivery', 'hasVideo', 'hasGift', 'showLowStock', 'allowInstallment'];
+
+            Object.entries(parsedSpecs).forEach(([key, value]) => {
+                if (marketingKeys.includes(key)) return;
+
+                if (Array.isArray(value) && value.length > 1) {
+                    sels.push([key, value]);
+                    setSelectedOptions(prev => {
+                        if (prev[key]) return prev;
+                        return { ...prev, [key]: value[0] };
+                    });
+                } else {
+                    const valStr = Array.isArray(value) ? value[0] : String(value);
+                    if (valStr) stats.push([key, valStr]);
+                }
+            });
+            setSelections(sels);
+            setStaticSpecs(stats);
+        }
+    };
+
+    // Serverdan initialProduct kelganda ham spec'lar parse qilinishi kerak
+    useEffect(() => {
+        if (initialProduct) {
+            parseSpecs(initialProduct);
+        }
+    }, []);
+
+    // Faqat initialProduct bo'lmasa client'dan fetch qilinadi (double-fetch oldini olish)
+    useEffect(() => {
+        if (initialProduct || !id) return;
+
+        fetch(`/api/products/${id}`)
+            .then(async res => {
+                if (res.status === 404) return { error: 'Not found' };
+                if (!res.ok) {
+                    console.error("Product fetch error status:", res.status);
+                    return { error: 'Server error' };
+                }
+                return res.json();
+            })
+            .then(data => {
+                if (data.error) {
+                    setProduct(null);
+                } else {
+                    // Ensure images array exists
+                    if (!data.images && data.image) {
+                        data.images = [data.image];
+                    } else if (!data.images) {
+                        data.images = [];
+                    }
+                    setProduct(data);
+                    setQuantity(1);
+                    parseSpecs(data);
+                }
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Failed to fetch product:", err);
+                setProduct(null);
+                setLoading(false);
+            });
+    }, [id, initialProduct]);
 
     // Related products — same category, excluding current
     useEffect(() => {
@@ -215,29 +257,37 @@ export default function ProductContent() {
 
     const handleAddToCart = () => {
         if (product) {
+            const variant = selections.length > 0 ? JSON.stringify(selectedOptions) : undefined;
             addToCart({
                 id: product.id,
                 title: product.title,
                 price: product.price,
                 image: product.images[0],
                 hasDiscount: !!product.oldPrice || !!product.discount,
-                discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined)
+                discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
+                oldPrice: product.oldPrice,
+                variant,
             }, false, quantity);
             toast.success(product.title + ' - ' + tHeader('savatcha'));
         }
     };
 
-    const handleBuyNow = () => {
+    const handleBuyNow = async () => {
         if (product) {
+            setBuying('buy');
+            const variant = selections.length > 0 ? JSON.stringify(selectedOptions) : undefined;
             addToCart({
                 id: product.id,
                 title: product.title,
                 price: product.price,
                 image: product.images[0],
                 hasDiscount: !!product.oldPrice || !!product.discount,
-                discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined)
+                discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
+                oldPrice: product.oldPrice,
+                variant,
             }, false, quantity);
-            router.push('/checkout');
+            await router.push('/checkout');
+            setBuying(null);
         }
     };
 
@@ -282,7 +332,7 @@ export default function ProductContent() {
     const activeImg = product.images?.[activeImage] || product.images?.[0] || "https://placehold.co/400";
 
     return (
-        <div className="container" style={{ paddingBottom: '100px' }}>
+        <div className="container" style={{ paddingBottom: '180px' }}>
             {/* Breadcrumb */}
             <nav className={styles.breadcrumb} aria-label="Breadcrumb">
                 <Link href="/" className={styles.crumbLink}>{tHeader('bosh_sahifa')}</Link>
@@ -308,23 +358,52 @@ export default function ProductContent() {
                                 className={`${styles.thumbItem} ${i === activeImage ? styles.thumbActive : ''}`}
                                 onMouseEnter={() => setActiveImage(i)}
                                 onClick={() => setActiveImage(i)}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setActiveImage(i); } }}
+                                role="button"
+                                tabIndex={0}
+                                aria-label={`Rasm ${i + 1}`}
                             >
-                                <img src={img} alt="" />
+                                <img
+                                    src={img}
+                                    alt=""
+                                    loading="lazy"
+                                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                                />
                             </div>
                         ))}
                     </div>
                     <div className={styles.mainImageArea}>
                         <button
                             type="button"
+                            ref={galleryTriggerRef}
                             className={styles.mainImgBtn}
                             onClick={() => setLightboxOpen(true)}
+                            onTouchStart={handleTouchStart}
+                            onTouchEnd={handleTouchEnd}
                             aria-label={tProduct('zoom_hint') || 'Rasmni kattalashtirish'}
                         >
-                            <img
-                                src={activeImg}
-                                alt={product.title}
-                                className={styles.mainImg}
-                            />
+                            {!imgError ? (
+                                <Image
+                                    src={activeImg}
+                                    alt={product.title}
+                                    width={500}
+                                    height={500}
+                                    sizes="(max-width: 768px) 100vw, 500px"
+                                    priority
+                                    onError={() => setImgError(true)}
+                                    className={styles.mainImg}
+                                />
+                            ) : (
+                                <div className={`${styles.mainImg} flex flex-col items-center justify-center gap-2 text-slate-300`}>
+                                    <Image
+                                        src="https://placehold.co/400x400?text=No+Image"
+                                        alt={product.title}
+                                        width={400}
+                                        height={400}
+                                        className="opacity-60"
+                                    />
+                                </div>
+                            )}
                         </button>
 
                         {/* Top Left: Promotion Stickers — faqat HOT/PROMO; oddiy % chegirma lenta bilan */}
@@ -462,6 +541,19 @@ export default function ProductContent() {
                                 )}
                             </div>
                         </div>
+
+                        {/* Delivery */}
+                        <div className={styles.metaRow}>
+                            <span className={styles.metaLabel}>{tProduct('delivery_info')}:</span>
+                            <div className={styles.metaDots}></div>
+                            <span className={styles.metaValue}>
+                                {product.freeDelivery ? (
+                                    <span className="text-emerald-600 font-bold">{tProduct('delivery_free')}</span>
+                                ) : (
+                                    tProduct('delivery_calculated')
+                                )}
+                            </span>
+                        </div>
                     </div>
 
                     {/* Quantity */}
@@ -492,12 +584,12 @@ export default function ProductContent() {
 
                     {/* Desktop Actions */}
                     <div className={styles.desktopActions}>
-                        <button className={styles.btnCart} onClick={handleAddToCart} disabled={isOutOfStock}>
+                        <button className={styles.btnCart} onClick={handleAddToCart} disabled={isOutOfStock} aria-label={tProduct('add_to_cart')}>
                             <ShoppingCart size={22} strokeWidth={2.5} />
                             {tProduct('add_to_cart')}
                         </button>
-                        <button className={styles.btnBuy} onClick={handleBuyNow} disabled={isOutOfStock}>
-                            {tProduct('buy_one_click')}
+                        <button className={styles.btnBuy} onClick={handleBuyNow} disabled={isOutOfStock || buying === 'buy'}>
+                            {buying === 'buy' ? tHeader('loading') : tProduct('buy_one_click')}
                         </button>
                     </div>
                 </div>
@@ -688,9 +780,10 @@ export default function ProductContent() {
 
             {/* Lightbox */}
             {lightboxOpen && (
-                <div className={styles.lightbox} onClick={() => setLightboxOpen(false)} role="dialog" aria-modal="true">
+                <div className={styles.lightbox} onClick={() => setLightboxOpen(false)} role="dialog" aria-modal="true" aria-label={product.title}>
                     <button
                         type="button"
+                        ref={lightboxCloseRef}
                         className={styles.lightboxClose}
                         onClick={() => setLightboxOpen(false)}
                         aria-label={tProduct('close')}
@@ -718,8 +811,8 @@ export default function ProductContent() {
                         <ShoppingCart size={20} strokeWidth={2.5} />
                         <span>{tProduct('add_to_cart')}</span>
                     </button>
-                    <button title="Hozir xarid qilish" className={styles.stickyBtnBuy} onClick={handleBuyNow} disabled={isOutOfStock}>
-                        {tProduct('buy_one_click')}
+                    <button title="Hozir xarid qilish" className={styles.stickyBtnBuy} onClick={handleBuyNow} disabled={isOutOfStock || buying === 'buy'}>
+                        {buying === 'buy' ? tHeader('loading') : tProduct('buy_one_click')}
                     </button>
                 </div>
             </div>

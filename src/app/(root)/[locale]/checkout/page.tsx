@@ -4,7 +4,7 @@
 
 import { useCartStore } from '@/store/useCartStore';
 import { useUserStore } from '@/store/useUserStore';
-import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle, Store, Building, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle, Store, Building, Clock, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import { Link, useRouter } from '@/navigation';
 import { useTranslations } from 'next-intl';
@@ -15,6 +15,55 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { useMapStore } from '@/store/useMapStore';
 import { useLocationStore } from '@/store/useLocationStore';
+
+/** Browser'da crypto.randomUUID mavjud bo'lmasa fallback (eski brauzerlar). */
+function generateIdempotencyKey(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+        return crypto.randomUUID();
+    }
+    return `ik_${Date.now()}_${Math.random().toString(36).slice(2, 12)}`;
+}
+
+/** Savat mazmunining fingerprint'i — idempotency key qachon yangilanishini aniqlaydi. */
+function cartFingerprint(items: any[]): string {
+    return JSON.stringify(
+        items.map(i => `${i.id}::${i.variant || ''}::${i.quantity}`).sort()
+    );
+}
+
+// Checkout progress stepper — completed/current/upcoming holatlar
+function CheckoutStepper({ steps }: { steps: { label: string; done: boolean }[] }) {
+    return (
+        <div className="flex items-center gap-2 md:gap-3 overflow-x-auto no-scrollbar">
+            {steps.map((step, i) => {
+                const isDone = step.done;
+                const isLast = i === steps.length - 1;
+                return (
+                    <div key={i} className="flex items-center gap-2 md:gap-3 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div
+                                className={`flex h-7 w-7 md:h-8 md:w-8 items-center justify-center rounded-full text-[11px] md:text-xs font-black transition-all ${
+                                    isDone
+                                        ? 'bg-emerald-500 text-white'
+                                        : 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                }`}
+                                aria-label={`${i + 1}-bosqich`}
+                            >
+                                {isDone ? <Check size={14} /> : i + 1}
+                            </div>
+                            <span className={`text-[10px] md:text-xs font-black uppercase tracking-wider whitespace-nowrap ${isDone ? 'text-emerald-600' : 'text-slate-900'}`}>
+                                {step.label}
+                            </span>
+                        </div>
+                        {!isLast && (
+                            <div className={`h-0.5 w-6 md:w-10 rounded-full ${isDone ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                        )}
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
 
 export default function CheckoutPage() {
     const { items, total, clearCart, isHydrated } = useCartStore();
@@ -37,11 +86,14 @@ export default function CheckoutPage() {
     const [isMethodsLoading, setIsMethodsLoading] = useState(true);
     const [isProcessing, setIsProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    // Field-level xatolar — aria-invalid uchun
+    const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
     // Shipping Zones State
     const [shippingZones, setShippingZones] = useState<any[]>([]);
     const [deliveryFee, setDeliveryFee] = useState(0);
     const [deliveryTime, setDeliveryTime] = useState('');
+    const [deliveryAvailable, setDeliveryAvailable] = useState<boolean | null>(null); // null = no district selected
 
     // Form state
     const [formData, setFormData] = useState({
@@ -65,6 +117,23 @@ export default function CheckoutPage() {
 
     const addressFormRef = useRef<HTMLDivElement>(null);
     const citySelectRef = useRef<HTMLSelectElement>(null);
+    const submittingRef = useRef(false);
+    const cartFingerprintRef = useRef<string | null>(null);
+
+    // Bitta checkout intent uchun barqaror idempotency key.
+    // Savat mazmuni (item/variant/quantity) o'zgarsa → yangi intent → yangi key.
+    const [idempotencyKey, setIdempotencyKey] = useState<string>(() => generateIdempotencyKey());
+
+    useEffect(() => {
+        if (!isHydrated) return;
+        const fp = cartFingerprint(items);
+        // Birinchi hydrate'da ref null — key o'zgartirilmaydi (initial key saqlanadi).
+        // Keyin savat mazmuni o'zgarsa → yangi checkout intent → yangi key.
+        if (cartFingerprintRef.current !== null && cartFingerprintRef.current !== fp) {
+            setIdempotencyKey(generateIdempotencyKey());
+        }
+        cartFingerprintRef.current = fp;
+    }, [items, isHydrated]);
 
     const applyCoupon = async () => {
         if (!couponCode) return;
@@ -305,6 +374,7 @@ export default function CheckoutPage() {
         if (deliveryMethod === 'pickup') {
             setDeliveryFee(0);
             setDeliveryTime('');
+            setDeliveryAvailable(true);
             return;
         }
 
@@ -312,6 +382,7 @@ export default function CheckoutPage() {
         if (!formData.district) {
             setDeliveryFee(0);
             setDeliveryTime('');
+            setDeliveryAvailable(null);
             return;
         }
 
@@ -352,10 +423,12 @@ export default function CheckoutPage() {
                 setDeliveryFee(selectedZone.price);
             }
             setDeliveryTime(selectedZone.deliveryTime || '');
+            setDeliveryAvailable(true);
         } else {
-            // Default if no zone matches
+            // Zone topilmasa — yetkazib berish mavjud emas. Yolg'on "FREE" ko'rsatilmaydi.
             setDeliveryFee(0);
             setDeliveryTime('');
+            setDeliveryAvailable(false);
         }
     }, [formData.city, formData.district, deliveryMethod, shippingZones, total, items]);
 
@@ -372,12 +445,17 @@ export default function CheckoutPage() {
             return;
         }
 
+        // Synchronous double-submission guard — state async, ref sync
+        if (submittingRef.current) return;
+        submittingRef.current = true;
         setIsProcessing(true);
         setError(null);
+        setFieldErrors({});
 
         if (!paymentMethod) {
             setError(tCheckout('select_payment'));
             setIsProcessing(false);
+            submittingRef.current = false;
             return;
         }
 
@@ -385,6 +463,7 @@ export default function CheckoutPage() {
         const phoneDigits = (formData.phone || '').replace(/\D/g, '');
         if (phoneDigits.length < 12) {
             setError(tCheckout('phone_invalid'));
+            setFieldErrors({ phone: true });
             setIsProcessing(false);
             return;
         }
@@ -392,7 +471,17 @@ export default function CheckoutPage() {
         // Kuryer yetkazib berishda tuman tanlanishi shart
         if (deliveryMethod === 'courier' && !formData.district) {
             setError(tCheckout('select_district'));
+            setFieldErrors({ district: true });
             setIsProcessing(false);
+            submittingRef.current = false;
+            return;
+        }
+
+        // Zone topilmasa — yetkazib berish mavjud emas, buyurtma qabul qilinmaydi
+        if (deliveryMethod === 'courier' && deliveryAvailable === false) {
+            setError(tCheckout('delivery_unavailable'));
+            setIsProcessing(false);
+            submittingRef.current = false;
             return;
         }
 
@@ -431,7 +520,9 @@ export default function CheckoutPage() {
                         price: item.price,
                         quantity: item.quantity,
                         image: item.image,
+                        variant: item.variant,
                     })),
+                    idempotencyKey,
                     total: grandTotal,
                     paymentMethod,
                     deliveryMethod,
@@ -462,8 +553,10 @@ export default function CheckoutPage() {
             }
 
             if (data.paymentUrl) {
+                // Savat to'lovdan OLDIN tozalanmaydi — foydalanuvchi to'lovni
+                // bekor qilsa yoki qaytsa, savat saqlanib qoladi. Savat
+                // order-success sahifasida buyurtma tasdiqlangandan keyin tozalanadi.
                 window.location.href = data.paymentUrl;
-                clearCart();
                 return;
             }
 
@@ -473,6 +566,7 @@ export default function CheckoutPage() {
             setError(err.message || tCheckout('order_error'));
         } finally {
             setIsProcessing(false);
+            submittingRef.current = false;
         }
     };
 
@@ -510,13 +604,31 @@ export default function CheckoutPage() {
                 <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
                     {/* Main Content */}
                     <div className="flex-1 flex flex-col gap-6">
-                        {/* Error Banner */}
-                        {error && (
-                            <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl flex items-center gap-3 animate-shake">
-                                <ShieldAlert size={20} className="shrink-0" />
-                                <span className="font-medium text-sm">{error}</span>
-                            </div>
-                        )}
+                    {/* Error Banner */}
+                    {error && (
+                        <div className="bg-red-50 border border-red-100 text-red-600 p-4 rounded-2xl flex items-center gap-3 animate-shake" role="alert">
+                            <ShieldAlert size={20} className="shrink-0" />
+                            <span className="font-medium text-sm">{error}</span>
+                        </div>
+                    )}
+
+                    {/* Progress Stepper */}
+                    <CheckoutStepper
+                        steps={[
+                            {
+                                label: tCheckout('contact_info'),
+                                done: (formData.phone || '').replace(/\D/g, '').length >= 12 && !!formData.name,
+                            },
+                            {
+                                label: tCheckout('delivery_method'),
+                                done: deliveryMethod === 'pickup' ? !!selectedStoreId : !!formData.district && !!formData.address,
+                            },
+                            {
+                                label: tCheckout('payment_type'),
+                                done: !!paymentMethod,
+                            },
+                        ]}
+                    />
 
 
 
@@ -534,8 +646,13 @@ export default function CheckoutPage() {
                                         value={formData.phone}
                                         onChange={(val) => setFormData({ ...formData, phone: val })}
                                         required
+                                        aria-invalid={fieldErrors.phone || undefined}
+                                        aria-describedby={fieldErrors.phone ? 'checkout-phone-error' : undefined}
                                         className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-4 py-3 md:py-3.5 outline-none focus-within:ring-4 focus-within:ring-blue-500/5 focus-within:border-blue-500 transition-all font-bold text-slate-900 text-[13px] md:text-sm"
                                     />
+                                    {fieldErrors.phone && (
+                                        <p id="checkout-phone-error" className="text-[11px] font-bold text-red-500 mt-1" role="alert">{tCheckout('phone_invalid')}</p>
+                                    )}
                                 </div>
 
                                 <div className="space-y-1.5">
@@ -890,10 +1007,21 @@ export default function CheckoutPage() {
                             </div>
 
                             <div className="flex flex-col gap-5 mb-8 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
-                                {items.map(item => (
-                                    <div key={item.id} className="flex justify-between items-center gap-4 group">
+                                {items.map(item => {
+                                    let variantLabel: string | null = null;
+                                    if (item.variant) {
+                                        try {
+                                            const obj = JSON.parse(item.variant);
+                                            variantLabel = Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(' · ');
+                                        } catch { variantLabel = item.variant; }
+                                    }
+                                    return (
+                                    <div key={item.id + (item.variant || '')} className="flex justify-between items-center gap-4 group">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-slate-900 font-bold text-sm line-clamp-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{item.title}</p>
+                                            {variantLabel && (
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{variantLabel}</p>
+                                            )}
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{item.quantity} <span className="text-[8px] mx-0.5 opacity-50">X</span> {(item.price).toLocaleString()}</p>
                                         </div>
                                         <div className="text-right">
@@ -901,7 +1029,8 @@ export default function CheckoutPage() {
                                             <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tighter leading-none mt-0.5">{tHeader('som')}</p>
                                         </div>
                                     </div>
-                                ))}
+                                    );
+                                })}
                             </div>
 
                             {/* Promo Code Section */}
@@ -968,8 +1097,10 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="flex justify-between items-center group">
                                     <span className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{tHeader('yetkazib_berish')}</span>
-                                    {deliveryMethod === 'courier' && !formData.district ? (
+                                    {deliveryMethod === 'courier' && deliveryAvailable === null ? (
                                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest animate-pulse">{tCheckout('calculating')}</span>
+                                    ) : deliveryMethod === 'courier' && deliveryAvailable === false ? (
+                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">Mavjud emas</span>
                                     ) : (
                                         <span className={cn("text-sm font-black transition-all group-hover:scale-105", deliveryFee === 0 ? "text-emerald-500" : "text-slate-900")}>
                                             {deliveryFee === 0 ? tCart('free') : `${deliveryFee.toLocaleString()} `}
@@ -1033,6 +1164,35 @@ export default function CheckoutPage() {
                             </p>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            {/* Mobile Sticky CTA */}
+            <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
+                <div className="flex items-center justify-between gap-4">
+                    <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{tHeader('jami_to_lov')}</p>
+                        <p className="text-lg font-black text-slate-900 tracking-tighter leading-none mt-0.5" aria-live="polite">
+                            {grandTotal.toLocaleString()} <span className="text-[10px] font-bold text-slate-500">{tHeader('som')}</span>
+                        </p>
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={isProcessing}
+                        className="flex items-center justify-center gap-2 h-12 px-6 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-wider shadow-lg shadow-blue-600/25 active:scale-95 transition-all disabled:opacity-50 disabled:pointer-events-none"
+                    >
+                        {isProcessing ? (
+                            <>
+                                <Loader2 size={16} className="animate-spin" />
+                                <span>{tHeader('loading')}</span>
+                            </>
+                        ) : (
+                            <>
+                                <span>{tCheckout('to_pay')}</span>
+                                <ChevronRight size={16} />
+                            </>
+                        )}
+                    </button>
                 </div>
             </div>
         </form>
