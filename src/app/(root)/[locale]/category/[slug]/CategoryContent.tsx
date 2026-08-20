@@ -10,7 +10,7 @@ import styles from './CategoryContent.module.css';
 import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface CategoryBanner {
     id: string;
@@ -40,6 +40,7 @@ interface CategoryContentProps {
     banners?: CategoryBanner[];
     products?: any[];
     totalCount?: number;
+    rootCategories?: any[];
 }
 
 const SORT_OPTIONS = ['recommended', 'price_asc', 'price_desc', 'newest', 'discount'] as const;
@@ -195,12 +196,15 @@ function SortToolbar({ sort, onSortChange }: { sort: string; onSortChange: (v: s
     );
 }
 
-export default function CategoryContent({ category, banners = [], products = [], totalCount }: CategoryContentProps) {
+export default function CategoryContent({ category, banners = [], products = [], totalCount, rootCategories = [] }: CategoryContentProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const isMobile = useMediaQuery('(max-width: 992px)');
     const t = useTranslations('Search');
     const tHeader = useTranslations('Header');
+    const locale = useLocale();
+    // Mobil drill-down: null = root kategoriyalar ko'rsatiladi, tanlanganda subkategoriyalar
+    const [selectedParent, setSelectedParent] = useState<any | null>(null);
 
     // Track impressions once (bitta qatordan — double tracking oldini olish)
     useEffect(() => {
@@ -225,14 +229,24 @@ export default function CategoryContent({ category, banners = [], products = [],
 
     // Faqat bitta DOM render qilinadi (mobil yoki desktop) — double DOM oldini olish
     if (isMobile) {
+        // Mobil drill-down: faqat ota kategoriyada (children bor) root ko'rsatiladi.
+        // Leaf kategoriya (children yo'q) — to'g'ridan-to'g'ri mahsulotlar.
+        const isParent = category.children && category.children.length > 0;
+        const showRoots = isParent && !selectedParent;
+        const roots = rootCategories.length > 0 ? rootCategories : (category.parent ? [] : [category]);
+        const catHref = (slug: string) => `/${locale}/category/${slug}`;
+
         return (
             <div className={styles.mobileWrapper}>
                 {/* Header */}
                 <div className={styles.mobileHeader}>
-                    <button className={styles.backBtn} onClick={() => router.back()}>
+                    <button className={styles.backBtn} onClick={() => {
+                        if (selectedParent) { setSelectedParent(null); return; }
+                        router.back();
+                    }}>
                         <ChevronLeft size={20} />
                     </button>
-                    <h1 className={styles.headerTitle}>{category.name}</h1>
+                    <h1 className={styles.headerTitle}>{showRoots ? t('category') : selectedParent.name}</h1>
                 </div>
 
                 {/* Banners Section */}
@@ -245,119 +259,105 @@ export default function CategoryContent({ category, banners = [], products = [],
                                         <Image src={banner.image} alt={banner.title} fill sizes="85vw" className="object-cover" />
                                         {(banner.title || banner.description) && (
                                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
-                                                {banner.title && (
-                                                    <span className="block text-white text-sm font-bold line-clamp-1">{banner.title}</span>
-                                                )}
-                                                {banner.description && (
-                                                    <span className="block text-white/80 text-xs font-medium line-clamp-1 mt-0.5">{banner.description}</span>
-                                                )}
+                                                {banner.title && <span className="block text-white text-sm font-bold line-clamp-1">{banner.title}</span>}
+                                                {banner.description && <span className="block text-white/80 text-xs font-medium line-clamp-1 mt-0.5">{banner.description}</span>}
                                             </div>
                                         )}
                                     </div>
                                 );
-
                                 const handleClick = () => {
                                     if (banner.link) {
-                                        fetch(`/api/admin/banners/${banner.id}/click`, { method: 'POST' })
-                                            .catch(() => {});
+                                        fetch(`/api/admin/banners/${banner.id}/click`, { method: 'POST' }).catch(() => {});
                                     }
                                 };
-
                                 return banner.link ? (
-                                    <Link key={banner.id} href={banner.link} onClick={handleClick}>
-                                        {BannerContent}
-                                    </Link>
+                                    <Link key={banner.id} href={banner.link} onClick={handleClick}>{BannerContent}</Link>
                                 ) : (
-                                    <div key={banner.id}>
-                                        {BannerContent}
-                                    </div>
+                                    <div key={banner.id}>{BannerContent}</div>
                                 );
                             })}
                         </div>
                     </div>
                 )}
 
-                {/* Toolbar: count + sort */}
-                <div className="px-4 flex items-center justify-between gap-3">
-                    <span className="text-xs font-bold text-slate-500">
-                        {t('results', { count })}
-                    </span>
-                    <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
-                </div>
+                {/* Toolbar: count + sort (faqat subkategoriya yoki mahsulot ko'rsatilganda) */}
+                {!showRoots && (
+                    <div className="px-4 flex items-center justify-between gap-3">
+                        <span className="text-xs font-bold text-slate-500">{t('results', { count: totalCount || products.length })}</span>
+                        <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
+                    </div>
+                )}
 
-                {/* List — subkategoriya kartalari (mobil'da 4 ustun, rasm bilan) */}
-                <div className={styles.list}>
-                    {/* All Products — kategoriya sahifasining o'zi (barcha mahsulotlarni ko'rsatadi) */}
-                    {category.children && category.children.length > 0 && (
-                        <Link
-                            href={`/category/${category.slug}`}
-                            className={`${styles.item} ${styles.allItem}`}
-                        >
-                            <div className="flex items-center gap-3">
-                                <span className={styles.allText}>{tHeader('barchasini_korish')}</span>
-                            </div>
-                            <ChevronRight size={18} className={styles.arrow} />
-                        </Link>
-                    )}
-
-                    {/* Subcategory cards — rasm + nom, yonma-yon */}
-                    {category.children && category.children.map((sub) => (
-                        <Link key={sub.id} href={`/category/${sub.slug}`} className={styles.card}>
-                            <div className={styles.cardImage}>
-                                {sub.image ? (
-                                    <img
-                                        src={sub.image}
-                                        alt={sub.name}
-                                        loading="lazy"
-                                        onError={(e) => {
-                                            e.currentTarget.style.display = 'none';
-                                            const parent = e.currentTarget.parentElement;
-                                            if (parent) parent.classList.add(styles.cardImageFallback);
-                                        }}
-                                    />
-                                ) : (
-                                    <span className={styles.cardLetter}>{sub.name.charAt(0)}</span>
-                                )}
-                            </div>
-                            <span className={styles.cardName}>{sub.name}</span>
-                        </Link>
-                    ))}
-                </div>
-
-                {/* Products Grid (Mobile) */}
-                <div className="p-4 bg-gray-50 border-t mt-4">
-                    <h2 className="text-xl font-bold mb-4">{tHeader('mahsulotlar')}</h2>
-                    {products.length > 0 ? (
-                        <div className="grid grid-cols-2 gap-3">
-                            {products.map((p) => (
-                                <ProductCard
-                                    key={p.id}
-                                    id={p.id}
-                                    title={p.title}
-                                    price={p.price}
-                                    oldPrice={p.oldPrice}
-                                    image={p.image || '/placeholder.png'}
-                                    discount={p.discount}
-                                    discountType={p.discountType}
-                                    isNew={p.isNew}
-                                    freeDelivery={p.freeDelivery}
-                                    hasVideo={p.hasVideo}
-                                    hasGift={p.hasGift}
-                                    showLowStock={p.showLowStock}
-                                    allowInstallment={p.allowInstallment}
-                                    stock={p.stock}
-                                    rating={p.rating}
-                                    reviewCount={p.reviewsCount}
-                                />
+                {/* Content: root categories va subcategories */}
+                <div className="p-4">
+                    {showRoots ? (
+                        // Level 1: root categories (3 per row)
+                        <div className={styles.cardGridRoot}>
+                            {roots.map((root: any) => (
+                                <button
+                                    key={root.id}
+                                    type="button"
+                                    onClick={() => {
+                                        // Agar bu rootning o'zi bo'lsa — uning children'ini ko'rsat
+                                        if (root.id === category.id || root.slug === category.slug) {
+                                            setSelectedParent(category);
+                                        } else {
+                                            // Boshqa root — navigatsiya
+                                            window.location.href = catHref(root.slug);
+                                        }
+                                    }}
+                                    className={styles.cardRoot}
+                                >
+                                    {root.image ? (
+                                        <img src={root.image} alt={root.name} className={styles.cardRootImg} />
+                                    ) : (
+                                        <div className={styles.cardRootIcon}>{root.name.charAt(0)}</div>
+                                    )}
+                                    <span className={styles.cardRootName}>{root.name}</span>
+                                </button>
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200">
-                            <Package size={44} className="text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500 font-medium">{t('no_products')}</p>
+                        // Level 2: subcategories of selected parent (4 per row)
+                        <div className={styles.cardGridSub}>
+                            {(selectedParent.children || []).map((child: any) => (
+                                <a
+                                    key={child.id}
+                                    href={catHref(child.slug)}
+                                    className={styles.cardSub}
+                                    style={{ textDecoration: 'none' }}
+                                >
+                                    <div className={styles.cardSubImage}>
+                                        {child.image ? (
+                                            <img src={child.image} alt={child.name} loading="lazy" />
+                                        ) : (
+                                            <span className={styles.cardSubLetter}>{child.name.charAt(0)}</span>
+                                        )}
+                                    </div>
+                                    <span className={styles.cardSubName}>{child.name}</span>
+                                </a>
+                            ))}
                         </div>
                     )}
                 </div>
+
+                {/* Products Grid (Mobile) */}
+                {!showRoots && products.length > 0 && (
+                    <div className="p-4 bg-gray-50 border-t mt-4">
+                        <h2 className="text-xl font-bold mb-4">{tHeader('mahsulotlar')}</h2>
+                        <div className="grid grid-cols-2 gap-3">
+                            {products.map((p) => (
+                                <ProductCard key={p.id} id={p.id} title={p.title} price={p.price}
+                                    oldPrice={p.oldPrice} image={p.image || '/placeholder.png'}
+                                    discount={p.discount} discountType={p.discountType}
+                                    isNew={p.isNew} freeDelivery={p.freeDelivery} hasVideo={p.hasVideo}
+                                    hasGift={p.hasGift} showLowStock={p.showLowStock}
+                                    allowInstallment={p.allowInstallment} stock={p.stock}
+                                    rating={p.rating} reviewCount={p.reviewsCount} />
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

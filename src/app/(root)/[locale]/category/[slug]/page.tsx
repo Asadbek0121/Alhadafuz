@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
+import { getCachedRootCategories } from '@/lib/data';
 import CategoryContent from './CategoryContent';
 
 /**
@@ -143,6 +144,9 @@ export default async function CategoryPage({
         link: banner.link ?? undefined
     }));
 
+    // Root kategoriyalar — mobil'da drill-down browser uchun
+    const rootCategories = await getCachedRootCategories();
+
     return (
         <>
             <script
@@ -151,7 +155,13 @@ export default async function CategoryPage({
                     __html: JSON.stringify(breadcrumbJsonLd(breadcrumbItems, locale))
                 }}
             />
-            <CategoryContent category={category} banners={activeBanners} products={products} totalCount={totalCount} />
+            <CategoryContent
+                category={category}
+                banners={activeBanners}
+                products={products}
+                totalCount={totalCount}
+                rootCategories={rootCategories}
+            />
         </>
     );
 }
