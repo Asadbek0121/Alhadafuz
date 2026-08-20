@@ -74,7 +74,11 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                 router.push(`/category/${cat.slug}`);
             }
         } else {
+            // Desktop: panel hover'da (onMouseEnter) ko'rinadi. Bosilganda esa
+            // kategoriya sahifasiga o'tadi — "kategoriya tanlash" izchil ishlaydi.
             setActiveIdx(idx);
+            close();
+            router.push(`/category/${cat.slug}`);
         }
     };
 
