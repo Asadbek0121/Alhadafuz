@@ -4,7 +4,7 @@ import { useRouter, Link } from '@/navigation';
 import styles from './MegaMenu.module.css';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { ChevronRight, Smartphone, Laptop, Home, Shirt, BookOpen, Car, Monitor, Package, UserCircle, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useCartStore } from '@/store/useCartStore';
 import { useWishlist } from '@/context/WishlistContext';
 import { useUserStore } from '@/store/useUserStore';
@@ -28,6 +28,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     const t = useTranslations('MegaMenu');
     const th = useTranslations('Header');
     const tAuth = useTranslations('Auth');
+    const locale = useLocale();
     const router = useRouter();
     const [activeIdx, setActiveIdx] = useState(0);
     const [categories, setCategories] = useState<any[]>([]);
@@ -70,21 +71,18 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                 setSelectedRoot(cat);
                 setActiveIdx(0);
             } else {
-                close();
-                router.push(`/category/${cat.slug}`);
+                goToCategory(cat.slug);
             }
         } else {
             // Desktop: panel hover'da (onMouseEnter) ko'rinadi. Bosilganda esa
             // kategoriya sahifasiga o'tadi — "kategoriya tanlash" izchil ishlaydi.
             setActiveIdx(idx);
-            close();
-            router.push(`/category/${cat.slug}`);
+            goToCategory(cat.slug);
         }
     };
 
     const handleChildClick = (child: any) => {
-        close();
-        router.push(`/category/${child.slug}`);
+        goToCategory(child.slug);
     };
 
     const handleBackToRoots = () => {
@@ -97,7 +95,13 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     const navigateToCategory = (e: React.MouseEvent, slug: string) => {
         e.preventDefault();
         close();
-        router.push(`/category/${slug}`);
+        router.push(`/${locale}/category/${slug}`);
+    };
+
+    // Kategoriya sahifasiga to'liq locale-prefixed URL orqali navigatsiya.
+    const goToCategory = (slug: string) => {
+        close();
+        router.push(`/${locale}/category/${slug}`);
     };
 
     const handleAuth = () => {
@@ -174,7 +178,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                     <span className={styles.catName}>← {selectedRoot.name}</span>
                                 </button>
                                 <Link
-                                    href={`/category/${selectedRoot.slug}`}
+                                    href={`/${locale}/category/${selectedRoot.slug}`}
                                     className={`${styles.catItem} ${styles.activeCat}`}
                                     onClick={(e) => navigateToCategory(e, selectedRoot.slug)}
                                     style={{ color: 'var(--primary)' }}
@@ -236,7 +240,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         <>
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
-                                                <Link href={`/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={(e) => navigateToCategory(e, categories[activeIdx].slug)}>
+                                                <Link href={`/${locale}/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={(e) => navigateToCategory(e, categories[activeIdx].slug)}>
                                                     {t('view_all')}
                                                 </Link>
                                             </div>
@@ -245,13 +249,13 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                 {categories[activeIdx].children && categories[activeIdx].children.length > 0 ? (
                                                     categories[activeIdx].children.map((sub: any) => (
                                                         <div key={sub.id} className={styles.subGroup}>
-                                                            <Link href={`/category/${sub.slug}`} className={styles.subTitle} onClick={(e) => navigateToCategory(e, sub.slug)}>
+                                                            <Link href={`/${locale}/category/${sub.slug}`} className={styles.subTitle} onClick={(e) => navigateToCategory(e, sub.slug)}>
                                                                 {sub.name}
                                                             </Link>
 
                                                             <div className={styles.microList}>
                                                                 {sub.children?.map((micro: any) => (
-                                                                    <Link key={micro.id} href={`/category/${micro.slug}`} className={styles.microLink} onClick={(e) => navigateToCategory(e, micro.slug)}>
+                                                                    <Link key={micro.id} href={`/${locale}/category/${micro.slug}`} className={styles.microLink} onClick={(e) => navigateToCategory(e, micro.slug)}>
                                                                         {micro.name}
                                                                     </Link>
                                                                 ))}
