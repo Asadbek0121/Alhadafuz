@@ -90,7 +90,7 @@ export default async function AdminOrdersPage({
 
     let orders: any[] = [];
     let total = 0;
-    let statusCounts: Record<string, number> = {};
+    const statusCounts: Record<string, number> = {};
     let allCount = 0;
 
     try {
