@@ -1,6 +1,6 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { useState, useEffect } from 'react';
-import { useRouter, Link } from '@/navigation';
+import { useRouter } from '@/navigation';
 import styles from './MegaMenu.module.css';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { ChevronRight, Smartphone, Laptop, Home, Shirt, BookOpen, Car, Monitor, Package, UserCircle, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
@@ -63,45 +63,24 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
 
     if (!isOpen) return null;
 
-    const handleCategoryClick = (cat: any, idx: number) => {
-        if (window.innerWidth < 992) {
-            // Mobile: root kategoriya bosilganda children ochiladi (drill-down),
-            // homepage'ga qaytarilmaydi. Child kategoriya bosilganda esa tegishli sahifa.
-            if (cat.children && cat.children.length > 0) {
-                setSelectedRoot(cat);
-                setActiveIdx(0);
-            } else {
-                goToCategory(cat.slug);
-            }
-        } else {
-            // Desktop: panel hover'da (onMouseEnter) ko'rinadi. Bosilganda esa
-            // kategoriya sahifasiga o'tadi — "kategoriya tanlash" izchil ishlaydi.
-            setActiveIdx(idx);
-            goToCategory(cat.slug);
-        }
-    };
-
-    const handleChildClick = (child: any) => {
-        goToCategory(child.slug);
-    };
-
     const handleBackToRoots = () => {
         setSelectedRoot(null);
         setActiveIdx(0);
     };
 
-    // Link onClick'da close() menyuni unmount qiladi — bu navigation'ni uzishi mumkin.
-    // Shu sababli preventDefault + router.push ishlatiladi (locate-aware).
-    const navigateToCategory = (e: React.MouseEvent, slug: string) => {
-        e.preventDefault();
-        close();
-        router.push(`/${locale}/category/${slug}`);
-    };
+    // To'liq locale-prefixed kategoriya URL — native <a> bilan full navigation.
+    // Telegram WebView'da router.push ishonchsiz bo'lgani uchun native anchor
+    // ishlatiladi (garantiya qilingan navigatsiya).
+    const catHref = (slug: string) => `/${locale}/category/${slug}`;
 
-    // Kategoriya sahifasiga to'liq locale-prefixed URL orqali navigatsiya.
-    const goToCategory = (slug: string) => {
-        close();
-        router.push(`/${locale}/category/${slug}`);
+    // Mobile'da root kategoriya (children bor) bosilganda drill-down ochiladi;
+    // boshqa holatlarda <a> native navigatsiya qiladi.
+    const handleNavClick = (e: React.MouseEvent, cat: any) => {
+        if (window.innerWidth < 992 && cat.children && cat.children.length > 0) {
+            e.preventDefault();
+            setSelectedRoot(cat);
+            setActiveIdx(0);
+        }
     };
 
     const handleAuth = () => {
@@ -177,43 +156,39 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                 >
                                     <span className={styles.catName}>← {selectedRoot.name}</span>
                                 </button>
-                                <Link
-                                    href={`/${locale}/category/${selectedRoot.slug}`}
+                                <a
+                                    href={catHref(selectedRoot.slug)}
                                     className={`${styles.catItem} ${styles.activeCat}`}
-                                    onClick={(e) => navigateToCategory(e, selectedRoot.slug)}
-                                    style={{ color: 'var(--primary)' }}
+                                    style={{ color: 'var(--primary)', textDecoration: 'none' }}
                                 >
                                     <span className={styles.catName}>{t('view_all')}</span>
-                                </Link>
+                                </a>
                                 {selectedRoot.children?.map((child: any) => (
-                                    <button
+                                    <a
                                         key={child.id}
-                                        type="button"
+                                        href={catHref(child.slug)}
                                         className={styles.catItem}
-                                        onClick={() => handleChildClick(child)}
+                                        style={{ textDecoration: 'none' }}
                                     >
                                         <span className={styles.catName}>{child.name}</span>
                                         <ChevronRight size={16} className={styles.arrow} />
-                                    </button>
+                                    </a>
                                 ))}
                             </div>
                         ) : (
                             <>
                                 <div className={styles.leftCol} role="tablist" aria-label={th('katalog')}>
                                     {categories.map((cat, idx) => (
-                                        <button
+                                        <a
                                             key={cat.id}
-                                            type="button"
+                                            href={catHref(cat.slug)}
                                             className={`${styles.catItem} ${activeIdx === idx ? styles.activeCat : ''}`}
                                             onMouseEnter={() => setActiveIdx(idx)}
                                             onFocus={() => setActiveIdx(idx)}
-                                            onClick={() => handleCategoryClick(cat, idx)}
-                                            onKeyDown={(e) => handleKeyDown(e, idx, categories.length)}
+                                            onClick={(e) => handleNavClick(e, cat)}
                                             role="tab"
                                             aria-selected={activeIdx === idx}
-                                            style={{
-                                                '--cat-gradient': GRADIENTS[idx % GRADIENTS.length]
-                                            } as React.CSSProperties}
+                                            style={{ textDecoration: 'none' }}
                                         >
                                             <span className={styles.catName}>{cat.name}</span>
 
@@ -232,7 +207,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             </span>
 
                                             <ChevronRight size={16} className={styles.arrow} />
-                                        </button>
+                                        </a>
                                     ))}
                                 </div>
                                 <div className={styles.rightCol}>
@@ -240,24 +215,24 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         <>
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
-                                                <Link href={`/${locale}/category/${categories[activeIdx].slug}`} className={styles.viewAllLink} onClick={(e) => navigateToCategory(e, categories[activeIdx].slug)}>
+                                                <a href={catHref(categories[activeIdx].slug)} className={styles.viewAllLink} style={{ textDecoration: 'none' }}>
                                                     {t('view_all')}
-                                                </Link>
+                                                </a>
                                             </div>
 
                                             <div className={styles.subGrid}>
                                                 {categories[activeIdx].children && categories[activeIdx].children.length > 0 ? (
                                                     categories[activeIdx].children.map((sub: any) => (
                                                         <div key={sub.id} className={styles.subGroup}>
-                                                            <Link href={`/${locale}/category/${sub.slug}`} className={styles.subTitle} onClick={(e) => navigateToCategory(e, sub.slug)}>
+                                                            <a href={catHref(sub.slug)} className={styles.subTitle} style={{ textDecoration: 'none' }}>
                                                                 {sub.name}
-                                                            </Link>
+                                                            </a>
 
                                                             <div className={styles.microList}>
                                                                 {sub.children?.map((micro: any) => (
-                                                                    <Link key={micro.id} href={`/${locale}/category/${micro.slug}`} className={styles.microLink} onClick={(e) => navigateToCategory(e, micro.slug)}>
+                                                                    <a key={micro.id} href={catHref(micro.slug)} className={styles.microLink} style={{ textDecoration: 'none' }}>
                                                                         {micro.name}
-                                                                    </Link>
+                                                                    </a>
                                                                 ))}
                                                             </div>
                                                         </div>
