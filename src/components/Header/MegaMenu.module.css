@@ -7,8 +7,9 @@
     bottom: 0;
     background: rgba(0, 0, 0, 0.4);
     z-index: 40;
+    /* `-webkit-backdrop-filter`ni qo'lda yozmang — lightningcss ikkisi birga
+       bo'lsa standart xususiyatni tashlaydi va Chrome'da blur ishlamaydi. */
     backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
     animation: fadeIn 0.2s ease;
 }
 
