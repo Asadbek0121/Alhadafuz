@@ -18,14 +18,18 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     // If VENDOR, check if they own any item in this order
     if (userRole === 'VENDOR') {
-        const checkResult: any[] = await (prisma as any).$queryRawUnsafe(`
-            SELECT oi.id FROM "OrderItem" oi
-            JOIN "Product" p ON oi."productId" = p.id
-            WHERE oi."orderId" = '${id}' AND p."vendorId" = '${userId}'
-            LIMIT 1
-        `);
+        // Ilgari bu xom SQL bo'lib, `id` (URL'dan) va `userId` to'g'ridan-to'g'ri
+        // qo'shtirnoq orasiga qo'yilardi — hech qanday oldingi tekshiruvsiz,
+        // ya'ni sotuvchi so'rov manzili orqali SQL kiritishi mumkin edi.
+        const owned = await prisma.orderItem.findFirst({
+            where: {
+                orderId: id,
+                product: { vendorId: userId }
+            },
+            select: { id: true }
+        });
 
-        if (!checkResult || checkResult.length === 0) {
+        if (!owned) {
             return NextResponse.json({ error: 'Forbidden: You do not have items in this order' }, { status: 403 });
         }
     }
@@ -86,18 +90,22 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
             }
         }
 
-        // Log activity
+        // Log activity — maydon nomi `userId`, sxemada `adminId` yo'q.
+        // Bu yerda `try` allaqachon bor edi, shuning uchun xato jimgina
+        // yutilardi: jurnal hech qachon yozilmagan. Endi yoziladi.
         try {
-            if ((prisma as any).activityLog && session?.user?.id) {
-                await (prisma as any).activityLog.create({
+            if (session?.user?.id) {
+                await prisma.activityLog.create({
                     data: {
-                        adminId: session.user.id,
+                        userId: session.user.id,
                         action: 'UPDATE_ORDER',
                         details: `Order ${id} status updated to ${status}`
                     }
                 });
             }
-        } catch (e) { }
+        } catch (logError) {
+            console.error('activityLog yozilmadi (UPDATE_ORDER):', logError);
+        }
 
         revalidatePath('/admin/orders');
         revalidatePath(`/admin/orders/${id}`);

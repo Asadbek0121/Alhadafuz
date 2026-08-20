@@ -54,15 +54,19 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
             data: updateData
         });
 
-        // Log activity
-        if ((prisma as any).activityLog) {
-            await (prisma as any).activityLog.create({
+        // Log activity — maydon nomi `userId`, sxemada `adminId` yo'q (qarang:
+        // ../route.ts DELETE). Jurnal ikkinchi darajali: xatosi tahrirlashning
+        // muvaffaqiyatini bekor qilmasligi kerak.
+        try {
+            await prisma.activityLog.create({
                 data: {
-                    adminId: session.user.id,
+                    userId: session.user.id,
                     action: 'UPDATE_PRODUCT',
                     details: `Product ${id} updated`
                 }
             });
+        } catch (logError) {
+            console.error('activityLog yozilmadi (UPDATE_PRODUCT):', logError);
         }
 
         // Bu yo'lda ilgari revalidatsiya umuman yo'q edi: mahsulot bazada

@@ -284,15 +284,21 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
             data: { isDeleted: true, status: 'ARCHIVED' }
         });
 
-        // Log activity
-        if ((prisma as any).activityLog) {
-            await (prisma as any).activityLog.create({
+        // Log activity — maydon nomi `userId` (sxemada `adminId` YO'Q). Ilgari
+        // `adminId` yozilgan va Prisma otilgan: mahsulot allaqachon o'chirilgan
+        // bo'lsa ham javob 500 qaytardi, ya'ni admin panelda har o'chirishda
+        // "xato" ko'rinardi. Jurnal ikkinchi darajali, shuning uchun o'z
+        // `try` ichida — u buzilsa o'chirish muvaffaqiyati yo'qolmasligi kerak.
+        try {
+            await prisma.activityLog.create({
                 data: {
-                    adminId: session?.user?.id,
+                    userId: session?.user?.id,
                     action: 'DELETE_PRODUCT',
                     details: `Product ${id} marked as deleted`
                 }
             });
+        } catch (logError) {
+            console.error('activityLog yozilmadi (DELETE_PRODUCT):', logError);
         }
 
         revalidatePath('/admin/products');
@@ -303,6 +309,9 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
         revalidateTag('products', { expire: 0 });
         return NextResponse.json({ success: true });
     } catch (error) {
+        // Ilgari xato butunlay yutilardi va faqat "Failed to delete product"
+        // qolardi — `adminId` nuqsonini topish uchun log yozish shart edi.
+        console.error(`Mahsulotni o'chirish xatosi (${id}):`, error);
         return NextResponse.json({ error: 'Failed to delete product' }, { status: 500 });
     }
 }
