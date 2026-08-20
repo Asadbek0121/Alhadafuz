@@ -11,15 +11,17 @@ import { useTranslations } from 'next-intl';
 import { useWishlist } from '@/context/WishlistContext';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { discountPercent, hasRealDiscount } from '@/lib/product-discount';
 
 interface ProductProps {
     id: string; // Updated to string
     title: string;
     price: number;
     oldPrice?: number;
-    isSale?: boolean;
     image: string;
-    discountType?: string;
+    /** Admin kiritgan chegirma miqdori — `null`/0 bo'lsa kartada chegirma ko'rinmaydi. */
+    discount?: number | null;
+    discountType?: string | null;
     isNew?: boolean;
     freeDelivery?: boolean;
     hasVideo?: boolean;
@@ -34,7 +36,7 @@ interface ProductProps {
 
 export default function ProductCard(props: ProductProps) {
     const {
-        id, title, price, oldPrice, isSale, image, discountType,
+        id, title, price, oldPrice, image, discount, discountType,
         freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false,
         rating = 0, reviewCount
     } = props;
@@ -46,9 +48,13 @@ export default function ProductCard(props: ProductProps) {
     const [isBuying, setIsBuying] = useState(false);
     const isOutOfStock = typeof stock !== 'undefined' && stock <= 0;
 
-    const discountPercentage = oldPrice && price < oldPrice
-        ? Math.round(((oldPrice - price) / oldPrice) * 100)
-        : 0;
+    // Chegirma faqat admin uni ataylab belgilaganda ko'rinadi. Ilgari bu yerda
+    // faqat `oldPrice > price` tekshirilardi — natijada "Chegirma yo'q"
+    // tanlangan, ammo eski narxi to'ldirilgan mahsulot ham chegirmali bo'lib
+    // chiqardi. Mantiq `src/lib/product-discount.ts` da, mahsulot sahifasi ham
+    // shu funksiyalarni ishlatadi.
+    const showDiscount = hasRealDiscount({ discount });
+    const discountPercentage = discountPercent({ price, oldPrice, discount });
 
     const isLowStock = showLowStock && typeof stock !== 'undefined' && stock > 0 && stock < 10;
     const monthlyPayment = Math.round(price / 12);
@@ -122,18 +128,17 @@ export default function ProductCard(props: ProductProps) {
         <div className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
             {/* Clickable area: badges + image */}
             <Link href={`/product/${id}`} className="block relative">
-                {/* Top Left: Promotion Stickers (max 2) — chegirma lentasi bor bo'lsa uning ostida */}
-                {badges.length > 0 && (
-                    <div className={`${styles.badgeContainer} ${discountPercentage > 0 ? styles.badgeBelowRibbon : ''}`}>
+                {/* Yuqori-chap: chegirma belgisi + marketing stikerlari (bittа ustunda,
+                    shuning uchun qo'lda yozilgan `top` offsetlari kerak emas) */}
+                {(discountPercentage > 0 || badges.length > 0) && (
+                    <div className={styles.badgeContainer}>
+                        {discountPercentage > 0 && (
+                            <div className={styles.discountTag}>
+                                <b className={styles.discountValue}>-{discountPercentage}%</b>
+                                <span className={styles.discountWord}>{tMarketing('chegirma')}</span>
+                            </div>
+                        )}
                         {badges.slice(0, 2)}
-                    </div>
-                )}
-
-                {/* Top Right: Discount Percentage Tag */}
-                {discountPercentage > 0 && (
-                    <div className={styles.discountTag}>
-                        <span>-{discountPercentage}%</span>
-                        {tMarketing('chegirma')}
                     </div>
                 )}
 
@@ -151,14 +156,20 @@ export default function ProductCard(props: ProductProps) {
                     )}
                 </div>
 
-                <div className="aspect-[4/5] bg-slate-50 w-full relative p-4 overflow-hidden">
+                {/* Rasm maydoni kvadrat: mahsulot rasmlari kvadrat yuklanadi, ilgarigi
+                    4/5 balandroq quti ichida `object-contain` ularni quti balandligining
+                    ~70% igacha kichraytirib, ustida-ostida bo'sh kul rang qoldirardi.
+                    Padding ham 16px dan 8px ga tushdi — rasm karta kengligining
+                    ~93% ini egallaydi. */}
+                <div className="aspect-square bg-slate-50 w-full relative p-2 md:p-2.5 overflow-hidden">
                     <div className="w-full h-full relative">
                         <Image
                             src={image || "https://placehold.co/400"}
                             alt={title}
                             fill
-                            priority={priority}
-                            sizes="(max-width: 640px) 160px, (max-width: 1024px) 200px, 300px"
+                            /* Next 16 da `priority` eskirgan — `preload` uning to'g'ridan-to'g'ri o'rnini bosadi */
+                            preload={priority}
+                            sizes="(max-width: 639px) 48vw, (max-width: 1919px) 260px, 340px"
                             className={`object-contain group-hover:scale-105 transition-transform duration-500 ${isOutOfStock ? 'grayscale opacity-50' : ''}`}
                             onError={(e) => {
                                 const target = e.target as HTMLImageElement;
@@ -210,7 +221,11 @@ export default function ProductCard(props: ProductProps) {
                                 {tMarketing('oyiga')} {monthlyPayment.toLocaleString()} {t('som')} {tMarketing('dan')}
                             </div>
                         )}
-                        {oldPrice && <div className="text-[10px] text-slate-400 line-through">{oldPrice.toLocaleString()} {t('som')}</div>}
+                        {/* Chizilgan eski narx ham chegirmani e'lon qiladi — chegirma
+                            belgilanmagan bo'lsa ko'rinmaydi */}
+                        {showDiscount && oldPrice && oldPrice > price && (
+                            <div className="text-[10px] text-slate-400 line-through">{oldPrice.toLocaleString()} {t('som')}</div>
+                        )}
                         <div className="text-sm md:text-lg font-black text-blue-600">{price.toLocaleString()} <span className="text-xs font-medium">{t('som')}</span></div>
                     </div>
 

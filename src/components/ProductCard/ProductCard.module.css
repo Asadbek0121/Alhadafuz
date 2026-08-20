@@ -6,13 +6,9 @@
     z-index: 20;
     display: flex;
     flex-direction: column;
+    align-items: flex-start;
     gap: 6px;
     pointer-events: none;
-}
-
-/* Chegirma lentasi chap-yuqorida — qolgan stikerlar uning ostida */
-.badgeBelowRibbon {
-    top: 58px;
 }
 
 .promoSticker {
@@ -29,8 +25,9 @@
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     position: relative;
     overflow: hidden;
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
+    /* backdrop-filter yo'q: har bir stikerning foni to'liq xira (bg-red-600 yoki
+       *Theme gradientlari), shuning uchun blur ko'rinmaydi — lekin har bir
+       mahsulot kartasida GPU qatlami yaratadi. */
 }
 
 .hotTheme {
@@ -49,42 +46,43 @@
     background: linear-gradient(135deg, #f80759, #bc4e9c);
 }
 
-/* Top-left discount percentage tag (YANGI belgisi o'rniga) */
+/* Chegirma belgisi — stikerlar ustunining birinchi elementi.
+   Ilgari bu alohida `position: absolute` qora lenta (clip-path bilan) edi va
+   qolgan stikerlarni qo'lda yozilgan `top: 58px` bilan pastga surardi: lenta
+   balandligi o'zgarishi bilanoq (tarjima uzunligi, shrift) ular ustma-ust
+   tushardi. Endi oddiy oqim elementi — ustun `gap` ni o'zi hisoblaydi. */
 .discountTag {
-    position: absolute;
-    top: 0;
-    left: 12px;
-    background: #1a1a1a;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #ff3b30, #e5106b);
     color: #fff;
-    padding: 10px 6px 14px;
-    font-size: 11px;
-    font-weight: 900;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 88%, 0 100%);
-    z-index: 20;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 9px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
     line-height: 1;
+    white-space: nowrap;
+    box-shadow: 0 6px 16px rgba(229, 16, 107, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
-.discountTag span {
-    color: #ff4b2b;
-    font-size: 14px;
-    margin-bottom: 2px;
-    display: block;
+.discountValue {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: -0.2px;
+}
+
+.discountWord {
+    opacity: 0.85;
 }
 
 @media (max-width: 480px) {
     .badgeContainer {
-        top: 2px;
-        left: 2px;
-        gap: 2px;
-    }
-
-    .badgeBelowRibbon {
-        top: 30px;
+        top: 6px;
+        left: 6px;
+        gap: 4px;
     }
 
     .promoSticker {
@@ -93,13 +91,18 @@
         border-radius: 3px;
     }
 
+    /* Ikki ustunli mobil to'rda "CHEGIRMA" so'zi karta kengligining yarmini
+       egallardi — faqat foiz qoladi, u tarjimaga bog'liq emas */
     .discountTag {
-        left: 4px;
-        padding: 4px 3px 8px;
-        font-size: 8px;
+        padding: 3px 7px;
+        gap: 0;
     }
 
-    .discountTag span {
-        font-size: 9px;
+    .discountWord {
+        display: none;
+    }
+
+    .discountValue {
+        font-size: 11px;
     }
 }

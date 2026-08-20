@@ -76,7 +76,7 @@ export default function FavoritesPage() {
                         price={product.price}
                         oldPrice={product.oldPrice}
                         image={product.image}
-                        isSale={product.isSale}
+                        discount={product.discount}
                         discountType={product.discountType}
                         isNew={product.isNew}
                         freeDelivery={product.freeDelivery}
@@ -85,6 +85,8 @@ export default function FavoritesPage() {
                         showLowStock={product.showLowStock}
                         allowInstallment={product.allowInstallment}
                         stock={product.stock}
+                        rating={product.rating}
+                        reviewCount={product.reviewsCount}
                     />
                 ))}
             </div>

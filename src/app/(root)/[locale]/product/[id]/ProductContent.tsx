@@ -9,6 +9,7 @@ import { useTranslations } from 'next-intl';
 import { Star, ShoppingCart, Share2, User as UserIcon, ChevronDown, ChevronUp, Check, Truck, Play, Gift, AlertTriangle, X, Minus, Plus, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import ProductCard from '@/components/ProductCard/ProductCard';
+import { discountPercent, hasRealDiscount } from '@/lib/product-discount';
 import styles from './page.module.css';
 
 interface Review {
@@ -268,9 +269,10 @@ export default function ProductContent() {
     if (loading) return <div className="container" style={{ padding: '80px', textAlign: 'center' }}><div className="loader"></div></div>;
     if (!product) return <div className="container" style={{ padding: '40px' }}>{tProduct('not_found')}</div>;
 
-    const discountPercentage = product.oldPrice && product.price < product.oldPrice
-        ? Math.round(((product.oldPrice - product.price) / product.oldPrice) * 100)
-        : 0;
+    // Kartadagi bilan bir xil mantiq: chegirma faqat admin uni belgilaganda
+    // ko'rinadi, eski narxning o'zi chegirma e'lon qilmaydi
+    const showDiscount = hasRealDiscount(product);
+    const discountPercentage = discountPercent(product);
 
     const discountType = product.discountType;
     const isCampaignSticker = discountType === 'HOT' || discountType === 'PROMO';
@@ -359,8 +361,8 @@ export default function ProductContent() {
                         {/* Top Right: Discount Tag */}
                         {discountPercentage > 0 && (
                             <div className={styles.discountTag}>
-                                <span>-{discountPercentage}%</span>
-                                {tMarketing('chegirma')}
+                                <b className={styles.discountValue}>-{discountPercentage}%</b>
+                                <span className={styles.discountWord}>{tMarketing('chegirma')}</span>
                             </div>
                         )}
 
@@ -405,7 +407,7 @@ export default function ProductContent() {
                     <h1 className={styles.productTitle}>{product.title}</h1>
 
                     <div className={styles.priceSection}>
-                        {product.oldPrice && product.oldPrice > product.price && (
+                        {showDiscount && product.oldPrice && product.oldPrice > product.price && (
                             <div className={styles.oldPriceSect}>
                                 <span className={styles.oldPriceVal}>{product.oldPrice.toLocaleString()} {tHeader('som')}</span>
                                 <span className={styles.saveBadge}>
@@ -668,6 +670,7 @@ export default function ProductContent() {
                                 price={p.price}
                                 oldPrice={p.oldPrice}
                                 image={p.image || (p.images && p.images[0]) || "https://placehold.co/400"}
+                                discount={p.discount}
                                 discountType={p.discountType}
                                 freeDelivery={p.freeDelivery}
                                 hasVideo={p.hasVideo}

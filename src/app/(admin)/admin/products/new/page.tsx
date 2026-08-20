@@ -1,14 +1,19 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft, Copy } from "lucide-react";
+import {
+    Loader2, Plus, X, UploadCloud, ChevronLeft, ChevronDown, Copy,
+    Search, Star, Trash2, AlertCircle, Link2, FolderPlus
+} from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
 const productSchema = z.object({
     title: z.string().min(3, "Mahsulot nomi kamida 3 ta belgidan iborat bo'lishi kerak"),
@@ -20,234 +25,616 @@ const productSchema = z.object({
     discountType: z.enum(["no_discount", "percentage", "fixed_price"]).default("no_discount"),
     discountValue: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().nonnegative().optional()),
     discountCategory: z.string().default("SALE"),
-    vatAmount: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().nonnegative().optional()),
-    stock: z.coerce.number().int().nonnegative("Ombordagi soni manfiy bo'lishi mumkin emas").default(0),
+    // Serverdagi sxema `vatPercent`ni 0..100 bilan cheklaydi — bu yerda ham
+    // shu chegara qo'yiladi, aks holda 400 xatosi faqat saqlashda ko'rinadi.
+    vatAmount: z.preprocess(
+        (val) => (val === "" || val === null ? undefined : val),
+        z.coerce.number().min(0, "Soliq manfiy bo'lishi mumkin emas").max(100, "Soliq 100% dan oshmasligi kerak").optional()
+    ),
+    // Serverga mos: butun songa yaxlitlanadi, keyin manfiy emasligi tekshiriladi.
+    stock: z.preprocess(
+        (val) => (val === "" || val === null ? 0 : val),
+        z.coerce.number().transform((v) => Math.round(v)).pipe(z.number().nonnegative("Ombordagi soni manfiy bo'lishi mumkin emas"))
+    ).default(0),
     image: z.string().min(1, "Asosiy rasm majburiy"),
     images: z.string().optional(),
     tags: z.string().optional(),
-    status: z.enum(["published", "draft", "scheduled", "inactive"]).default("published"),
+    mxikCode: z.string().optional(),
+    packageCode: z.string().optional(),
+    // "scheduled" olib tashlandi: rejalashtirish uchun na sana maydoni,
+    // na fon vazifasi bor edi — tanlangan mahsulot shunchaki yo'qolardi.
+    status: z.enum(["published", "draft", "inactive"]).default("published"),
     isNew: z.boolean().default(false),
     freeDelivery: z.boolean().default(false),
     hasVideo: z.boolean().default(false),
     hasGift: z.boolean().default(false),
     showLowStock: z.boolean().default(false),
     allowInstallment: z.boolean().default(false),
-    template: z.string().optional(),
+}).check((ctx) => {
+    // Chegirma turi tanlangan bo'lsa, miqdor MAJBURIY. Ilgari bu maydon
+    // ixtiyoriy edi: admin "Foiz (%)" ni tanlab qiymatni bo'sh qoldirsa,
+    // bazaga `discount: null` tushardi va saytda chegirma jimgina ko'rinmasdi.
+    // Sayt chegirmani faqat `discount` ustuni bo'yicha aniqlaydi
+    // (`src/lib/product-discount.ts`), shuning uchun bo'sh qiymatga yo'l yo'q.
+    const v = ctx.value;
+    if (v.discountType !== "no_discount" && !(Number(v.discountValue) > 0)) {
+        ctx.issues.push({
+            code: "custom",
+            message: "Chegirma turi tanlandi — miqdorni kiriting (0 dan katta)",
+            path: ["discountValue"],
+            input: v.discountValue,
+        });
+    }
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
+const FIELD_LABELS: Record<string, string> = {
+    title: "Mahsulot nomi",
+    description: "Tavsif",
+    category: "Kategoriya",
+    price: "Asosiy narx",
+    oldPrice: "Eski narx",
+    discountValue: "Chegirma miqdori",
+    vatAmount: "Soliq",
+    stock: "Ombordagi soni",
+    image: "Asosiy rasm",
+};
+
+/** Yig'iladigan karta. Sahifa komponenti ichida e'lon qilinmaydi — aks holda har
+ *  bir renderda qayta yaratilib, ichidagi inputlar fokusni yo'qotardi.
+ *  Karta "chrome"i uchun uslublar shu yerda: styled-jsx uslublarni faqat
+ *  `<style jsx>` yozilgan komponent elementlariga bog'laydi. */
+function Card({
+    title, open, onToggle, children, id, right,
+}: {
+    title: string;
+    open?: boolean;
+    onToggle?: () => void;
+    children: React.ReactNode;
+    id?: string;
+    right?: React.ReactNode;
+}) {
+    const collapsible = typeof onToggle === "function";
+    const isOpen = collapsible ? !!open : true;
+
+    return (
+        <div className="card" id={id}>
+            <div className="card-head">
+                <h2 className="card-title">{title}</h2>
+                {collapsible ? (
+                    <button
+                        type="button"
+                        className={`card-toggle ${isOpen ? "" : "closed"}`}
+                        onClick={onToggle}
+                        title={isOpen ? "Bo'limni yopish" : "Bo'limni ochish"}
+                        aria-label={isOpen ? "Bo'limni yopish" : "Bo'limni ochish"}
+                        aria-expanded={isOpen}
+                    >
+                        <ChevronDown size={18} />
+                    </button>
+                ) : right}
+            </div>
+            {isOpen && <div className="card-body">{children}</div>}
+
+            <style jsx>{`
+                .card { background: #fff; border-radius: 12px; box-shadow: 0 0 20px rgba(0,0,0,0.03); }
+                .card-head {
+                    display: flex; justify-content: space-between; align-items: center;
+                    gap: 12px; padding: 20px 24px;
+                }
+                .card-body { padding: 0 24px 24px; }
+                .card-title { font-size: 17px; font-weight: 700; color: #2A3547; margin: 0; }
+                .card-toggle {
+                    flex-shrink: 0; width: 32px; height: 32px; border-radius: 50%;
+                    background: #f4f7fb; color: #5A6A85; border: none; display: flex;
+                    align-items: center; justify-content: center; cursor: pointer;
+                    transition: transform 0.2s, background 0.2s;
+                }
+                .card-toggle:hover { background: #e7eef7; color: #0085db; }
+                .card-toggle.closed { transform: rotate(-90deg); }
+
+                @media (max-width: 640px) {
+                    .card-head { padding: 16px; }
+                    .card-body { padding: 0 16px 16px; }
+                }
+            `}</style>
+        </div>
+    );
+}
+
+const isImageUrl = (s: string) =>
+    /^https?:\/\/[^\s]+$/i.test(s) &&
+    (/\.(png|jpe?g|gif|webp|avif|svg|bmp)(\?|#|$)/i.test(s) ||
+        /(res\.cloudinary\.com|\.public\.blob\.vercel-storage\.com|googleusercontent\.com|i\.imgur\.com)/i.test(s));
+
+const isTypingTarget = (el: EventTarget | null) => {
+    const node = el as HTMLElement | null;
+    if (!node || !node.tagName) return false;
+    const tag = node.tagName.toLowerCase();
+    return tag === "input" || tag === "textarea" || tag === "select" || node.isContentEditable;
+};
+
 export default function AddProductPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(false);
+    const [uploading, setUploading] = useState(0);
     const [categories, setCategories] = useState<any[]>([]);
+    const [catState, setCatState] = useState<"loading" | "ready" | "error">("loading");
+    const [catQuery, setCatQuery] = useState("");
+    const [showNewCategory, setShowNewCategory] = useState(false);
+    const [newCatName, setNewCatName] = useState("");
+    const [newCatParent, setNewCatParent] = useState("");
+    const [creatingCat, setCreatingCat] = useState(false);
     const [attributes, setAttributes] = useState<{ key: string; value: string }[]>([]);
     const [showBulkPaste, setShowBulkPaste] = useState(false);
     const [bulkText, setBulkText] = useState("");
+    const [dragZone, setDragZone] = useState<"main" | "gallery" | null>(null);
+    const [pasteZone, setPasteZone] = useState<"main" | "gallery" | null>(null);
+    const [duplicate, setDuplicate] = useState<{ id: string; title: string } | null>(null);
+    const [open, setOpen] = useState<Record<string, boolean>>({
+        general: true, media: true, variations: true, pricing: true,
+        status: true, details: true, fiscal: false, inventory: true, marketing: true,
+    });
+
+    const toggle = (key: string) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+
+    const {
+        register, handleSubmit, setValue, watch, formState: { errors, isSubmitted, isDirty },
+    } = useForm<ProductFormValues>({
+        resolver: zodResolver(productSchema) as any,
+        defaultValues: {
+            title: "", description: "", price: 0, stock: 0, category: "", image: "", images: "",
+            isNew: false, freeDelivery: false, hasVideo: false, hasGift: false,
+            showLowStock: false, allowInstallment: false,
+            discountType: "no_discount", discountCategory: "SALE", status: "published",
+        },
+    });
+
+    const watchTitle = watch("title");
+    const watchImage = watch("image");
+    const watchImages = watch("images");
+    const watchCategory = watch("category");
+    const watchOldPrice = watch("oldPrice");
+    const watchPrice = watch("price");
+    const watchDiscountValue = watch("discountValue");
+    const watchDiscountType = watch("discountType");
+
+    const gallery = useMemo(
+        () => (watchImages || "").split("\n").map((s) => s.trim()).filter(Boolean),
+        [watchImages]
+    );
+    const selectedCategories = useMemo(
+        () => (watchCategory || "").split(",").filter(Boolean),
+        [watchCategory]
+    );
+
+    /* ---------------------------------------------------------------- kategoriyalar */
+
+    const loadCategories = useCallback(async () => {
+        setCatState("loading");
+        try {
+            const res = await fetch("/api/admin/categories", { cache: "no-store" });
+            if (!res.ok) throw new Error(String(res.status));
+            const data = await res.json();
+            // Route xatoda `[]` qaytaradi, lekin sessiya tugab HTML kelsa
+            // `categories.map` yiqilardi — shuning uchun tur tekshiriladi.
+            if (!Array.isArray(data)) throw new Error("Noto'g'ri javob");
+            setCategories(data);
+            setCatState("ready");
+        } catch (err) {
+            console.error("Kategoriyalarni yuklash xatosi:", err);
+            setCategories([]);
+            setCatState("error");
+        }
+    }, []);
+
+    useEffect(() => { void loadCategories(); }, [loadCategories]);
+
+    const visibleCategories = useMemo(() => {
+        const q = catQuery.trim().toLowerCase();
+        if (!q) return categories;
+        return categories.filter((c: any) => {
+            const full = `${c.parent?.name || ""} ${c.name}`.toLowerCase();
+            return full.includes(q);
+        });
+    }, [categories, catQuery]);
+
+    const categoryLabel = useCallback(
+        (id: string) => {
+            const cat = categories.find((c: any) => c.id === id);
+            if (!cat) return id;
+            return cat.parent ? `${cat.parent.name} › ${cat.name}` : cat.name;
+        },
+        [categories]
+    );
+
+    const toggleCategory = (id: string, checked: boolean) => {
+        const next = checked
+            ? [...selectedCategories, id]
+            : selectedCategories.filter((c) => c !== id);
+        setValue("category", next.join(","), { shouldValidate: isSubmitted, shouldDirty: true });
+    };
+
+    const createCategory = async () => {
+        const name = newCatName.trim();
+        if (name.length < 2) {
+            toast.error("Kategoriya nomi kamida 2 ta belgidan iborat bo'lishi kerak");
+            return;
+        }
+        setCreatingCat(true);
+        try {
+            const res = await fetch("/api/admin/categories", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, parentId: newCatParent || null, image: "", isActive: true }),
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(
+                    res.status === 401
+                        ? "Kategoriya yaratishga faqat ADMIN huquqi bor"
+                        : data.error || "Kategoriya yaratilmadi"
+                );
+            }
+            await loadCategories();
+            if (data.id) {
+                setValue("category", [...selectedCategories, data.id].join(","), {
+                    shouldValidate: isSubmitted, shouldDirty: true,
+                });
+            }
+            setNewCatName("");
+            setNewCatParent("");
+            setShowNewCategory(false);
+            toast.success(`"${data.name || name}" qo'shildi va tanlandi`);
+        } catch (err: any) {
+            toast.error(err.message || "Kategoriya yaratilmadi");
+        } finally {
+            setCreatingCat(false);
+        }
+    };
+
+    /* ------------------------------------------------------- takrorlanuvchi nom */
+
+    useEffect(() => {
+        const title = (watchTitle || "").trim();
+        if (title.length < 3) {
+            setDuplicate(null);
+            return;
+        }
+        const handle = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/products?q=${encodeURIComponent(title)}`);
+                if (!res.ok) return;
+                const list = await res.json();
+                if (!Array.isArray(list)) return;
+                const exact = list.find(
+                    (p: any) => String(p.title || "").trim().toLowerCase() === title.toLowerCase()
+                );
+                setDuplicate(exact ? { id: exact.id, title: exact.title } : null);
+            } catch {
+                /* tarmoq xatosi — ogohlantirish shunchaki chiqmaydi */
+            }
+        }, 600);
+        return () => clearTimeout(handle);
+    }, [watchTitle]);
+
+    /* ------------------------------------------------------------ narx hisoblash */
+
+    const oldPriceNum = Number(watchOldPrice || 0);
+    const discountNum = Number(watchDiscountValue || 0);
+    const discountActive = watchDiscountType !== "no_discount";
+    // Narx faqat eski narx va chegirma birgalikda kiritilganda hisoblanadi.
+    // Shu holatda maydon `readOnly` — ilgari effekt ikki tomonga ishlab,
+    // foydalanuvchi kiritgan narxni darhol qaytarib tashlardi.
+    const priceIsDerived = discountActive && oldPriceNum > 0 && discountNum > 0;
+
+    const discountWarning = useMemo(() => {
+        if (!discountActive || discountNum <= 0) return null;
+        if (watchDiscountType === "percentage" && discountNum >= 100) {
+            return "Foiz 100 dan kichik bo'lishi kerak, aks holda narx 0 bo'ladi.";
+        }
+        if (watchDiscountType === "fixed_price" && oldPriceNum > 0 && discountNum >= oldPriceNum) {
+            return "Chegirma eski narxdan kichik bo'lishi kerak.";
+        }
+        if (!oldPriceNum) {
+            return "Narx avtomatik hisoblanishi uchun \"Eski narx\"ni ham kiriting.";
+        }
+        return null;
+    }, [discountActive, discountNum, watchDiscountType, oldPriceNum]);
+
+    useEffect(() => {
+        if (!priceIsDerived) return;
+        const computed = watchDiscountType === "percentage"
+            ? Math.round(oldPriceNum - oldPriceNum * (discountNum / 100))
+            : Math.round(oldPriceNum - discountNum);
+        const next = Math.max(0, computed);
+        if (Number(watchPrice) !== next) {
+            setValue("price", next, { shouldValidate: isSubmitted, shouldDirty: true });
+        }
+    }, [priceIsDerived, oldPriceNum, discountNum, watchDiscountType, watchPrice, setValue, isSubmitted]);
+
+    /* ---------------------------------------------------------------- rasm yuklash */
+
+    const appendGallery = useCallback((urls: string[]) => {
+        if (!urls.length) return;
+        const current = (watch("images") || "").split("\n").map((s) => s.trim()).filter(Boolean);
+        const merged = [...current];
+        urls.forEach((u) => { if (!merged.includes(u)) merged.push(u); });
+        setValue("images", merged.join("\n"), { shouldDirty: true });
+    }, [setValue, watch]);
+
+    /** Asosiy rasm bo'sh bo'lsa birinchi rasmni unga qo'yadi, qolganini galereyaga. */
+    const placeUrls = useCallback((urls: string[]) => {
+        if (!urls.length) return;
+        let rest = urls;
+        if (!watch("image")) {
+            setValue("image", urls[0], { shouldValidate: isSubmitted, shouldDirty: true });
+            rest = urls.slice(1);
+        }
+        appendGallery(rest);
+    }, [appendGallery, setValue, watch, isSubmitted]);
+
+    const uploadOne = async (file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                res.status === 401
+                    ? "Sessiya tugagan — qaytadan kiring"
+                    : data.error || `Yuklash muvaffaqiyatsiz (${res.status})`
+            );
+        }
+        if (!data.url) throw new Error("Server rasm manzilini qaytarmadi");
+        return data.url as string;
+    };
+
+    const handleFiles = useCallback(async (
+        input: FileList | File[] | null,
+        target: "main" | "gallery" | "auto"
+    ) => {
+        const files = Array.from(input || []);
+        if (!files.length) return;
+
+        const valid: File[] = [];
+        files.forEach((file) => {
+            if (!file.type.startsWith("image/")) {
+                toast.error(`${file.name || "Fayl"}: faqat rasm fayllari qabul qilinadi`);
+            } else if (file.size > MAX_IMAGE_BYTES) {
+                toast.error(`${file.name}: ${(file.size / 1048576).toFixed(1)}MB — 10MB dan oshmasligi kerak`);
+            } else {
+                valid.push(file);
+            }
+        });
+        if (!valid.length) return;
+
+        setUploading((n) => n + valid.length);
+        try {
+            const results = await Promise.allSettled(valid.map(uploadOne));
+            const urls: string[] = [];
+            results.forEach((result, i) => {
+                if (result.status === "fulfilled") urls.push(result.value);
+                else toast.error(`${valid[i].name}: ${result.reason?.message || "yuklanmadi"}`);
+            });
+            if (!urls.length) return;
+
+            if (target === "main") {
+                setValue("image", urls[0], { shouldValidate: isSubmitted, shouldDirty: true });
+                appendGallery(urls.slice(1));
+                toast.success(urls.length > 1
+                    ? `Asosiy rasm va ${urls.length - 1} ta galereya rasmi yuklandi`
+                    : "Asosiy rasm yuklandi");
+            } else if (target === "gallery") {
+                appendGallery(urls);
+                toast.success(`${urls.length} ta rasm galereyaga qo'shildi`);
+            } else {
+                placeUrls(urls);
+                toast.success(`${urls.length} ta rasm yuklandi`);
+            }
+        } finally {
+            setUploading((n) => Math.max(0, n - valid.length));
+        }
+    }, [appendGallery, placeUrls, setValue, isSubmitted]);
+
+    /** Ctrl/Cmd+V — skrinshot yoki nusxalangan rasm, hamda rasm havolasi. */
+    useEffect(() => {
+        const onPaste = (event: ClipboardEvent) => {
+            const clip = event.clipboardData;
+            if (!clip) return;
+
+            const imageFiles = Array.from(clip.files || []).filter((f) => f.type.startsWith("image/"));
+            if (imageFiles.length) {
+                event.preventDefault();
+                void handleFiles(imageFiles, pasteZone || "auto");
+                return;
+            }
+
+            // Rasm havolasi matn sifatida qo'yilgan bo'lsa. Matn maydonlariga
+            // qo'yishga aralashilmaydi — aks holda oddiy nusxalash buzilardi.
+            if (isTypingTarget(event.target)) return;
+            const text = (clip.getData("text") || "").trim();
+            if (!text || !isImageUrl(text)) return;
+            event.preventDefault();
+            if (pasteZone === "gallery") appendGallery([text]);
+            else if (pasteZone === "main") setValue("image", text, { shouldValidate: isSubmitted, shouldDirty: true });
+            else placeUrls([text]);
+            toast.success("Rasm havolasi qo'shildi");
+        };
+
+        window.addEventListener("paste", onPaste);
+        return () => window.removeEventListener("paste", onPaste);
+    }, [handleFiles, pasteZone, appendGallery, placeUrls, setValue, isSubmitted]);
+
+    const onDrop = (event: React.DragEvent, target: "main" | "gallery") => {
+        event.preventDefault();
+        setDragZone(null);
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (files.length) {
+            void handleFiles(files, target);
+            return;
+        }
+        // Boshqa oynadan sudrab olib kelingan rasm — faqat havola keladi.
+        const uri = (event.dataTransfer?.getData("text/uri-list")
+            || event.dataTransfer?.getData("text") || "").trim();
+        if (uri && isImageUrl(uri)) {
+            if (target === "main") setValue("image", uri, { shouldValidate: isSubmitted, shouldDirty: true });
+            else appendGallery([uri]);
+            toast.success("Rasm havolasi qo'shildi");
+        }
+    };
+
+    const removeGalleryImage = (url: string) => {
+        setValue("images", gallery.filter((u) => u !== url).join("\n"), { shouldDirty: true });
+    };
+
+    const makeMainImage = (url: string) => {
+        const previousMain = watch("image");
+        setValue("image", url, { shouldValidate: isSubmitted, shouldDirty: true });
+        const next = gallery.filter((u) => u !== url);
+        if (previousMain && !next.includes(previousMain)) next.unshift(previousMain);
+        setValue("images", next.join("\n"), { shouldDirty: true });
+        toast.success("Asosiy rasm o'zgartirildi");
+    };
+
+    /* ------------------------------------------------------------- varyatsiyalar */
+
+    const addAttribute = () => setAttributes((prev) => [...prev, { key: "", value: "" }]);
+    const removeAttribute = (index: number) =>
+        setAttributes((prev) => prev.filter((_, i) => i !== index));
+    const updateAttribute = (index: number, field: "key" | "value", val: string) =>
+        // Ilgari `[...attributes]` sayoz nusxa olib, `newAttrs[index][field] = val`
+        // bilan mavjud obyektni o'zgartirardi — bu React holatini joyida buzish.
+        setAttributes((prev) => prev.map((attr, i) => (i === index ? { ...attr, [field]: val } : attr)));
+
+    const duplicateAttrKeys = useMemo(() => {
+        const seen = new Set<string>();
+        const dupes = new Set<string>();
+        attributes.forEach((a) => {
+            const key = a.key.trim().toLowerCase();
+            if (!key) return;
+            if (seen.has(key)) dupes.add(key);
+            seen.add(key);
+        });
+        return dupes;
+    }, [attributes]);
 
     const processBulkPaste = () => {
-        if (!bulkText.trim()) return;
+        if (!bulkText.trim()) {
+            toast.error("Matn bo'sh");
+            return;
+        }
+        const lines = bulkText.split("\n");
+        const parsed: { key: string; value: string }[] = [];
+        let skipped = 0;
 
-        const lines = bulkText.split('\n');
-        // Filter out empty existing attributes if needed, but let's append
-        const newAttrs = [...attributes.filter(a => a.key || a.value)];
-        let addedCount = 0;
-
-        lines.forEach(line => {
+        lines.forEach((line) => {
             if (!line.trim()) return;
-
             let key = "";
             let value = "";
 
-            // Try splitting by tab first (Excel copy paste usually uses tabs)
-            if (line.includes('\t')) {
-                const parts = line.split('\t');
+            if (line.includes("\t")) {
+                const parts = line.split("\t");
                 key = parts[0];
-                value = parts.slice(1).join(' ').trim();
-            }
-            // Then by colon :
-            else if (line.includes(':')) {
-                const parts = line.split(':');
+                value = parts.slice(1).join(" ").trim();
+            } else if (line.includes(":")) {
+                const parts = line.split(":");
                 key = parts[0];
-                value = parts.slice(1).join(':').trim();
-            }
-            // Then by dash -
-            else if (line.includes(' - ')) {
-                const parts = line.split(' - ');
+                value = parts.slice(1).join(":").trim();
+            } else if (line.includes(" - ")) {
+                const parts = line.split(" - ");
                 key = parts[0];
-                value = parts.slice(1).join(' - ').trim();
+                value = parts.slice(1).join(" - ").trim();
             }
 
-            if (key && value) {
-                newAttrs.push({ key: key.trim(), value: value.trim() });
-                addedCount++;
-            }
+            if (key.trim() && value) parsed.push({ key: key.trim(), value: value.trim() });
+            else skipped++;
         });
 
-        if (addedCount > 0) {
-            setAttributes(newAttrs);
-            setBulkText("");
-            setShowBulkPaste(false);
-            toast.success(`${addedCount} ta xususiyat qo'shildi`);
-        } else {
+        if (!parsed.length) {
             toast.error("Format noto'g'ri. Har bir qatorda 'Nomi' va 'Qiymati' bo'lishi kerak");
-        }
-    };
-
-    useEffect(() => {
-        fetch('/api/admin/categories')
-            .then(res => res.json())
-            .then(data => setCategories(data))
-            .catch(err => console.error(err));
-    }, []);
-
-    const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema) as any,
-        defaultValues: {
-            title: "",
-            description: "",
-            price: 0,
-            stock: 0,
-            category: "",
-            isNew: false,
-            freeDelivery: false,
-            hasVideo: false,
-            hasGift: false,
-            showLowStock: false,
-            allowInstallment: false,
-            discountType: "no_discount",
-            status: "published"
-        }
-    });
-
-    // Auto-calculate price based on discount
-    const watchOldPrice = watch('oldPrice');
-    const watchPrice = watch('price');
-    const watchDiscountValue = watch('discountValue');
-    const watchDiscountType = watch('discountType');
-
-    const isCalculating = useRef(false);
-
-    useEffect(() => {
-        if (isCalculating.current) return;
-
-        if (watchDiscountType === 'no_discount') {
             return;
         }
 
-        isCalculating.current = true;
-        const discVal = Number(watchDiscountValue || 0);
-
-        if (watchOldPrice && watchOldPrice > 0) {
-            const oldPriceNum = Number(watchOldPrice);
-            let calculatedPrice = 0;
-
-            if (watchDiscountType === 'percentage') {
-                calculatedPrice = Math.round(oldPriceNum - (oldPriceNum * (discVal / 100)));
-            } else if (watchDiscountType === 'fixed_price') {
-                calculatedPrice = Math.round(oldPriceNum - discVal);
-            }
-
-            if (calculatedPrice !== watchPrice) {
-                setValue('price', calculatedPrice);
-            }
-        } else if (watchPrice && watchPrice > 0 && discVal > 0) {
-            const priceNum = Number(watchPrice);
-            let calculatedOldPrice = 0;
-
-            if (watchDiscountType === 'percentage') {
-                calculatedOldPrice = Math.round(priceNum / (1 - (discVal / 100)));
-            } else if (watchDiscountType === 'fixed_price') {
-                calculatedOldPrice = Math.round(priceNum + discVal);
-            }
-
-            if (calculatedOldPrice !== watchOldPrice) {
-                setValue('oldPrice', calculatedOldPrice);
-            }
-        }
-
-        isCalculating.current = false;
-    }, [watchOldPrice, watchPrice, watchDiscountValue, watchDiscountType, setValue]);
-
-    const addAttribute = () => {
-        setAttributes([...attributes, { key: "", value: "" }]);
+        setAttributes((prev) => [...prev.filter((a) => a.key || a.value), ...parsed]);
+        setBulkText("");
+        setShowBulkPaste(false);
+        toast.success(
+            skipped > 0
+                ? `${parsed.length} ta xususiyat qo'shildi, ${skipped} ta qator o'tkazib yuborildi`
+                : `${parsed.length} ta xususiyat qo'shildi`
+        );
     };
 
-    const removeAttribute = (index: number) => {
-        setAttributes(attributes.filter((_, i) => i !== index));
-    };
+    /* -------------------------------------------------- saqlanmagan o'zgarishlar */
 
-    const updateAttribute = (index: number, field: 'key' | 'value', val: string) => {
-        const newAttrs = [...attributes];
-        newAttrs[index][field] = val;
-        setAttributes(newAttrs);
-    };
+    useEffect(() => {
+        if (!isDirty || loading) return;
+        const warn = (event: BeforeUnloadEvent) => {
+            event.preventDefault();
+            event.returnValue = "";
+        };
+        window.addEventListener("beforeunload", warn);
+        return () => window.removeEventListener("beforeunload", warn);
+    }, [isDirty, loading]);
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, field: 'image' | 'images') => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        try {
-            setLoading(true);
-            const formData = new FormData();
-            formData.append('file', file);
-
-            // Note: Replace with your actual upload API endpoint
-            const res = await fetch('/api/upload', { method: 'POST', body: formData });
-            if (!res.ok) throw new Error('Upload failed');
-            const data = await res.json();
-
-            if (field === 'image') {
-                setValue('image', data.url);
-            } else {
-                const current = watch('images');
-                const newValue = current ? current + '\n' + data.url : data.url;
-                setValue('images', newValue);
-            }
-            toast.success("Image uploaded successfully");
-        } catch (err) {
-            console.error(err);
-            toast.error("Failed to upload image");
-        } finally {
-            setLoading(false);
-            e.target.value = '';
-        }
-    };
+    /* -------------------------------------------------------------------- saqlash */
 
     async function onSubmit(data: ProductFormValues) {
         setLoading(true);
 
-        const imagesList = data.images
-            ? String(data.images).split('\n').map(s => s.trim()).filter(Boolean)
-            : [];
-        if (data.image && !imagesList.includes(data.image)) {
-            imagesList.unshift(data.image);
-        }
+        const imagesList = [...gallery];
+        if (data.image && !imagesList.includes(data.image)) imagesList.unshift(data.image);
 
         const attrsObject: Record<string, string | string[]> = {};
-        attributes.forEach(attr => {
+        attributes.forEach((attr) => {
             if (attr.key && attr.value) {
-                const values = attr.value.split(',').map(s => s.trim()).filter(Boolean);
-                if (values.length > 0) {
-                    attrsObject[attr.key] = values;
-                }
+                const values = attr.value.split(",").map((s) => s.trim()).filter(Boolean);
+                if (values.length > 0) attrsObject[attr.key.trim()] = values;
             }
         });
 
-        const categoryIds = data.category?.split(',').filter(Boolean) || [];
+        // Teglar ilgari serverga yetib bormasdi: API sxemasida `tags` kaliti yo'q,
+        // zod esa notanish kalitlarni jimgina olib tashlaydi. Endi ular
+        // `attributes._tags` ichida saqlanadi va mahsulot sahifasida SEO
+        // kalit so'zlariga aylanadi.
+        const tagList = (data.tags || "").split(",").map((s) => s.trim()).filter(Boolean);
+        if (tagList.length) attrsObject._tags = tagList;
+
+        const categoryIds = selectedCategories;
+        const noDiscount = data.discountType === "no_discount";
 
         const payload = {
-            ...data,
+            title: data.title.trim(),
+            description: data.description.trim(),
+            brand: data.brand?.trim() || undefined,
             price: data.price,
             stock: data.stock,
             oldPrice: data.oldPrice || null,
-            discount: data.discountValue || null,
-            discountType: data.discountCategory || "SALE",
+            // Chegirma yo'q bo'lganda ilgari ham `discountType: "SALE"` ketardi —
+            // mahsulot bazada aksiyaday belgilanib qolardi.
+            discount: noDiscount ? null : (data.discountValue ?? null),
+            discountType: noDiscount ? null : data.discountCategory,
             vatPercent: data.vatAmount || 0,
+            mxikCode: data.mxikCode?.trim() || undefined,
+            packageCode: data.packageCode?.trim() || undefined,
+            image: data.image,
             images: imagesList,
             attributes: attrsObject,
-            category: data.category, // Keep for backward compatibility
-            categoryIds // New M-N relation
+            status: data.status,
+            isNew: data.isNew,
+            freeDelivery: data.freeDelivery,
+            hasVideo: data.hasVideo,
+            hasGift: data.hasGift,
+            showLowStock: data.showLowStock,
+            allowInstallment: data.allowInstallment,
+            // Eski bitta-kategoriya ustuni uchun faqat birinchi ID yuboriladi.
+            // Ilgari butun "id1,id2" qatori ketib, server hech qanday kategoriya
+            // topmasdi: `categoryId` bo'sh qolib, `category` ustuniga ID'lar
+            // qatori yozilardi — o'xshash mahsulotlar va breadcrumb ishlamasdi.
+            category: categoryIds[0] || data.category,
+            categoryIds,
         };
 
         try {
@@ -260,23 +647,21 @@ export default function AddProductPage() {
             const responseData = await res.json().catch(() => ({}));
 
             if (!res.ok) {
-                let errorMessage = responseData.error || "Failed to create product";
-
-                // If there are validation details, format them nicely
+                let errorMessage = responseData.error || "Mahsulot yaratilmadi";
                 if (responseData.details) {
                     const details = responseData.details;
-                    const errorFields = Object.keys(details).filter(k => k !== "_errors");
+                    const errorFields = Object.keys(details).filter((k) => k !== "_errors");
                     if (errorFields.length > 0) {
-                        const fieldErrors = errorFields.map(field => {
-                            const messages = details[field]._errors || [];
-                            return `${field}: ${messages.join(", ")}`;
-                        }).join("; ");
+                        const fieldErrors = errorFields
+                            .map((field) => `${FIELD_LABELS[field] || field}: ${(details[field]._errors || []).join(", ")}`)
+                            .join("; ");
                         errorMessage = `Ma'lumotlar xato: ${fieldErrors}`;
-                    } else if (details._errors && details._errors.length > 0) {
+                    } else if (details._errors?.length > 0) {
                         errorMessage = details._errors.join(", ");
                     }
+                } else if (responseData.message) {
+                    errorMessage = `${errorMessage}: ${responseData.message}`;
                 }
-
                 throw new Error(errorMessage);
             }
 
@@ -286,211 +671,343 @@ export default function AddProductPage() {
         } catch (error: any) {
             console.error("Submit error details:", error);
             toast.error(error.message || "Xatolik yuz berdi");
-        } finally {
             setLoading(false);
         }
     }
 
+    const errorList = Object.entries(errors)
+        .map(([field, err]) => ({ field, message: (err as any)?.message as string }))
+        .filter((e) => e.message);
+
+    const busy = loading || uploading > 0;
+
     return (
-        <div style={{ padding: "0" }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '30px', alignItems: 'start' }}>
+        <form onSubmit={handleSubmit(onSubmit)} className="page">
+            {/* Sarlavha */}
+            <div className="page-head">
+                <Link href="/admin/products" className="back-link" title="Mahsulotlar ro'yxatiga qaytish">
+                    <ChevronLeft size={18} /> Mahsulotlar
+                </Link>
+                <div>
+                    <h1 className="page-title">Yangi mahsulot</h1>
+                    <p className="page-sub">
+                        Majburiy maydonlar <span className="req">*</span> bilan belgilangan.
+                        Rasmni sudrab tashlash yoki <b>Ctrl/⌘+V</b> bilan qo'yish mumkin.
+                    </p>
+                </div>
+            </div>
 
-                {/* Left Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-
-                    {/* General Section */}
-                    <div className="card">
-                        <h2 className="card-title">Umumiy</h2>
-                        <div className="form-group">
-                            <label className="label">Mahsulot nomi <span className="text-red-500">*</span></label>
-                            <input {...register("title")} className="input" placeholder="Mahsulot nomi" />
-                            {errors.title && <span className="error">{errors.title.message}</span>}
-                            <p className="helper-text">Mahsulot nomi majburiy va takrorlanmas bo'lishi tavsiya etiladi.</p>
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Tavsif</label>
-                            <textarea {...register("description")} className="input" rows={6} placeholder="Mahsulot tavsifi..." />
-                            {errors.description && <span className="error">{errors.description.message}</span>}
-                            <p className="helper-text">Mahsulot haqida batafsil ma'lumot bering.</p>
-                        </div>
+            {isSubmitted && errorList.length > 0 && (
+                <div className="banner-error" role="alert">
+                    <AlertCircle size={20} className="banner-icon" />
+                    <div>
+                        <p className="banner-title">Saqlash uchun quyidagilarni to'g'rilang:</p>
+                        <ul className="banner-list">
+                            {errorList.map((e) => (
+                                <li key={e.field}>
+                                    <a href={`#field-${e.field}`}>{FIELD_LABELS[e.field] || e.field}</a> — {e.message}
+                                </li>
+                            ))}
+                        </ul>
                     </div>
+                </div>
+            )}
 
-                    {/* Media Section */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className="card-title">Media</h2>
-                            <button 
-                                type="button" 
-                                className="fab-green"
-                                title="Media sozlamalari"
-                                aria-label="Media sozlamalari"
-                            >
-                                <Settings size={20} />
-                            </button>
+            <div className="grid-main">
+                {/* Chap ustun */}
+                <div className="col">
+                    <Card title="Umumiy" open={open.general} onToggle={() => toggle("general")}>
+                        <div className="form-group" id="field-title">
+                            <label className="label" htmlFor="p-title">
+                                Mahsulot nomi <span className="req">*</span>
+                            </label>
+                            <input
+                                id="p-title"
+                                {...register("title")}
+                                className={`input ${errors.title ? "invalid" : ""}`}
+                                placeholder="Mahsulot nomi"
+                            />
+                            {errors.title && <span className="error">{errors.title.message}</span>}
+                            {duplicate ? (
+                                <p className="warn">
+                                    Shu nomdagi mahsulot allaqachon bor:{" "}
+                                    <Link href={`/admin/products/${duplicate.id}`} className="warn-link">
+                                        {duplicate.title}
+                                    </Link>
+                                </p>
+                            ) : (
+                                <p className="helper-text">Mahsulot nomi majburiy va takrorlanmas bo'lishi tavsiya etiladi.</p>
+                            )}
                         </div>
-                        <div className="form-group">
-                            <label className="label">Asosiy Rasm</label>
-                            <div className="upload-zone">
+                        <div className="form-group" id="field-description">
+                            <label className="label" htmlFor="p-desc">
+                                Tavsif <span className="req">*</span>
+                            </label>
+                            <textarea
+                                id="p-desc"
+                                {...register("description")}
+                                className={`input ${errors.description ? "invalid" : ""}`}
+                                rows={6}
+                                placeholder="Mahsulot tavsifi..."
+                            />
+                            {errors.description && <span className="error">{errors.description.message}</span>}
+                            <p className="helper-text">
+                                Mahsulot haqida batafsil ma'lumot bering — bu matn sayt SEO tavsifiga ham tushadi.
+                            </p>
+                        </div>
+                    </Card>
+
+                    <Card title="Media" open={open.media} onToggle={() => toggle("media")}>
+                        <div className="form-group" id="field-image">
+                            <label className="label">
+                                Asosiy Rasm <span className="req">*</span>
+                            </label>
+                            <div
+                                className={`upload-zone ${dragZone === "main" ? "dragging" : ""} ${errors.image ? "invalid" : ""}`}
+                                onClick={() => document.getElementById("main-image-upload")?.click()}
+                                onDragOver={(e) => { e.preventDefault(); setDragZone("main"); }}
+                                onDragEnter={(e) => { e.preventDefault(); setDragZone("main"); }}
+                                onDragLeave={() => setDragZone(null)}
+                                onDrop={(e) => onDrop(e, "main")}
+                                onMouseEnter={() => setPasteZone("main")}
+                                onMouseLeave={() => setPasteZone((z) => (z === "main" ? null : z))}
+                            >
+                                {pasteZone === "main" && <span className="paste-badge">Ctrl/⌘+V</span>}
                                 <UploadCloud size={40} color="#0085db" />
-                                <p style={{ margin: '10px 0', fontSize: '16px', fontWeight: '500' }}>
-                                    Faylni tashlang yoki tanlang
+                                <p className="zone-title">Faylni tashlang, tanlang yoki qo'ying</p>
+                                <p className="zone-sub">
+                                    Rasmni shu yerga sudrab tashlang, <span className="zone-link">kompyuterdan tanlang</span>{" "}
+                                    yoki <b>Ctrl/⌘+V</b> bilan qo'ying. PNG, JPG, WEBP — 10MB gacha.
                                 </p>
-                                <p style={{ fontSize: '12px', color: '#999' }}>
-                                    Fayllarni shu yerga tashlang yoki kompyuterdan <span style={{ color: '#0085db', cursor: 'pointer' }} onClick={() => document.getElementById('main-image-upload')?.click()}>tanlang</span>
-                                </p>
-                                <input 
-                                    id="main-image-upload" 
-                                    type="file" 
-                                    hidden 
-                                    accept="image/*" 
-                                    onChange={(e) => handleImageUpload(e, 'image')} 
+                                <input
+                                    id="main-image-upload"
+                                    type="file"
+                                    hidden
+                                    multiple
+                                    accept="image/*"
+                                    onChange={(e) => { void handleFiles(e.target.files, "main"); e.target.value = ""; }}
                                     title="Asosiy rasmni tanlang"
                                 />
                             </div>
-                            {watch('image') && (
-                                <div style={{ marginTop: '15px', position: 'relative', width: '100px', height: '100px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                    <img alt="Rasm" src={watch('image')} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                    <button 
-                                        onClick={() => setValue('image', '')} 
-                                        type="button" 
-                                        style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(255,0,0,0.7)', color: '#fff', borderRadius: '50%', width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: 'none', cursor: 'pointer' }}
-                                        title="O'chirish"
-                                        aria-label="Rasmni o'chirish"
+                            {errors.image && <span className="error">{errors.image.message}</span>}
+
+                            {watchImage && (
+                                <div className="main-preview">
+                                    <img alt="Asosiy rasm" src={watchImage} className="image-full" />
+                                    <button
+                                        onClick={() => setValue("image", "", { shouldValidate: isSubmitted, shouldDirty: true })}
+                                        type="button"
+                                        className="thumb-btn danger"
+                                        title="Asosiy rasmni o'chirish"
+                                        aria-label="Asosiy rasmni o'chirish"
                                     >
-                                        &times;
+                                        <X size={13} strokeWidth={3} />
                                     </button>
                                 </div>
                             )}
                         </div>
+
                         <div className="form-group">
-                            <label className="label">Galereya rasmlari</label>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                                {watch('images')?.split('\n').filter(Boolean).map((url, i) => (
-                                    <div key={i} style={{ position: 'relative', width: '80px', height: '80px', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
-                                        <img alt="Rasm" src={url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <div className="label-row">
+                                <label className="label">Galereya rasmlari</label>
+                                <span className="count">{gallery.length} ta</span>
+                            </div>
+                            <div
+                                className={`gallery-zone ${dragZone === "gallery" ? "dragging" : ""}`}
+                                onDragOver={(e) => { e.preventDefault(); setDragZone("gallery"); }}
+                                onDragEnter={(e) => { e.preventDefault(); setDragZone("gallery"); }}
+                                onDragLeave={() => setDragZone(null)}
+                                onDrop={(e) => onDrop(e, "gallery")}
+                                onMouseEnter={() => setPasteZone("gallery")}
+                                onMouseLeave={() => setPasteZone((z) => (z === "gallery" ? null : z))}
+                            >
+                                {pasteZone === "gallery" && <span className="paste-badge">Ctrl/⌘+V</span>}
+                                {gallery.map((url) => (
+                                    <div key={url} className="gallery-item">
+                                        <img alt="Galereya rasmi" src={url} className="image-full" />
+                                        <button
+                                            type="button"
+                                            onClick={() => makeMainImage(url)}
+                                            className="thumb-btn star"
+                                            title="Asosiy rasm qilish"
+                                            aria-label="Asosiy rasm qilish"
+                                        >
+                                            <Star size={12} strokeWidth={3} />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => removeGalleryImage(url)}
+                                            className="thumb-btn danger"
+                                            title="Rasmni o'chirish"
+                                            aria-label="Rasmni o'chirish"
+                                        >
+                                            <Trash2 size={12} strokeWidth={2.5} />
+                                        </button>
                                     </div>
                                 ))}
-                                <div
-                                    onClick={() => document.getElementById('gallery-upload')?.click()}
-                                    style={{ width: '80px', height: '80px', borderRadius: '8px', border: '2px dashed #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#999' }}
+                                <button
+                                    type="button"
+                                    onClick={() => document.getElementById("gallery-upload")?.click()}
+                                    className="gallery-add"
+                                    title="Galereyaga rasm qo'shish"
+                                    aria-label="Galereyaga rasm qo'shish"
                                 >
-                                    <Plus />
-                                </div>
-                                <input 
-                                    id="gallery-upload" 
-                                    type="file" 
-                                    hidden 
-                                    accept="image/*" 
-                                    onChange={(e) => handleImageUpload(e, 'images')} 
+                                    <Plus size={22} />
+                                </button>
+                                <input
+                                    id="gallery-upload"
+                                    type="file"
+                                    hidden
+                                    multiple
+                                    accept="image/*"
+                                    onChange={(e) => { void handleFiles(e.target.files, "gallery"); e.target.value = ""; }}
                                     title="Galereya rasmlarini tanlang"
                                 />
                             </div>
+                            <p className="helper-text">
+                                Bir vaqtda bir nechta rasm tanlash mumkin. <Link2 size={12} className="inline-icon" /> Rasm
+                                havolasini ham qo'yish mumkin. Yulduzcha — rasmni asosiy qilish.
+                            </p>
+                            {uploading > 0 && (
+                                <p className="uploading">
+                                    <Loader2 size={14} className="animate-spin" /> {uploading} ta rasm yuklanmoqda...
+                                </p>
+                            )}
                         </div>
-                    </div>
+                    </Card>
 
-                    {/* Variation Section */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className="card-title">Varyatsiyalar</h2>
-                            <button 
-                                type="button" 
-                                className="fab-green"
-                                title="Varyatsiya sozlamalari"
-                                aria-label="Varyatsiya sozlamalari"
-                            >
-                                <Settings size={20} />
-                            </button>
-                        </div>
+                    <Card title="Varyatsiyalar va xususiyatlar" open={open.variations} onToggle={() => toggle("variations")}>
+                        {attributes.length === 0 && (
+                            <p className="helper-text no-margin">
+                                Bitta qiymat texnik xususiyat sifatida, vergul bilan ajratilgan bir nechta qiymat esa
+                                mahsulot sahifasida tanlov sifatida ko'rinadi.
+                            </p>
+                        )}
 
-                        {attributes.map((attr, idx) => (
-                            <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 40px', gap: '15px', alignItems: 'end', marginBottom: '15px' }}>
-                                <div>
-                                    <label className="label">Varyatsiya turi</label>
-                                    <input value={attr.key} onChange={(e) => updateAttribute(idx, 'key', e.target.value)} className="input" placeholder="Rang, O'lcham..." />
+                        {attributes.map((attr, idx) => {
+                            const isDupe = duplicateAttrKeys.has(attr.key.trim().toLowerCase());
+                            return (
+                                <div key={idx} className="attr-row">
+                                    <div>
+                                        {idx === 0 && <label className="label">Xususiyat nomi</label>}
+                                        <input
+                                            value={attr.key}
+                                            onChange={(e) => updateAttribute(idx, "key", e.target.value)}
+                                            className={`input ${isDupe ? "invalid" : ""}`}
+                                            placeholder="Rang, O'lcham..."
+                                        />
+                                    </div>
+                                    <div>
+                                        {idx === 0 && <label className="label">Qiymati</label>}
+                                        <input
+                                            value={attr.value}
+                                            onChange={(e) => updateAttribute(idx, "value", e.target.value)}
+                                            className="input"
+                                            placeholder="Qizil, Ko'k, Yashil"
+                                        />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => removeAttribute(idx)}
+                                        className="btn-icon-danger"
+                                        title="O'chirish"
+                                        aria-label="Xususiyatni olib tashlash"
+                                    >
+                                        <X size={18} />
+                                    </button>
                                 </div>
-                                <div>
-                                    <label className="label">Qiymati</label>
-                                    <input value={attr.value} onChange={(e) => updateAttribute(idx, 'value', e.target.value)} className="input" placeholder="Qizil, XL..." />
-                                </div>
-                                <button 
-                                    type="button" 
-                                    onClick={() => removeAttribute(idx)} 
-                                    className="btn-icon-danger"
-                                    title="O'chirish"
-                                    aria-label="Varyatsiyani olib tashlash"
-                                >
-                                    <X size={18} />
-                                </button>
-                            </div>
-                        ))}
+                            );
+                        })}
 
-                        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                        {duplicateAttrKeys.size > 0 && (
+                            <p className="warn">
+                                Bir xil nomdagi xususiyatlar bor — saqlashda faqat oxirgisi qoladi.
+                            </p>
+                        )}
+
+                        <div className="row-gap">
                             <button type="button" onClick={addAttribute} className="btn-light-primary">
-                                <Plus size={18} style={{ marginRight: '8px' }} /> Varyatsiya qo'shish
+                                <Plus size={18} /> Xususiyat qo'shish
                             </button>
-                            <button type="button" onClick={() => setShowBulkPaste(!showBulkPaste)} className="btn-light-secondary" style={{ background: '#f0f0f0', color: '#555', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', fontSize: '14px', transition: 'background 0.2s' }}>
-                                <Copy size={18} style={{ marginRight: '8px' }} /> Matndan nusxalash
+                            <button
+                                type="button"
+                                onClick={() => setShowBulkPaste(!showBulkPaste)}
+                                className="btn-light-secondary"
+                            >
+                                <Copy size={18} /> Matndan nusxalash
                             </button>
                         </div>
 
                         {showBulkPaste && (
-                            <div style={{ marginTop: '15px', background: '#f8f9fa', padding: '20px', borderRadius: '12px', border: '1px solid #e5eaef', animation: 'fadeIn 0.3s' }}>
-                                <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 600, color: '#2A3547' }}>Xususiyatlarni matndan nusxalash</h4>
-                                <p style={{ fontSize: '13px', color: '#5A6A85', marginBottom: '15px', lineHeight: '1.5' }}>
+                            <div className="bulk-panel">
+                                <h4 className="bulk-title">Xususiyatlarni matndan nusxalash</h4>
+                                <p className="bulk-help">
                                     Excel yoki boshqa saytdan nusxalab tashlang. Har bir qator yangi xususiyat bo'ladi.
                                     <br />Format: <b>Nomi [Tab] Qiymati</b> yoki <b>Nomi: Qiymati</b>
                                 </p>
                                 <textarea
-                                    className="input"
+                                    className="input mono"
                                     rows={8}
                                     value={bulkText}
                                     onChange={(e) => setBulkText(e.target.value)}
-                                    placeholder={`Masalan:\nRang\tQizil\nO'lcham\tXL\nMaterial: Paxta`}
-                                    style={{ fontFamily: 'monospace', fontSize: '13px', lineHeight: '1.5' }}
+                                    placeholder={"Masalan:\nRang\tQizil\nO'lcham\tXL\nMaterial: Paxta"}
                                 />
-                                <div style={{ display: 'flex', gap: '10px', marginTop: '15px' }}>
+                                <div className="row-gap top">
                                     <button type="button" onClick={processBulkPaste} className="btn-primary">
                                         Qo'shish
                                     </button>
-                                    <button type="button" onClick={() => { setShowBulkPaste(false); setBulkText(""); }} className="btn-outline-danger" style={{ border: 'none', padding: '10px 20px' }}>
+                                    <button
+                                        type="button"
+                                        onClick={() => { setShowBulkPaste(false); setBulkText(""); }}
+                                        className="btn-ghost-danger"
+                                    >
                                         Yopish
                                     </button>
                                 </div>
                             </div>
                         )}
-                    </div>
+                    </Card>
 
-                    {/* Pricing Section */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className="card-title">Narx</h2>
-                            <button 
-                                type="button" 
-                                className="fab-green"
-                                title="Narx sozlamalari"
-                                aria-label="Narx sozlamalari"
-                            >
-                                <Settings size={20} />
-                            </button>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            <div className="form-group">
-                                <label className="label">Asosiy narx <span className="text-red-500">*</span></label>
-                                <input {...register("price")} type="number" className="input" placeholder="Mahsulot narxi" />
+                    <Card title="Narx" open={open.pricing} onToggle={() => toggle("pricing")}>
+                        <div className="grid-2">
+                            <div className="form-group" id="field-price">
+                                <label className="label" htmlFor="p-price">
+                                    Asosiy narx <span className="req">*</span>
+                                </label>
+                                <input
+                                    id="p-price"
+                                    {...register("price")}
+                                    type="number"
+                                    min={0}
+                                    readOnly={priceIsDerived}
+                                    className={`input ${errors.price ? "invalid" : ""} ${priceIsDerived ? "readonly" : ""}`}
+                                    placeholder="Mahsulot narxi"
+                                />
                                 {errors.price && <span className="error">{errors.price.message}</span>}
-                                <p className="helper-text">Mahsulot narxini belgilang.</p>
+                                <p className="helper-text">
+                                    {priceIsDerived
+                                        ? "Eski narx va chegirmadan avtomatik hisoblanadi."
+                                        : "Mijoz to'laydigan narx."}
+                                </p>
                             </div>
-                            <div className="form-group">
-                                <label className="label">Eski narx (optional)</label>
-                                <input {...register("oldPrice")} type="number" className="input" placeholder="0" />
+                            <div className="form-group" id="field-oldPrice">
+                                <label className="label" htmlFor="p-oldprice">Eski narx (ixtiyoriy)</label>
+                                <input
+                                    id="p-oldprice"
+                                    {...register("oldPrice")}
+                                    type="number"
+                                    min={0}
+                                    className={`input ${errors.oldPrice ? "invalid" : ""}`}
+                                    placeholder="0"
+                                />
                                 {errors.oldPrice && <span className="error">{errors.oldPrice.message}</span>}
-                                <p className="helper-text">Chegirmadan oldingi narx.</p>
+                                <p className="helper-text">Chegirmadan oldingi narx — kartada chizilgan holda ko'rinadi.</p>
                             </div>
                         </div>
 
                         <div className="form-group">
                             <label className="label">Chegirma turi</label>
-                            <div style={{ display: 'flex', gap: '20px', margin: '10px 0' }}>
+                            <div className="radio-row">
                                 <label className="radio-label">
                                     <input type="radio" value="no_discount" {...register("discountType")} /> Chegirma yo'q
                                 </label>
@@ -498,278 +1015,616 @@ export default function AddProductPage() {
                                     <input type="radio" value="percentage" {...register("discountType")} /> Foiz (%)
                                 </label>
                                 <label className="radio-label">
-                                    <input type="radio" value="fixed_price" {...register("discountType")} /> Aniq narx
+                                    <input type="radio" value="fixed_price" {...register("discountType")} /> Aniq summa
                                 </label>
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                            {watch('discountType') !== 'no_discount' && (
-                                <>
-                                    <div className="form-group">
-                                        <label className="label">Chegirma miqdori</label>
-                                        <input {...register("discountValue")} type="number" className="input" placeholder="0" />
+                        {discountActive && (
+                            <>
+                                <div className="grid-2">
+                                    <div className="form-group" id="field-discountValue">
+                                        <label className="label" htmlFor="p-disc">
+                                            Chegirma miqdori {watchDiscountType === "percentage" ? "(%)" : "(so'm)"}
+                                        </label>
+                                        <input
+                                            id="p-disc"
+                                            {...register("discountValue")}
+                                            type="number"
+                                            min={0}
+                                            className={`input ${errors.discountValue ? "invalid" : ""}`}
+                                            placeholder="0"
+                                        />
+                                        {errors.discountValue && <span className="error">{errors.discountValue.message}</span>}
                                     </div>
                                     <div className="form-group">
-                                        <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
-                                        <select 
-                                            {...register("discountCategory")} 
-                                            className="input"
-                                            title="Chegirma kategoriyasi"
-                                        >
+                                        <label className="label" htmlFor="p-disc-cat">Chegirma kategoriyasi</label>
+                                        <select id="p-disc-cat" {...register("discountCategory")} className="input">
                                             <option value="SALE">Aksiya (SALE)</option>
                                             <option value="PROMO">Promo (PROMO)</option>
                                             <option value="HOT">Qaynoq (HOT)</option>
                                         </select>
+                                        <p className="helper-text">
+                                            PROMO va HOT kartada "AKSIYA" stikerini chiqaradi; yetkazib berish
+                                            shartlarida ham shu tur ishlatiladi.
+                                        </p>
                                     </div>
-                                </>
-                            )}
-                        </div>
+                                </div>
+                                {discountWarning && <p className="warn no-margin">{discountWarning}</p>}
+                            </>
+                        )}
 
-                        <div className="form-group">
-                            <label className="label">Soliq (%)</label>
-                            <input {...register("vatAmount")} type="number" className="input" placeholder="0" />
+                        <div className="form-group" id="field-vatAmount">
+                            <label className="label" htmlFor="p-vat">QQS (%)</label>
+                            <input
+                                id="p-vat"
+                                {...register("vatAmount")}
+                                type="number"
+                                min={0}
+                                max={100}
+                                className={`input ${errors.vatAmount ? "invalid" : ""}`}
+                                placeholder="0"
+                            />
                             {errors.vatAmount && <span className="error">{errors.vatAmount.message}</span>}
-                            <p className="helper-text">QQS miqdorini belgilang.</p>
+                            <p className="helper-text">0 dan 100 gacha. Hisob-fakturada shu foiz ishlatiladi.</p>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
-                {/* Right Column */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
-
-                    {/* Status Section */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className="card-title">Holat</h2>
-                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#00ceb6' }}></div>
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Mahsulot holati</label>
-                             <select 
-                                {...register("status")} 
-                                className="input"
-                                title="Mahsulot holati"
-                            >
+                {/* O'ng ustun */}
+                <div className="col">
+                    <Card title="Holat" right={<span className={`status-dot ${watch("status")}`} />}>
+                        <div className="form-group no-margin">
+                            <label className="label" htmlFor="p-status">Mahsulot holati</label>
+                            <select id="p-status" {...register("status")} className="input">
                                 <option value="published">Nashr qilingan</option>
                                 <option value="draft">Qoralama</option>
-                                <option value="scheduled">Rejalashtirilgan</option>
                                 <option value="inactive">Faol emas</option>
                             </select>
-                            <p className="helper-text">Mahsulot holatini belgilang.</p>
+                            <p className="helper-text">
+                                Saytda faqat <b>Nashr qilingan</b> mahsulotlar ko'rinadi.
+                            </p>
                         </div>
-                    </div>
+                    </Card>
 
-                    {/* Product Details Section */}
-                    <div className="card">
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <h2 className="card-title">Mahsulot ma'lumotlari</h2>
-                            <button 
-                                type="button" 
-                                className="fab-green"
-                                title="Ma'lumotlar sozlamalari"
-                                aria-label="Ma'lumotlar sozlamalari"
-                            >
-                                <Settings size={20} />
-                            </button>
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Kategoriyalar (bir yoki bir nechta)</label>
-                            <div style={{ maxHeight: '250px', overflowY: 'auto', padding: '15px', background: '#f8f9fa', borderRadius: '12px', border: '1px solid #e5eaef' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '10px' }}>
-                                    {categories.map((cat: any) => {
-                                        const isSelected = watch('category')?.split(',').includes(cat.id);
-                                        return (
-                                            <label
-                                                key={cat.id}
-                                                style={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: '10px',
-                                                    padding: '10px 12px',
-                                                    borderRadius: '8px',
-                                                    cursor: 'pointer',
-                                                    background: isSelected ? '#ecf2ff' : '#fff',
-                                                    border: isSelected ? '1px solid #0085db' : '1px solid #e5eaef',
-                                                    transition: 'all 0.2s',
-                                                    fontSize: '13px',
-                                                    fontWeight: isSelected ? 600 : 500,
-                                                    color: isSelected ? '#0085db' : '#5A6A85'
-                                                }}
+                    <Card title="Mahsulot ma'lumotlari" open={open.details} onToggle={() => toggle("details")}>
+                        <div className="form-group" id="field-category">
+                            <div className="label-row">
+                                <label className="label">
+                                    Kategoriyalar <span className="req">*</span>
+                                </label>
+                                <span className="count">{selectedCategories.length} tanlangan</span>
+                            </div>
+
+                            {selectedCategories.length > 0 && (
+                                <div className="chips">
+                                    {selectedCategories.map((id) => (
+                                        <span key={id} className="chip">
+                                            {categoryLabel(id)}
+                                            <button
+                                                type="button"
+                                                onClick={() => toggleCategory(id, false)}
+                                                title="Olib tashlash"
+                                                aria-label={`${categoryLabel(id)} kategoriyasini olib tashlash`}
                                             >
+                                                <X size={12} strokeWidth={3} />
+                                            </button>
+                                        </span>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="cat-search">
+                                <Search size={15} />
+                                <input
+                                    value={catQuery}
+                                    onChange={(e) => setCatQuery(e.target.value)}
+                                    placeholder="Kategoriya qidirish..."
+                                    className="cat-search-input"
+                                />
+                                {catQuery && (
+                                    <button type="button" onClick={() => setCatQuery("")} title="Tozalash" aria-label="Qidiruvni tozalash">
+                                        <X size={14} />
+                                    </button>
+                                )}
+                            </div>
+
+                            <div className="cat-box">
+                                <div className="cat-scroll">
+                                    {catState === "loading" && (
+                                        <p className="cat-empty"><Loader2 size={14} className="animate-spin" /> Yuklanmoqda...</p>
+                                    )}
+                                    {catState === "error" && (
+                                        <p className="cat-empty">
+                                            Kategoriyalar yuklanmadi.{" "}
+                                            <button type="button" className="link-btn" onClick={() => void loadCategories()}>
+                                                Qayta urinish
+                                            </button>
+                                        </p>
+                                    )}
+                                    {catState === "ready" && visibleCategories.length === 0 && (
+                                        <p className="cat-empty">
+                                            {catQuery ? `"${catQuery}" bo'yicha topilmadi` : "Hali kategoriya yo'q"}
+                                        </p>
+                                    )}
+                                    {visibleCategories.map((cat: any) => {
+                                        const isSelected = selectedCategories.includes(cat.id);
+                                        return (
+                                            <label key={cat.id} className={`cat-item ${isSelected ? "selected" : ""}`}>
                                                 <input
                                                     type="checkbox"
                                                     checked={isSelected}
-                                                    onChange={(e) => {
-                                                        const current = watch('category')?.split(',').filter(Boolean) || [];
-                                                        const next = e.target.checked
-                                                            ? [...current, cat.id]
-                                                            : current.filter(id => id !== cat.id);
-                                                        setValue('category', next.join(','));
-                                                    }}
-                                                    style={{ width: '16px', height: '16px', cursor: 'pointer' }}
+                                                    onChange={(e) => toggleCategory(cat.id, e.target.checked)}
                                                 />
-                                                <span>{cat.parent ? `${cat.parent.name} > ` : ''}{cat.name}</span>
+                                                <span className="cat-name">
+                                                    {cat.parent && <span className="cat-parent">{cat.parent.name} › </span>}
+                                                    {cat.name}
+                                                </span>
+                                                {typeof cat._count?.products === "number" && (
+                                                    <span className="cat-count">{cat._count.products}</span>
+                                                )}
                                             </label>
                                         );
                                     })}
                                 </div>
+                                <span className="cat-fade" aria-hidden="true" />
                             </div>
+
                             {errors.category && <span className="error">{errors.category.message}</span>}
-                            <p className="helper-text">Mahsulotni bir yoki bir nechta kategoriyaga biriktiring.</p>
-                            <button type="button" className="btn-light-primary" style={{ marginTop: '10px', width: '100%', justifyContent: 'center' }}>
-                                <Plus size={16} style={{ marginRight: '5px' }} /> Yangi kategoriya yaratish
-                            </button>
-                        </div>
-                        <div className="form-group" style={{ marginTop: '20px' }}>
-                            <label className="label">Brand</label>
-                            <input {...register("brand")} className="input" placeholder="Brand nomi" />
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Teglar</label>
-                            <input {...register("tags")} className="input" placeholder="Teglarni kiriting..." />
-                            <p className="helper-text">Mahsulotga teglar qo'shing.</p>
-                        </div>
-                    </div>
+                            <p className="helper-text">
+                                Mahsulotni bir yoki bir nechta kategoriyaga biriktiring. Birinchi tanlangan kategoriya
+                                asosiy hisoblanadi (breadcrumb va o'xshash mahsulotlar uchun).
+                            </p>
 
-                    {/* Product Template */}
-                    <div className="card">
-                        <div className="flex-between-center">
-                            <h2 className="card-title">Mahsulot shabloni</h2>
-                            <button type="button" className="fab-green" title="Shablon sozlamalari" aria-label="Shablon sozlamalari"><Settings size={20} /></button>
+                            {!showNewCategory ? (
+                                <button
+                                    type="button"
+                                    className="btn-light-primary full"
+                                    onClick={() => setShowNewCategory(true)}
+                                >
+                                    <FolderPlus size={16} /> Yangi kategoriya yaratish
+                                </button>
+                            ) : (
+                                <div className="new-cat-panel">
+                                    <label className="label" htmlFor="new-cat-name">Yangi kategoriya nomi</label>
+                                    <input
+                                        id="new-cat-name"
+                                        value={newCatName}
+                                        onChange={(e) => setNewCatName(e.target.value)}
+                                        onKeyDown={(e) => {
+                                            // Enter bu yerda mahsulot formasini yubormasligi kerak.
+                                            if (e.key === "Enter") { e.preventDefault(); void createCategory(); }
+                                        }}
+                                        className="input"
+                                        placeholder="Masalan: Maktab kitoblari"
+                                    />
+                                    <label className="label top" htmlFor="new-cat-parent">Ota kategoriya (ixtiyoriy)</label>
+                                    <select
+                                        id="new-cat-parent"
+                                        value={newCatParent}
+                                        onChange={(e) => setNewCatParent(e.target.value)}
+                                        className="input"
+                                    >
+                                        <option value="">— Yo'q (yuqori daraja) —</option>
+                                        {categories.map((c: any) => (
+                                            <option key={c.id} value={c.id}>
+                                                {c.parent ? `${c.parent.name} › ${c.name}` : c.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="row-gap top">
+                                        <button
+                                            type="button"
+                                            className="btn-primary"
+                                            onClick={() => void createCategory()}
+                                            disabled={creatingCat}
+                                        >
+                                            {creatingCat && <Loader2 size={16} className="animate-spin" />}
+                                            {creatingCat ? "Yaratilmoqda..." : "Yaratish"}
+                                        </button>
+                                        <button
+                                            type="button"
+                                            className="btn-ghost-danger"
+                                            onClick={() => { setShowNewCategory(false); setNewCatName(""); setNewCatParent(""); }}
+                                        >
+                                            Bekor qilish
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
+
                         <div className="form-group">
-                            <label className="label">Shablonni tanlash</label>
-                             <select 
-                                {...register("template")} 
+                            <label className="label" htmlFor="p-brand">Brend</label>
+                            <input id="p-brand" {...register("brand")} className="input" placeholder="Brend nomi" />
+                        </div>
+                        <div className="form-group no-margin">
+                            <label className="label" htmlFor="p-tags">Teglar</label>
+                            <input
+                                id="p-tags"
+                                {...register("tags")}
                                 className="input"
-                                title="Shablonni tanlang"
-                            >
-                                <option value="default">Odatiy shablon</option>
-                                <option value="box">Box ko'rinishi</option>
-                                <option value="full">To'liq kenglik</option>
-                            </select>
-                            <p className="helper-text">Mahsulot ko'rinish shablonini tanlang.</p>
+                                placeholder="kitob, tarix, sovg'a"
+                            />
+                            <p className="helper-text">
+                                Vergul bilan ajrating. Teglar mahsulot sahifasining SEO kalit so'zlariga aylanadi.
+                            </p>
                         </div>
-                    </div>
+                    </Card>
 
-                    {/* Inventory */}
-                    <div className="card">
-                        <div className="flex-between-center">
-                            <h2 className="card-title">Ombor</h2>
-                            <button type="button" className="fab-green" title="Ombor sozlamalari" aria-label="Ombor sozlamalari"><Settings size={20} /></button>
-                        </div>
-                        <div className="form-group">
-                            <label className="label">Ombordagi soni</label>
-                            <input {...register("stock")} type="number" className="input" placeholder="0" />
+                    <Card title="Ombor" open={open.inventory} onToggle={() => toggle("inventory")}>
+                        <div className="form-group no-margin" id="field-stock">
+                            <label className="label" htmlFor="p-stock">Ombordagi soni</label>
+                            <input
+                                id="p-stock"
+                                {...register("stock")}
+                                type="number"
+                                min={0}
+                                className={`input ${errors.stock ? "invalid" : ""}`}
+                                placeholder="0"
+                            />
                             {errors.stock && <span className="error">{errors.stock.message}</span>}
+                            <p className="helper-text">0 bo'lsa kartada "Tugagan" belgisi chiqadi.</p>
                         </div>
-                    </div>
+                    </Card>
 
-                    {/* Marketing */}
-                    <div className="card">
-                        <div className="flex-between-center">
-                            <h2 className="card-title">Marketing</h2>
-                            <button type="button" className="fab-green" title="Marketing sozlamalari" aria-label="Marketing sozlamalari"><Settings size={20} /></button>
-                        </div>
+                    <Card title="Fiskal ma'lumotlar" open={open.fiscal} onToggle={() => toggle("fiscal")}>
                         <div className="form-group">
-                            <label className="checkbox-label font-normal">
+                            <label className="label" htmlFor="p-mxik">IKPU / MXIK kodi</label>
+                            <input
+                                id="p-mxik"
+                                {...register("mxikCode")}
+                                className="input"
+                                inputMode="numeric"
+                                maxLength={17}
+                                placeholder="00000000000000000"
+                            />
+                            <p className="helper-text">Soliq cheki va hisob-faktura uchun kerak (17 xonali).</p>
+                        </div>
+                        <div className="form-group no-margin">
+                            <label className="label" htmlFor="p-package">Qadoq kodi</label>
+                            <input
+                                id="p-package"
+                                {...register("packageCode")}
+                                className="input"
+                                inputMode="numeric"
+                                placeholder="1512416"
+                            />
+                        </div>
+                    </Card>
+
+                    <Card title="Marketing" open={open.marketing} onToggle={() => toggle("marketing")}>
+                        <div className="grid-1">
+                            <label className="checkbox-label">
                                 <input type="checkbox" {...register("isNew")} className="checkbox-input" />
-                                <span>"YANGI" belgisi</span>
+                                <span>✨ "YANGI" belgisi</span>
+                            </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" {...register("freeDelivery")} className="checkbox-input" />
+                                <span>🚚 Bepul yetkazib berish</span>
+                            </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" {...register("hasVideo")} className="checkbox-input" />
+                                <span>🎬 Video-sharh mavjud</span>
+                            </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" {...register("hasGift")} className="checkbox-input" />
+                                <span>🎁 Sovg'asi bor</span>
+                            </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" {...register("showLowStock")} className="checkbox-input" />
+                                <span>⚠️ "Kam qoldi" ogohlantirishi</span>
+                            </label>
+                            <label className="checkbox-label">
+                                <input type="checkbox" {...register("allowInstallment")} className="checkbox-input" />
+                                <span>💰 Bo'lib to'lash</span>
                             </label>
                         </div>
-                        <div className="form-group">
-                            <div className="grid-1">
-                                <label className="checkbox-label font-normal">
-                                    <input type="checkbox" {...register("freeDelivery")} className="checkbox-input" />
-                                    <span>🚚 Bepul yetkazib berish</span>
-                                </label>
-                                <label className="checkbox-label font-normal">
-                                    <input type="checkbox" {...register("hasVideo")} className="checkbox-input" />
-                                    <span>🎬 Video-sharh mavjud</span>
-                                </label>
-                                <label className="checkbox-label font-normal">
-                                    <input type="checkbox" {...register("hasGift")} className="checkbox-input" />
-                                    <span>🎁 Sovg'asi bor</span>
-                                </label>
-                                <label className="checkbox-label font-normal">
-                                    <input type="checkbox" {...register("showLowStock")} className="checkbox-input" />
-                                    <span>⚠️ "Kam qoldi" (Stock Alert)</span>
-                                </label>
-                                <label className="checkbox-label font-normal">
-                                    <input type="checkbox" {...register("allowInstallment")} className="checkbox-input" />
-                                    <span>💰 Bo'lib to'lash</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
+                        <p className="helper-text">
+                            "Kam qoldi" faqat ombordagi soni 1–9 bo'lganda ko'rinadi.
+                        </p>
+                    </Card>
                 </div>
             </div>
 
-            {/* Footer Actions */}
+            {/* Pastki panel */}
             <div className="footer-actions">
-                <button type="button" onClick={() => router.back()} className="btn-outline-danger">
+                <span className="footer-hint">
+                    {uploading > 0
+                        ? `${uploading} ta rasm yuklanmoqda...`
+                        : isDirty ? "Saqlanmagan o'zgarishlar bor" : ""}
+                </span>
+                <button type="button" onClick={() => router.push("/admin/products")} className="btn-ghost-danger">
                     Bekor qilish
                 </button>
-                <button type="button" onClick={handleSubmit(onSubmit)} className="btn-primary" disabled={loading}>
-                    {loading && <Loader2 className="animate-spin mr-2" size={18} />}
-                    {loading ? "Saqlanmoqda..." : "Mahsulot qo'shish"}
+                <button type="submit" className="btn-primary" disabled={busy}>
+                    {loading && <Loader2 className="animate-spin" size={18} />}
+                    {loading ? "Saqlanmoqda..." : uploading > 0 ? "Rasm yuklanmoqda..." : "Mahsulot qo'shish"}
                 </button>
             </div>
 
             <style jsx>{`
-                .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(0,0,0,0.03); margin-bottom: 0px; }
-                .card-title { font-size: 18px; font-weight: 700; color: #2A3547; margin-bottom: 20px; margin-top: 0; }
+                .page { padding: 0 0 96px; }
+
+                .page-head { margin-bottom: 24px; }
+                /* Link va lucide ikonkalari — styled-jsx o'z sinf nomini faqat
+                   oddiy DOM elementlariga qo'shadi, komponentlarga emas. Shuning
+                   uchun :global kerak, lekin u har doim scope'langan ajdod
+                   ostida yoziladi — aks holda qoida butun sayt bo'ylab tarqaydi. */
+                .page-head :global(.back-link) {
+                    display: inline-flex; align-items: center; gap: 4px; margin-bottom: 12px;
+                    font-size: 13px; font-weight: 600; color: #5A6A85; text-decoration: none;
+                }
+                .page-head :global(.back-link):hover { color: #0085db; }
+                .page-title { font-size: 24px; font-weight: 800; color: #2A3547; margin: 0; }
+                .page-sub { font-size: 13px; color: #7c8fac; margin: 4px 0 0; }
+                .req { color: #fa896b; }
+
+                .banner-error {
+                    display: flex; gap: 12px; align-items: flex-start; margin-bottom: 24px;
+                    background: #fdede8; border: 1px solid #f7c8bb; color: #a33a20;
+                    padding: 16px 18px; border-radius: 12px;
+                }
+                .banner-error :global(.banner-icon) { flex-shrink: 0; margin-top: 2px; }
+                .banner-title { margin: 0 0 6px; font-weight: 700; font-size: 14px; }
+                .banner-list { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.7; }
+                .banner-list a { color: #a33a20; font-weight: 600; }
+
+                .grid-main {
+                    display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+                    gap: 24px; align-items: start;
+                }
+                .col { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+
                 .form-group { margin-bottom: 20px; }
+                .form-group.no-margin { margin-bottom: 0; }
                 .label { display: block; margin-bottom: 8px; font-weight: 500; font-size: 14px; color: #2A3547; }
-                .input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5eaef; outline: none; font-size: 14px; transition: all 0.2s; color: #5A6A85; }
-                .input:focus { border-color: #0085db; }
-                .helper-text { font-size: 12px; color: #7c8fac; margin-top: 6px; }
-                .error { font-size: 12px; color: #fa896b; margin-top: 4px; display: block; }
-                .text-red-500 { color: #fa896b; }
-                
-                .fab-green { width: 35px; height: 35px; border-radius: 50%; background: #e6fffa; color: #00ceb6; border: none; display: flex; alignItems: 'center'; justify-content: center; cursor: pointer; }
-                
-                .upload-zone { border: 2px dashed #e5eaef; border-radius: 12px; padding: 40px; text-align: center; cursor: pointer; transition: border-color 0.2s; display: flex; flex-direction: column; alignItems: center; }
-                .upload-zone:hover { border-color: #0085db; }
+                .label.top { margin-top: 12px; }
+                .label-row { display: flex; justify-content: space-between; align-items: center; }
+                .count { font-size: 12px; font-weight: 600; color: #7c8fac; }
 
-                .btn-light-primary { background: #ecf2ff; color: #0085db; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; alignItems: center; font-size: 14px; transition: background 0.2s; }
-                .btn-light-primary:hover { background: #dfe9ff; }
+                .input {
+                    width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid #e5eaef;
+                    outline: none; font-size: 14px; transition: border-color 0.2s, box-shadow 0.2s;
+                    color: #2A3547; background: #fff; font-family: inherit;
+                }
+                .input:focus { border-color: #0085db; box-shadow: 0 0 0 3px rgba(0,133,219,0.12); }
+                .input.invalid { border-color: #fa896b; }
+                .input.readonly { background: #f4f7fb; color: #5A6A85; cursor: not-allowed; }
+                .input.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; line-height: 1.5; }
 
-                .btn-icon-danger { width: 40px; height: 40px; background: #fdede8; color: #fa896b; border: none; border-radius: 8px; display: flex; alignItems: center; justifyContent: center; cursor: pointer; }
-                
-                .radio-label { display: flex; items-center: center; gap: 8px; font-size: 14px; color: #5A6A85; cursor: pointer; }
+                .helper-text { font-size: 12px; color: #7c8fac; margin: 6px 0 0; line-height: 1.5; }
+                .helper-text.no-margin { margin-bottom: 16px; }
+                .error { font-size: 12px; color: #fa896b; margin-top: 4px; display: block; font-weight: 500; }
+                .warn { font-size: 12px; color: #b26a00; background: #fff6e6; border: 1px solid #ffe0a6;
+                        padding: 8px 10px; border-radius: 8px; margin: 6px 0 0; line-height: 1.5; }
+                .warn.no-margin { margin-top: 0; }
+                .warn :global(.warn-link) { color: #8a5200; font-weight: 700; text-decoration: underline; }
 
-                .btn-primary { background: #0085db; color: #fff; padding: 12px 24px; border-radius: 8px; border: none; font-weight: 600; font-size: 14px; cursor: pointer; display: flex; alignItems: center; box-shadow: 0 4px 12px rgba(0, 133, 219, 0.2); }
-                .btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+                .upload-zone {
+                    position: relative; border: 2px dashed #e5eaef; border-radius: 12px; padding: 32px 20px;
+                    text-align: center; cursor: pointer; transition: border-color 0.2s, background 0.2s;
+                    display: flex; flex-direction: column; align-items: center; justify-content: center;
+                    background: #fcfdfe;
+                }
+                .upload-zone:hover { border-color: #0085db; background: #f7fbff; }
+                .upload-zone.dragging { border-color: #0085db; background: #ecf5ff; }
+                .upload-zone.invalid { border-color: #fa896b; }
+                .zone-title { margin: 12px 0 4px; font-size: 15px; font-weight: 600; color: #2A3547; }
+                .zone-sub { margin: 0; font-size: 12px; color: #7c8fac; max-width: 380px; line-height: 1.6; }
+                .zone-link { color: #0085db; font-weight: 600; }
+                .paste-badge {
+                    position: absolute; top: 8px; right: 10px; font-size: 10px; font-weight: 700;
+                    letter-spacing: 0.04em; color: #0085db; background: #ecf5ff;
+                    border: 1px solid #cfe6fb; padding: 3px 7px; border-radius: 6px;
+                }
 
-                .btn-outline-danger { background: transparent; color: #fa896b; border: 1px solid #fa896b; padding: 12px 24px; border-radius: 8px; font-weight: 600; font-size: 14px; cursor: pointer; }
-                .btn-outline-danger:hover { background: #fdede8; }
+                .main-preview {
+                    position: relative; width: 112px; height: 112px; border-radius: 10px;
+                    overflow: hidden; border: 1px solid #e5eaef; margin-top: 14px; background: #f8f9fa;
+                }
+                .gallery-zone {
+                    position: relative; display: flex; gap: 10px; flex-wrap: wrap; padding: 12px;
+                    border: 2px dashed transparent; border-radius: 12px; transition: border-color 0.2s, background 0.2s;
+                    background: #fafbfc; min-height: 96px; align-items: center;
+                }
+                .gallery-zone.dragging { border-color: #0085db; background: #ecf5ff; }
+                .gallery-item {
+                    position: relative; width: 78px; height: 78px; border-radius: 8px;
+                    overflow: hidden; border: 1px solid #e5eaef; background: #fff;
+                }
+                .image-full { width: 100%; height: 100%; object-fit: cover; display: block; }
+                .thumb-btn {
+                    position: absolute; top: 3px; width: 20px; height: 20px; border-radius: 50%;
+                    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
+                    color: #fff; opacity: 0; transition: opacity 0.15s;
+                }
+                .gallery-item:hover .thumb-btn, .main-preview:hover .thumb-btn { opacity: 1; }
+                .thumb-btn.danger { right: 3px; background: rgba(220,38,38,0.9); }
+                .thumb-btn.star { left: 3px; background: rgba(245,158,11,0.95); }
+                .gallery-add {
+                    width: 78px; height: 78px; border-radius: 8px; border: 2px dashed #d7dfe8;
+                    display: flex; align-items: center; justify-content: center; cursor: pointer;
+                    color: #9aa8bb; background: #fff; transition: all 0.2s;
+                }
+                .gallery-add:hover { border-color: #0085db; color: #0085db; background: #f7fbff; }
+                .uploading {
+                    display: flex; align-items: center; gap: 6px; margin: 8px 0 0;
+                    font-size: 12px; font-weight: 600; color: #0085db;
+                }
+                .helper-text :global(.inline-icon) { vertical-align: -2px; }
 
-                .flex-between-center { display: flex; justify-content: space-between; align-items: center; }
-                .flex-gap-10 { display: flex; gap: 10px; }
-                .flex-wrap { flex-wrap: wrap; }
-                .flex-center { display: flex; align-items: center; justify-content: center; }
-                .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+                .attr-row {
+                    display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px;
+                    gap: 12px; align-items: end; margin-bottom: 12px;
+                }
+                .btn-icon-danger {
+                    width: 40px; height: 40px; background: #fdede8; color: #fa896b; border: none;
+                    border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer;
+                }
+                .btn-icon-danger:hover { background: #fbdcd3; }
+
+                .row-gap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+                .row-gap.top { margin-top: 14px; }
+
+                .bulk-panel {
+                    margin-top: 16px; background: #f8f9fa; padding: 20px;
+                    border-radius: 12px; border: 1px solid #e5eaef;
+                }
+                .bulk-title { margin: 0 0 10px; font-size: 14px; font-weight: 600; color: #2A3547; }
+                .bulk-help { font-size: 13px; color: #5A6A85; margin-bottom: 14px; line-height: 1.6; }
+
+                .radio-row { display: flex; gap: 20px; margin: 10px 0 0; flex-wrap: wrap; }
+                .radio-label {
+                    display: flex; align-items: center; gap: 8px; font-size: 14px;
+                    color: #5A6A85; cursor: pointer;
+                }
+
+                .grid-2 { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
                 .grid-1 { display: grid; grid-template-columns: 1fr; gap: 12px; }
-                
-                .image-preview-container { position: relative; width: 100px; height: 100px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; margin-top: 15px; }
-                .gallery-item { position: relative; width: 80px; height: 80px; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
-                .gallery-add { width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; }
-                .image-full { width: 100%; height: 100%; object-fit: cover; }
-                
-                .category-list-container { maxHeight: 200px; overflow-y: auto; padding: 12px; background: #f8f9fa; border-radius: 8px; border: 1px solid #e5eaef; }
-                .category-item { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s; font-size: 13px; }
-                .category-item.selected { background: #ecf2ff; border: 1px solid #0085db; font-weight: 600; color: #0085db; }
-                .category-item.unselected { background: #fff; border: 1px solid #e5eaef; font-weight: 500; color: #5A6A85; }
-                
-                .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; }
-                .checkbox-input { width: 18px; height: 18px; cursor: pointer; }
-                
-                .footer-actions { margin-top: 30px; display: flex; justify-content: flex-end; gap: 15px; }
 
+                .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #00ceb6; }
+                .status-dot.draft { background: #ffae1f; }
+                .status-dot.inactive { background: #fa896b; }
+
+                .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+                .chip {
+                    display: inline-flex; align-items: center; gap: 6px; background: #ecf2ff;
+                    color: #0068ad; border: 1px solid #cfe0f7; border-radius: 999px;
+                    padding: 4px 6px 4px 10px; font-size: 12px; font-weight: 600; max-width: 100%;
+                }
+                .chip button {
+                    display: flex; align-items: center; justify-content: center; width: 16px; height: 16px;
+                    border: none; border-radius: 50%; background: #cfe0f7; color: #0068ad; cursor: pointer;
+                    flex-shrink: 0;
+                }
+                .chip button:hover { background: #0085db; color: #fff; }
+
+                .cat-search {
+                    display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+                    border: 1px solid #e5eaef; border-radius: 8px; margin-bottom: 8px; color: #9aa8bb;
+                    background: #fff;
+                }
+                .cat-search:focus-within { border-color: #0085db; }
+                .cat-search-input {
+                    flex: 1; border: none; outline: none; font-size: 13px; color: #2A3547;
+                    background: transparent; min-width: 0; font-family: inherit;
+                }
+                .cat-search button {
+                    border: none; background: transparent; color: #9aa8bb; cursor: pointer;
+                    display: flex; align-items: center; padding: 0;
+                }
+
+                .cat-box {
+                    position: relative; background: #f8f9fa; border-radius: 12px; border: 1px solid #e5eaef;
+                }
+                .cat-scroll {
+                    display: flex; flex-direction: column; gap: 6px; max-height: 260px;
+                    overflow-y: auto; padding: 12px 12px 20px;
+                    overscroll-behavior: contain; scrollbar-width: thin;
+                }
+                /* Ilgari ro'yxat matn o'rtasidan qirqilib, siljitish mumkinligi
+                   ko'rinmasdi — pastdagi oq gradient shuni bildiradi. */
+                .cat-fade {
+                    position: absolute; left: 1px; right: 1px; bottom: 1px; height: 24px;
+                    border-radius: 0 0 12px 12px; pointer-events: none;
+                    background: linear-gradient(to top, #f8f9fa 20%, rgba(248,249,250,0));
+                }
+                .cat-item {
+                    display: flex; align-items: center; gap: 10px; padding: 9px 11px; border-radius: 8px;
+                    cursor: pointer; background: #fff; border: 1px solid #e5eaef;
+                    font-size: 13px; font-weight: 500; color: #5A6A85; transition: all 0.15s;
+                }
+                .cat-item:hover { border-color: #b9d8f2; }
+                .cat-item.selected { background: #ecf2ff; border-color: #0085db; color: #0068ad; font-weight: 600; }
+                .cat-item input { width: 16px; height: 16px; cursor: pointer; flex-shrink: 0; }
+                .cat-name { flex: 1; min-width: 0; line-height: 1.4; }
+                .cat-parent { color: #9aa8bb; font-weight: 500; }
+                .cat-item.selected .cat-parent { color: #5b9bd0; }
+                .cat-count {
+                    flex-shrink: 0; font-size: 11px; font-weight: 700; color: #7c8fac;
+                    background: #f0f3f7; border-radius: 999px; padding: 1px 7px;
+                }
+                .cat-empty {
+                    display: flex; align-items: center; gap: 6px; justify-content: center;
+                    font-size: 13px; color: #7c8fac; padding: 20px 0; margin: 0; text-align: center;
+                }
+                .link-btn {
+                    border: none; background: transparent; color: #0085db; font-weight: 600;
+                    cursor: pointer; text-decoration: underline; font-size: 13px; padding: 0;
+                    font-family: inherit;
+                }
+
+                .new-cat-panel {
+                    margin-top: 10px; padding: 16px; background: #f8f9fa;
+                    border: 1px solid #e5eaef; border-radius: 12px;
+                }
+
+                .btn-light-primary {
+                    background: #ecf2ff; color: #0085db; border: none; padding: 10px 18px;
+                    border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex;
+                    align-items: center; justify-content: center; gap: 8px; font-size: 14px;
+                    transition: background 0.2s; font-family: inherit;
+                }
+                .btn-light-primary:hover { background: #dfe9ff; }
+                .btn-light-primary.full { width: 100%; margin-top: 12px; }
+
+                .btn-light-secondary {
+                    background: #f0f2f5; color: #5A6A85; border: none; padding: 10px 18px;
+                    border-radius: 8px; font-weight: 600; cursor: pointer; display: inline-flex;
+                    align-items: center; gap: 8px; font-size: 14px; transition: background 0.2s;
+                    font-family: inherit;
+                }
+                .btn-light-secondary:hover { background: #e5e8ed; }
+
+                .btn-primary {
+                    background: #0085db; color: #fff; padding: 11px 24px; border-radius: 8px; border: none;
+                    font-weight: 600; font-size: 14px; cursor: pointer; display: inline-flex;
+                    align-items: center; justify-content: center; gap: 8px;
+                    box-shadow: 0 4px 12px rgba(0,133,219,0.2); transition: background 0.2s;
+                    font-family: inherit;
+                }
+                .btn-primary:hover:not(:disabled) { background: #0072bd; }
+                .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+
+                .btn-ghost-danger {
+                    background: transparent; color: #fa896b; border: 1px solid #f7c8bb;
+                    padding: 11px 22px; border-radius: 8px; font-weight: 600; font-size: 14px;
+                    cursor: pointer; transition: background 0.2s; font-family: inherit;
+                }
+                .btn-ghost-danger:hover { background: #fdede8; }
+
+                .checkbox-label {
+                    display: flex; align-items: center; gap: 10px; cursor: pointer;
+                    font-size: 14px; color: #5A6A85; font-weight: 500;
+                }
+                .checkbox-input { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+
+                /* Uzun formada saqlash tugmasi doim ko'rinib turadi. */
+                .footer-actions {
+                    position: sticky; bottom: 0; z-index: 5; margin-top: 24px;
+                    display: flex; justify-content: flex-end; align-items: center; gap: 14px;
+                    padding: 16px 20px; background: rgba(255,255,255,0.92);
+                    /* Faqat standart xossa: qo'lda -webkit- prefiksi yozilsa,
+                       lightningcss standart xossani tashlab yuboradi va blur
+                       Chrome'da umuman ishlamaydi. Prefiksni kompilyator qo'shadi. */
+                    backdrop-filter: blur(8px);
+                    border-top: 1px solid #e5eaef; border-radius: 12px 12px 0 0;
+                }
+                .footer-hint { flex: 1; font-size: 12px; color: #7c8fac; font-weight: 500; }
+
+                @media (max-width: 1100px) {
+                    .grid-main { grid-template-columns: minmax(0, 1fr); }
+                }
+                @media (max-width: 640px) {
+                    .grid-2 { grid-template-columns: minmax(0, 1fr); }
+                    .attr-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 40px; gap: 8px; }
+                    .card-head { padding: 16px; }
+                    .card-body { padding: 0 16px 16px; }
+                    .footer-actions { flex-wrap: wrap; padding: 12px; }
+                    .footer-hint { flex-basis: 100%; }
+                }
             `}</style>
-        </div >
+        </form>
     );
 }

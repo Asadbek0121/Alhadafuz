@@ -33,6 +33,18 @@ const productSchema = z.object({
     showLowStock: z.boolean().default(false),
     allowInstallment: z.boolean().default(false),
     template: z.string().optional(),
+}).check((ctx) => {
+    // Chegirma turi tanlangan bo'lsa, miqdor MAJBURIY — qarang:
+    // src/app/(admin)/admin/products/new/page.tsx dagi bir xil tekshiruv.
+    const v = ctx.value;
+    if (v.discountType !== "no_discount" && !(Number(v.discountValue) > 0)) {
+        ctx.issues.push({
+            code: "custom",
+            message: "Chegirma turi tanlandi — miqdorni kiriting (0 dan katta)",
+            path: ["discountValue"],
+            input: v.discountValue,
+        });
+    }
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -43,6 +55,29 @@ const tryParseJsonImages = (jsonStr: string) => {
         if (Array.isArray(parsed)) return parsed.join('\n');
     } catch (e) { }
     return jsonStr;
+};
+
+/**
+ * Saqlangan `discount` foiz sifatida kiritilganmi yoki so'm sifatida —
+ * bazada bu ajratilmaydi. Eski narxdan qaytarib hisoblab tekshiramiz:
+ * `oldPrice - oldPrice*discount/100` joriy narxga teng chiqsa, bu foiz.
+ */
+const guessDiscountKind = (
+    price: unknown,
+    oldPrice: unknown,
+    discount: unknown
+): "no_discount" | "percentage" | "fixed_price" => {
+    const disc = Number(discount || 0);
+    if (!disc) return "no_discount";
+
+    const priceNum = Number(price || 0);
+    const oldNum = Number(oldPrice || 0);
+    if (oldNum > 0 && disc < 100) {
+        const asPercent = Math.round(oldNum - oldNum * (disc / 100));
+        // 1 so'mlik yaxlitlash farqiga yo'l qo'yamiz
+        if (Math.abs(asPercent - priceNum) <= 1) return "percentage";
+    }
+    return "fixed_price";
 };
 
 export default function EditProductPage() {
@@ -147,11 +182,19 @@ export default function EditProductPage() {
                                 ? tryParseJsonImages(data.images)
                                 : (data.images || '')),
                         category: categoryValue,
-                        // For demonstration, mapping some fields even if not perfect match
-                        discountType: data.discount ? "fixed_price" : "no_discount",
+                        // `discount` ustuni foizmi yoki so'mmi — bazada yozilmaydi,
+                        // shuning uchun eski narxdan qaytarib hisoblanadi. Ilgari bu
+                        // yerda doim "fixed_price" tanlanardi: 20% chegirmali
+                        // mahsulotni tahrirlashga ochishning o'zi avtomatik hisoblash
+                        // effektini ishga solib, narxni `oldPrice - 20` ga
+                        // aylantirib qo'yardi.
+                        discountType: guessDiscountKind(data.price, data.oldPrice, data.discount),
                         discountValue: data.discount || "",
                         discountCategory: data.discountType || "SALE",
                         brand: data.brand || "",
+                        // Teglar `attributes._tags` ichida saqlanadi, API ularni
+                        // yuqori darajaga chiqarib beradi.
+                        tags: Array.isArray(data.tags) ? data.tags.join(', ') : (data.tags || ""),
                         status: (data.status === "ACTIVE" || data.status === "published") ? "published" :
                             (data.status === "inactive" ? "inactive" :
                                 (data.status === "sotuvda_kam_qolgan" ? "sotuvda_kam_qolgan" :
@@ -179,8 +222,10 @@ export default function EditProductPage() {
                             const marketingKeys = ['isNew', 'freeDelivery', 'hasVideo', 'hasGift', 'showLowStock', 'allowInstallment'];
 
                             Object.entries(parsedAttrs).forEach(([key, value]) => {
-                                // Filter out marketing flags from technical variations
-                                if (!marketingKeys.includes(key)) {
+                                // Filter out marketing flags from technical variations.
+                                // `_tags` ham o'tkazib yuboriladi: u teglar maydoniga
+                                // yuklanadi, xususiyatlar jadvaliga emas.
+                                if (!marketingKeys.includes(key) && key !== '_tags') {
                                     attrs.push({ key, value: Array.isArray(value) ? value.join(',') : String(value) });
                                 }
                             });
@@ -310,18 +355,31 @@ export default function EditProductPage() {
             }
         });
 
+        // Teglar uchun `Product`da ustun yo'q — `attributes._tags` ichida saqlanadi.
+        const tagList = (data.tags || "").split(',').map(s => s.trim()).filter(Boolean);
+        if (tagList.length) attrsObject._tags = tagList;
+
         const categoryIds = data.category?.split(',').filter(Boolean) || [];
+
+        // "Chegirma yo'q" tanlansa ikkala ustun ham tozalanadi. Ilgari
+        // `discountType` shartsiz yozilardi (doim "SALE"), shuning uchun bir
+        // marta chegirma qo'yilgan mahsulotdan uni olib tashlashning yo'li
+        // yo'q edi — sayt kartada chegirmani ko'rsatishda davom etardi.
+        const noDiscount = data.discountType === "no_discount";
 
         const payload = {
             ...data,
             price: Number(data.price),
             stock: Number(data.stock),
             oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
-            discount: data.discountValue ? Number(data.discountValue) : null,
-            discountType: data.discountCategory,
+            discount: noDiscount || !data.discountValue ? null : Number(data.discountValue),
+            discountType: noDiscount ? null : data.discountCategory,
             images: imagesList,
             attributes: attrsObject,
-            category: data.category,
+            // Faqat birinchi ID — ilgari butun "id1,id2" qatori yuborilib, server
+            // hech qanday kategoriya topmasdi va eski `category` ustuniga ID'lar
+            // qatori yozilardi.
+            category: categoryIds[0] || data.category,
             categoryIds,
             freeDelivery: data.freeDelivery,
             hasVideo: data.hasVideo,
@@ -452,7 +510,8 @@ export default function EditProductPage() {
                                 <>
                                     <div className="form-group">
                                         <label className="label">Chegirma miqdori</label>
-                                        <input {...register("discountValue")} type="number" className="input" placeholder="0" />
+                                        <input {...register("discountValue")} type="number" className={`input ${errors.discountValue ? "invalid" : ""}`} placeholder="0" />
+                                        {errors.discountValue && <span className="error">{errors.discountValue.message}</span>}
                                     </div>
                                     <div className="form-group">
                                         <label className="label">Chegirma kategoriyasi (Dostavka uchun)</label>
@@ -588,6 +647,13 @@ export default function EditProductPage() {
                             <input {...register("brand")} className="input" placeholder="Brand nomi" />
                         </div>
                         <div className="form-group">
+                            <label className="label">Teglar</label>
+                            <input {...register("tags")} className="input" placeholder="kitob, tarix, sovg'a" />
+                            <p style={{ fontSize: '12px', color: '#7c8fac', margin: '6px 0 0' }}>
+                                Vergul bilan ajrating. Teglar mahsulot sahifasining SEO kalit so'zlariga aylanadi.
+                            </p>
+                        </div>
+                        <div className="form-group">
                             <label className="label">Omborda</label>
                             <input {...register("stock")} type="number" className="input" placeholder="Ombordagi soni" />
                         </div>
@@ -645,6 +711,7 @@ export default function EditProductPage() {
                 .input:focus { border-color: #0085db; }
                 .helper-text { font-size: 12px; color: #7c8fac; margin-top: 6px; }
                 .error { font-size: 12px; color: #fa896b; margin-top: 4px; display: block; }
+                .input.invalid { border-color: #fa896b; background: #fff8f6; }
                 .text-red-500 { color: #fa896b; }
                 
                 .fab-green { width: 35px; height: 35px; border-radius: 50%; background: #e6fffa; color: #00ceb6; border: none; display: flex; alignItems: 'center'; justify-content: center; cursor: pointer; }

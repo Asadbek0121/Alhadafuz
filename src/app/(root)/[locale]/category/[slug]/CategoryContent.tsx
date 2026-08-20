@@ -8,6 +8,14 @@ import styles from './CategoryContent.module.css';
 import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard/ProductCard';
 
+interface CategoryBanner {
+    id: string;
+    title: string;
+    description?: string | null;
+    image: string;
+    link?: string;
+}
+
 interface CategoryContentProps {
     category: {
         id: string;
@@ -25,17 +33,12 @@ interface CategoryContentProps {
             image?: string | null;
         }[];
     };
-    banners?: {
-        id: string;
-        title: string;
-        image: string;
-        link?: string;
-    }[];
+    banners?: CategoryBanner[];
     products?: any[];
 }
 
 // Desktop Banner Carousel Component
-function DesktopBannerCarousel({ banners }: { banners: { id: string; title: string; image: string; link?: string }[] }) {
+function DesktopBannerCarousel({ banners }: { banners: CategoryBanner[] }) {
     const [currentIndex, setCurrentIndex] = useState(0);
 
     useEffect(() => {
@@ -72,11 +75,18 @@ function DesktopBannerCarousel({ banners }: { banners: { id: string; title: stri
                                 alt={banner.title}
                                 className="w-full h-full object-cover"
                             />
-                            {banner.title && (
+                            {(banner.title || banner.description) && (
                                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-8">
-                                    <h3 className="text-white text-2xl lg:text-4xl font-bold drop-shadow-lg">
-                                        {banner.title}
-                                    </h3>
+                                    {banner.title && (
+                                        <h3 className="text-white text-2xl lg:text-4xl font-bold drop-shadow-lg">
+                                            {banner.title}
+                                        </h3>
+                                    )}
+                                    {banner.description && (
+                                        <p className="text-white/85 text-sm lg:text-base font-medium mt-2 max-w-2xl line-clamp-2 drop-shadow">
+                                            {banner.description}
+                                        </p>
+                                    )}
                                 </div>
                             )}
                         </div>
@@ -163,9 +173,14 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                 const BannerContent = (
                                     <div key={banner.id} className="min-w-[85%] snap-start rounded-2xl overflow-hidden relative h-40 shadow-sm border border-gray-100">
                                         <img src={banner.image} alt={banner.title} className="w-full h-full object-cover" />
-                                        {banner.title && (
+                                        {(banner.title || banner.description) && (
                                             <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-4">
-                                                <span className="text-white text-sm font-bold line-clamp-1">{banner.title}</span>
+                                                {banner.title && (
+                                                    <span className="block text-white text-sm font-bold line-clamp-1">{banner.title}</span>
+                                                )}
+                                                {banner.description && (
+                                                    <span className="block text-white/80 text-xs font-medium line-clamp-1 mt-0.5">{banner.description}</span>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -248,7 +263,7 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                     price={p.price}
                                     oldPrice={p.oldPrice}
                                     image={p.image || '/placeholder.png'}
-                                    isSale={p.isSale}
+                                    discount={p.discount}
                                     discountType={p.discountType}
                                     isNew={p.isNew}
                                     freeDelivery={p.freeDelivery}
@@ -257,6 +272,8 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                     showLowStock={p.showLowStock}
                                     allowInstallment={p.allowInstallment}
                                     stock={p.stock}
+                                    rating={p.rating}
+                                    reviewCount={p.reviewsCount}
                                 />
                             ))}
                         </div>
@@ -364,7 +381,7 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                         price={p.price}
                                         oldPrice={p.oldPrice}
                                         image={p.image || '/placeholder.png'}
-                                        isSale={p.isSale}
+                                        discount={p.discount}
                                         discountType={p.discountType}
                                         isNew={p.isNew}
                                         freeDelivery={p.freeDelivery}
@@ -373,6 +390,8 @@ export default function CategoryContent({ category, banners = [], products = [] 
                                         showLowStock={p.showLowStock}
                                         allowInstallment={p.allowInstallment}
                                         stock={p.stock}
+                                        rating={p.rating}
+                                        reviewCount={p.reviewsCount}
                                     />
                                 ))}
                             </div>

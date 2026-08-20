@@ -41,7 +41,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               price={p.price}
               oldPrice={p.oldPrice}
               image={p.image}
-              isSale={p.isSale}
+              discount={p.discount}
               discountType={p.discountType}
               isNew={p.isNew}
               freeDelivery={p.freeDelivery}
@@ -50,6 +50,8 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               showLowStock={p.showLowStock}
               allowInstallment={p.allowInstallment}
               stock={p.stock}
+              rating={p.rating}
+              reviewCount={p.reviewsCount}
               priority={index < 8}
             />
           ))}
