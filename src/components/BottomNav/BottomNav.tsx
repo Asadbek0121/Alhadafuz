@@ -30,16 +30,20 @@ export default function BottomNav() {
     const { openAuthModal } = useUserStore();
     const { data: session } = useSession();
     const isAuthenticated = !!session?.user;
-    const { isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
+    const { closeCatalog } = useUIStore();
     const { items, isHydrated } = useCartStore();
     const { wishlist } = useWishlist();
 
+    // Katalog active faqat URL asosida: /catalog yoki /category/... route'larida.
+    // Local state emas — URL = source of truth (state mismatch oldini olish).
+    const isCatalogRoute = pathname === '/catalog' || pathname.includes('/category/');
+
     const navItems = [
-        { label: t('bosh_sahifa'), icon: Home, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru" || pathname === "/en") && !isCatalogOpen, action: () => closeCatalog() },
-        { label: t('katalog'), icon: LayoutGrid, href: null, isActive: isCatalogOpen, action: () => toggleCatalog() },
-        { label: t('savatcha'), icon: ShoppingBag, href: "/cart", isActive: pathname === "/cart" && !isCatalogOpen, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
-        { label: t('sevimlilar'), icon: Heart, href: "/favorites", isActive: pathname === "/favorites" && !isCatalogOpen, action: () => closeCatalog(), badge: wishlist.length },
-        { label: t('kabinet'), icon: isAuthenticated ? User : UserCircle, href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogOpen, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
+        { label: t('bosh_sahifa'), icon: Home, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru" || pathname === "/en") && !isCatalogRoute, action: () => closeCatalog() },
+        { label: t('katalog'), icon: LayoutGrid, href: "/catalog", isActive: isCatalogRoute, action: () => closeCatalog() },
+        { label: t('savatcha'), icon: ShoppingBag, href: "/cart", isActive: pathname === "/cart" && !isCatalogRoute, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
+        { label: t('sevimlilar'), icon: Heart, href: "/favorites", isActive: pathname === "/favorites" && !isCatalogRoute, action: () => closeCatalog(), badge: wishlist.length },
+        { label: t('kabinet'), icon: isAuthenticated ? User : UserCircle, href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogRoute, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
     ];
 
     // Checkout o'z fokusli flow'iga ega (o'z mobile sticky CTA) — BottomNav u yerda ko'rsatilmaydi.
