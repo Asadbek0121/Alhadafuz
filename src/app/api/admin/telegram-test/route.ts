@@ -1,8 +1,15 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth';
 
 export async function POST() {
+    // Himoyasiz qolsa istalgan kishi admin Telegram'iga xabar yubora oladi.
+    const session = await auth();
+    if ((session?.user as any)?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     try {
         const settings = await prisma.storeSettings.findUnique({ where: { id: 'default' } });
 

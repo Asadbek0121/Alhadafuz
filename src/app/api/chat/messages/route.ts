@@ -8,7 +8,8 @@ export async function GET(req: Request) {
     const userId = searchParams.get('userId');
     const session = await auth();
 
-    if (!session || !userId) return NextResponse.json([], { status: 400 });
+    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!userId) return NextResponse.json({ error: 'userId majburiy' }, { status: 400 });
 
     try {
         const currentUser = session.user;
@@ -51,9 +52,15 @@ export async function GET(req: Request) {
         }
 
         return NextResponse.json(messages);
-    } catch (error) {
-        // Fallback if table doesn't exist
-        return NextResponse.json([]);
+    } catch (error: any) {
+        // Ilgari bu yerda jimgina `[]` qaytarilardi ("Fallback if table doesn't
+        // exist"), shu sababli bazadagi nosozlik admin panelda "xabar yo'q"
+        // bo'lib ko'rinardi — mavjud yozishma yo'qolgandek tuyulardi.
+        console.error('❌ [CHAT] Xabarlarni o\'qishda xato:', error);
+        return NextResponse.json(
+            { error: error?.message || 'Xabarlarni yuklashda xatolik' },
+            { status: 500 }
+        );
     }
 }
 

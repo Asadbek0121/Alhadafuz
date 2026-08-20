@@ -4,20 +4,38 @@
 
 import styles from './ChatPage.module.css';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { Search, Send, Phone, Video, Info, Menu, X, MessageCircle, Check, CheckCheck, Trash2, Loader2 } from 'lucide-react';
+import { Search, Send, Menu, X, MessageCircle, Check, CheckCheck, Trash2, Paperclip } from 'lucide-react';
+/**
+ * Xabar matni fayl havolasimi yoki oddiy matnmi — `src/lib/chat-media.ts`da.
+ *
+ * Ilgari bu yerda faqat `/uploads/` prefiksi tekshirilardi, lekin
+ * `/api/upload` Vercel Blob (yoki Cloudinary) havolasini qaytaradi —
+ * natijada mijoz yuborgan rasm va ovozli xabarlar admin panelda uzun havola
+ * matni bo'lib ko'rinardi.
+ */
+import { mediaKind, isFileUrl } from '@/lib/chat-media';
 
 type User = {
     id: string;
     name: string;
     image: string;
     status: 'online' | 'offline' | 'busy' | 'away';
+    hasTelegram?: boolean;
     lastMessage?: string;
     time?: string;
     unread?: number;
 };
+
+/**
+ * `Message.source` bazada 4 xil qiymat oladi va har biri boshqa yo'ldan
+ * keladi. Ilgari bu tur faqat 'WEB' | 'TELEGRAM' edi, shu sababli
+ * SUPPORT_CHAT va ADMIN_PANEL xabarlari hech qanday manba belgisi olmasdi —
+ * ya'ni bazadagi xabarlarning aksariyati belgisiz ko'rinardi.
+ */
+type MessageSource = 'WEB' | 'TELEGRAM' | 'SUPPORT_CHAT' | 'ADMIN_PANEL';
 
 type Message = {
     id: string;
@@ -25,8 +43,17 @@ type Message = {
     content: string;
     createdAt: string;
     type: 'TEXT' | 'IMAGE' | 'AUDIO';
-    source?: 'WEB' | 'TELEGRAM';
+    source?: MessageSource;
     isRead?: boolean;
+    pending?: boolean;
+    failed?: boolean;
+};
+
+const SOURCE_LABELS: Record<MessageSource, { icon: string; label: string }> = {
+    TELEGRAM: { icon: '📱', label: 'Telegram' },
+    SUPPORT_CHAT: { icon: '💬', label: 'Sayt chati' },
+    ADMIN_PANEL: { icon: '🛠️', label: 'Admin panel' },
+    WEB: { icon: '🌐', label: 'Ilova' }
 };
 
 export default function AdminChatPage() {
@@ -34,14 +61,26 @@ export default function AdminChatPage() {
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [messageInput, setMessageInput] = useState("");
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+    const [search, setSearch] = useState("");
 
     // Real Data State
     const [conversations, setConversations] = useState<User[]>([]);
     const [messages, setMessages] = useState<Message[]>([]);
     const [loading, setLoading] = useState(true);
+    const [sending, setSending] = useState(false);
+    // Server xatosi. Poll har 3-5 sekundda ishlaydi, shu sababli toast emas —
+    // ekranda turadigan yozuv: aks holda xato 20 marta sakrab chiqardi.
+    const [loadError, setLoadError] = useState<string | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
+    // Yuborilgan, ammo hali serverdan qaytmagan xabarlar. Poll natijasi
+    // kelganda ular o'chiriladi — ilgari optimistik xabar ro'yxatda qolib,
+    // haqiqiy xabar kelgach bir muddat ikki marta ko'rinardi.
+    const pendingRef = useRef<Message[]>([]);
+    const didAutoSelect = useRef(false);
 
-    // Fetch conversations with polling
+    // Suhbatlar ro'yxati — 5 sekundda bir yangilanadi.
+    // `loading` bog'liqliklardan olib tashlandi: u o'zgarganda interval
+    // bekor qilinib qaytadan qurilardi.
     useEffect(() => {
         const fetchConversations = () => {
             fetch('/api/chat/conversations')
@@ -53,47 +92,86 @@ export default function AdminChatPage() {
                     return null;
                 })
                 .then(data => {
-                    if (data && !data.error) {
+                    if (Array.isArray(data)) {
                         setConversations(data);
-                        if (loading && data.length > 0) {
-                            if (window.innerWidth > 768) setSelectedUser(data[0]);
-                            setLoading(false);
+                        // Kompyuterda birinchi suhbat avtomatik ochiladi, lekin
+                        // faqat bir marta — aks holda har bir poll admin
+                        // tanlagan suhbatni almashtirib yuborardi.
+                        if (!didAutoSelect.current && data.length > 0) {
+                            didAutoSelect.current = true;
+                            if (window.innerWidth > 991) setSelectedUser(data[0]);
                         }
                     }
                 })
-                .catch(err => console.error("Conversations fetch error:", err));
+                .catch(err => console.error("Conversations fetch error:", err))
+                .finally(() => setLoading(false));
         };
 
         fetchConversations();
-        const interval = setInterval(fetchConversations, 5000); // Poll every 5s
+        const interval = setInterval(fetchConversations, 5000);
         return () => clearInterval(interval);
-    }, [loading]);
+    }, []);
 
     // Fetch messages with polling
     useEffect(() => {
         if (!selectedUser) return;
+        const userId = selectedUser.id;
 
         const fetchMessages = () => {
-            fetch(`/api/chat/messages?userId=${selectedUser.id}`)
-                .then(res => {
-                    const contentType = res.headers.get("content-type");
-                    if (res.ok && contentType && contentType.includes("application/json")) {
-                        return res.json();
+            fetch(`/api/chat/messages?userId=${userId}`)
+                .then(async res => {
+                    if (!res.ok) {
+                        // Ilgari non-ok javob jimgina `null` bo'lib ketardi:
+                        // 500 xato ham "yozishma yo'q" ko'rinishida chiqardi.
+                        const data = await res.json().catch(() => ({}));
+                        throw new Error(data.error || `Server xatosi (${res.status})`);
                     }
-                    return null;
+                    return res.json();
                 })
                 .then(data => {
                     if (data && Array.isArray(data)) {
-                        setMessages(data);
+                        setLoadError(null);
+                        // Serverga yetib borgan optimistik xabarlar tashlanadi
+                        const serverContents = new Set(data.map((m: Message) => m.content));
+                        pendingRef.current = pendingRef.current.filter(
+                            p => p.failed || !serverContents.has(p.content)
+                        );
+                        setMessages([...data, ...pendingRef.current]);
                     }
                 })
-                .catch(err => console.error("Messages fetch error:", err));
+                .catch(err => {
+                    console.error("Messages fetch error:", err);
+                    setLoadError(err.message || 'Xabarlarni yuklab bo\'lmadi');
+                });
         };
 
         fetchMessages();
-        const interval = setInterval(fetchMessages, 3000); // Poll every 3s
+        const interval = setInterval(fetchMessages, 3000);
         return () => clearInterval(interval);
     }, [selectedUser]);
+
+    // Suhbat almashganda oldingi suhbatning yuborilmagan xabarlari tozalanadi
+    useEffect(() => {
+        pendingRef.current = [];
+        setLoadError(null);
+    }, [selectedUser?.id]);
+
+    // Ro'yxatni izlash. Ilgari bu maydonning `value`/`onChange`'i yo'q edi —
+    // yozish mumkin, lekin filtrlash umuman ishlamasdi.
+    const filteredConversations = useMemo(() => {
+        const q = search.trim().toLowerCase();
+        if (!q) return conversations;
+        return conversations.filter(c => c.name.toLowerCase().includes(q));
+    }, [conversations, search]);
+
+    // `selectedUser` — bosilgan paytdagi nusxa; poll uni yangilamaydi. Sarlavhada
+    // shuning uchun ro'yxatdagi jonli yozuv ishlatiladi: aks holda suhbat
+    // ochilib xabarlar o'qilgan deb belgilangandan keyin ham "N o'qilmagan
+    // xabar" yozuvi qotib qolardi.
+    const activeUser = useMemo(
+        () => conversations.find(c => c.id === selectedUser?.id) || selectedUser,
+        [conversations, selectedUser]
+    );
 
     // Scroll to bottom
     useEffect(() => {
@@ -104,31 +182,59 @@ export default function AdminChatPage() {
 
     const handleSendMessage = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!messageInput.trim() || !selectedUser) return;
+        const content = messageInput.trim();
+        if (!content || !selectedUser || sending) return;
 
         const optimisticMsg: Message = {
-            id: Date.now().toString(),
+            id: `pending-${Date.now()}`,
             senderId: session?.user?.id as string,
-            content: messageInput,
+            content,
             createdAt: new Date().toISOString(),
-            type: 'TEXT'
+            type: 'TEXT',
+            source: 'ADMIN_PANEL',
+            pending: true
         };
 
+        pendingRef.current = [...pendingRef.current, optimisticMsg];
         setMessages(prev => [...prev, optimisticMsg]);
         setMessageInput("");
+        setSending(true);
 
         try {
-            await fetch('/api/chat/send', {
+            const res = await fetch('/api/chat/send', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     receiverId: selectedUser.id,
-                    content: optimisticMsg.content,
+                    content,
                     target: 'BOTH'
                 })
             });
-        } catch (error) {
-            console.error("Yuborishda xatolik:", error);
+
+            // Ilgari javob umuman tekshirilmasdi: xabar yuborilmagan bo'lsa
+            // ham ekranda muvaffaqiyatli ketgandek turardi.
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'Xabar yuborilmadi');
+            }
+
+            // Xabar bazaga yozildi, lekin Telegramga yetmagan bo'lishi mumkin
+            // (bot bloklangan, mijoz botni ochmagan). Admin buni bilishi kerak,
+            // aks holda javob berdim deb o'ylab qoladi.
+            const data = await res.json().catch(() => null);
+            if (data?.telegram?.attempted && !data.telegram.delivered) {
+                toast.warning(`Telegramga yetmadi: ${data.telegram.error || 'sabab noma\'lum'}`);
+            }
+        } catch (error: any) {
+            pendingRef.current = pendingRef.current.map(p =>
+                p.id === optimisticMsg.id ? { ...p, pending: false, failed: true } : p
+            );
+            setMessages(prev => prev.map(m =>
+                m.id === optimisticMsg.id ? { ...m, pending: false, failed: true } : m
+            ));
+            toast.error(error.message || "Xabar yuborishda xatolik");
+        } finally {
+            setSending(false);
         }
     };
 
@@ -136,12 +242,12 @@ export default function AdminChatPage() {
         if (!selectedUser || !confirm("Siz rostdan ham ushbu suhbat tarixini butkul o'chirib tashlamoqchimisiz?")) return;
 
         try {
-            setLoading(true);
             const res = await fetch(`/api/chat/messages?userId=${selectedUser.id}`, {
                 method: 'DELETE'
             });
             const data = await res.json();
-            if (data.success) {
+            if (res.ok && data.success) {
+                pendingRef.current = [];
                 setMessages([]);
                 toast.success("Suhbat tarixi o'chirildi");
             } else {
@@ -149,13 +255,20 @@ export default function AdminChatPage() {
             }
         } catch (error) {
             toast.error("Xatolik yuz berdi");
-        } finally {
-            setLoading(false);
         }
     };
 
     return (
         <div className={styles.chatContainer}>
+
+            {/* Mobil/planshetda ro'yxat ochiq bo'lganda fon qatlami — tashqarisiga
+                bosib yopish uchun. Ilgari faqat X tugmasi bilan yopilardi. */}
+            {mobileSidebarOpen && (
+                <div
+                    onClick={() => setMobileSidebarOpen(false)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 999 }}
+                />
+            )}
 
             {/* Sidebar List */}
             <div className={`${styles.sidebar} ${mobileSidebarOpen ? styles.sidebarOpen : ''}`}>
@@ -176,7 +289,12 @@ export default function AdminChatPage() {
                 {/* Search */}
                 <div style={{ padding: '20px' }}>
                     <div style={{ position: 'relative' }}>
-                        <input placeholder="Foydalanuvchilarni izlash" style={{ width: '100%', padding: '10px 15px 10px 40px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none', fontSize: '14px' }} />
+                        <input
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            placeholder="Foydalanuvchilarni izlash"
+                            style={{ width: '100%', padding: '10px 15px 10px 40px', borderRadius: '8px', border: '1px solid #e5eaef', outline: 'none', fontSize: '14px' }}
+                        />
                         <Search size={18} style={{ position: 'absolute', left: '12px', top: '12px', color: '#5A6A85' }} />
                     </div>
                 </div>
@@ -184,7 +302,12 @@ export default function AdminChatPage() {
                 {/* Contacts List */}
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {loading ? <div style={{ padding: '20px', textAlign: 'center' }}>Yuklanmoqda...</div> :
-                        conversations.map(user => (
+                        filteredConversations.length === 0 ? (
+                            <div style={{ padding: '20px', textAlign: 'center', color: '#5A6A85', fontSize: '13px' }}>
+                                {search ? `"${search}" bo'yicha hech kim topilmadi` : 'Suhbat yo\'q'}
+                            </div>
+                        ) :
+                        filteredConversations.map(user => (
                             <div
                                 key={user.id}
                                 onClick={() => { setSelectedUser(user); setMobileSidebarOpen(false); }}
@@ -205,9 +328,32 @@ export default function AdminChatPage() {
                                         <h5 style={{ margin: 0, fontSize: '14px', color: '#2A3547' }}>{user.name}</h5>
                                         <span style={{ fontSize: '11px', color: '#5A6A85' }}>{user.time || ''}</span>
                                     </div>
-                                    <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#5A6A85', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>
-                                        {user.lastMessage || "Xabar yo'q"}
-                                    </p>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#5A6A85', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px', flex: 1 }}>
+                                            {user.lastMessage || "Xabar yo'q"}
+                                        </p>
+                                        {!!user.unread && user.unread > 0 && (
+                                            <span
+                                                title={`${user.unread} o'qilmagan xabar`}
+                                                style={{
+                                                    background: '#fa896b',
+                                                    color: '#fff',
+                                                    fontSize: '11px',
+                                                    fontWeight: 700,
+                                                    minWidth: '20px',
+                                                    height: '20px',
+                                                    borderRadius: '10px',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '0 6px',
+                                                    flexShrink: 0
+                                                }}
+                                            >
+                                                {user.unread}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -225,10 +371,22 @@ export default function AdminChatPage() {
                                 <button className="mobile-menu-btn" onClick={() => setMobileSidebarOpen(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'none' }} title="Menyu">
                                     <Menu />
                                 </button>
-                                <img alt="Rasm" src={selectedUser.image} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
+                                <img alt="Rasm" src={activeUser!.image} style={{ width: '40px', height: '40px', borderRadius: '50%' }} />
                                 <div>
-                                    <h5 style={{ margin: 0, fontSize: '15px', color: '#2A3547' }}>{selectedUser.name}</h5>
-                                    <span style={{ fontSize: '12px', color: '#00ceb6' }}>Online</span>
+                                    <h5 style={{ margin: 0, fontSize: '15px', color: '#2A3547' }}>{activeUser!.name}</h5>
+                                    {/* Ilgari bu yerda qat'iy "Online" yozilgan edi — hech qachon
+                                        yozishmagan mijoz ham "Online" ko'rinardi. Endi haqiqiy
+                                        ma'lumot: o'qilmagan xabarlar soni yoki oxirgi yozishma vaqti. */}
+                                    <span style={{ fontSize: '12px', color: activeUser!.unread ? '#fa896b' : '#5A6A85' }}>
+                                        {activeUser!.unread
+                                            ? `${activeUser!.unread} o'qilmagan xabar`
+                                            : activeUser!.time
+                                                ? `Oxirgi xabar: ${activeUser!.time}`
+                                                : 'Yozishma yo\'q'}
+                                        {activeUser!.hasTelegram
+                                            ? <span title="Javob Telegram botga ham yetib boradi" style={{ marginLeft: '8px', color: '#0088cc' }}>📱 Telegram ulangan</span>
+                                            : <span title="Mijoz botni ochmagan — javob faqat saytda ko'rinadi" style={{ marginLeft: '8px', color: '#8E98A8' }}>Telegram ulanmagan</span>}
+                                    </span>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
@@ -253,10 +411,6 @@ export default function AdminChatPage() {
                                 >
                                     <Trash2 size={18} />
                                 </button>
-                                <div style={{ width: '1px', height: '24px', background: '#e5eaef' }}></div>
-                                <Phone size={20} style={{ cursor: 'pointer', color: '#5A6A85' }} />
-                                <Video size={20} style={{ cursor: 'pointer', color: '#5A6A85' }} />
-                                <Info size={20} style={{ cursor: 'pointer', color: '#5A6A85' }} />
                             </div>
                         </div>
 
@@ -264,34 +418,48 @@ export default function AdminChatPage() {
 
                         {/* Messages - Styled like Image 2 */}
                         <div ref={scrollRef} style={{ flex: 1, padding: '24px', overflowY: 'auto', background: '#F8F9FA', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                            {loadError && (
+                                <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '10px 14px', borderRadius: '8px', fontSize: '13px', textAlign: 'center' }}>
+                                    {loadError}
+                                </div>
+                            )}
+                            {!loadError && messages.length === 0 && (
+                                <div style={{ margin: 'auto', textAlign: 'center', color: '#8E98A8', fontSize: '14px' }}>
+                                    <MessageCircle size={40} style={{ opacity: 0.25, marginBottom: '10px' }} />
+                                    <div>Bu mijoz bilan hali yozishma yo&apos;q.</div>
+                                    <div style={{ fontSize: '12px', marginTop: '4px' }}>Birinchi xabarni yozing — mijoz Telegram&apos;ga ulangan bo&apos;lsa, botga ham yetib boradi.</div>
+                                </div>
+                            )}
                             {messages.map((msg) => {
                                 const isMe = msg.senderId === session?.user?.id;
-                                console.log(`Msg: ${msg.content}, Sender: ${msg.senderId}, Me: ${session?.user?.id}, isMe: ${isMe}`);
+                                const kind = mediaKind(msg);
+                                const badge = SOURCE_LABELS[msg.source ?? 'WEB'] ?? SOURCE_LABELS.WEB;
                                 return (
                                     <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
                                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: isMe ? 'flex-end' : 'flex-start', maxWidth: '70%', gap: '6px' }}>
                                             <div style={{
-                                                padding: (msg.type === 'IMAGE' || msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp|webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? '4px' : '12px 20px',
+                                                padding: kind === 'TEXT' ? '12px 20px' : '4px',
                                                 borderTopLeftRadius: isMe ? '12px' : '0px',
                                                 borderTopRightRadius: isMe ? '0px' : '12px',
                                                 borderBottomLeftRadius: '12px',
                                                 borderBottomRightRadius: '12px',
-                                                background: isMe ? '#0085db' : '#fff',
-                                                color: isMe ? '#fff' : '#2A3547',
+                                                background: msg.failed ? '#fef2f2' : (isMe ? '#0085db' : '#fff'),
+                                                color: msg.failed ? '#b91c1c' : (isMe ? '#fff' : '#2A3547'),
                                                 boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                                                 fontSize: '15px',
                                                 lineHeight: '1.5',
-                                                border: isMe ? 'none' : '1px solid #F1F4F9',
+                                                border: msg.failed ? '1px solid #fecaca' : (isMe ? 'none' : '1px solid #F1F4F9'),
+                                                opacity: msg.pending ? 0.6 : 1,
                                                 overflow: 'hidden'
                                             }}>
-                                                {msg.type === 'IMAGE' || (msg.content.startsWith('/uploads/') && /\.(jpg|jpeg|png|gif|webp)$/i.test(msg.content)) ? (
+                                                {kind === 'IMAGE' ? (
                                                     <img
                                                         src={msg.content}
-                                                        alt="Chat image"
+                                                        alt="Chat rasmi"
                                                         style={{ maxWidth: '100%', borderRadius: '8px', display: 'block', cursor: 'pointer' }}
                                                         onClick={() => window.open(msg.content, '_blank')}
                                                     />
-                                                ) : (msg.type === 'AUDIO' || (msg.content.startsWith('/uploads/') && /\.(webm|ogg|mp3|wav|mp4)$/i.test(msg.content))) ? (
+                                                ) : kind === 'AUDIO' ? (
                                                     <div style={{ minWidth: '220px', padding: '6px' }}>
                                                         <audio
                                                             src={msg.content}
@@ -299,32 +467,37 @@ export default function AdminChatPage() {
                                                             style={{ width: '100%', height: '40px' }}
                                                             preload="metadata"
                                                         >
-                                                            Sizning brauzeringiz audioni qo'llab-quvvatlamaydi.
+                                                            Sizning brauzeringiz audioni qo&apos;llab-quvvatlamaydi.
                                                         </audio>
                                                     </div>
                                                 ) : (
-                                                    msg.content
+                                                    // Rasm/ovoz bo'lmagan havola (masalan Telegram'dan
+                                                    // kelgan PDF) ilgari bosib bo'lmaydigan xom matn
+                                                    // bo'lib turardi — endi yuklab olish havolasi.
+                                                    isFileUrl(msg.content) ? (
+                                                        <a
+                                                            href={msg.content}
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            style={{ color: 'inherit', textDecoration: 'underline', display: 'flex', alignItems: 'center', gap: '8px', wordBreak: 'break-all' }}
+                                                        >
+                                                            <Paperclip size={16} style={{ flexShrink: 0 }} />
+                                                            {decodeURIComponent(msg.content.split('/').pop()?.split('?')[0] || 'Fayl')}
+                                                        </a>
+                                                    ) : msg.content
                                                 )}
                                             </div>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                                {msg.source === 'TELEGRAM' && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#5A6A85', background: '#fff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E5EAEF' }}>
-                                                        <span style={{ display: 'flex', alignItems: 'center' }}>📱</span>
-                                                        <span style={{ fontWeight: 500 }}>Telegram</span>
-                                                    </div>
-                                                )}
-                                                {(msg.source === 'WEB' || !msg.source) && (
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#5A6A85', background: '#fff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E5EAEF' }}>
-                                                        <span style={{ display: 'flex', alignItems: 'center' }}>🌐</span>
-                                                        <span style={{ fontWeight: 500 }}>Ilova</span>
-                                                    </div>
-                                                )}
-                                                <span style={{ fontSize: '11px', color: isMe ? '#e2e8f0' : '#8E98A8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                    {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                    {isMe && (
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#5A6A85', background: '#fff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #E5EAEF' }}>
+                                                    <span style={{ display: 'flex', alignItems: 'center' }}>{badge.icon}</span>
+                                                    <span style={{ fontWeight: 500 }}>{badge.label}</span>
+                                                </div>
+                                                <span style={{ fontSize: '11px', color: '#8E98A8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                    {msg.failed ? 'Yuborilmadi' : new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                    {isMe && !msg.failed && (
                                                         msg.isRead ?
-                                                            <CheckCheck size={14} color="#4ade80" /> :
-                                                            <Check size={14} color="#cbd5e1" />
+                                                            <CheckCheck size={14} color="#22c55e" /> :
+                                                            <Check size={14} color="#94a3b8" />
                                                     )}
                                                 </span>
                                             </div>
@@ -344,7 +517,18 @@ export default function AdminChatPage() {
                                     placeholder="Javob yozish..."
                                     style={{ flex: 1, padding: '12px 18px', borderRadius: '10px', border: '1px solid #e5eaef', outline: 'none', fontSize: '15px' }}
                                 />
-                                <button type="submit" style={{ background: '#0085db', border: 'none', borderRadius: '10px', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', cursor: 'pointer', boxShadow: '0 4px 12px rgba(0,133,219,0.2)' }} title="Yuborish">
+                                <button
+                                    type="submit"
+                                    disabled={sending || !messageInput.trim()}
+                                    style={{
+                                        background: sending || !messageInput.trim() ? '#94a3b8' : '#0085db',
+                                        border: 'none', borderRadius: '10px', width: '48px', height: '48px',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        color: '#fff', cursor: sending || !messageInput.trim() ? 'not-allowed' : 'pointer',
+                                        boxShadow: '0 4px 12px rgba(0,133,219,0.2)'
+                                    }}
+                                    title="Yuborish"
+                                >
                                     <Send size={20} />
                                 </button>
                             </form>
@@ -353,27 +537,36 @@ export default function AdminChatPage() {
                 ) : (
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', color: '#5A6A85' }}>
                         <MessageCircle size={64} style={{ opacity: 0.2, marginBottom: '20px' }} />
-                        <h3>Suhbatni tanlang</h3>
+                        <h3 style={{ margin: 0 }}>Suhbatni tanlang</h3>
+                        {/* Mobil/planshetda suhbat avtomatik tanlanmaydi va ro'yxat
+                            ekrandan chiqarilgan. Ilgari menyu tugmasi faqat suhbat
+                            tanlangan holatda chizilardi — ya'ni telefonda sahifa
+                            ochilganda ro'yxatga yetib borish yo'li umuman yo'q edi. */}
+                        <button
+                            className="mobile-menu-btn"
+                            onClick={() => setMobileSidebarOpen(true)}
+                            style={{
+                                display: 'none', marginTop: '18px', padding: '10px 20px',
+                                borderRadius: '10px', border: 'none', background: '#0085db',
+                                color: '#fff', fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+                                alignItems: 'center', gap: '8px'
+                            }}
+                        >
+                            <Menu size={18} /> Suhbatlar ro&apos;yxati
+                        </button>
                     </div>
                 )}
             </div>
 
             <style jsx>{`
-                @media (max-width: 768px) {
-                    .chat-sidebar {
-                        position: absolute;
-                        left: -320px;
-                        top: 0;
-                        bottom: 0;
-                        z-index: 100;
-                        background: #fff;
-                        transition: left 0.3s ease;
-                    }
-                    .chat-sidebar.open {
-                        left: 0;
-                    }
+                /* ChatPage.module.css sidebar'ni 991px'dan pastda ekrandan
+                   chiqarib qo'yadi (left: -350px). Ilgari bu tugma esa faqat
+                   768px'dan pastda ko'rinardi — natijada 769-991px orasida
+                   (planshetlar) suhbatlar ro'yxati yashirin qolib, uni ochish
+                   imkoni bo'lmasdi. Endi ikki chegara bir xil. */
+                @media (max-width: 991px) {
                     .mobile-menu-btn {
-                        display: block !important;
+                        display: inline-flex !important;
                     }
                 }
             `}</style>
