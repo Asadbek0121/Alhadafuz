@@ -93,6 +93,11 @@
     cursor: pointer;
     transition: all 0.2s;
     color: var(--text-main);
+    width: 100%;
+    background: none;
+    border: none;
+    font: inherit;
+    text-align: left;
 }
 
 .catItem:hover {

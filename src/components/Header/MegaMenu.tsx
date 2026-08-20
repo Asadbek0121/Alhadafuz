@@ -1,10 +1,9 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, Link } from '@/navigation';
 import styles from './MegaMenu.module.css';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { ChevronRight, Smartphone, Laptop, Home, Shirt, BookOpen, Car, Monitor, Package, UserCircle, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
-import { Link } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { useCartStore } from '@/store/useCartStore';
 import { useWishlist } from '@/context/WishlistContext';

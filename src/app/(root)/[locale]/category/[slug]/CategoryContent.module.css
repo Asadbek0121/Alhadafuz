@@ -1,7 +1,7 @@
 .mobileWrapper {
     display: none;
     background: #fafafb;
-    min-height: 100vh;
+    min-height: calc(100vh - 150px);
     padding-bottom: 90px;
 }
 
