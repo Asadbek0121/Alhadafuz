@@ -123,6 +123,15 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         fetch(`/api/admin/banners/${visibleBannerId}/impression`, { method: 'POST' }).catch(() => { });
     }, [currentIndex, isMounted, loading, visibleBannerId]);
 
+    // Yon banner ko'rishlari ham hisoblanadi. Ilgari faqat slider banner'i
+    // uchun impression yozilgani sababli yon banner'ning CTR'i admin panelda
+    // strukturaviy ravishda doim 0.0% ko'rinardi (bosishlar bor, ko'rishlar 0).
+    // Slider'dan farqli — bu banner almashmaydi, shu sababli sahifaga bir marta.
+    useEffect(() => {
+        if (!isMounted || loading || !sideBanner?.id) return;
+        fetch(`/api/admin/banners/${sideBanner.id}/impression`, { method: 'POST' }).catch(() => { });
+    }, [isMounted, loading, sideBanner?.id]);
+
     const trackBannerClick = (bannerId?: string) => {
         if (!bannerId) return;
         fetch(`/api/admin/banners/${bannerId}/click`, { method: 'POST' }).catch(() => { });
@@ -203,6 +212,15 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                     <h1 className={styles.sliderTitle}>
                                         {mainBanners[currentIndex]?.title || t('slider_title')}
                                     </h1>
+
+                                    {/* Admin panelda kiritilgan tavsif — sarlavha ostidagi matn.
+                                        Serverdan kelgan props'dan render bo'ladi, shu sababli
+                                        hidratsiyada siljish yo'q. */}
+                                    {mainBanners[currentIndex]?.description && (
+                                        <p className={styles.sliderSubtitle}>
+                                            {mainBanners[currentIndex].description}
+                                        </p>
+                                    )}
 
                                     <Link
                                         href={mainBanners[currentIndex]?.link || '/'}
@@ -308,16 +326,21 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                     <h3 className={styles.hotDealTitle}>
                                         {sideBanner?.title || "Limited Edition"}
                                     </h3>
-                                    <div className={styles.priceContainer}>
-                                        {sideBanner?.oldPrice && (
-                                            <div className={styles.oldPrice}>
-                                                {sideBanner.oldPrice.toLocaleString()} {tCommon('som')}
+                                    {/* Narx faqat admin panelda kiritilgan bo'lsa chiqadi.
+                                        Ilgari `|| "0"` bo'lgani uchun narxsiz banner
+                                        saytda "0 so'm" deb ko'rinardi. */}
+                                    {sideBanner?.price ? (
+                                        <div>
+                                            {sideBanner?.oldPrice && (
+                                                <div className={styles.oldPrice}>
+                                                    {sideBanner.oldPrice.toLocaleString()} {tCommon('som')}
+                                                </div>
+                                            )}
+                                            <div className={styles.promoPrice}>
+                                                {sideBanner.price.toLocaleString()} <span className={styles.currency}>{tCommon('som')}</span>
                                             </div>
-                                        )}
-                                        <div className={styles.promoPrice}>
-                                            {sideBanner?.price?.toLocaleString() || "0"} <span className={styles.currency}>{tCommon('som')}</span>
                                         </div>
-                                    </div>
+                                    ) : null}
                                     <Link
                                         href={hotDealHref}
                                         className={styles.hotDealBtn}
