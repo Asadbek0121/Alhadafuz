@@ -93,8 +93,15 @@ export default async function CategoryPage({
     const defaultOrder = { createdAt: 'desc' };
     const orderBy = sortMap[resolvedSearch.sort || 'newest'] || defaultOrder;
 
-    // Fetch products for this category (and its children)
-    const categoryIds = [category.id, ...(category.children?.map((c: any) => c.id) || [])];
+    // Fetch products for this category (and its children + parent).
+    // Muhim: mahsulotlar ROOT kategoriyaga bog'langan bo'lishi mumkin (child'larda
+    // bo'sh bo'lmasligi uchun). Shu sababli child sahifasi parent mahsulotlarini
+    // ham ko'rsatadi — "bo'sh subkategoriya" muammosini oldini oladi.
+    const categoryIds = [
+        category.id,
+        ...(category.children?.map((c: any) => c.id) || []),
+        ...(category.parent ? [category.parent.id] : []),
+    ];
     const [products, totalCount] = await Promise.all([
         (prisma as any).product.findMany({
             where: {
