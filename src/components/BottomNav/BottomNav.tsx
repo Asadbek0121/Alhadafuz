@@ -54,49 +54,66 @@ export default function BottomNav() {
 
                 return (
                     <div key={idx} className="relative flex-1 h-full flex items-center justify-center">
-                        <Link
-                            href={item.href || '#'}
-                            className="relative z-10 flex flex-col items-center justify-center w-full h-full"
-                            onClick={(e) => {
-                                if (item.action) item.action(e);
-                                if (!item.href) e.preventDefault();
-                            }}
-                            aria-current={active ? 'page' : undefined}
-                            aria-expanded={item.href === null && active ? true : undefined}
-                            aria-label={item.label}
-                        >
-                            <motion.div
-                                animate={{ 
-                                    scale: active ? 1.3 : 1,
-                                    color: active ? "#FFCA6C" : "#94a3b8"
-                                }}
-                                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                                className="relative flex items-center justify-center"
+                        {item.href ? (
+                            <Link
+                                href={item.href}
+                                className="relative z-10 flex flex-col items-center justify-center w-full h-full"
+                                onClick={(e) => { if (item.action) item.action(e); }}
+                                aria-current={active ? 'page' : undefined}
+                                aria-label={item.label}
                             >
-                                <Icon
-                                    size={24}
-                                    strokeWidth={active ? 2.5 : 2}
-                                />
-                                {(item.badge || 0) > 0 && (
-                                    <span className={cn(
-                                        "absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white",
-                                        active ? "opacity-100" : "opacity-80"
-                                    )}>
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </motion.div>
-                            
-                            <span className={cn(
-                                "text-[9px] mt-1 transition-all duration-300",
-                                active ? "font-bold text-[#FFCA6C] opacity-100" : "font-medium text-slate-500 opacity-60"
-                            )}>
-                                {item.label}
-                            </span>
-                        </Link>
+                                <BottomNavIcon item={item} active={active} />
+                            </Link>
+                        ) : (
+                            // href'siz itemlar (Katalog toggle, auth'lanmagan Profile) —
+                            // <button> ishlatiladi. `<Link href="#">` next-intl'da
+                            // bosh sahifaga navigatsiya qilardi (buzilgan edi).
+                            <button
+                                type="button"
+                                className="relative z-10 flex flex-col items-center justify-center w-full h-full cursor-pointer bg-transparent border-none"
+                                onClick={(e) => { if (item.action) item.action(e); }}
+                                aria-expanded={active ? true : undefined}
+                                aria-label={item.label}
+                            >
+                                <BottomNavIcon item={item} active={active} />
+                            </button>
+                        )}
                     </div>
                 );
             })}
         </nav>
+    );
+}
+
+// Icon + badge + label — Link va button uchun umumiy markup
+function BottomNavIcon({ item, active }: { item: any; active: boolean }) {
+    const Icon = item.icon;
+    return (
+        <>
+            <motion.div
+                animate={{
+                    scale: active ? 1.3 : 1,
+                    color: active ? "#FFCA6C" : "#94a3b8"
+                }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="relative flex items-center justify-center"
+            >
+                <Icon size={24} strokeWidth={active ? 2.5 : 2} />
+                {(item.badge || 0) > 0 && (
+                    <span className={cn(
+                        "absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white",
+                        active ? "opacity-100" : "opacity-80"
+                    )}>
+                        {item.badge}
+                    </span>
+                )}
+            </motion.div>
+            <span className={cn(
+                "text-[9px] mt-1 transition-all duration-300",
+                active ? "font-bold text-[#FFCA6C] opacity-100" : "font-medium text-slate-500 opacity-60"
+            )}>
+                {item.label}
+            </span>
+        </>
     );
 }
