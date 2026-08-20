@@ -285,7 +285,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                     <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
                 </div>
 
-                {/* List */}
+                {/* List — subkategoriya kartalari (mobil'da 4 ustun, rasm bilan) */}
                 <div className={styles.list}>
                     {/* All Products — kategoriya sahifasining o'zi (barcha mahsulotlarni ko'rsatadi) */}
                     {category.children && category.children.length > 0 && (
@@ -300,25 +300,26 @@ export default function CategoryContent({ category, banners = [], products = [],
                         </Link>
                     )}
 
-                    {/* Subcategories */}
+                    {/* Subcategory cards — rasm + nom, yonma-yon */}
                     {category.children && category.children.map((sub) => (
-                        <Link key={sub.id} href={`/category/${sub.slug}`} className={styles.item}>
-                            <div className={styles.itemContent}>
-                                <div className={styles.iconWrapper}>
-                                    {sub.image ? (
-                                        <img src={sub.image} alt={sub.name} onError={(e) => {
+                        <Link key={sub.id} href={`/category/${sub.slug}`} className={styles.card}>
+                            <div className={styles.cardImage}>
+                                {sub.image ? (
+                                    <img
+                                        src={sub.image}
+                                        alt={sub.name}
+                                        loading="lazy"
+                                        onError={(e) => {
                                             e.currentTarget.style.display = 'none';
-                                            e.currentTarget.parentElement!.style.background = 'linear-gradient(135deg, #3b82f6, #1d4ed8)';
-                                        }} />
-                                    ) : (
-                                        <span className="text-white text-xl font-bold">
-                                            {sub.name.charAt(0)}
-                                        </span>
-                                    )}
-                                </div>
-                                <span className={styles.itemName}>{sub.name}</span>
+                                            const parent = e.currentTarget.parentElement;
+                                            if (parent) parent.classList.add(styles.cardImageFallback);
+                                        }}
+                                    />
+                                ) : (
+                                    <span className={styles.cardLetter}>{sub.name.charAt(0)}</span>
+                                )}
                             </div>
-                            <ChevronRight size={18} className={styles.arrow} />
+                            <span className={styles.cardName}>{sub.name}</span>
                         </Link>
                     ))}
                 </div>
