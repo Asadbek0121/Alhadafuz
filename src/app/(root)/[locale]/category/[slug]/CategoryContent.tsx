@@ -246,7 +246,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                     }}>
                         <ChevronLeft size={20} />
                     </button>
-                    <h1 className={styles.headerTitle}>{showRoots ? t('category') : selectedParent.name}</h1>
+                    <h1 className={styles.headerTitle}>{showRoots ? t('category') : (selectedParent ? selectedParent.name : category.name)}</h1>
                 </div>
 
                 {/* Banners Section */}
@@ -308,8 +308,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                     }}
                                     className={styles.cardRoot}
                                 >
-                                    {root.image ? (
-                                        <img src={root.image} alt={root.name} className={styles.cardRootImg} />
+                                    {root.image ? (                                        <img src={root.image} alt={root.name} className={styles.cardRootImg} />
                                     ) : (
                                         <div className={styles.cardRootIcon}>{root.name.charAt(0)}</div>
                                     )}
@@ -317,7 +316,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                 </button>
                             ))}
                         </div>
-                    ) : (
+                    ) : selectedParent ? (
                         // Level 2: subcategories of selected parent (4 per row)
                         <div className={styles.cardGridSub}>
                             {(selectedParent.children || []).map((child: any) => (
@@ -338,7 +337,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                 </a>
                             ))}
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 {/* Products Grid (Mobile) */}
