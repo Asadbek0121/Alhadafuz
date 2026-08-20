@@ -1,25 +1,28 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 
 /**
  * Media query hook — komponent ichida breakpoint'ga qarab render qilish uchun.
  * Masalan: `const isMobile = useMediaQuery('(max-width: 992px)')`
  *
- * Lazy initializer: useEffect'da setState chaqirmaslik uchun state'ni
- * to'g'ridan-to'g'ri window.matchMedia bilan boshlaymiz.
+ * `useSyncExternalStore` ishlatiladi — hydration mismatch bo'lmaydi:
+ * - SSR va hydration paytida `getServerSnapshot` (false) ishlatiladi
+ * - hydration'dan keyin haqiqiy `getSnapshot` qiymatiga o'tadi
+ * Bu serverda desktop tree, hydration'da desktop (mos), keyin mobilga o'tadi.
  */
 export function useMediaQuery(query: string): boolean {
-    const [matches, setMatches] = useState(
-        typeof window !== 'undefined' ? window.matchMedia(query).matches : false
-    );
-
-    useEffect(() => {
+    const subscribe = useCallback((onStoreChange: () => void) => {
         const mql = window.matchMedia(query);
-        const handler = (e: MediaQueryListEvent) => setMatches(e.matches);
-        mql.addEventListener('change', handler);
-        return () => mql.removeEventListener('change', handler);
+        mql.addEventListener('change', onStoreChange);
+        return () => mql.removeEventListener('change', onStoreChange);
     }, [query]);
 
-    return matches;
+    const getSnapshot = useCallback(() => {
+        return window.matchMedia(query).matches;
+    }, [query]);
+
+    const getServerSnapshot = useCallback(() => false, []);
+
+    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }
