@@ -222,12 +222,11 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         <>
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
+                                                {/* "Barchasini ko'rish" — kichik secondary text-link */}
+                                                <a href={catHref(categories[activeIdx].slug)} className={styles.viewAllLink} style={{ textDecoration: 'none' }}>
+                                                    {t('view_all')}
+                                                </a>
                                             </div>
-
-                                            {/* "Barchasini ko'rish" — prominent tugma */}
-                                            <a href={catHref(categories[activeIdx].slug)} className={styles.viewAllBtn} style={{ textDecoration: 'none' }}>
-                                                {t('view_all')} <ChevronRight size={16} />
-                                            </a>
 
                                             {/* Child kategoriyalar — toza grid */}
                                             <div className={styles.childGrid}>
