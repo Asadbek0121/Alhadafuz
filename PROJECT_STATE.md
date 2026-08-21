@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Desktop MegaMenu `/uz` redirect bug fix — root cause `LanguageSwitcher` global mousedown listener**: Katalog child kategoriya click'ida `/uz` ga "qaytish" muammosining haqiqiy sababi topildi: `LanguageSwitcher` (2 instance) `document` `mousedown`'da `closeAllMenus()` chaqirardi — katalog menyusi ichidagi native `<a>` child link'iga bosilganda menyu click'dan OLDIN unmount bo'lib, native navigation bekor qilinar edi (href to'g'ri edi, `setTimeout(close,0)` ham yordam bermasdi — click event anchor'ga yetmasdi). Fix: `LanguageSwitcher` `handleOutside` ga `#catalog-menu` guard qo'shildi. `close()` route'ni o'zgartirmaydi (faqat UI state). Mobile katalog/BottomNav/mobile drill-down o'zgarmadi. tsc 0 / lint 0 / build SUCCESS (101/101, Node 22). Real Chrome CDP test: child/root/view-all/language/overlay/X desktop + mobile drill-down SUCCESS. (`src/components/LanguageSwitcher.tsx`)
 - **Category Attribute Definition — Parent-chain inheritance + Standard Product Template seed**:
   - **Parent-chain inheritance** (backend): Yangi helper `src/lib/category-definitions.ts` — `getEffectiveCategoryDefinitions(categoryId)` parent chain bo'ylab recursion (visited Set bilan cycle-safe, infinite loop guard). Qoida: child parent defs'ni inherit qiladi, o'z local defs'ni qo'shadi, same `name` bilan override qilsa child g'alaba qiladi. Priority: child local > parent > grandparent. Order bo'yicha sort; har def'ga `_effectiveCategoryId` (manba kategoriya) qo'shiladi.
   - **Route'lar**: `GET /api/admin/categories/[id]/attributes` endi effective defs qaytaradi (includeValuesCount saqlanadi). `GET/PUT /api/admin/products/[id]/attributes` `getCategoryDefinitions` endi har product category'si + parent chain defs'ni qaytaradi (name bo'yicha dedupe). POST/PATCH create'da local defs faqat exact category'ga yoziladi (inheritance faqat read'da). Product Builder frontend o'zgarmadi.
@@ -240,4 +241,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-21 (Category Attribute Definition — Parent-chain inheritance + Standard Product Template seed, Storefront variant integration, Phase C/D admin UI)
+2026-08-21 (Desktop MegaMenu `/uz` bug fix — LanguageSwitcher mousedown root cause; Category Attribute Definition, Storefront variant integration, Phase C/D admin UI)

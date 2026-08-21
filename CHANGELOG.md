@@ -4,6 +4,14 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Fixed
+- **Desktop MegaMenu child category `/uz` redirect bug — root cause: `LanguageSwitcher` global `mousedown` listener**:
+  - **Symptom**: Desktop'da (1280px+) MegaMenu child kategoriya (masalan Badiiy adabiyotlar) ustiga hover qilganda status bar to'g'ri URL ko'rsatadi (`/uz/category/...`), lekin click'dan keyin address bar `/uz` (homepage) bo'lib qolardi — sahifa navigatsiya qilmasdi.
+  - **Root cause**: `LanguageSwitcher` (desktop va mobil `minimal` — IKKI instance) `document`'da `mousedown` listener'ga ega bo'lib, tashqariga bosilganda `closeAllMenus()` chaqirardi. Bu `closeAllMenus()` Katalog MegaMenu'ni ham yopadi. Katalog ichidagi native `<a>` child link'iga bosilganda listener `mousedown`'da ishlab, menyuni `click` event'dan OLDIN unmount qilardi — anchor DOM'dan olib tashlangani uchun native navigation bekor bo'lardi (browser click default action target yo'qolgan elementda bajara olmaydi). Natijada `setTimeout(close, 0)` va to'g'ri `href` ham yordam bermasdi — click event umuman anchor'ga yetib bormasdi.
+  - **Fix**: `LanguageSwitcher` `handleOutside`'ga `#catalog-menu` ichidagi bosishlar uchun guard qo'shildi (Header `handleClickOutside` bilan bir xil himoya) — `closeAllMenus()` katalog menyusi ichidagi bosishlarda chaqirilmaydi. Endi native `<a>` navigation authoritative bo'lib qoladi: mousedown menyuni yopmaydi, click native navigation'ni ishga tushiradi, keyin `setTimeout(close, 0)` menyuni yopadi.
+  - Mobile Katalog, BottomNav, mobile drill-down, mobile routing **o'zgarmadi** (guard faqat desktop va mobil MegaMenu'da bir xil qo'llanadi; mobil drill-down `window.innerWidth < 1024` branch'i o'zgarmadi). `close()` faqat UI state'ni o'zgartiradi, route'ni EMAS. Migration/schema yaratilmadi.
+  - Verification: real Chrome (CDP, 1440×900) — child click → `/uz/category/badiiy-adabiyotlar-1787141564282` (SUCCESS), root click → `/uz/category/qalambooks-1776709755846`, view-all link, overlay/X close, LanguageSwitcher (ochish/yopish/RU tanlash) — hammasi ishlaydi. Mobile (390×844): BottomNav → category route, drill-down root card → subcategory link → `/uz/category/badiiy-...` SUCCESS. `npx tsc --noEmit` 0 error, ESLint o'zgargan fayllar 0 error, `npm run build` SUCCESS (101/101 static, Node 22). (Fayl: `src/components/LanguageSwitcher.tsx`)
+
 ### Added
 - **Category Attribute Definition — Parent-chain inheritance + Standard Product Template seed**:
   - **Parent-chain inheritance** (`src/lib/category-definitions.ts`, yangi): `getEffectiveCategoryDefinitions(categoryId)` — child kategoriya parent chain'dagi barcha definitions'ni inherit qiladi, o'z local defs'ni qo'shadi, same `name` bo'lsa child override qiladi (Priority: child local > parent > grandparent). Cycle-safe (visited Set + infinite loop guard). Sort `order` bo'yicha. Har effective def'ga `_effectiveCategoryId` (manba kategoriya) qo'shiladi.

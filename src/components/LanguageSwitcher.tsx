@@ -24,10 +24,20 @@ export default function LanguageSwitcher({ minimal = false }: { minimal?: boolea
 
     const activeLang = languages.find(l => l.code === locale) || languages[0];
 
-    // Tashqariga bosilganda yopiladi
+    // Tashqariga bosilganda yopiladi.
+    // DIQQAT: `closeAllMenus()` barcha menyularni (shu jumladan Katalog
+    // MegaMenu'ni ham) yopadi. Katalog ichidagi native <a> child link'lariga
+    // bosilganda bu listener mousedown'da ishlab, menyuni click'dan OLDIN
+    // yopardi — anchor DOM'dan olib tashlangani uchun native navigation bekor
+    // bo'lib, /uz ga "qaytib" qolardi. Shuning uchun katalog menyusi ichidagi
+    // bosishlar closeAllMenus'ni chaqirmaydi (Header.handleClickOutside bilan
+    // bir xil himoya).
     useEffect(() => {
         const handleOutside = (e: MouseEvent) => {
-            if (ref.current && !ref.current.contains(e.target as Node)) {
+            const target = e.target as HTMLElement;
+            const insideCatalog = !!target.closest && target.closest('#catalog-menu') !== null;
+            if (insideCatalog) return;
+            if (ref.current && !ref.current.contains(target as Node)) {
                 closeAllMenus();
             }
         };
