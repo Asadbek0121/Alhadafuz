@@ -136,7 +136,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
         <>
             <div className={styles.overlay} onClick={close}></div>
             <div id="catalog-menu" className={styles.megaMenu} onKeyDown={handleMenuKeyDown}>
-                <div className={`${styles.panelHeader} container`}>
+                <div className={styles.panelHeader}>
                     <span className={styles.panelTitle}>{th('katalog')}</span>
                     <button
                         type="button"
@@ -147,8 +147,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                         <X size={22} />
                     </button>
                 </div>
-                <div className={`container ${styles.menuGridWrap}`}>
-                    <div className={styles.menuGrid}>
+                <div className={styles.menuGrid}>
                         {loading ? (
                             <div className={styles.statusMessage}>{t('loading')}</div>
                         ) : categories.length === 0 ? (
@@ -248,8 +247,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                             </>
                         )}
                     </div>
-                </div >
-            </div >
+                </div>
         </>
     );
 }
