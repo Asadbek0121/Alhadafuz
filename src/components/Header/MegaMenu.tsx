@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from '@/navigation';
 import styles from './MegaMenu.module.css';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import { ChevronRight, Smartphone, Laptop, Home, Shirt, BookOpen, Car, Monitor, Package, UserCircle, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
+import { ChevronRight, X, Smartphone, Laptop, Home, Shirt, BookOpen, Car, Monitor, Package, UserCircle, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useCartStore } from '@/store/useCartStore';
 import { useWishlist } from '@/context/WishlistContext';
@@ -136,10 +136,18 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
         <>
             <div className={styles.overlay} onClick={close}></div>
             <div id="catalog-menu" className={styles.megaMenu} onKeyDown={handleMenuKeyDown}>
-                <div className="container">
-                    {/* Mobile Navigation Header - Only show if mode is full */}
-
-
+                <div className={`${styles.panelHeader} container`}>
+                    <span className={styles.panelTitle}>{th('katalog')}</span>
+                    <button
+                        type="button"
+                        className={styles.panelClose}
+                        onClick={close}
+                        aria-label={th('yopish')}
+                    >
+                        <X size={22} />
+                    </button>
+                </div>
+                <div className={`container ${styles.menuGridWrap}`}>
                     <div className={styles.menuGrid}>
                         {loading ? (
                             <div className={styles.statusMessage}>{t('loading')}</div>
@@ -215,38 +223,27 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         <>
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
-                                                <a href={catHref(categories[activeIdx].slug)} className={styles.viewAllLink} style={{ textDecoration: 'none' }}>
-                                                    {t('view_all')}
-                                                </a>
                                             </div>
 
-                                            <div className={styles.subGrid}>
+                                            {/* "Barchasini ko'rish" — prominent tugma */}
+                                            <a href={catHref(categories[activeIdx].slug)} className={styles.viewAllBtn} style={{ textDecoration: 'none' }}>
+                                                {t('view_all')} <ChevronRight size={16} />
+                                            </a>
+
+                                            {/* Child kategoriyalar — toza grid */}
+                                            <div className={styles.childGrid}>
                                                 {categories[activeIdx].children && categories[activeIdx].children.length > 0 ? (
                                                     categories[activeIdx].children.map((sub: any) => (
-                                                        <div key={sub.id} className={styles.subGroup}>
-                                                            <a href={catHref(sub.slug)} className={styles.subTitle} style={{ textDecoration: 'none' }}>
-                                                                {sub.name}
-                                                            </a>
-
-                                                            <div className={styles.microList}>
-                                                                {sub.children?.map((micro: any) => (
-                                                                    <a key={micro.id} href={catHref(micro.slug)} className={styles.microLink} style={{ textDecoration: 'none' }}>
-                                                                        {micro.name}
-                                                                    </a>
-                                                                ))}
-                                                            </div>
-                                                        </div>
+                                                        <a key={sub.id} href={catHref(sub.slug)} className={styles.childLink} style={{ textDecoration: 'none' }}>
+                                                            {sub.name}
+                                                        </a>
                                                     ))
                                                 ) : (
-                                                    <div className={styles.noSubCategories}>
-                                                        {t('no_subcategories')}
-                                                    </div>
+                                                    <div className={styles.noSubCategories}>{t('no_subcategories')}</div>
                                                 )}
                                             </div>
                                         </>
                                     )}
-
-
                                 </div>
                             </>
                         )}

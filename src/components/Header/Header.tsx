@@ -447,24 +447,17 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                         {/* Mobile/Tablet Location Selector (Visible < xl) */}
 
 
-                        {/* Old Location Selector REMOVED */}
-
-                        {/* Katalog — URL = source of truth. Mobile bilan bir xil:
-                            to'g'ridan-to'g'ri birinchi root kategoriyaga o'tadi. */}
+                        {/* Desktop Katalog — katta ikki ustunli panel ochadi (overlay).
+                            Mobile'da BottomNav -> /category route'iga o'tadi. */}
                         <button
                             id="category-btn-trigger"
-                            className="hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30"
-                            onClick={() => {
-                                if (firstRootSlug) {
-                                    // Telegram WebView'da router.push ishonchsiz — native navigation
-                                    window.location.href = `/${locale}/category/${firstRootSlug}`;
-                                } else {
-                                    setMenuMode('catalog');
-                                    toggleCatalog();
-                                }
-                            }}
+                            className={`hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${isCatalogOpen
+                                ? 'bg-slate-900 text-white shadow-slate-900/20'
+                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30'
+                                }`}
+                            onClick={() => { setMenuMode('catalog'); toggleCatalog(); }}
                         >
-                            <LayoutGrid size={20} strokeWidth={2.5} />
+                            {isCatalogOpen ? <X size={20} strokeWidth={2.5} /> : <LayoutGrid size={20} strokeWidth={2.5} />}
                             <span>{t('katalog')}</span>
                         </button>
                     </div>

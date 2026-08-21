@@ -100,6 +100,13 @@
     text-align: left;
 }
 
+.activeCat {
+    background: white;
+    color: var(--primary);
+    border-right: 2px solid var(--primary);
+    font-weight: 700;
+}
+
 .catItem:hover {
     background: white;
     color: var(--primary);
@@ -143,6 +150,92 @@
     flex: 1;
     padding: 40px;
     overflow-y: auto;
+}
+
+/* Panel header — Katalog sarlavha + X close */
+.panelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 0;
+}
+
+.panelTitle {
+    font-size: 18px;
+    font-weight: 800;
+    color: #1e293b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.panelClose {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #64748b;
+    transition: all 0.2s;
+}
+
+.panelClose:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+/* Menu grid wrapper — panelHeader dan keyin container */
+.menuGridWrap {
+    height: calc(100% - 69px);
+    overflow: hidden;
+    padding: 0;
+}
+
+/* "Barchasini ko'rish" — prominent button */
+.viewAllBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 20px;
+    margin-bottom: 24px;
+    background: #1e293b;
+    color: white;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+
+.viewAllBtn:hover {
+    background: #2563eb;
+    transform: translateY(-1px);
+}
+
+/* Child kategoriyalar grid */
+.childGrid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 4px;
+}
+
+.childLink {
+    display: block;
+    padding: 6px 8px;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 8px;
+    transition: all 0.15s;
+}
+
+.childLink:hover {
+    background: #f1f5f9;
+    color: #1e293b;
 }
 
 .rightCol h3 {
