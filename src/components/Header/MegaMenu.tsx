@@ -81,10 +81,10 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
             setSelectedRoot(cat);
             setActiveIdx(0);
         } else {
-            // Desktop yoki child'siz root — native navigation (Telegram WebView'da ishonchli)
+            // Desktop yoki child'siz root — native + assign navigatsiya
             e.preventDefault();
             close();
-            window.open(catHref(cat.slug), '_self');
+            window.location.assign(catHref(cat.slug));
         }
     };
 
@@ -184,7 +184,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         onClick={(e) => {
                                             e.preventDefault();
                                             close();
-                                            window.open(catHref(child.slug), '_self');
+                                            window.location.assign(catHref(child.slug));
                                         }}
                                     >
                                         <span className={styles.catName}>{child.name}</span>
@@ -245,14 +245,13 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                         <a
                                                             key={sub.id}
                                                             href={catHref(sub.slug)}
-                                                            onClick={(e) => {
-                                                                // Telegram WebView'da ishonchli navigatsiya
-                                                                e.preventDefault();
-                                                                close();
-                                                                window.open(catHref(sub.slug), '_self');
-                                                            }}
                                                             className={styles.childLink}
                                                             style={{ textDecoration: 'none' }}
+                                                            onClick={() => {
+                                                                // Native href navigation asosiy; bu ham ishonchli navigatsiya
+                                                                close();
+                                                                window.location.assign(catHref(sub.slug));
+                                                            }}
                                                         >
                                                             {sub.name}
                                                         </a>
