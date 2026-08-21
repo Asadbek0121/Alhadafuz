@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { attributeDefSchema, validateDefinitionTypeCombo } from '@/lib/universal-product';
+import { getEffectiveCategoryDefinitions } from '@/lib/category-definitions';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,10 +21,8 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
             return NextResponse.json({ error: 'Kategoriya topilmadi' }, { status: 404 });
         }
 
-        const definitions = await (prisma as any).categoryAttributeDefinition.findMany({
-            where: { categoryId: id },
-            orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
-            include: { _count: { select: { values: true } } },
+        const definitions = await getEffectiveCategoryDefinitions(id, {
+            includeValuesCount: true,
         });
 
         return NextResponse.json({ definitions });

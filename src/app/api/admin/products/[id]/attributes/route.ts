@@ -8,6 +8,7 @@ import {
     serializeAttributeValue,
     deserializeAttributeValue,
 } from '@/lib/universal-product';
+import { getEffectiveCategoryDefinitions } from '@/lib/category-definitions';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,10 +35,14 @@ async function getProductCategoryIds(productId: string): Promise<string[]> {
 }
 
 async function getCategoryDefinitions(categoryIds: string[]) {
-    if (categoryIds.length === 0) return [];
-    return (prisma as any).categoryAttributeDefinition.findMany({
-        where: { categoryId: { in: categoryIds } },
-    });
+    const nameMap = new Map<string, any>();
+    for (const catId of categoryIds) {
+        const defs = await getEffectiveCategoryDefinitions(catId);
+        for (const def of defs) {
+            if (!nameMap.has(def.name)) nameMap.set(def.name, def);
+        }
+    }
+    return Array.from(nameMap.values());
 }
 
 export async function GET(req: Request, context: { params: Promise<{ id: string }> }) {
