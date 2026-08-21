@@ -35,6 +35,7 @@ const productSchema = z.object({
     hasGift: z.boolean().optional().default(false),
     showLowStock: z.boolean().optional().default(false),
     allowInstallment: z.boolean().optional().default(false),
+    fulfillmentType: z.enum(["LOCAL", "CHINA_ORDER"]).optional().default("LOCAL"),
 });
 
 export async function POST(req: Request) {
@@ -103,6 +104,7 @@ export async function POST(req: Request) {
             attributes: JSON.stringify(attrsObj),
             brand: data.brand,
             status: data.status,
+            fulfillmentType: data.fulfillmentType || 'LOCAL',
         };
 
         if (hasVendorId) {

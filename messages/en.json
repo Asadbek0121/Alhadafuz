@@ -1332,5 +1332,26 @@
     "input_placeholder": "Write a message...",
     "error_send": "Error sending message",
     "error_fetch": "Error fetching conversations"
+  },
+  "ChinaOrder": {
+    "badge": "🇨🇳 From China",
+    "badge_full": "🇨🇳 Order from China",
+    "order_based": "🇨🇳 MADE TO ORDER",
+    "cargo_separate": "Shipping cost is calculated separately",
+    "cargo_later": "Shipping to be calculated later",
+    "cargo_calculated_later": "Shipping to be calculated later",
+    "prepaid_100": "Product price is 100% prepaid",
+    "prepaid_desc": "You pay the product price now. Shipping cost is calculated separately after the product arrives in Uzbekistan.",
+    "now_paid": "Pay now",
+    "products_total": "Products",
+    "cargo_status_pending": "Calculating",
+    "cargo_status_calculated": "Calculated",
+    "cargo_status_paid": "Paid",
+    "china_order_type": "🇨🇳 China Order",
+    "product_paid": "Product paid",
+    "fulfillment_type_label": "Sales type",
+    "fulfillment_local": "Regular product",
+    "fulfillment_china": "🇨🇳 Order from China",
+    "delivery_estimate": "Delivery estimate"
   }
 }

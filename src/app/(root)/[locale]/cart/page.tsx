@@ -1,7 +1,7 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useCartStore, cartItemKey } from '@/store/useCartStore';
+import { useCartStore, cartItemKey, isChinaItem } from '@/store/useCartStore';
 import { Trash2, ShoppingCart, Minus, Plus, ArrowRight, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Link, useRouter } from '@/navigation';
@@ -26,10 +26,12 @@ export default function CartPage() {
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
     const tCheckout = useTranslations('Checkout');
+    const tChina = useTranslations('ChinaOrder');
     const router = useRouter();
     const { isAuthenticated } = useUserStore();
 
     const savings = discount();
+    const hasChina = items.some(isChinaItem);
 
     // Hydration tugamaguncha empty state ko'rsatilmaydi — misleading empty cart oldini olish
     if (!isHydrated) {
@@ -100,6 +102,11 @@ export default function CartPage() {
                                     <div className="flex justify-between items-start gap-2">
                                         <div className="flex flex-col gap-0.5">
                                             <h3 className="text-xs md:text-lg font-bold text-slate-900 line-clamp-2 leading-snug">{item.title}</h3>
+                                            {item.fulfillmentType === 'CHINA_ORDER' && (
+                                                <span className="text-[10px] md:text-xs text-red-600 font-semibold bg-red-50 px-1.5 py-0.5 rounded w-fit border border-red-100">
+                                                    {tChina('badge')} · {tChina('cargo_separate')}
+                                                </span>
+                                            )}
                                             {variantLabel && (
                                                 <span className="text-[10px] md:text-xs text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded w-fit">{variantLabel}</span>
                                             )}
@@ -174,9 +181,14 @@ export default function CartPage() {
                             </div>
                             <div className="border-t border-dashed border-slate-200 my-2"></div>
                             <div className="flex justify-between text-base md:text-lg font-black text-slate-900">
-                                <span>{tHeader('jami_to_lov')}:</span>
+                                <span>{hasChina ? tChina('now_paid') : tHeader('jami_to_lov')}:</span>
                                 <span>{total().toLocaleString()} <small className="font-normal text-xs md:text-sm">{tHeader('som')}</small></span>
                             </div>
+                            {hasChina && (
+                                <div className="text-[10px] md:text-xs text-red-600 font-medium bg-red-50 border border-red-100 rounded-lg px-3 py-2">
+                                    {tChina('cargo_separate')}
+                                </div>
+                            )}
                         </div>
 
                         <button

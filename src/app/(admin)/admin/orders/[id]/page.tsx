@@ -34,12 +34,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
     if (!orderBasics) notFound();
 
     // Manually fetch relations
-    const [customer, items] = await Promise.all([
+    const [customer, items, cargos] = await Promise.all([
         prisma.user.findUnique({ where: { id: orderBasics.userId } }),
         prisma.orderItem.findMany({
             where: { orderId: id },
             include: { product: true }
         }),
+        prisma.cargo.findMany({ where: { orderId: id } }),
     ]);
 
     let courier = null;
@@ -66,8 +67,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         ...orderBasics,
         user: customer,
         items: items,
-        courier: courier
-    };
+        courier: courier,
+        cargos: cargos,
+    }; // as any;
 
     if (!order) notFound();
 
@@ -155,6 +157,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                                 </div>
                                 <div className="flex-1 min-w-0">
                                     <h4 className="font-bold text-gray-900 truncate">{item.product.title}</h4>
+                                    {(item.fulfillmentType === 'CHINA_ORDER' || item.product.fulfillmentType === 'CHINA_ORDER') && (
+                                        <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-black uppercase tracking-wider text-red-600 bg-red-50 border border-red-100 rounded-full px-2 py-0.5">
+                                            🇨🇳 China Order · Cargo keyin
+                                        </span>
+                                    )}
                                     <div className="flex items-center gap-3 mt-1.5">
                                         <span className="text-sm font-semibold text-blue-600">{item.product.price.toLocaleString()} so'm</span>
                                         <span className="text-xs text-gray-400">×</span>
@@ -198,6 +205,42 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                             <span className="text-2xl font-black text-white">{userRole === 'VENDOR' ? vendorSubtotal.toLocaleString() : (order as any).total.toLocaleString()} <span className="text-sm font-bold opacity-60 ml-1">UZS</span></span>
                         </div>
                     </div>
+
+                    {/* Cargo status — CHINA_ORDER buyurtmalar uchun */}
+                    {(() => {
+                        const hasChina = (order as any).items?.some((i: any) => i.fulfillmentType === 'CHINA_ORDER' || i.product?.fulfillmentType === 'CHINA_ORDER');
+                        if (!hasChina) return null;
+                        const cargo = (order as any).cargos?.[0];
+                        const cargoStatus = cargo?.status || 'PENDING';
+                        return (
+                            <div className="bg-white rounded-2xl border border-red-100 shadow-sm p-6 space-y-4 transition-all hover:shadow-md">
+                                <h3 className="font-bold text-gray-900 flex items-center gap-2.5 text-sm">
+                                    <Package size={18} className="text-red-500" /> 🇨🇳 Cargo (Xitoydan buyurtma)
+                                </h3>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-4 bg-gray-50 rounded-xl">
+                                        <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Mahsulot to'langan</div>
+                                        <div className="font-black text-emerald-600">YES</div>
+                                    </div>
+                                    <div className="p-4 bg-gray-50 rounded-xl">
+                                        <div className="text-[10px] font-black uppercase tracking-wider text-gray-400 mb-1">Cargo status</div>
+                                        <div className={`font-black ${cargoStatus === 'PAID' ? 'text-emerald-600' : cargoStatus === 'CALCULATED' ? 'text-amber-600' : 'text-red-500'}`}>
+                                            {cargoStatus}
+                                        </div>
+                                    </div>
+                                </div>
+                                {cargo?.amount > 0 && (
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-gray-500 font-medium">Kargo summasi:</span>
+                                        <span className="font-black text-gray-900">{cargo.amount.toLocaleString()} so'm</span>
+                                    </div>
+                                )}
+                                {!cargo?.amount && (
+                                    <p className="text-xs text-gray-400 font-medium">Kargo summa hali hisoblanmagan — mahsulot kelgach alohida hisoblanadi.</p>
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 {/* TWO COLUMN GRID FOR ADDRESS & COURIER */}

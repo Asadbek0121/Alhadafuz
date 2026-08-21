@@ -44,6 +44,7 @@ const productSchema = z.object({
     // "scheduled" olib tashlandi: rejalashtirish uchun na sana maydoni,
     // na fon vazifasi bor edi — tanlangan mahsulot shunchaki yo'qolardi.
     status: z.enum(["published", "draft", "inactive"]).default("published"),
+    fulfillmentType: z.enum(["LOCAL", "CHINA_ORDER"]).default("LOCAL"),
     isNew: z.boolean().default(false),
     freeDelivery: z.boolean().default(false),
     hasVideo: z.boolean().default(false),
@@ -174,7 +175,7 @@ export default function AddProductPage() {
     const [duplicate, setDuplicate] = useState<{ id: string; title: string } | null>(null);
     const [open, setOpen] = useState<Record<string, boolean>>({
         general: true, media: true, variations: true, pricing: true,
-        status: true, details: true, fiscal: false, inventory: true, marketing: true,
+        status: true, details: true, fiscal: false, inventory: true, marketing: true, fulfillment: true,
     });
 
     const toggle = (key: string) => setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -188,6 +189,7 @@ export default function AddProductPage() {
             isNew: false, freeDelivery: false, hasVideo: false, hasGift: false,
             showLowStock: false, allowInstallment: false,
             discountType: "no_discount", discountCategory: "SALE", status: "published",
+            fulfillmentType: "LOCAL",
         },
     });
 
@@ -199,6 +201,7 @@ export default function AddProductPage() {
     const watchPrice = watch("price");
     const watchDiscountValue = watch("discountValue");
     const watchDiscountType = watch("discountType");
+    const watchFulfillmentType = watch("fulfillmentType");
 
     const gallery = useMemo(
         () => (watchImages || "").split("\n").map((s) => s.trim()).filter(Boolean),
@@ -629,6 +632,7 @@ export default function AddProductPage() {
             hasGift: data.hasGift,
             showLowStock: data.showLowStock,
             allowInstallment: data.allowInstallment,
+            fulfillmentType: data.fulfillmentType || "LOCAL",
             // Eski bitta-kategoriya ustuni uchun faqat birinchi ID yuboriladi.
             // Ilgari butun "id1,id2" qatori ketib, server hech qanday kategoriya
             // topmasdi: `categoryId` bo'sh qolib, `category` ustuniga ID'lar
@@ -1249,6 +1253,32 @@ export default function AddProductPage() {
                             <p className="helper-text">
                                 Vergul bilan ajrating. Teglar mahsulot sahifasining SEO kalit so'zlariga aylanadi.
                             </p>
+                        </div>
+                    </Card>
+
+                    <Card title="Sotuv turi" open={open.fulfillment} onToggle={() => toggle("fulfillment")}>
+                        <div className="form-group no-margin">
+                            <fieldset>
+                                <legend className="label">Sotuv turi</legend>
+                                <div className="flex flex-col gap-2">
+                                    <label className="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-slate-50">
+                                        <input type="radio" value="LOCAL" {...register("fulfillmentType")} className="accent-blue-600" />
+                                        <span className="text-sm font-bold text-slate-700">Oddiy mahsulot</span>
+                                    </label>
+                                    <label className="flex items-center gap-3 p-3 border rounded-xl cursor-pointer hover:bg-red-50 border-red-100">
+                                        <input type="radio" value="CHINA_ORDER" {...register("fulfillmentType")} className="accent-red-600" />
+                                        <span className="text-sm font-bold text-red-700">🇨🇳 Xitoydan buyurtma</span>
+                                    </label>
+                                </div>
+                            </fieldset>
+                            {watchFulfillmentType === "CHINA_ORDER" && (
+                                <div className="mt-3 p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-700 space-y-1">
+                                    <div className="font-black">🇨🇳 Xitoydan buyurtma</div>
+                                    <div>Mahsulot narxi 100% oldindan to'lanadi.</div>
+                                    <div>Kargo xarajati mahsulot kelgandan keyin alohida hisoblanadi.</div>
+                                    <div>Kargo summasi mahsulot narxiga kiritilmaydi.</div>
+                                </div>
+                            )}
                         </div>
                     </Card>
 

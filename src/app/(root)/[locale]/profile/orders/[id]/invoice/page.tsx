@@ -124,7 +124,12 @@ export default function OrderInvoicePage() {
                                             <div className="w-12 h-12 bg-slate-50 rounded-xl overflow-hidden shrink-0">
                                                 <img src={item.image} alt="" className="w-full h-full object-cover" />
                                             </div>
-                                            <p className="font-black text-sm text-slate-900 leading-tight uppercase tracking-tight">{item.title}</p>
+                                            <div>
+                                                <p className="font-black text-sm text-slate-900 leading-tight uppercase tracking-tight">{item.title}</p>
+                                                {item.fulfillmentType === 'CHINA_ORDER' && (
+                                                    <span className="inline-block mt-1 text-[9px] font-black text-red-500 bg-red-50 border border-red-100 rounded-full px-1.5 py-0.5">🇨🇳 Xitoydan · kargo alohida</span>
+                                                )}
+                                            </div>
                                         </div>
                                     </td>
                                     <td className="py-6 text-center font-bold text-slate-500">{item.quantity}</td>
@@ -147,6 +152,12 @@ export default function OrderInvoicePage() {
                             <span className="text-[10px] font-black uppercase tracking-widest">Yetkazish</span>
                             <span className="font-bold">{(order.deliveryFee || 0).toLocaleString()} UZS</span>
                         </div>
+                        {order.items?.some((i: any) => i.fulfillmentType === 'CHINA_ORDER') && (
+                            <div className="flex justify-between items-center text-red-500">
+                                <span className="text-[10px] font-black uppercase tracking-widest">Kargo (Xitoy)</span>
+                                <span className="font-bold">Keyin hisoblanadi</span>
+                            </div>
+                        )}
                         {order.discountAmount > 0 && (
                             <div className="flex justify-between items-center text-emerald-500">
                                 <span className="text-[10px] font-black uppercase tracking-widest">Chegirma</span>

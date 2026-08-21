@@ -24,6 +24,7 @@ interface OrderItem {
     image: string;
     product?: Product | null; // Optional relation
     productId: string;
+    fulfillmentType?: string;
 }
 
 interface Order {
@@ -49,6 +50,7 @@ export default function OrderHistoryPage() {
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
     const { user, isAuthenticated } = useUserStore();
     const { addToCart } = useCartStore();
+    const tChina = useTranslations('ChinaOrder');
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -181,6 +183,11 @@ export default function OrderHistoryPage() {
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <p className="font-bold text-[11px] md:text-sm text-gray-900 line-clamp-1">{item.title}</p>
+                                                        {item.fulfillmentType === 'CHINA_ORDER' && (
+                                                            <span className="inline-block mt-0.5 text-[8px] md:text-[10px] font-black text-red-500 bg-red-50 border border-red-100 rounded-full px-1.5 py-0.5">
+                                                                🇨🇳 Xitoydan
+                                                            </span>
+                                                        )}
                                                         <p className="text-[9px] md:text-xs text-text-muted font-medium mt-0.5">{item.quantity} x {item.price.toLocaleString()} {tHeader('som')}</p>
                                                     </div>
                                                 </div>
@@ -218,6 +225,12 @@ export default function OrderHistoryPage() {
                                                 {(order.deliveryFee || 0) === 0 ? tCart('free') : `${order.deliveryFee?.toLocaleString()} ${tHeader('som')}`}
                                             </span>
                                         </div>
+                                        {order.items.some(i => i.fulfillmentType === 'CHINA_ORDER') && (
+                                            <div className="flex justify-between text-[11px] md:text-sm">
+                                                <span className="text-red-500 font-medium">{tChina('cargo_later')}:</span>
+                                                <span className="text-red-500 font-bold">{tChina('cargo_status_pending')}</span>
+                                            </div>
+                                        )}
                                         <div className="flex justify-between text-[13px] md:text-base font-black pt-2 border-t border-gray-100 mt-2">
                                             <span className="text-gray-900">{t('total')}:</span>
                                             <span className="text-blue-600">{order.total.toLocaleString()} {tHeader('som')}</span>

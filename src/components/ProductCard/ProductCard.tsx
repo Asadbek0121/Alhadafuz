@@ -12,6 +12,7 @@ import { useWishlist } from '@/context/WishlistContext';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { discountPercent, hasRealDiscount } from '@/lib/product-discount';
+import { isChinaItem } from '@/store/useCartStore';
 
 interface ProductProps {
     id: string; // Updated to string
@@ -32,17 +33,20 @@ interface ProductProps {
     priority?: boolean;
     rating?: number;
     reviewCount?: number;
+    /** Fulfillment turi: `LOCAL` (oddiy) yoki `CHINA_ORDER` (Xitoydan buyurtma). */
+    fulfillmentType?: string;
 }
 
 export default function ProductCard(props: ProductProps) {
     const {
         id, title, price, oldPrice, image, discount, discountType,
         freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false,
-        rating = 0, reviewCount
+        rating = 0, reviewCount, fulfillmentType
     } = props;
     const { addToCart } = useCartStore(); // Updated hook
     const t = useTranslations('Header');
     const tMarketing = useTranslations('Marketing');
+    const tChina = useTranslations('ChinaOrder');
     const { toggleWishlist, isInWishlist } = useWishlist();
     const router = useRouter();
     const [isBuying, setIsBuying] = useState(false);
@@ -58,6 +62,7 @@ export default function ProductCard(props: ProductProps) {
 
     const isLowStock = showLowStock && typeof stock !== 'undefined' && stock > 0 && stock < 10;
     const monthlyPayment = Math.round(price / 12);
+    const isChina = isChinaItem({ fulfillmentType });
 
     // "AKSIYA" sticker faqat HOT/PROMO marketing turlarida chiqadi — oddiy % chegirma ribbon bilan ko'rsatiladi
     const isCampaignSticker = discountType === 'HOT' || discountType === 'PROMO';
@@ -68,7 +73,8 @@ export default function ProductCard(props: ProductProps) {
             id,
             title,
             price,
-            image
+            image,
+            fulfillmentType: isChinaItem({ fulfillmentType }) ? 'CHINA_ORDER' : 'LOCAL'
         });
         toast.success(t('savatga_qoshildi'));
     };
@@ -80,7 +86,8 @@ export default function ProductCard(props: ProductProps) {
             id,
             title,
             price,
-            image
+            image,
+            fulfillmentType: isChinaItem({ fulfillmentType }) ? 'CHINA_ORDER' : 'LOCAL'
         });
         router.push(`/${window.location.pathname.split('/')[1]}/checkout`);
     };
@@ -94,6 +101,14 @@ export default function ProductCard(props: ProductProps) {
 
     // Badge'lar — maksimal 2 ta, ustuvorlik tartibida
     const badges: React.ReactNode[] = [];
+    if (isChina) {
+        // CHINA_ORDER badge — eng yuqori ustuvorlik
+        badges.push(
+            <div key="china" className={`${styles.promoSticker} bg-red-600 text-white`}>
+                {tChina('order_based')}
+            </div>
+        );
+    }
     if (isOutOfStock) {
         badges.push(
             <div key="stock" className={`${styles.promoSticker} bg-red-600 text-white`}>
@@ -108,7 +123,7 @@ export default function ProductCard(props: ProductProps) {
                 </div>
             );
         }
-        if (freeDelivery) {
+        if (!isChina && freeDelivery) {
             badges.push(
                 <div key="del" className={`${styles.promoSticker} ${styles.deliveryTheme}`}>
                     <Truck size={12} className="mr-1" /> {tMarketing('bepul')}
@@ -228,6 +243,11 @@ export default function ProductCard(props: ProductProps) {
                             <div className="text-[10px] text-slate-400 line-through">{oldPrice.toLocaleString()} {t('som')}</div>
                         )}
                         <div className="text-sm md:text-lg font-black text-blue-600">{price.toLocaleString()} <span className="text-xs font-medium">{t('som')}</span></div>
+                        {isChina && (
+                            <div className="text-[10px] text-slate-400 mt-0.5">
+                                {tChina('cargo_separate')}
+                            </div>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-2">

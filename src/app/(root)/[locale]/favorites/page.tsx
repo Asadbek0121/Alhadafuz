@@ -87,6 +87,7 @@ export default function FavoritesPage() {
                         stock={product.stock}
                         rating={product.rating}
                         reviewCount={product.reviewsCount}
+                        fulfillmentType={product.fulfillmentType}
                     />
                 ))}
             </div>

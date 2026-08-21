@@ -83,6 +83,7 @@ export async function POST(req: Request) {
             price: item.product.price,
             image: item.product.image,
             quantity: item.quantity,
+            fulfillmentType: item.product.fulfillmentType || 'LOCAL',
         })) || [];
 
         return NextResponse.json({ success: true, items: formattedItems });

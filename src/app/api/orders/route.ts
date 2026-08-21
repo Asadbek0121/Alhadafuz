@@ -127,7 +127,9 @@ export async function POST(req: Request) {
                 price,
                 quantity: item.quantity,
                 image,
-                variant: item.variant || null
+                variant: item.variant || null,
+                // Fulfillment snapshot — Product authoritative; kargo alohida
+                fulfillmentType: dbProduct.fulfillmentType || 'LOCAL'
             });
         }
 
@@ -299,6 +301,7 @@ export async function POST(req: Request) {
                         quantity: item.quantity,
                         image: item.image,
                         variant: item.variant,
+                        fulfillmentType: item.fulfillmentType || 'LOCAL',
                     }
                 });
             }

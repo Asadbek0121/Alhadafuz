@@ -136,6 +136,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             hasGift,
             showLowStock,
             allowInstallment,
+            fulfillmentType,
             attributes,
             specs,
             mxikCode,
@@ -159,6 +160,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             packageCode,
             vatPercent: vatPercent !== undefined ? Number(vatPercent) : undefined,
             brand,
+            fulfillmentType: fulfillmentType !== undefined ? (fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL') : undefined,
         };
 
         if (userRole === 'ADMIN' && vendorId !== undefined) {

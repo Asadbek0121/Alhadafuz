@@ -28,6 +28,8 @@ export async function GET() {
             price: item.product.price,
             image: item.product.image,
             quantity: item.quantity,
+            // Product authoritative source; eski itemlarda null -> LOCAL
+            fulfillmentType: item.product.fulfillmentType || 'LOCAL',
         })) || [];
 
         return NextResponse.json({ items: formattedItems });

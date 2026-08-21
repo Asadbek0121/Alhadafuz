@@ -83,6 +83,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                   stock={p.stock}
                   rating={p.rating}
                   reviewCount={p.reviewsCount}
+                  fulfillmentType={p.fulfillmentType}
                   priority={false}
                 />
               </div>
@@ -118,6 +119,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                   stock={p.stock}
                   rating={p.rating}
                   reviewCount={p.reviewsCount}
+                  fulfillmentType={p.fulfillmentType}
                   priority={index < 8}
                 />
               ))}

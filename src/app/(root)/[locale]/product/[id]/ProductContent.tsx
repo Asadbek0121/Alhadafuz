@@ -47,6 +47,7 @@ interface Product {
     category?: string;
     categorySlug?: string;
     categoryId?: string;
+    fulfillmentType?: string;
 }
 
 export default function ProductContent({ initialProduct = null }: { initialProduct?: Product | null }) {
@@ -61,6 +62,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
     const tProduct = useTranslations('Product');
     const tHeader = useTranslations('Header');
     const tMarketing = useTranslations('Marketing');
+    const tChina = useTranslations('ChinaOrder');
 
     // Separate selections (arrays) from static specs (strings)
     const [selections, setSelections] = useState<[string, string[]][]>([]);
@@ -267,6 +269,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                 discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
                 oldPrice: product.oldPrice,
                 variant,
+                fulfillmentType: product.fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL',
             }, false, quantity);
             toast.success(product.title + ' - ' + tHeader('savatcha'));
         }
@@ -285,6 +288,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                 discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
                 oldPrice: product.oldPrice,
                 variant,
+                fulfillmentType: product.fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL',
             }, false, quantity);
             await router.push('/checkout');
             setBuying(null);
@@ -328,6 +332,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
     const isCampaignSticker = discountType === 'HOT' || discountType === 'PROMO';
     const isOutOfStock = product.stock <= 0 || ['inactive', 'draft'].includes(product.status?.toLowerCase() || '');
     const isLowStock = !isOutOfStock && product.stock < 10;
+    const isChina = product.fulfillmentType === 'CHINA_ORDER';
 
     const activeImg = product.images?.[activeImage] || product.images?.[0] || "https://placehold.co/400";
 
@@ -413,7 +418,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                                     {tMarketing(discountType!.toLowerCase())}
                                 </div>
                             )}
-                            {product.freeDelivery && (
+                            {!isChina && product.freeDelivery && (
                                 <div className={`${styles.promoSticker} ${styles.promoPromo}`}>
                                     <Truck size={14} className="mr-2" /> {tMarketing('freeDelivery')}
                                 </div>
@@ -496,6 +501,16 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                         )}
                         <div className={styles.mainPrice}>{product.price.toLocaleString()} {tHeader('som')}</div>
 
+                        {isChina && (
+                            <div className="mt-4 p-4 bg-red-50 rounded-2xl border border-red-100" role="region" aria-label={tChina('badge_full')}>
+                                <div className="text-red-700 text-sm font-black mb-1">{tChina('badge_full')}</div>
+                                <div className="text-red-600 text-xs leading-relaxed space-y-0.5">
+                                    <div>{tChina('prepaid_100')}.</div>
+                                    <div>{tChina('cargo_separate')}.</div>
+                                </div>
+                            </div>
+                        )}
+
                         {product.allowInstallment && (
                             <div className="mt-4 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex items-center justify-between">
                                 <div>
@@ -542,12 +557,14 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                             </div>
                         </div>
 
-                        {/* Delivery */}
+                        {/* Delivery / Cargo */}
                         <div className={styles.metaRow}>
                             <span className={styles.metaLabel}>{tProduct('delivery_info')}:</span>
                             <div className={styles.metaDots}></div>
                             <span className={styles.metaValue}>
-                                {product.freeDelivery ? (
+                                {isChina ? (
+                                    <span className="text-red-600 font-bold">{tChina('cargo_later')}</span>
+                                ) : product.freeDelivery ? (
                                     <span className="text-emerald-600 font-bold">{tProduct('delivery_free')}</span>
                                 ) : (
                                     tProduct('delivery_calculated')
@@ -772,6 +789,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                                 stock={p.stock}
                                 rating={p.rating}
                                 reviewCount={p.reviewsCount}
+                                fulfillmentType={p.fulfillmentType}
                             />
                         ))}
                     </div>

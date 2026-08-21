@@ -1308,5 +1308,26 @@
     "cat_appliances": "Бытовая техника",
     "cat_home": "Для дома и сада",
     "cat_other": "Прочее..."
+  },
+  "ChinaOrder": {
+    "badge": "🇨🇳 Из Китая",
+    "badge_full": "🇨🇳 Заказ из Китая",
+    "order_based": "🇨🇳 ПОД ЗАКАЗ",
+    "cargo_separate": "Стоимость доставки рассчитывается отдельно",
+    "cargo_later": "Доставка будет рассчитана позже",
+    "cargo_calculated_later": "Доставка будет рассчитана позже",
+    "prepaid_100": "Цена товара оплачивается 100% предоплата",
+    "prepaid_desc": "Вы сейчас оплачиваете стоимость товара. Стоимость доставки будет рассчитана отдельно после прибытия товара в Узбекистан.",
+    "now_paid": "Оплачивается сейчас",
+    "products_total": "Товары",
+    "cargo_status_pending": "Рассчитывается",
+    "cargo_status_calculated": "Рассчитано",
+    "cargo_status_paid": "Оплачено",
+    "china_order_type": "🇨🇳 China Order",
+    "product_paid": "Товар оплачен",
+    "fulfillment_type_label": "Тип продажи",
+    "fulfillment_local": "Обычный товар",
+    "fulfillment_china": "🇨🇳 Заказ из Китая",
+    "delivery_estimate": "Срок поставки"
   }
 }

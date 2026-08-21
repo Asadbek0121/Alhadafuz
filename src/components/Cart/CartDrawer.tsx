@@ -1,7 +1,7 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useCartStore, cartItemKey } from '@/store/useCartStore';
+import { useCartStore, cartItemKey, isChinaItem } from '@/store/useCartStore';
 import styles from './CartDrawer.module.css';
 import { X, Trash2, ShoppingCart, ChevronRight } from 'lucide-react';
 import { Link } from '@/navigation';
@@ -25,6 +25,8 @@ export default function CartDrawer() {
     const { items, isOpen, closeCart, removeFromCart, updateQuantity, total, isHydrated } = useCartStore();
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
+    const tChina = useTranslations('ChinaOrder');
+    const hasChina = items.some(isChinaItem);
 
     // Drawer ochiq paytida fon sahifa scroll qilinmaydi
     useScrollLock(isOpen);
@@ -70,6 +72,11 @@ export default function CartDrawer() {
                                 />
                                 <div className={styles.details}>
                                     <div className={styles.title}>{item.title}</div>
+                                    {item.fulfillmentType === 'CHINA_ORDER' && (
+                                        <div className={styles.chinaLabel} style={{ fontSize: '11px', color: '#dc2626', fontWeight: 600, marginTop: 2 }}>
+                                            {tChina('badge')} · {tChina('cargo_separate')}
+                                        </div>
+                                    )}
                                     {parseVariantLabel(item.variant) && (
                                         <div className={styles.variant}>{parseVariantLabel(item.variant)}</div>
                                     )}
@@ -93,9 +100,14 @@ export default function CartDrawer() {
                 {items.length > 0 && (
                     <div className={styles.footer}>
                         <div className={styles.total}>
-                            <span style={{ fontWeight: '500' }}>{tCart('total')}:</span>
+                            <span style={{ fontWeight: '500' }}>{hasChina ? tChina('now_paid') : tCart('total')}:</span>
                             <span style={{ color: 'var(--primary)' }}>{total().toLocaleString()} {tHeader('som')}</span>
                         </div>
+                        {hasChina && (
+                            <div style={{ fontSize: '12px', color: '#dc2626', marginTop: 4, fontWeight: 500 }}>
+                                {tChina('cargo_separate')}
+                            </div>
+                        )}
 
                         <div className={styles.actionButtons}>
                             <Link href="/checkout" onClick={closeCart} className={styles.checkoutBtn} style={{ textAlign: 'center', display: 'block', textDecoration: 'none' }}>

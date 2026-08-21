@@ -13,6 +13,8 @@ export interface CartItem {
     oldPrice?: number;
     /** Tanlangan variant JSON (masalan: `{"Rang":"Qizil","Xotira":"128GB"}`). Variant bo'lmasa undefined. */
     variant?: string;
+    /** Fulfillment turi: `LOCAL` (oddiy) yoki `CHINA_ORDER` (Xitoydan buyurtma). Kargo alohida hisoblanadi. */
+    fulfillmentType?: 'LOCAL' | 'CHINA_ORDER';
 }
 
 /**
@@ -21,6 +23,11 @@ export interface CartItem {
  */
 export function cartItemKey(item: Pick<CartItem, 'id' | 'variant'>): string {
     return item.variant ? `${item.id}::${item.variant}` : item.id;
+}
+
+/** Cart item Xitoydan buyurtmami? */
+export function isChinaItem(item: { fulfillmentType?: string }): boolean {
+    return item.fulfillmentType === 'CHINA_ORDER';
 }
 
 interface CartState {

@@ -394,6 +394,7 @@ export default function SearchClient() {
                                     stock={p.stock}
                                     rating={p.rating}
                                     reviewCount={p.reviewsCount}
+                                    fulfillmentType={p.fulfillmentType}
                                     priority={false}
                                 />
                             ))}

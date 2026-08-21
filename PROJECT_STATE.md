@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- 🇨🇳 **Xitoydan buyurtma (CHINA_ORDER fulfillment)** — to'liq zanjir implement qilindi: `Product.fulfillmentType` (authoritative, default LOCAL) + `CartItem`/`OrderItem` snapshot + yangi `Cargo` modeli (PENDING/CALCULATED/PAID placeholder). Migration `20260821051422_china_order_fulfillment` qo'llandi. Product card/detail, Cart, Checkout ("Hozir to'lanadi", "Kargo keyin hisoblanadi"), Order, Admin product form (Sotuv turi radio), Admin order detail (China Order + Cargo status card), Profile orders + invoice — barchasi CHINA_ORDER'ni farqlaydi. Yangi `ChinaOrder` i18n namespace (uz/ru/en). Server authoritative price saqlanadi. (schema, `lib/data.ts`, `useCartStore`, cart/orders API, ProductCard, ProductContent, checkout, admin products/orders, profile orders, invoice)
 - **Vercel build P1002 fix (2)**: `scripts/prepare-direct-url.mjs` endi DIRECT_URL allaqachon o'rnatilgan bo'lsa ham uni normalizatsiya qiladi. Vercel env'ida DIRECT_URL `pgbouncer=true` bilan qo'lda o'rnatilgan edi — skript `already set` deb o'tkazib yuborgan va `prisma migrate deploy` transaction-mode ulanishda advisory lock ololmay P1002 bergan. Endi `pgbouncer=true` bo'lsa override qilib to'g'ri variantni yozadi. (`scripts/prepare-direct-url.mjs`)
 - **MegaMenu child navigation fix**: Desktop childGrid child linklari `window.open(url, '_self')` + `preventDefault` o'rniga native `<a href>` (no preventDefault) + `window.location.assign` bilan almashtirildi. Root kategoriya va mobile drill-down ham `window.location.assign`ga o'tkazildi. Bu Telegram WebView'da `/uz`ga tushib ketish muammosini bartaraf qiladi. (`MegaMenu.tsx`)
 
@@ -154,11 +155,13 @@ Avvalgi sessiyalardan:
 
 ## In Progress
 
-- **`prisma/schema.prisma`** — `BannerEvent` modeli qo'shildi; `npx prisma generate` + `db push` kerak (uncommitted). Ehtiyot: build `db push --accept-data-loss` ishlatadi.
+- **`prisma/schema.prisma`** — `BannerEvent` modeli qo'shildi; `npx prisma generate` + migratsiya kerak (uncommitted). Build `prisma migrate deploy` ishlatadi (db push emas).
 - **Lint**: `.eslintcache` buzilganda `eslint` osilib qoladi — `rm -f .eslintcache` qilib qayta ishga tushirish yoki `node node_modules/eslint/bin/eslint.js` bilan.
 
 ## Next Tasks
 
+- 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
+- **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash — productlar `fulfillmentType` bilan ajratiladi, kategoriya alohida tushuncha.
 - **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup.
 - **Product slug migration** (katalog o'sganda): `Product.slug` + `@@unique` + `/product/[slug]` + 301 redirect. Hozircha `[id]` ishlatiladi.
 - **BannerEvent** migratsiyasini tugatish (generate + push + admin analitika).

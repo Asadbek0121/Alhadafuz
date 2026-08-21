@@ -573,7 +573,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                         isNew={p.isNew} freeDelivery={p.freeDelivery} hasVideo={p.hasVideo}
                                         hasGift={p.hasGift} showLowStock={p.showLowStock}
                                         allowInstallment={p.allowInstallment} stock={p.stock}
-                                        rating={p.rating} reviewCount={p.reviewsCount} />
+                                        rating={p.rating} reviewCount={p.reviewsCount} fulfillmentType={p.fulfillmentType} />
                                 ))}
                             </div>
                         ) : (
@@ -741,6 +741,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                     stock={p.stock}
                                     rating={p.rating}
                                     reviewCount={p.reviewsCount}
+                                    fulfillmentType={p.fulfillmentType}
                                 />
                             ))}
                         </div>

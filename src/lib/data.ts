@@ -27,6 +27,8 @@ export function mapProductMarketing(p: any) {
 
     return {
         ...p,
+        // Eski productlar (fulfillmentType null) LOCAL deb hisoblanadi
+        fulfillmentType: p.fulfillmentType || 'LOCAL',
         isNew,
         freeDelivery,
         hasVideo,

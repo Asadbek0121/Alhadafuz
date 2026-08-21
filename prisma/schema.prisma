@@ -155,6 +155,7 @@ model Order {
   store             Store?        @relation(fields: [storeId], references: [id])
   user              User          @relation("CustomerOrders", fields: [userId], references: [id])
   items             OrderItem[]
+  cargos            Cargo[]
 
   @@unique([userId, idempotencyKey])
 }
@@ -279,21 +280,39 @@ model TelegramLoginToken {
 }
 
 model OrderItem {
-  id        String  @id @default(cuid())
-  orderId   String
-  productId String
-  vendorId  String?
-  title     String
-  price     Float
-  quantity  Int
-  image     String
-  variant   String?
-  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id])
+  id              String  @id @default(cuid())
+  orderId         String
+  productId       String
+  vendorId        String?
+  title           String
+  price           Float
+  quantity        Int
+  image           String
+  variant         String?
+  fulfillmentType String?
+  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product         Product @relation(fields: [productId], references: [id])
 
   @@index([orderId])
   @@index([productId])
   @@index([vendorId])
+}
+
+// Cargo — CHINA_ORDER buyurtmalari uchun kelajakdagi kargo hisoblash modeli.
+// Hozir faqat placeholder: real kargo calculator/payment hali yo'q.
+// status: PENDING | CALCULATED | PAID
+model Cargo {
+  id        String   @id @default(cuid())
+  orderId   String
+  amount    Float    @default(0)
+  status    String   @default("PENDING")
+  weight    Float?
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }
 
 model Product {
@@ -310,6 +329,7 @@ model Product {
   stock         Int            @default(0)
   attributes    String?
   specs         String?
+  fulfillmentType String       @default("LOCAL") // LOCAL | CHINA_ORDER
   rating        Float          @default(0)
   reviewsCount  Int            @default(0)
   category      String
@@ -474,13 +494,14 @@ model Cart {
 }
 
 model CartItem {
-  id        String  @id @default(cuid())
+  id        String    @id @default(cuid())
   cartId    String
   productId String
   quantity  Int
   variant   String?
-  cart      Cart    @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fulfillmentType String?
+  cart      Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([cartId, productId])
 }

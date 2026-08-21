@@ -5,6 +5,17 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 ## [Unreleased]
 
 ### Added
+- 🇨🇳 **Xitoydan buyurtma (CHINA_ORDER fulfillment)** — boshidan oxirigacha fulfillment modeli:
+  - **DB**: `Product.fulfillmentType String @default("LOCAL")` (authoritative), `CartItem.fulfillmentType`/`OrderItem.fulfillmentType` (snapshot, nullable), yangi `Cargo` modeli (PENDING/CALCULATED/PAID — future placeholder, hozir real calculator yo'q). Migration `20260821051422_china_order_fulfillment`.
+  - **Product card**: CHINA_ORDER qizil badge "🇨🇳 BUYURTMA ASOSIDA" + "Kargo alohida hisoblanadi" izohi. LOCAL'da bepul yetkazib berish badge'si o'chadi.
+  - **Product detail**: qizil info blok — "Narx 100% oldindan to'lanadi", "Kargo alohida", delivery row "Kargo keyin hisoblanadi".
+  - **Cart/CartDrawer**: CHINA_ORDER badge + item izohi; summary'da "Kargo alohida hisoblanadi".
+  - **Checkout**: "Hozir to'lanadi" label (Jami o'rniga), "Kargo keyin hisoblanadi" qatori, mobil sticky CTA'da ham.
+  - **Order**: `OrderItem.fulfillmentType` snapshot server authoritative price bilan (client total ishonilmaydi).
+  - **Admin**: product form'da "Sotuv turi" radio (Oddiy / 🇨🇳 Xitoydan), order detail'da "China Order · Cargo keyin" badge + Cargo status card (Product paid YES, status).
+  - **Profile orders + invoice**: CHINA_ORDER badge, "Kargo hisoblanmoqda" qatori.
+  - **i18n**: yangi `ChinaOrder` namespace — uz/ru/en.
+  - **Backward compat**: eski productlar LOCAL, eski cart/order itemlar `null` → kod `LOCAL` deb hisoblaydi.
 - `BannerEvent` modeli (vaqt-belgili impression/click jurnali) schema'ga qo'shildi — `db push` kutilmoqda.
 
 ## [2026-08-20] — Production Remediation (B1/B2/H1/H3/H4/P6/P7/P8/P9)

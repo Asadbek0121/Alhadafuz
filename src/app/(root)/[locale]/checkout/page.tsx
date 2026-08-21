@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useCartStore } from '@/store/useCartStore';
+import { useCartStore, isChinaItem } from '@/store/useCartStore';
 import { useUserStore } from '@/store/useUserStore';
 import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle, Store, Building, Clock, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -71,7 +71,9 @@ export default function CheckoutPage() {
     const tCheckout = useTranslations('Checkout');
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
+    const tChina = useTranslations('ChinaOrder');
     const tProfile = useTranslations('Profile');
+    const hasChina = items.some(isChinaItem);
     const messages = useMessages() as any;
     const router = useRouter();
     const { openMap } = useMapStore();
@@ -1124,11 +1126,18 @@ export default function CheckoutPage() {
                                     </div>
                                 )}
 
+                                {hasChina && (
+                                    <div className="flex justify-between items-center group">
+                                        <span className="text-slate-400 font-black text-[10px] uppercase tracking-widest">{tChina('cargo_later')}</span>
+                                        <span className="text-[10px] font-black text-red-500 uppercase tracking-widest">{tChina('cargo_later')}</span>
+                                    </div>
+                                )}
+
                                 <div className="h-px bg-gradient-to-r from-transparent via-slate-100 to-transparent my-6"></div>
 
                                 <div className="flex justify-between items-end pb-2">
                                     <div>
-                                        <span className="text-slate-900 font-black text-[10px] sm:text-[11px] md:text-[11px] uppercase tracking-[0.2em] block mb-1">{tHeader('jami_to_lov')}</span>
+                                        <span className="text-slate-900 font-black text-[10px] sm:text-[11px] md:text-[11px] uppercase tracking-[0.2em] block mb-1">{hasChina ? tChina('now_paid') : tHeader('jami_to_lov')}</span>
                                         <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest leading-none">{items.length} {tHeader('mahsulotlar')}</p>
                                     </div>
                                     <div className="text-right">
@@ -1171,7 +1180,8 @@ export default function CheckoutPage() {
             <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-slate-200 bg-white/95 backdrop-blur-xl px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-[0_-4px_20px_rgba(0,0,0,0.06)]">
                 <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{tHeader('jami_to_lov')}</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">{hasChina ? tChina('now_paid') : tHeader('jami_to_lov')}</p>
+                        {hasChina && <p className="text-[9px] font-bold text-red-500 tracking-wide leading-none mt-1">{tChina('cargo_later')}</p>}
                         <p className="text-lg font-black text-slate-900 tracking-tighter leading-none mt-0.5" aria-live="polite">
                             {grandTotal.toLocaleString()} <span className="text-[10px] font-bold text-slate-500">{tHeader('som')}</span>
                         </p>

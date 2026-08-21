@@ -1127,5 +1127,26 @@
     "cat_appliances": "Maishiy texnika",
     "cat_home": "Uy va bog' uchun",
     "cat_other": "Boshqa..."
+  },
+  "ChinaOrder": {
+    "badge": "🇨🇳 Xitoydan",
+    "badge_full": "🇨🇳 Xitoydan buyurtma",
+    "order_based": "🇨🇳 BUYURTMA ASOSIDA",
+    "cargo_separate": "Kargo alohida hisoblanadi",
+    "cargo_later": "Kargo keyin hisoblanadi",
+    "cargo_calculated_later": "Kargo keyin hisoblanadi",
+    "prepaid_100": "Mahsulot narxi 100% oldindan to'lanadi",
+    "prepaid_desc": "Siz hozir mahsulot narxini to'laysiz. Kargo xarajati mahsulot O'zbekistonga kelgach alohida hisoblanadi.",
+    "now_paid": "Hozir to'lanadi",
+    "products_total": "Mahsulotlar",
+    "cargo_status_pending": "Hisoblanmoqda",
+    "cargo_status_calculated": "Hisoblangan",
+    "cargo_status_paid": "To'langan",
+    "china_order_type": "🇨🇳 China Order",
+    "product_paid": "Mahsulot to'langan",
+    "fulfillment_type_label": "Sotuv turi",
+    "fulfillment_local": "Oddiy mahsulot",
+    "fulfillment_china": "🇨🇳 Xitoydan buyurtma",
+    "delivery_estimate": "Yetib kelish muddati"
   }
 }

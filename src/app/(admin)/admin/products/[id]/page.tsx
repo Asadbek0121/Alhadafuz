@@ -32,6 +32,7 @@ const productSchema = z.object({
     hasGift: z.boolean().default(false),
     showLowStock: z.boolean().default(false),
     allowInstallment: z.boolean().default(false),
+    fulfillmentType: z.enum(["LOCAL", "CHINA_ORDER"]).default("LOCAL"),
     template: z.string().optional(),
 }).check((ctx) => {
     // Chegirma turi tanlangan bo'lsa, miqdor MAJBURIY — qarang:
@@ -205,6 +206,7 @@ export default function EditProductPage() {
                         hasGift: !!data.hasGift,
                         showLowStock: !!data.showLowStock,
                         allowInstallment: !!data.allowInstallment,
+                        fulfillmentType: data.fulfillmentType === "CHINA_ORDER" ? "CHINA_ORDER" : "LOCAL",
                     });
 
                     // Populate attributes
@@ -386,6 +388,7 @@ export default function EditProductPage() {
             hasGift: data.hasGift,
             showLowStock: data.showLowStock,
             allowInstallment: data.allowInstallment,
+            fulfillmentType: data.fulfillmentType || "LOCAL",
         };
 
         try {
@@ -652,6 +655,24 @@ export default function EditProductPage() {
                             <p style={{ fontSize: '12px', color: '#7c8fac', margin: '6px 0 0' }}>
                                 Vergul bilan ajrating. Teglar mahsulot sahifasining SEO kalit so'zlariga aylanadi.
                             </p>
+                        </div>
+                        <div className="form-group">
+                            <label className="label">Sotuv turi</label>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                <label className="checkbox-label font-normal">
+                                    <input type="radio" value="LOCAL" {...register("fulfillmentType")} className="checkbox-input" />
+                                    <span>Oddiy mahsulot</span>
+                                </label>
+                                <label className="checkbox-label font-normal">
+                                    <input type="radio" value="CHINA_ORDER" {...register("fulfillmentType")} className="checkbox-input" />
+                                    <span>🇨🇳 Xitoydan buyurtma</span>
+                                </label>
+                            </div>
+                            {watch('fulfillmentType') === 'CHINA_ORDER' && (
+                                <p className="helper-text" style={{ color: '#b91c1c' }}>
+                                    🇨🇳 Narx 100% oldindan to'lanadi. Kargo mahsulot kelgach alohida hisoblanadi.
+                                </p>
+                            )}
                         </div>
                         <div className="form-group">
                             <label className="label">Omborda</label>
