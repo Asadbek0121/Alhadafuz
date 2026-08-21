@@ -30,7 +30,7 @@ import NotificationIcon from '../ui/NotificationIcon';
 
 
 
-export default function Header() {
+export default function Header({ firstRootSlug }: { firstRootSlug?: string | null }) {
     const { items, openCart, isHydrated } = useCartStore();
     const { wishlist } = useWishlist();
     const t = useTranslations('Header');
@@ -448,15 +448,21 @@ export default function Header() {
 
                         {/* Old Location Selector REMOVED */}
 
+                        {/* Katalog — URL = source of truth. Mobile bilan bir xil:
+                            to'g'ridan-to'g'ri birinchi root kategoriyaga o'tadi. */}
                         <button
                             id="category-btn-trigger"
-                            className={`hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 ${isCatalogOpen
-                                ? 'bg-slate-900 text-white shadow-slate-900/20'
-                                : 'bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30'
-                                }`}
-                            onClick={() => { setMenuMode('catalog'); toggleCatalog(); }}
+                            className="hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30"
+                            onClick={() => {
+                                if (firstRootSlug) {
+                                    router.push(`/category/${firstRootSlug}`);
+                                } else {
+                                    setMenuMode('catalog');
+                                    toggleCatalog();
+                                }
+                            }}
                         >
-                            {isCatalogOpen ? <X size={20} strokeWidth={2.5} /> : <LayoutGrid size={20} strokeWidth={2.5} />}
+                            <LayoutGrid size={20} strokeWidth={2.5} />
                             <span>{t('katalog')}</span>
                         </button>
                     </div>

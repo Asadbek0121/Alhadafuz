@@ -116,7 +116,7 @@ export default async function LocaleLayout({
     <ClientProviders messages={messages} locale={locale} session={session}>
           <SessionSync />
           <TelegramAuthSync />
-          <Header />
+          <Header firstRootSlug={firstRootSlug} />
           <main className="min-h-screen flex flex-col">
             {children}
           </main>
