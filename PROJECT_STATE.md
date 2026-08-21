@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Phase C — Universal Product Admin UI (admin product create/edit)**: `src/app/(admin)/admin/products/new/page.tsx` va `[id]/page.tsx` ga dynamic attribute fields (8 turdagi: TEXT/NUMBER/BOOLEAN/SELECT/MULTI_SELECT/COLOR/MEASUREMENT/DATE, required yulduzchali, frontend validation) + variant builder (forVariant o'qlari, values, kartezian kombinatsiya generatori, 50/batch chunk render) + editable variant table (SKU/Barcode/Price/OldPrice/Stock/Weight/Default radio/Active/Images) + variant images drawer (upload `/api/upload` reuse, delete, reorder, primary) + safe save sequence (1. product POST/PUT legacy JSON, 2. `PUT /api/admin/products/[id]/attributes`, 3. variants create/update/delete, 4. variant images). Category o'zgarishida warning + eski qiymatlar darhol o'chirilmaydi. CHINA_ORDER block mavjud. Yangi komponentlar: `src/components/admin/product/` (types.ts, AttributeFields.tsx, VariantEditor.tsx, UniversalProductSections.tsx — forwardRef bilan save/validate API). Qisman muvaffaqiyatda (attrs/variants xato) sahifada qolib, qayta bosish PUT bo'ladi (duplicate product yaratilmaydi). Legacy book flow (free-form attributes, legacy JSON) saqlanadi.
 - **Phase B — Backend CRUD & Validation (universal product system)**: Category Attribute Definitions CRUD, Product Attribute Values bulk PUT/GET, Product Variants CRUD (deterministic variantKey), Variant Images CRUD (single primary). Barchasi ADMIN/VENDOR auth + zod validation + Prisma transaction bilan. CHINA_ORDER ziddiyat qoidasi aniqlangan. Public `/api/products/[id]` ga `attributeValues`/`variants` qo'shimcha qo'shildi (legacy saqlanadi). Shared helper `src/lib/universal-product.ts`. Yangi migration kerak emas.
 - **Vercel build P1002 fix (3)**: `prepare-direct-url.mjs` endi DIRECT_URL ni true direct host'ga normalizatsiya qiladi — nafaqat `pgbouncer=true`, balki hostname'dan `-pooler` ham olib tashlanadi. Neon pooler endpoint'ida stale advisory lock (avvalgi o'chirilmagan `pg_advisory_lock` sessiyalari) `prisma migrate deploy` da P1002 beradi; true direct host (ep-...-neon.tech) pooling'da emas, shuning uchun lock sessiya yopilishi bilan bo'shaydi. Local'da stale lock topilib, `pg_terminate_backend` bilan bo'shatildi. (`scripts/prepare-direct-url.mjs`)
 - 🇨🇳 **Xitoydan buyurtma (CHINA_ORDER fulfillment)** — to'liq zanjir implement qilindi: `Product.fulfillmentType` (authoritative, default LOCAL) + `CartItem`/`OrderItem` snapshot + yangi `Cargo` modeli (PENDING/CALCULATED/PAID placeholder). Migration `20260821051422_china_order_fulfillment` qo'llandi. Product card/detail, Cart, Checkout ("Hozir to'lanadi", "Kargo keyin hisoblanadi"), Order, Admin product form (Sotuv turi radio), Admin order detail (China Order + Cargo status card), Profile orders + invoice — barchasi CHINA_ORDER'ni farqlaydi. Yangi `ChinaOrder` i18n namespace (uz/ru/en). Server authoritative price saqlanadi. (schema, `lib/data.ts`, `useCartStore`, cart/orders API, ProductCard, ProductContent, checkout, admin products/orders, profile orders, invoice)
@@ -162,8 +163,9 @@ Avvalgi sessiyalardan:
 
 ## Next Tasks
 
-- **Phase C — Admin UI (universal product system)**: Admin product form'ga dynamic attribute definitions + structured attribute values + variants (variantKey options input) + variant images (order/isPrimary) UI. Backend endi tayyor.
-- **Cart sync variant support**: `/api/cart/sync` variantId/variant yo'qotadi (audit) — frontend variantli mahsulotlar savatida sync qilinsa variant yo'qoladi. Hozircha frontend sync'ni chaqirmaydi (audit-only, kod tegilmadi).
+- **Cart sync variant support**: `/api/cart/sync` variantId/variant yo'qotadi (audit) — frontend variantli mahsulotlar savatida sync qilinsa variant yo'qoladi. Hozircha frontend sync'ni chaqirmaydi (audit-only, kod tegilmadi). Phase C da ataylab FIX qilinmadi (keyingi phase).
+- **Admin category attributes UI**: Phase B backend tayyor (`/api/admin/categories/[id]/attributes` CRUD), lekin admin panelda attribute definitions boshqarish sahifasi yo'q — hozircha faqat product form ulardan o'qiydi. Kategoriya sahifasiga attribute definitions CRUD UI qo'shish kerak.
+- 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID placeholder) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
 - 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
 - **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash — productlar `fulfillmentType` bilan ajratiladi, kategoriya alohida tushuncha.
 - **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup.
@@ -187,7 +189,7 @@ Avvalgi sessiyalardan:
 11. **Neon PostgreSQL** transient connection "Closed" xatolari — prisma qayta ulanishga urinadi.
 12. **Category sahifasida `useMediaQuery`** — mobil/desktop switch'da bir kadr flash mumkin (SSR desktop render).
 13. **Cart sync variant yo'qolishi**: `/api/cart/sync` faqat `{id, quantity}` qabul qiladi — variantId/variant saqlamaydi va merge faqat productId bo'yicha. Schema'da `@@unique([cartId, productId, variantId])` bor, lekin sync endpoint variantlarni hisobga olmaydi. Frontend hozircha sync'ni chaqirmaydi (faqat `/api/cart` GET/PUT ishlatiladi, ular ham variant saqlamaydi). Variantli mahsulotlar savat uchun sync/merge variant-aware qilish kerak (Phase C/future).
-14. **Hozircha variantli mahsulot yo'q** — backend tayyor (Phase B), admin UI (Phase C) va real variantli mahsulotlar kutilmoqda.
+14. **Variantli mahsulotlar**: Phase C admin UI tayyor, lekin real variantli mahsulotlar hali yaratilmagan — admin orqali variant yaratish + category attribute definitions to'ldirish kerak. Structured attribute saqlash cheklovi: category o'zgartirilsa va joriy defs'ga kirmaydigan structured qiymatlar saqlanganda `PUT .../attributes` (bulk deleteMany+createMany) ularni o'chiradi (legacy `Product.attributes` JSON saqlanadi).
 
 ## Important Decisions
 
@@ -230,4 +232,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-21 (Phase B — universal product backend CRUD)
+2026-08-21 (Phase C — Universal Product Admin UI)

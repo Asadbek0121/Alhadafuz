@@ -5,6 +5,17 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 ## [Unreleased]
 
 ### Added
+- **Phase C — Universal Product Admin UI**:
+  - **Dynamic attributes**: `src/components/admin/product/AttributeFields.tsx` — 8 attribute type (TEXT/NUMBER/BOOLEAN/SELECT/MULTI_SELECT/COLOR/MEASUREMENT/DATE) uchun UI, category tanlanganda backend'dan yuklanadi, required yulduzchali, frontend validation, extras (legacy) read-only.
+  - **Variant builder**: `src/components/admin/product/VariantEditor.tsx` — forVariant definition'lar asosida variant o'qlari (axes), values comma-input, kartezian kombinatsiya generator (duplicate + deletedKey skip), 50/batch chunk render + "Ko'proq ko'rsatish".
+  - **Variant table**: editable row (SKU/Barcode/Price/OldPrice/Stock/Weight/Default radio/Active), images thumbnail+count tugma → drawer, delete row.
+  - **Variant images drawer**: upload (`/api/upload`), delete, reorder (left/right), primary radio (per variant).
+  - **Orchestrator**: `src/components/admin/product/UniversalProductSections.tsx` — defs yuklash (category endpoint / product attributes endpoint), values/axes/variants state management, forwardRef bilan `validate()` + `saveAttributesAndVariants(productId)` API.
+  - **Save sequence** (safe): 1. product POST/PUT (legacy JSON atributlar hali ham yoziladi), 2. `PUT /api/admin/products/[id]/attributes` (bulk structured), 3. variants create/update/delete (diff-based), 4. variant images create/update/delete. Partial failure'da `createdId` state → qayta bosish PUT bo'ladi (duplicate emas).
+  - **Integration**: `new/page.tsx` va `[id]/page.tsx` ga qo'shildi — mavjud variatsiyalar (free-form attributes) saqlanadi; universal card always open (state yo'qotilmasligi uchun). CHINA_ORDER info block mavjud. Legacy book flow (attributes JSON, single category, images) saqlanadi. Category o'zgarishida warning banner.
+  - **Helper types**: `src/components/admin/product/types.ts` — AttributeDef, VariantAxis, VariantRow, parseVariantKey.
+  - Yangi migration KERAK EMAS (`prisma/schema.prisma` ga tegilmladi). DB schema o'zgarmadi.
+
 - **Phase B — Backend CRUD & Validation (universal product system)**:
   - **Category Attribute Definitions CRUD**: `GET/POST /api/admin/categories/[id]/attributes`, `PATCH/DELETE .../[attributeId]` — ADMIN rol tekshiruvi, category ownership tekshiruvi (boshqa category definition'ini tahrirlash 404), type/options kombinatsiya validatsiyasi (TEXT/BOOLEAN/DATE options yo'q; SELECT/MULTI_SELECT options shart; COLOR #HEX format; NUMBER/MEASUREMENT min/max; MEASUREMENT unit tavsiya), name unique per category (409). Zod.
   - **Product Attribute Values**: `GET/PUT /api/admin/products/[id]/attributes` — bulk replace (transaction: deleteMany+createMany). Definition product'ning category'iga tegishli bo'lishi shart (400), `required=true` tekshiruvi, type asosida qiymat validatsiyasi (TEXT/NUMBER/BOOLEAN/SELECT/MULTI_SELECT/COLOR/MEASUREMENT/DATE), `@@unique([productId, attributeDefId])` — P2002 → 409. VALUE storage: `ProductAttributeValue.value` = JSON.stringify qiymat, deserialize/read uchun helper.

@@ -9,6 +9,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import UniversalProductSections, { type UniversalProductRef } from "@/components/admin/product/UniversalProductSections";
 
 const productSchema = z.object({
     title: z.string().min(3, "Product name must be at least 3 characters"),
@@ -90,6 +91,8 @@ export default function EditProductPage() {
     const [attributes, setAttributes] = useState<{ key: string; value: string }[]>([]);
     const [showBulkPaste, setShowBulkPaste] = useState(false);
     const [bulkText, setBulkText] = useState("");
+    const [categoryWarning, setCategoryWarning] = useState(false);
+    const universalRef = useRef<UniversalProductRef>(null);
 
     const processBulkPaste = () => {
         if (!bulkText.trim()) return;
@@ -404,6 +407,18 @@ export default function EditProductPage() {
                 throw new Error(errorMessage);
             }
 
+            // Structured attributes + variants saqlash (universal format)
+            const universalError = universalRef.current?.validate() ?? null;
+            if (universalError) {
+                toast.error(universalError);
+                setLoading(false);
+                return;
+            }
+            const saved = await universalRef.current?.saveAttributesAndVariants(String(id));
+            if (!saved) {
+                throw new Error("Mahsulot yangilandi, lekin xususiyatlar/variantlar saqlanmadi. Qayta urinib ko'ring.");
+            }
+
             toast.success("Mahsulot muvaffaqiyatli yangilandi");
             router.push("/admin/products");
             router.refresh();
@@ -483,6 +498,25 @@ export default function EditProductPage() {
                                 <input id="edit-gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
                             </div>
                         </div>
+                    </div>
+
+                    {/* Universal product sections (dynamic attributes + variants) */}
+                    <div className="card">
+                        <h2 className="card-title">Dinamik xususiyatlar va variantlar</h2>
+                        <>
+                            {categoryWarning && (
+                                <div style={{ background: '#fff6e6', border: '1px solid #ffe0a6', color: '#8a5200', padding: '10px 14px', borderRadius: '10px', fontSize: '13px', marginBottom: '16px' }}>
+                                    Kategoriya o'zgartirilmoqda. Ba'zi xususiyatlar mos kelmasligi mumkin.
+                                </div>
+                            )}
+                            <UniversalProductSections
+                                ref={universalRef}
+                                productId={String(id)}
+                                categoryId={watch('category')?.split(',').filter(Boolean)[0] || null}
+                                onCategoryWarning={setCategoryWarning}
+                                disabled={loading}
+                            />
+                        </>
                     </div>
 
                     {/* Pricing Section */}

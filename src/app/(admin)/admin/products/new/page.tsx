@@ -12,6 +12,7 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Link from "next/link";
+import UniversalProductSections, { type UniversalProductRef } from "@/components/admin/product/UniversalProductSections";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 
@@ -173,6 +174,9 @@ export default function AddProductPage() {
     const [dragZone, setDragZone] = useState<"main" | "gallery" | null>(null);
     const [pasteZone, setPasteZone] = useState<"main" | "gallery" | null>(null);
     const [duplicate, setDuplicate] = useState<{ id: string; title: string } | null>(null);
+    const [createdId, setCreatedId] = useState<string | null>(null);
+    const [categoryWarning, setCategoryWarning] = useState(false);
+    const universalRef = useRef<UniversalProductRef>(null);
     const [open, setOpen] = useState<Record<string, boolean>>({
         general: true, media: true, variations: true, pricing: true,
         status: true, details: true, fiscal: false, inventory: true, marketing: true, fulfillment: true,
@@ -210,6 +214,10 @@ export default function AddProductPage() {
     const selectedCategories = useMemo(
         () => (watchCategory || "").split(",").filter(Boolean),
         [watchCategory]
+    );
+    const primaryCategoryId = useMemo(
+        () => selectedCategories.length > 0 ? selectedCategories[0] : null,
+        [selectedCategories]
     );
 
     /* ---------------------------------------------------------------- kategoriyalar */
@@ -605,6 +613,15 @@ export default function AddProductPage() {
         const tagList = (data.tags || "").split(",").map((s) => s.trim()).filter(Boolean);
         if (tagList.length) attrsObject._tags = tagList;
 
+        // Dinamik xususiyatlar validatsiyasi — backend authoritative, lekin
+        // frontendda ham tekshirib product yaratishga o'tmaymiz.
+        const universalError = universalRef.current?.validate() ?? null;
+        if (universalError) {
+            toast.error(universalError);
+            setLoading(false);
+            return;
+        }
+
         const categoryIds = selectedCategories;
         const noDiscount = data.discountType === "no_discount";
 
@@ -642,34 +659,76 @@ export default function AddProductPage() {
         };
 
         try {
-            const res = await fetch("/api/admin/products", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload),
-            });
-
-            const responseData = await res.json().catch(() => ({}));
-
-            if (!res.ok) {
-                let errorMessage = responseData.error || "Mahsulot yaratilmadi";
-                if (responseData.details) {
-                    const details = responseData.details;
-                    const errorFields = Object.keys(details).filter((k) => k !== "_errors");
-                    if (errorFields.length > 0) {
-                        const fieldErrors = errorFields
-                            .map((field) => `${FIELD_LABELS[field] || field}: ${(details[field]._errors || []).join(", ")}`)
-                            .join("; ");
-                        errorMessage = `Ma'lumotlar xato: ${fieldErrors}`;
-                    } else if (details._errors?.length > 0) {
-                        errorMessage = details._errors.join(", ");
+            // Qisman muvaffaqiyat bo'lsa (attrs/variants xato) qayta bosish
+            // duplicate product yaratmasligi uchun PUT ga o'tiladi.
+            let productId: string | null = createdId;
+            if (createdId) {
+                const res = await fetch(`/api/admin/products/${createdId}`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+                if (!res.ok) {
+                    const responseData = await res.json().catch(() => ({}));
+                    let errorMessage = responseData.error || "Mahsulot yangilanmadi";
+                    if (responseData.details) {
+                        const details = responseData.details;
+                        const errorFields = Object.keys(details).filter((k) => k !== "_errors");
+                        if (errorFields.length > 0) {
+                            const fieldErrors = errorFields
+                                .map((field) => `${FIELD_LABELS[field] || field}: ${(details[field]._errors || []).join(", ")}`)
+                                .join("; ");
+                            errorMessage = `Ma'lumotlar xato: ${fieldErrors}`;
+                        } else if (details._errors?.length > 0) {
+                            errorMessage = details._errors.join(", ");
+                        }
+                    } else if (responseData.message) {
+                        errorMessage = `${errorMessage}: ${responseData.message}`;
                     }
-                } else if (responseData.message) {
-                    errorMessage = `${errorMessage}: ${responseData.message}`;
+                    throw new Error(errorMessage);
                 }
-                throw new Error(errorMessage);
+            } else {
+                const res = await fetch("/api/admin/products", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload),
+                });
+
+                const responseData = await res.json().catch(() => ({}));
+
+                if (!res.ok) {
+                    let errorMessage = responseData.error || "Mahsulot yaratilmadi";
+                    if (responseData.details) {
+                        const details = responseData.details;
+                        const errorFields = Object.keys(details).filter((k) => k !== "_errors");
+                        if (errorFields.length > 0) {
+                            const fieldErrors = errorFields
+                                .map((field) => `${FIELD_LABELS[field] || field}: ${(details[field]._errors || []).join(", ")}`)
+                                .join("; ");
+                            errorMessage = `Ma'lumotlar xato: ${fieldErrors}`;
+                        } else if (details._errors?.length > 0) {
+                            errorMessage = details._errors.join(", ");
+                        }
+                    } else if (responseData.message) {
+                        errorMessage = `${errorMessage}: ${responseData.message}`;
+                    }
+                    throw new Error(errorMessage);
+                }
+                productId = responseData.id as string | null;
+                if (!productId) throw new Error("Server mahsulot ID qaytarmadi");
             }
 
-            toast.success("Mahsulot muvaffaqiyatli yaratildi");
+            // Structured attributes + variants saqlash (yangi universal format)
+            if (!productId) throw new Error("Mahsulot ID aniqlanmadi");
+            const saved = await universalRef.current?.saveAttributesAndVariants(productId);
+            if (!saved) {
+                // Product saqlandi, lekin xususiyat/variantlar qisman yoki umuman
+                // saqlanmadi — sahifada qolamiz, qayta bosish PUT bo'ladi.
+                setCreatedId(productId);
+                throw new Error("Mahsulot saqlandi, lekin xususiyatlar/variantlar saqlanmadi. Iltimos, qayta urinib ko'ring.");
+            }
+
+            toast.success(createdId ? "Mahsulot muvaffaqiyatli yangilandi" : "Mahsulot muvaffaqiyatli yaratildi");
             router.push("/admin/products");
             router.refresh();
         } catch (error: any) {
@@ -970,6 +1029,21 @@ export default function AddProductPage() {
                                 </div>
                             </div>
                         )}
+                    </Card>
+
+                    <Card title="Dinamik xususiyatlar va variantlar" right={<span className="count">kategoriya bo'yicha</span>}>
+                        {categoryWarning && (
+                            <p className="warn no-margin" style={{ marginBottom: "16px" }}>
+                                Kategoriya o'zgartirilmoqda. Ba'zi xususiyatlar mos kelmasligi mumkin.
+                            </p>
+                        )}
+                        <UniversalProductSections
+                            ref={universalRef}
+                            productId={null}
+                            categoryId={primaryCategoryId}
+                            onCategoryWarning={setCategoryWarning}
+                            disabled={loading}
+                        />
                     </Card>
 
                     <Card title="Narx" open={open.pricing} onToggle={() => toggle("pricing")}>
