@@ -3,15 +3,58 @@
 
 import { useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Plus, Save } from "lucide-react";
-import { ATTRIBUTE_TYPES, validateDefinitionTypeCombo } from "@/lib/universal-product";
+import { Loader2, Plus, Save, X } from "lucide-react";
+import { ATTRIBUTE_TYPES, VALID_HEX_COLOR, parseOptions, validateDefinitionTypeCombo } from "@/lib/universal-product";
 import type { AttributeDef } from "@/components/admin/product/types";
 
 type TypeString = (typeof ATTRIBUTE_TYPES)[number];
 
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+    а: "a", б: "b", в: "v", г: "g", д: "d", е: "e", ё: "yo", ж: "j", з: "z", и: "i",
+    й: "y", к: "k", л: "l", м: "m", н: "n", о: "o", п: "p", р: "r", с: "s", т: "t",
+    у: "u", ф: "f", х: "x", ц: "c", ч: "ch", ш: "sh", щ: "sh", ъ: "", ы: "i", ь: "",
+    э: "e", ю: "yu", я: "ya", ў: "o", қ: "q", ғ: "g", ҳ: "h",
+};
+
+/**
+ * Label'dan texnik nom (slug) generatsiya qiladi:
+ * kirill/lotin harflar, probellar va maxsus belgilar → kichik lotin harflar + underscore.
+ * Agar natija bo'sh bo'lsa (masalan butunlay boshqa belgilar) `attr_<timestamp>` fallback.
+ */
+export function slugifyLabel(label: string): string {
+    let slug = label
+        .trim()
+        .toLowerCase()
+        .split("")
+        .map((ch) => CYRILLIC_TO_LATIN[ch] ?? ch)
+        .join("")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "_")
+        .replace(/^_+|_+$/g, "")
+        .slice(0, 100)
+        .replace(/_+$/g, "");
+    if (slug.length === 0) {
+        slug = `attr_${Date.now()}`;
+    }
+    return slug;
+}
+
+const TYPE_DEFS: Record<TypeString, { optionLabel: string; hint: string }> = {
+    TEXT: { optionLabel: "TEXT — Matn", hint: "Erkin matn kiritiladi. Masalan: Material, Brend." },
+    NUMBER: { optionLabel: "NUMBER — Raqam", hint: "Son kiritiladi. Masalan: vazn, hajm." },
+    BOOLEAN: { optionLabel: "BOOLEAN — Ha/Yo'q", hint: "Faqat Ha yoki Yo'q tanlanadi." },
+    SELECT: { optionLabel: "SELECT — Bittasini tanlash", hint: "Siz qo'shgan qiymatlardan faqat bittasi tanlanadi." },
+    MULTI_SELECT: { optionLabel: "MULTI_SELECT — Bir nechtasini tanlash", hint: "Siz qo'shgan qiymatlardan bir nechtasi tanlanishi mumkin." },
+    COLOR: { optionLabel: "COLOR — Rang", hint: "Ranglar qo'shiladi. Har biri #HEX formatida (masalan: #FF0000)." },
+    MEASUREMENT: { optionLabel: "MEASUREMENT — Qiymat + birlik", hint: "Raqam va o'lchov birligi kiritiladi. Masalan: 1.5 kg." },
+    DATE: { optionLabel: "DATE — Sana", hint: "Sana tanlanadi." },
+};
+
 interface DefinitionFormProps {
     categoryId: string;
     initial?: AttributeDef | null;
+    presetForVariant?: boolean;
     defaultOrder?: number;
     onSaved: (def: AttributeDef) => void;
     onCancel: () => void;
@@ -26,44 +69,92 @@ function parseNum(v: string): number | null {
 const inputClass =
     "w-full px-3.5 py-2.5 rounded-lg border border-[#e5eaef] outline-none text-sm text-[#2A3547] bg-white transition-colors focus:border-[#0085db] focus:ring-2 focus:ring-[#0085db]/15";
 const labelClass = "block mb-1.5 text-sm font-medium text-[#2A3547]";
+const checkClass = "w-4 h-4 rounded cursor-pointer accent-[#0085db]";
 
-export default function DefinitionForm({ categoryId, initial, defaultOrder, onSaved, onCancel }: DefinitionFormProps) {
-    const [name, setName] = useState(initial?.name ?? "");
+export default function DefinitionForm({
+    categoryId,
+    initial,
+    presetForVariant,
+    defaultOrder,
+    onSaved,
+    onCancel,
+}: DefinitionFormProps) {
+    const isEdit = !!initial?.id;
+
     const [label, setLabel] = useState(initial?.label ?? "");
+    const [manualName, setManualName] = useState(initial?.name ?? "");
+    const [showAdvancedName, setShowAdvancedName] = useState(false);
     const [type, setType] = useState<TypeString>((initial?.type as TypeString) || "TEXT");
     const [required, setRequired] = useState(initial?.required ?? false);
-    const [forVariant, setForVariant] = useState(initial?.forVariant ?? false);
+    const [forVariant, setForVariant] = useState(initial?.forVariant ?? presetForVariant ?? false);
     const [order, setOrder] = useState(String(initial?.order ?? defaultOrder ?? 0));
     const [options, setOptions] = useState(initial?.options ?? "");
+    const [optionDraft, setOptionDraft] = useState("");
     const [unit, setUnit] = useState(initial?.unit ?? "");
     const [minValue, setMinValue] = useState(initial?.minValue != null ? String(initial.minValue) : "");
     const [maxValue, setMaxValue] = useState(initial?.maxValue != null ? String(initial.maxValue) : "");
     const [error, setError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
 
-    const isEdit = !!initial?.id;
-
     // Type'ga qarab dinamik maydonlar
     const showOptions = type === "SELECT" || type === "MULTI_SELECT" || type === "COLOR";
     const showUnit = type === "MEASUREMENT";
     const showMinMax = type === "NUMBER";
+    const optionList = parseOptions(options);
+
+    const addOption = () => {
+        const v = optionDraft.trim();
+        if (!v) return;
+        if (type === "COLOR" && !VALID_HEX_COLOR.test(v)) {
+            setError(`Rang #HEX formatida bo'lishi kerak (masalan: #FF0000)`);
+            return;
+        }
+        setError(null);
+        const cur = parseOptions(options);
+        if (cur.includes(v)) {
+            setOptionDraft("");
+            return;
+        }
+        setOptions([...cur, v].join(","));
+        setOptionDraft("");
+    };
+
+    const removeOption = (v: string) => {
+        setOptions(parseOptions(options).filter((o) => o !== v).join(","));
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError(null);
 
-        if (!name.trim()) {
-            setError("Ichki nom (name) majburiy");
-            return;
-        }
-        if (!label.trim()) {
-            setError("Label (ko'rinadigan nom) majburiy");
+        const labelValue = label.trim();
+        if (!labelValue) {
+            setError("Nomi majburiy");
             return;
         }
 
+        // name avtomatik yoki qo'lda (advanced toggle)
+        let nameValue: string;
+        if (isEdit) {
+            if (showAdvancedName) {
+                nameValue = manualName.trim();
+            } else if (labelValue === (initial?.label ?? "").trim()) {
+                nameValue = initial?.name ?? "";
+            } else {
+                nameValue = slugifyLabel(labelValue);
+            }
+        } else {
+            nameValue = showAdvancedName ? manualName.trim() : slugifyLabel(labelValue);
+        }
+        if (!nameValue) {
+            setError("Texnik nom bo'sh bo'lishi mumkin emas");
+            return;
+        }
+        nameValue = nameValue.slice(0, 100);
+
         const payload = {
-            name: name.trim(),
-            label: label.trim(),
+            name: nameValue,
+            label: labelValue,
             type,
             required,
             forVariant,
@@ -113,80 +204,144 @@ export default function DefinitionForm({ categoryId, initial, defaultOrder, onSa
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="form-group">
-                    <label htmlFor="def-name" className={labelClass}>
-                        Ichki nom (name) <span className="text-[#fa896b]">*</span>
-                    </label>
-                    <input
-                        id="def-name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className={inputClass}
-                        placeholder="masalan: material"
-                        disabled={submitting}
-                    />
-                    <p className="text-xs text-[#7c8fac] mt-1">Variant o'qi va JSON kalitlarida ishlatiladi</p>
-                </div>
+            <div className="rounded-lg bg-[#f0f7ff] border border-[#d3e6f7] px-4 py-3 space-y-1.5 text-sm text-[#2A3547]">
+                <p>
+                    <span className="font-bold text-[#0085db]">Xususiyat</span> — mahsulotni tavsiflaydi (masalan: Material, Brend).
+                </p>
+                <p>
+                    <span className="font-bold text-[#0085db]">Variant</span> — xaridor tanlaydi va har bir variant alohida narx/stock/rasmga ega bo'lishi mumkin (masalan: Rang, O'lcham).
+                </p>
+            </div>
 
-                <div className="form-group">
-                    <label htmlFor="def-label" className={labelClass}>
-                        Label (ko'rinadigan nom) <span className="text-[#fa896b]">*</span>
-                    </label>
-                    <input
-                        id="def-label"
-                        type="text"
-                        value={label}
-                        onChange={(e) => setLabel(e.target.value)}
-                        className={inputClass}
-                        placeholder="masalan: Material"
-                        disabled={submitting}
-                    />
-                </div>
-
-                <div className="form-group">
-                    <label htmlFor="def-type" className={labelClass}>
-                        Tip <span className="text-[#fa896b]">*</span>
-                    </label>
-                    <select
-                        id="def-type"
-                        value={type}
-                        onChange={(e) => setType(e.target.value as TypeString)}
-                        className={inputClass}
-                        disabled={submitting}
+            <div className="form-group">
+                <label htmlFor="def-label" className={labelClass}>
+                    Nomi <span className="text-[#fa896b]">*</span>
+                </label>
+                <input
+                    id="def-label"
+                    type="text"
+                    value={label}
+                    onChange={(e) => setLabel(e.target.value)}
+                    className={inputClass}
+                    placeholder="masalan: Material"
+                    disabled={submitting}
+                />
+                <div className="mt-1 flex items-center gap-2">
+                    <p className="text-xs text-[#7c8fac]">
+                        Xaridor va mahsulot sahifasida aynan shu nom ko'rinadi.
+                    </p>
+                    <button
+                        type="button"
+                        onClick={() => setShowAdvancedName((v) => !v)}
+                        className="text-xs font-semibold text-[#0085db] hover:underline ml-auto shrink-0"
                     >
-                        {ATTRIBUTE_TYPES.map((t) => (
-                            <option key={t} value={t}>{t}</option>
-                        ))}
-                    </select>
+                        {showAdvancedName ? "Texnik nomni yashirish" : "Texnik nomni tahrirlash"}
+                    </button>
                 </div>
+                {showAdvancedName && (
+                    <div className="mt-2">
+                        <label htmlFor="def-name" className="block mb-1.5 text-xs font-medium text-[#7c8fac]">
+                            Texnik nom (name) — systema uchun
+                        </label>
+                        <input
+                            id="def-name"
+                            type="text"
+                            value={manualName}
+                            onChange={(e) => setManualName(e.target.value)}
+                            className={inputClass}
+                            placeholder="masalan: material"
+                            disabled={submitting}
+                        />
+                        <p className="text-xs text-[#7c8fac] mt-1">
+                            Bo'sh qoldirsangiz, nomingizdan avtomatik generatsiya qilinadi (masalan: "Sahifa soni" → "sahifa_soni").
+                        </p>
+                    </div>
+                )}
+            </div>
+
+            <div className="form-group">
+                <label htmlFor="def-type" className={labelClass}>
+                    Qiymat turi <span className="text-[#fa896b]">*</span>
+                </label>
+                <select
+                    id="def-type"
+                    value={type}
+                    onChange={(e) => setType(e.target.value as TypeString)}
+                    className={inputClass}
+                    disabled={submitting}
+                >
+                    {ATTRIBUTE_TYPES.map((t) => (
+                        <option key={t} value={t}>{TYPE_DEFS[t].optionLabel}</option>
+                    ))}
+                </select>
+                <p className="text-xs text-[#7c8fac] mt-1">{TYPE_DEFS[type].hint}</p>
             </div>
 
             {showOptions && (
                 <div className="form-group">
-                    <label htmlFor="def-options" className={labelClass}>
-                        Options <span className="text-[#fa896b]">*</span>
+                    <label className={labelClass}>
+                        Qiymatlar {type === "SELECT" || type === "MULTI_SELECT" ? <span className="text-[#fa896b]">*</span> : null}
                     </label>
-                    <input
-                        id="def-options"
-                        type="text"
-                        value={options}
-                        onChange={(e) => setOptions(e.target.value)}
-                        className={inputClass}
-                        placeholder={type === "COLOR" ? "#FF0000,#0000FF,#00FF00" : "Qizil,Ko'k,Yashil"}
-                        disabled={submitting}
-                    />
-                    <p className="text-xs text-[#7c8fac] mt-1">
-                        Vergul bilan ajratiladi. {type === "COLOR" ? "Har biri #HEX formatida bo'lishi kerak." : "Masalan: Qizil,Ko'k,Yashil"}
-                    </p>
+                    <div className="flex gap-2">
+                        <input
+                            type="text"
+                            value={optionDraft}
+                            onChange={(e) => setOptionDraft(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    addOption();
+                                }
+                            }}
+                            className={inputClass}
+                            placeholder={type === "COLOR" ? "masalan: #FF0000" : "masalan: Qizil"}
+                            disabled={submitting}
+                        />
+                        <button
+                            type="button"
+                            onClick={addOption}
+                            disabled={submitting || !optionDraft.trim()}
+                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-[#0085db] text-[#0085db] text-sm font-semibold transition-colors hover:bg-[#ecf2ff] disabled:opacity-50 shrink-0"
+                        >
+                            <Plus size={15} /> Qo'shish
+                        </button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                        {optionList.length === 0 ? (
+                            <span className="text-xs text-[#9aa8bb]">Hozircha qiymat qo'shilmagan</span>
+                        ) : (
+                            optionList.map((opt, i) => (
+                                <span
+                                    key={`${opt}-${i}`}
+                                    className="inline-flex items-center gap-1.5 bg-[#f0f2f5] border border-[#e5eaef] rounded-full pl-3 pr-2 py-1.5 text-sm text-[#2A3547]"
+                                >
+                                    {type === "COLOR" && (
+                                        <span
+                                            className="w-4 h-4 rounded-full border border-black/10 shrink-0"
+                                            style={{ backgroundColor: opt }}
+                                        />
+                                    )}
+                                    {opt}
+                                    <button
+                                        type="button"
+                                        onClick={() => removeOption(opt)}
+                                        disabled={submitting}
+                                        className="text-[#9aa8bb] hover:text-[#fa896b] transition-colors p-0.5"
+                                        aria-label={`${opt} ni o'chirish`}
+                                    >
+                                        <X size={14} />
+                                    </button>
+                                </span>
+                            ))
+                        )}
+                    </div>
                 </div>
             )}
 
             {showUnit && (
                 <div className="form-group">
                     <label htmlFor="def-unit" className={labelClass}>
-                        O'lchov birligi (unit)
+                        O'lchov birligi
                     </label>
                     <input
                         id="def-unit"
@@ -232,7 +387,7 @@ export default function DefinitionForm({ categoryId, initial, defaultOrder, onSa
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                 <div className="form-group">
-                    <label htmlFor="def-order" className={labelClass}>Order (sort raqami)</label>
+                    <label htmlFor="def-order" className={labelClass}>Ko'rsatish tartibi</label>
                     <input
                         id="def-order"
                         type="number"
@@ -242,33 +397,38 @@ export default function DefinitionForm({ categoryId, initial, defaultOrder, onSa
                         min={0}
                         disabled={submitting}
                     />
+                    <p className="text-xs text-[#7c8fac] mt-1">Qanchalik kichik bo'lsa, formada shunchalik birinchi chiqadi</p>
                 </div>
 
-                <label className="flex items-center gap-2.5 cursor-pointer text-sm text-[#2A3547] form-group pt-1">
+                <label className="flex items-start gap-2.5 cursor-pointer text-sm text-[#2A3547] form-group pt-1">
                     <input
                         type="checkbox"
                         checked={required}
                         onChange={(e) => setRequired(e.target.checked)}
-                        className="w-4 h-4 rounded cursor-pointer accent-[#0085db]"
+                        className={`${checkClass} mt-0.5`}
                         disabled={submitting}
                     />
                     <span>
-                        Majburiy <span className="text-[#fa896b]">*</span>
-                        <span className="block text-xs text-[#7c8fac] font-normal">Product yaratishda qiymat shart bo'ladi</span>
+                        To'ldirish shart <span className="text-[#fa896b]">*</span>
+                        <span className="block text-xs text-[#7c8fac] font-normal">
+                            Mahsulot saqlanishidan oldin ushbu maydon to'ldirilishi kerak.
+                        </span>
                     </span>
                 </label>
 
-                <label className="flex items-center gap-2.5 cursor-pointer text-sm text-[#2A3547] form-group pt-1">
+                <label className="flex items-start gap-2.5 cursor-pointer text-sm text-[#2A3547] form-group pt-1">
                     <input
                         type="checkbox"
                         checked={forVariant}
                         onChange={(e) => setForVariant(e.target.checked)}
-                        className="w-4 h-4 rounded cursor-pointer accent-[#0085db]"
+                        className={`${checkClass} mt-0.5`}
                         disabled={submitting}
                     />
                     <span>
-                        Variant turi
-                        <span className="block text-xs text-[#7c8fac] font-normal">Belgilansa, product Builder'da variant o'qi sifatida chiqadi (masalan Rang, O'lcham)</span>
+                        Xaridor tanlaydigan variant
+                        <span className="block text-xs text-[#7c8fac] font-normal">
+                            Masalan: Rang, O'lcham, Xotira. Xaridor buni tanlaydi va har bir variant alohida narx/stock/rasmga ega bo'lishi mumkin.
+                        </span>
                     </span>
                 </label>
             </div>

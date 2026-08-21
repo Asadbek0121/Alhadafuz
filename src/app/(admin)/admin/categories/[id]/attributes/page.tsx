@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Plus, ChevronLeft, Trash2, Edit2, Settings2, Check } from "lucide-react";
+import { Loader2, Plus, ChevronLeft, Trash2, Edit2, Settings2, Check, Boxes, Layers } from "lucide-react";
 import { parseOptions } from "@/lib/universal-product";
 import type { AttributeDef } from "@/components/admin/product/types";
 import DefinitionForm from "./DefinitionForm";
@@ -51,7 +51,7 @@ export default function CategoryAttributesPage() {
     const [defs, setDefs] = useState<AttributeDef[]>([]);
     const [categoryName, setCategoryName] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
-    const [showCreate, setShowCreate] = useState(false);
+    const [createForVariant, setCreateForVariant] = useState<boolean | null>(null);
     const [editing, setEditing] = useState<AttributeDef | null>(null);
     const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -115,6 +115,75 @@ export default function CategoryAttributesPage() {
     const nextOrder = defs.length > 0 ? Math.max(...defs.map((d) => d.order)) + 1 : 0;
 
     const sortedDefs = [...defs].sort((a, b) => a.order - b.order);
+    const properties = sortedDefs.filter((d) => !d.forVariant);
+    const variants = sortedDefs.filter((d) => d.forVariant);
+
+    const formOpen = createForVariant !== null || !!editing;
+
+    const renderList = (title: string, icon: React.ReactNode, items: AttributeDef[]) => (
+        <div className="bg-white rounded-xl border border-[#e5eaef] shadow-sm overflow-hidden">
+            <div className="px-5 py-3 border-b border-[#eef1f5] flex items-center gap-2 text-xs font-bold text-[#7c8fac] uppercase tracking-wider">
+                {icon}
+                {title}
+                <span className="ml-auto normal-case tracking-normal bg-[#f0f2f5] text-[#7c8fac] px-2 py-0.5 rounded-full text-[11px] font-bold">
+                    {items.length}
+                </span>
+            </div>
+            {items.length === 0 ? (
+                <div className="px-5 py-10 text-center">
+                    <p className="text-sm text-[#9aa8bb]">
+                        {title.includes("Xususiyat") ? "Hozircha xususiyat qo'shilmagan." : "Hozircha variant qo'shilmagan."}
+                    </p>
+                </div>
+            ) : (
+                <ul className="divide-y divide-[#f0f2f5]">
+                    {items.map((def) => {
+                        const meta = definitionMeta(def);
+                        const isEditingThis = editing?.id === def.id;
+                        return (
+                            <li key={def.id} className={`px-5 py-4 flex items-start justify-between gap-4 transition-colors ${isEditingThis ? "bg-[#f4f9ff]" : "hover:bg-[#fafbfc]"}`}>
+                                <div className="min-w-0">
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <span className="font-bold text-[#2A3547] text-sm">{def.label}</span>
+                                        {def.required && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fdede8] text-[#a33a20] text-[11px] font-bold border border-[#f7c8bb]">
+                                                To'ldirish shart
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="mt-1 flex flex-wrap items-center gap-2">
+                                        <DefinitionBadge type={def.type} />
+                                        <code className="text-xs text-[#7c8fac] bg-[#f0f2f5] px-1.5 py-0.5 rounded font-mono">{def.name}</code>
+                                        <span className="text-xs text-[#9aa8bb]">tartib {def.order}</span>
+                                    </div>
+                                    {meta && <p className="text-xs text-[#7c8fac] mt-1.5">{meta}</p>}
+                                </div>
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                    <button
+                                        onClick={() => { setEditing(def); setCreateForVariant(null); }}
+                                        className="p-2 rounded-lg text-[#0085db] hover:bg-[#ecf2ff] transition-colors"
+                                        title="Tahrirlash"
+                                        aria-label={`${def.label} ni tahrirlash`}
+                                    >
+                                        <Edit2 size={16} />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDelete(def)}
+                                        disabled={deleting === def.id}
+                                        className="p-2 rounded-lg text-[#fa896b] hover:bg-[#fdede8] transition-colors disabled:opacity-50"
+                                        title="O'chirish"
+                                        aria-label={`${def.label} ni o'chirish`}
+                                    >
+                                        {deleting === def.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                                    </button>
+                                </div>
+                            </li>
+                        );
+                    })}
+                </ul>
+            )}
+        </div>
+    );
 
     return (
         <div className="max-w-4xl">
@@ -126,126 +195,83 @@ export default function CategoryAttributesPage() {
                 <div>
                     <h1 className="text-2xl font-extrabold tracking-tight text-[#2A3547] flex items-center gap-2">
                         <Settings2 size={22} className="text-[#0085db]" />
-                        {categoryName ? `${categoryName} — Xususiyatlar` : "Kategoriya xususiyatlari"}
+                        {categoryName ? `${categoryName} — mahsulot xususiyatlari` : "Kategoriya uchun mahsulot xususiyatlari"}
                     </h1>
                     <p className="text-sm text-[#7c8fac] mt-1">
-                        Bu kategoriyadagi mahsulotlar uchun attribute definitionlarini boshqaring.
-                        {defs.length > 0 && ` Jami: ${defs.length} ta xususiyat.`}
+                        Bu kategoriyadagi mahsulotlar qanday xususiyat va variantlar bilan tavsiflanishini belgilang.
+                        {defs.length > 0 && ` Jami: ${defs.length} ta.`}
                     </p>
                 </div>
-                {!showCreate && !editing && (
-                    <button
-                        onClick={() => setShowCreate(true)}
-                        className="inline-flex items-center justify-center gap-2 bg-[#0085db] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-[#0072bd] shadow-sm"
-                    >
-                        <Plus size={16} /> Xususiyat qo'shish
-                    </button>
+                {!formOpen && (
+                    <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+                        <button
+                            onClick={() => { setCreateForVariant(false); setEditing(null); }}
+                            className="inline-flex items-center justify-center gap-2 bg-[#0085db] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-[#0072bd] shadow-sm"
+                        >
+                            <Plus size={16} /> Xususiyat qo'shish
+                        </button>
+                        <button
+                            onClick={() => { setCreateForVariant(true); setEditing(null); }}
+                            className="inline-flex items-center justify-center gap-2 bg-white text-[#0085db] border border-[#0085db] px-5 py-2.5 rounded-lg text-sm font-semibold transition-colors hover:bg-[#ecf2ff] shadow-sm"
+                        >
+                            <Layers size={16} /> Variant qo'shish
+                        </button>
+                    </div>
                 )}
             </div>
 
-            {(showCreate || editing) && (
+            {formOpen && (
                 <div className="bg-white rounded-xl border border-[#e5eaef] p-6 mb-6 shadow-sm">
                     <h2 className="text-base font-bold text-[#2A3547] mb-5">
-                        {editing ? `"${editing.label}" ni tahrirlash` : "Yangi xususiyat qo'shish"}
+                        {editing ? `"${editing.label}" ni tahrirlash` : (createForVariant ? "Yangi variant qo'shish" : "Yangi xususiyat qo'shish")}
                     </h2>
                     <DefinitionForm
                         categoryId={categoryId}
                         initial={editing}
+                        presetForVariant={createForVariant === true}
                         defaultOrder={nextOrder}
                         onSaved={(saved) => {
                             setDefs((prev) => {
                                 const exists = prev.some((d) => d.id === saved.id);
                                 return exists ? prev.map((d) => (d.id === saved.id ? saved : d)) : [...prev, saved];
                             });
-                            setShowCreate(false);
+                            setCreateForVariant(null);
                             setEditing(null);
                         }}
                         onCancel={() => {
-                            setShowCreate(false);
+                            setCreateForVariant(null);
                             setEditing(null);
                         }}
                     />
                 </div>
             )}
 
-            <div className="bg-white rounded-xl border border-[#e5eaef] shadow-sm overflow-hidden">
-                <div className="px-5 py-3 border-b border-[#eef1f5] text-xs font-bold text-[#7c8fac] uppercase tracking-wider">
-                    Definitionlar (order bo'yicha)
+            {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-3 bg-white rounded-xl border border-[#e5eaef] shadow-sm">
+                    <Loader2 size={28} className="animate-spin text-[#0085db]" />
+                    <p className="text-sm font-semibold text-[#7c8fac]">Yuklanmoqda...</p>
                 </div>
-
-                {loading ? (
-                    <div className="flex flex-col items-center justify-center py-20 gap-3">
-                        <Loader2 size={28} className="animate-spin text-[#0085db]" />
-                        <p className="text-sm font-semibold text-[#7c8fac]">Yuklanmoqda...</p>
+            ) : sortedDefs.length === 0 ? (
+                <div className="bg-white rounded-xl border border-[#e5eaef] shadow-sm text-center py-20">
+                    <div className="w-16 h-16 bg-[#f0f2f5] rounded-full flex items-center justify-center mx-auto mb-4 text-[#9aa8bb]">
+                        <Settings2 size={28} />
                     </div>
-                ) : sortedDefs.length === 0 ? (
-                    <div className="text-center py-20">
-                        <div className="w-16 h-16 bg-[#f0f2f5] rounded-full flex items-center justify-center mx-auto mb-4 text-[#9aa8bb]">
-                            <Settings2 size={28} />
-                        </div>
-                        <p className="text-base font-bold text-[#2A3547]">Xususiyatlar aniqlanmagan</p>
-                        <p className="text-sm text-[#9aa8bb] mt-1 max-w-sm mx-auto">
-                            "Xususiyat qo'shish" tugmasi orqali birinchi definitionni yarating.
-                            Shundan keyin Product yaratish sahifasida bu kategoriya tanlanganda shu maydonlar chiqadi.
-                        </p>
-                    </div>
-                ) : (
-                    <ul className="divide-y divide-[#f0f2f5]">
-                        {sortedDefs.map((def) => {
-                            const meta = definitionMeta(def);
-                            const isEditingThis = editing?.id === def.id;
-                            return (
-                                <li key={def.id} className={`px-5 py-4 flex items-start justify-between gap-4 transition-colors ${isEditingThis ? "bg-[#f4f9ff]" : "hover:bg-[#fafbfc]"}`}>
-                                    <div className="min-w-0">
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            <span className="font-bold text-[#2A3547] text-sm">{def.label}</span>
-                                            {def.required && (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fdede8] text-[#a33a20] text-[11px] font-bold border border-[#f7c8bb]">
-                                                    Majburiy
-                                                </span>
-                                            )}
-                                            {def.forVariant && (
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#ecf2ff] text-[#0068ad] text-[11px] font-bold border border-[#cfe0f7]">
-                                                    Variant turi
-                                                </span>
-                                            )}
-                                        </div>
-                                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                                            <DefinitionBadge type={def.type} />
-                                            <code className="text-xs text-[#7c8fac] bg-[#f0f2f5] px-1.5 py-0.5 rounded font-mono">{def.name}</code>
-                                            <span className="text-xs text-[#9aa8bb]">order {def.order}</span>
-                                        </div>
-                                        {meta && <p className="text-xs text-[#7c8fac] mt-1.5">{meta}</p>}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 shrink-0">
-                                        <button
-                                            onClick={() => { setEditing(def); setShowCreate(false); }}
-                                            className="p-2 rounded-lg text-[#0085db] hover:bg-[#ecf2ff] transition-colors"
-                                            title="Tahrirlash"
-                                            aria-label={`${def.label} ni tahrirlash`}
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
-                                        <button
-                                            onClick={() => handleDelete(def)}
-                                            disabled={deleting === def.id}
-                                            className="p-2 rounded-lg text-[#fa896b] hover:bg-[#fdede8] transition-colors disabled:opacity-50"
-                                            title="O'chirish"
-                                            aria-label={`${def.label} ni o'chirish`}
-                                        >
-                                            {deleting === def.id ? <Loader2 size={16} className="animate-spin" /> : <Trash2 size={16} />}
-                                        </button>
-                                    </div>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                )}
-            </div>
+                    <p className="text-base font-bold text-[#2A3547]">Xususiyatlar aniqlanmagan</p>
+                    <p className="text-sm text-[#9aa8bb] mt-1 max-w-sm mx-auto">
+                        "Xususiyat qo'shish" yoki "Variant qo'shish" tugmasi orqali birinchi definitionni yarating.
+                        Shundan keyin Product yaratish sahifasida bu kategoriya tanlanganda shu maydonlar chiqadi.
+                    </p>
+                </div>
+            ) : (
+                <div className="space-y-6">
+                    {renderList("Xususiyatlar", <Boxes size={14} className="text-[#0085db]" />, properties)}
+                    {renderList("Variantlar", <Layers size={14} className="text-[#0085db]" />, variants)}
+                </div>
+            )}
 
             <p className="text-xs text-[#9aa8bb] mt-4 flex items-start gap-1.5">
                 <Check size={14} className="mt-0.5 shrink-0 text-[#00ceb6]" />
-                Izoh: "Variant turi" belgilangan definitionlar Product Builder'da variant o'qlari sifatida chiqadi.
+                Izoh: "Xaridor tanlaydigan variant" belgilangan definitionlar Product Builder'da variant o'qlari sifatida chiqadi.
                 O'chirilgan definitionga bog'langan product qiymatlari ham o'chadi (cascade).
             </p>
         </div>
