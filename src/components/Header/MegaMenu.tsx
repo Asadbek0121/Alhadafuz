@@ -76,7 +76,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     // Mobile'da root kategoriya (children bor) bosilganda drill-down ochiladi;
     // boshqa holatlarda <a> native navigatsiya qiladi.
     const handleNavClick = (e: React.MouseEvent, cat: any) => {
-        if (window.innerWidth < 992 && cat.children && cat.children.length > 0) {
+        if (window.innerWidth < 1024 && cat.children && cat.children.length > 0) {
             e.preventDefault();
             setSelectedRoot(cat);
             setActiveIdx(0);
@@ -157,7 +157,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                             <div className={styles.statusMessage}>{t('loading')}</div>
                         ) : categories.length === 0 ? (
                             <div className={styles.statusMessage}>{t('no_categories')}</div>
-                        ) : selectedRoot && window.innerWidth < 992 ? (
+                        ) : selectedRoot && window.innerWidth < 1024 ? (
                             // Mobile drill-down: children view
                             <div className={styles.leftCol}>
                                 <button
