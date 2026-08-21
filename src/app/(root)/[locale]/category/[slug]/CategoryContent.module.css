@@ -1,5 +1,8 @@
 .mobileWrapper {
-    display: none;
+    /* Drill-down (root -> sub -> products) barcha viewport'larda ko'rinadi.
+       Avval `display:none` edi (faqat mobil'da block) — desktop'da parent kategoriya
+       drill-downi shu wrapper ichida render bo'lardi va yashirin qolar edi. */
+    display: block;
     background: #fafafb;
     min-height: calc(100vh - 150px);
     padding-bottom: 90px;
@@ -9,11 +12,18 @@
     --category-header-h: 56px;
 }
 
-@media (max-width: 992px) {
-    .mobileWrapper {
+/* Leaf kategoriya desktop'da desktopWrapper ishlatadi; mobil'da yashirin */
+.desktopWrapper {
+    display: none;
+}
+
+@media (min-width: 993px) {
+    .desktopWrapper {
         display: block;
     }
+}
 
+@media (max-width: 992px) {
     .desktopWrapper {
         display: none;
     }
