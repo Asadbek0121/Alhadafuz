@@ -73,12 +73,6 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     // ishlatiladi (garantiya qilingan navigatsiya).
     const catHref = (slug: string) => `/${locale}/category/${slug}`;
 
-    // Telegram WebView'da relative `window.location.assign` ishonchsiz.
-    // Absolute URL bilan assign — barcha muhitda ishonchli.
-    const navigateTo = (slug: string) => {
-        window.location.assign(new URL(catHref(slug), window.location.origin).href);
-    };
-
     // Mobile'da root kategoriya (children bor) bosilganda drill-down ochiladi;
     // boshqa holatlarda <a> native navigatsiya qiladi.
     const handleNavClick = (e: React.MouseEvent, cat: any) => {
@@ -87,10 +81,10 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
             setSelectedRoot(cat);
             setActiveIdx(0);
         } else {
-            // Desktop yoki child'siz root — preventDefault + absolute navigatsiya
-            e.preventDefault();
-            close();
-            navigateTo(cat.slug);
+            // Desktop yoki child'siz root — native <a> navigation authoritative,
+            // close() setTimeout bilan keyinga suriladi (anchor'ni DOM'dan olib
+            // tashlash native navigation'ni bekor qilmasligi uchun).
+            setTimeout(close, 0);
         }
     };
 
@@ -187,10 +181,9 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         href={catHref(child.slug)}
                                         className={styles.catItem}
                                         style={{ textDecoration: 'none' }}
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            close();
-                                            navigateTo(child.slug);
+                                        onClick={() => {
+                                            // Native <a> navigation authoritative; close() keyinga suriladi
+                                            setTimeout(close, 0);
                                         }}
                                     >
                                         <span className={styles.catName}>{child.name}</span>
@@ -243,10 +236,8 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                     href={catHref(categories[activeIdx].slug)}
                                                     className={styles.viewAllLink}
                                                     style={{ textDecoration: 'none' }}
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        close();
-                                                        navigateTo(categories[activeIdx].slug);
+                                                    onClick={() => {
+                                                        setTimeout(close, 0);
                                                     }}
                                                 >
                                                     {t('view_all')}
@@ -257,23 +248,21 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             <div className={styles.childGrid}>
                                                 {categories[activeIdx].children && categories[activeIdx].children.length > 0 ? (
                                                     categories[activeIdx].children.map((sub: any) => (
-                                                        <a
-                                                            key={sub.id}
-                                                            href={catHref(sub.slug)}
-                                                            className={styles.childLink}
-                                                            style={{ textDecoration: 'none' }}
-                                                            onClick={(e) => {
-                                                                // `preventDefault` MAJBURIY: native href + JS navigatsiya
-                                                                // birga otganda close() anchor'ni DOM'dan olib tashlaydi va native
-                                                                // navigation bekor bo'ladi — natijada /uz ga tushib qolardi.
-                                                                // Absolute URL + window.location.href ishlatiladi (barcha muhitda).
-                                                                e.preventDefault();
-                                                                close();
-                                                                navigateTo(sub.slug);
-                                                            }}
-                                                        >
-                                                            {sub.name}
-                                                        </a>
+                                                    <a
+                                                        key={sub.id}
+                                                        href={catHref(sub.slug)}
+                                                        className={styles.childLink}
+                                                        style={{ textDecoration: 'none' }}
+                                                        onClick={() => {
+                                                            // Native <a> navigation authoritative — browser href'ni o'zi
+                                                            // ochadi. `close()` ni setTimeout bilan keyinga surish anchor
+                                                            // DOM'dan olib tashlansa ham native navigation bekor
+                                                            // bo'lmasligini ta'minlaydi (avvalgi /uz redirect sababi).
+                                                            setTimeout(close, 0);
+                                                        }}
+                                                    >
+                                                        {sub.name}
+                                                    </a>
                                                     ))
                                                 ) : (
                                                     <div className={styles.noSubCategories}>{t('no_subcategories')}</div>
