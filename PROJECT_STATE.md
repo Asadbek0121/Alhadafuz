@@ -55,6 +55,8 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Vercel build P1002 fix (2)**: `scripts/prepare-direct-url.mjs` endi DIRECT_URL allaqachon o'rnatilgan bo'lsa ham uni normalizatsiya qiladi. Vercel env'ida DIRECT_URL `pgbouncer=true` bilan qo'lda o'rnatilgan edi — skript `already set` deb o'tkazib yuborgan va `prisma migrate deploy` transaction-mode ulanishda advisory lock ololmay P1002 bergan. Endi `pgbouncer=true` bo'lsa override qilib to'g'ri variantni yozadi. (`scripts/prepare-direct-url.mjs`)
+- **MegaMenu child navigation fix**: Desktop childGrid child linklari `window.open(url, '_self')` + `preventDefault` o'rniga native `<a href>` (no preventDefault) + `window.location.assign` bilan almashtirildi. Root kategoriya va mobile drill-down ham `window.location.assign`ga o'tkazildi. Bu Telegram WebView'da `/uz`ga tushib ketish muammosini bartaraf qiladi. (`MegaMenu.tsx`)
 
 **Phase 10 — Final Accessibility & UI Polish (2026-08-20):**
 - **`useFocusTrap` hook** (yangi): CartDrawer'ga qo'llandi — `role="dialog"` + `aria-modal` + Tab trap + Escape + focus restore. AuthModal allaqachon to'liq focus trap + Escape + dialog semantics'ga ega edi (tekshirildi, o'zgarish kerak emasdi).
@@ -221,4 +223,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-20
+2026-08-21
