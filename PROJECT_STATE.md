@@ -168,14 +168,14 @@ Avvalgi sessiyalardan:
 1. **Node 25 + Turbopack hang**: `next dev` "Compiling instrumentation" da osilib qoladi. Yechim: Node 22 LTS (`nvm use 22`), `.next` ni o'chirib qayta ishga tushirish.
 2. **ESLint hang**: `.eslintcache` buzuq bo'lsa `eslint` 0% CPU'da osilib qoladi. Yechim: `rm -f .eslintcache` + direct `node node_modules/eslint/bin/eslint.js`.
 3. **tsc hang**: eski `tsconfig.tsbuildinfo` bilan `npx tsc --noEmit` osilib qolishi mumkin — eski tsbuildinfo'larni o'chirib `--incremental false` bilan ishga tushiring.
-4. **Click payment** aktiv emas — env yo'q.
-5. **Rate limit (Upstash)** disabled — env yo'q.
-6. **`otp-store.ts`** in-memory — server restart'da email OTP yo'qoladi.
-7. **OTP console'da log** qilinadi (dev uchun qulay, prod'da olib tashlash kerak).
-8. **Order-success/track'da hardcoded o'zbek matnlari** — i18n qilish Phase 10'da.
-9. **Katalog juda kichik** (6 mahsulot, 1 ildiz kategoriya) — filter/sort/pagination to'liq ishlaydi lekin kichik natija ko'rsatadi.
-10. **Chegirmali mahsulotlarda `discount` field ko'pincha `null`** — chegirma `oldPrice > price` orqali aniqlanadi; `getCachedFlashDeals` JS'da filter qiladi. `/api/products?discount=1` faqat `discount > 0` bo'lganlarni qaytaradi.
-11. **Neon PostgreSQL** transient connection "Closed" xatolari berishi mumkin — prisma avtomatik qayta ulanishga urinadi.
+4. **`.next` keshi buzilganda homepage bo'sh chiqadi (MUHIM!)**: `unstable_cache` (getCachedHomepageProducts, getCachedRootCategories, getCachedFlashDeals) transient Neon DB xatosi paytida `[]` qaytaradi va bu **keshlanadi** (3600s). Natijada homepage'da "Ommabop mahsulotlar" bo'limida "Topilmadi", kategoriyalar/chegirmalar bo'sh bo'ladi — lekin mahsulotlar DB'da bor (to'g'ridan-to'g'ri Prisma query 6 ta qaytaradi). **Yechim**: `rm -rf .next` (butun .next, faqat .next/cache emas) + dev server'ni qayta ishga tushirish. Kod darajasida fix: unstable_cache funksiyalari xatoda `[]` qaytarib keshlash o'rniga rethrow qilishi kerak (hali qilinmagan).
+5. **Click payment** aktiv emas — env yo'q.
+6. **Rate limit (Upstash)** disabled — env yo'q.
+7. **`otp-store.ts`** in-memory — server restart'da email OTP yo'qoladi.
+8. **OTP console'da log** qilinadi (dev uchun qulay, prod'da olib tashlash kerak).
+9. **Order-success/track'da hardcoded o'zbek matnlari** — i18n qilish keyingi iteratsiyada.
+10. **Katalog juda kichik** (6 mahsulot, 1 root kategoriya) — filter/sort ishlaydi lekin kichik natija.
+11. **Neon PostgreSQL** transient connection "Closed" xatolari — prisma qayta ulanishga urinadi.
 12. **Category sahifasida `useMediaQuery`** — mobil/desktop switch'da bir kadr flash mumkin (SSR desktop render).
 13. **Variant DB constraint**: `@@unique([cartId, productId])` — variant mahsulotlar DB cart'da bitta qator sifatida saqlanadi (localStorage cart'da id+variant bo'yicha alohida). To'liq variant support uchun schema kengaytirish kerak.
 14. **Hozircha variantli mahsulot yo'q** — variant kodi to'liq, lekin real data bo'lmagani sababli variant UI ko'rinmaydi.
