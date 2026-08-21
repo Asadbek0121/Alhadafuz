@@ -39,7 +39,7 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 - `BannerEvent` modeli (vaqt-belgili impression/click jurnali) schema'ga qo'shildi — `db push` kutilmoqda.
 
 ### Fixed
-- **Vercel build P1002 (3-chi tuzatish)**: Neon pooler endpoint'ida stale advisory lock tufayli `prisma migrate deploy` doimiy P1002 berardi. `prepare-direct-url.mjs` endi DIRECT_URL ni **true direct host** (hostname'dan `-pooler` olib tashlab) ga normalizatsiya qiladi — pooling'da qolgan advisory lock muammosini bartaraf qiladi. (`scripts/prepare-direct-url.mjs`)
+- **Vercel build P1002 (4-chi tuzatish)**: `prepare-direct-url.mjs` endi `prisma migrate deploy` ni `execSync` orqali O'Z ICHIDA ishga tushiradi. Sabab: `process.env.DIRECT_URL` (true direct host) faqat node process'ida qoladi, shell'da `&& prisma migrate deploy` alohida process'ga o'tmaydi. `.env` fayli esa Vercel env var'idan past priority. Endi `process.env.DIRECT_URL` to'g'ri child process'ga meros qilib beriladi. (`scripts/prepare-direct-url.mjs`, `package.json`)
 
 ## [2026-08-20] — Production Remediation (B1/B2/H1/H3/H4/P6/P7/P8/P9)
 
