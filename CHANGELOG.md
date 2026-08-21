@@ -4,10 +4,16 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
-### Fixed
-- **Vercel build P1002 (3-chi tuzatish)**: Neon pooler endpoint'ida stale advisory lock tufayli `prisma migrate deploy` doimiy P1002 berardi. `prepare-direct-url.mjs` endi DIRECT_URL ni **true direct host** (hostname'dan `-pooler` olib tashlab) ga normalizatsiya qiladi — pooling'da qolgan advisory lock muammosini bartaraf qiladi. (`scripts/prepare-direct-url.mjs`)
-
 ### Added
+- **Phase B — Backend CRUD & Validation (universal product system)**:
+  - **Category Attribute Definitions CRUD**: `GET/POST /api/admin/categories/[id]/attributes`, `PATCH/DELETE .../[attributeId]` — ADMIN rol tekshiruvi, category ownership tekshiruvi (boshqa category definition'ini tahrirlash 404), type/options kombinatsiya validatsiyasi (TEXT/BOOLEAN/DATE options yo'q; SELECT/MULTI_SELECT options shart; COLOR #HEX format; NUMBER/MEASUREMENT min/max; MEASUREMENT unit tavsiya), name unique per category (409). Zod.
+  - **Product Attribute Values**: `GET/PUT /api/admin/products/[id]/attributes` — bulk replace (transaction: deleteMany+createMany). Definition product'ning category'iga tegishli bo'lishi shart (400), `required=true` tekshiruvi, type asosida qiymat validatsiyasi (TEXT/NUMBER/BOOLEAN/SELECT/MULTI_SELECT/COLOR/MEASUREMENT/DATE), `@@unique([productId, attributeDefId])` — P2002 → 409. VALUE storage: `ProductAttributeValue.value` = JSON.stringify qiymat, deserialize/read uchun helper.
+  - **Product Variants CRUD**: `GET/POST /api/admin/products/[id]/variants`, `PATCH/DELETE .../[variantId]` — `variantKey` deterministik kanonik (`color=black|size=m`; kalitlar lexicographic sort, qiymatlar trim+lowercase; `@@unique([productId, variantKey])` → P2002 → 409, 500 EMAS). `variantLabel` readable label ("Black / M") options'dan generatsiya. `isDefault` transaction bilan yagona (eski default false). PATCH uchun default'siz `variantPatchSchema` (`.partial()` default'li schema'da default'larni qo'llardi — bug fix).
+  - **Variant Images CRUD**: `GET/POST .../variants/[variantId]/images`, `PATCH/DELETE .../images/[imageId]` — metadata-only (upload yo'q), `order` reorder, `isPrimary` transaction bilan yagona (yangisi set qilinsa eski false).
+  - **CHINA_ORDER ziddiyat qoidasi**: `resolveFulfillmentConflict` — Product CHINA_ORDER bo'lsa variant LOCAL bo'la olmaydi (400); Product LOCAL bo'lsa variant CHINA_ORDER override qila oladi; variant.fulfillmentType null bo'lsa product'dan inherit. Variant override qila oladi, lekin product CHINA_ORDER → variant faqat CHINA_ORDER yoki null.
+  - **Public Product API kengaytirildi** (`/api/products/[id]`): legacy `attributes`/`variant` response'lari SAQLANADI, qo'shimcha `attributeValues` (structured) va `variants` (isActive, images bilan, price/stock fallback Product'ga) qo'shildi. `mapProductMarketing`/`lib/data.ts` buzilmadi.
+  - Shared helper: `src/lib/universal-product.ts` (zod schemas, variantKey/label generatsiya, type combo validatsiya, value validatsiya, serialize/deserialize, fulfillment qoidasi).
+- Yangi migration KERAK EMAS — Phase A migration `20260821060000_add_universal_product_system` yetarli.
 - 🇨🇳 **Xitoydan buyurtma (CHINA_ORDER fulfillment)** — boshidan oxirigacha fulfillment modeli:
   - **DB**: `Product.fulfillmentType String @default("LOCAL")` (authoritative), `CartItem.fulfillmentType`/`OrderItem.fulfillmentType` (snapshot, nullable), yangi `Cargo` modeli (PENDING/CALCULATED/PAID — future placeholder, hozir real calculator yo'q). Migration `20260821051422_china_order_fulfillment`.
   - **Product card**: CHINA_ORDER qizil badge "🇨🇳 BUYURTMA ASOSIDA" + "Kargo alohida hisoblanadi" izohi. LOCAL'da bepul yetkazib berish badge'si o'chadi.
@@ -20,6 +26,9 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
   - **i18n**: yangi `ChinaOrder` namespace — uz/ru/en.
   - **Backward compat**: eski productlar LOCAL, eski cart/order itemlar `null` → kod `LOCAL` deb hisoblaydi.
 - `BannerEvent` modeli (vaqt-belgili impression/click jurnali) schema'ga qo'shildi — `db push` kutilmoqda.
+
+### Fixed
+- **Vercel build P1002 (3-chi tuzatish)**: Neon pooler endpoint'ida stale advisory lock tufayli `prisma migrate deploy` doimiy P1002 berardi. `prepare-direct-url.mjs` endi DIRECT_URL ni **true direct host** (hostname'dan `-pooler` olib tashlab) ga normalizatsiya qiladi — pooling'da qolgan advisory lock muammosini bartaraf qiladi. (`scripts/prepare-direct-url.mjs`)
 
 ## [2026-08-20] — Production Remediation (B1/B2/H1/H3/H4/P6/P7/P8/P9)
 

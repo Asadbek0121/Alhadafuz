@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { products } from '@/data/products';
 import { mapProductMarketing } from '@/lib/data';
+import { deserializeAttributeValue } from '@/lib/universal-product';
 
 export async function GET(request: Request, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
@@ -103,6 +104,46 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 }
             }
 
+            // Structured attributeValues (new format) — parallel to legacy attributes JSON
+            let attributeValues: any[] = [];
+            let variants: any[] = [];
+            try {
+                const values = await (prisma as any).productAttributeValue.findMany({
+                    where: { productId: id },
+                    include: { attributeDef: true },
+                });
+                attributeValues = values.map((v: any) => ({
+                    id: v.id,
+                    attributeDefId: v.attributeDefId,
+                    attributeDef: {
+                        name: v.attributeDef.name,
+                        label: v.attributeDef.label,
+                        type: v.attributeDef.type,
+                        forVariant: v.attributeDef.forVariant,
+                    },
+                    value: deserializeAttributeValue(v.attributeDef.type, v.value),
+                }));
+            } catch (e) {
+                console.error("Failed to fetch attributeValues for product", id, e);
+            }
+
+            try {
+                const vns = await (prisma as any).productVariant.findMany({
+                    where: { productId: id, isActive: true },
+                    include: {
+                        images: { orderBy: { order: 'asc' }, select: { id: true, url: true, order: true, isPrimary: true } },
+                    },
+                    orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+                });
+                variants = vns.map((v: any) => ({
+                    ...v,
+                    price: v.price !== 0 ? v.price : dbProduct.price,
+                    stock: v.stock !== -1 ? v.stock : dbProduct.stock,
+                }));
+            } catch (e) {
+                console.error("Failed to fetch variants for product", id, e);
+            }
+
             return NextResponse.json({
                 ...dbProduct,
                 images,
@@ -120,7 +161,9 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
                 oldPrice: dbProduct.oldPrice,
                 discount: dbProduct.discount,
                 stock: dbProduct.stock,
-                categorySlug
+                categorySlug,
+                attributeValues,
+                variants,
             });
         }
     } catch (error) {
