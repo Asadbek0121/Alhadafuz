@@ -233,7 +233,16 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             <div className={styles.rightColHeader}>
                                                 <h3>{categories[activeIdx].name}</h3>
                                                 {/* "Barchasini ko'rish" — kichik secondary text-link */}
-                                                <a href={catHref(categories[activeIdx].slug)} className={styles.viewAllLink} style={{ textDecoration: 'none' }}>
+                                                <a
+                                                    href={catHref(categories[activeIdx].slug)}
+                                                    className={styles.viewAllLink}
+                                                    style={{ textDecoration: 'none' }}
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        close();
+                                                        window.location.assign(catHref(categories[activeIdx].slug));
+                                                    }}
+                                                >
                                                     {t('view_all')}
                                                 </a>
                                             </div>
@@ -247,8 +256,12 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                             href={catHref(sub.slug)}
                                                             className={styles.childLink}
                                                             style={{ textDecoration: 'none' }}
-                                                            onClick={() => {
-                                                                // Native href navigation asosiy; bu ham ishonchli navigatsiya
+                                                            onClick={(e) => {
+                                                                // `preventDefault` MAJBURIY: native href + window.location.assign
+                                                                // birga otganda close() anchor'ni DOM'dan olib tashlaydi va native
+                                                                // navigation bekor bo'ladi — natijada /uz ga tushib qolardi.
+                                                                // Faqat window.location.assign ishlatiladi (mobil drill-down bilan bir xil).
+                                                                e.preventDefault();
                                                                 close();
                                                                 window.location.assign(catHref(sub.slug));
                                                             }}
