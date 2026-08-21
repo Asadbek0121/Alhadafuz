@@ -282,7 +282,7 @@ export default function CategoryContent({ category, banners = [], products = [],
 
                 {/* Toolbar: count + sort (faqat subkategoriya yoki mahsulot ko'rsatilganda) */}
                 {!showRoots && (
-                    <div className="px-4 flex items-center justify-between gap-3">
+                    <div className={`${styles.mobileToolbar} px-4 py-2 flex items-center justify-between gap-3`}>
                         <span className="text-xs font-bold text-slate-500">{t('results', { count: totalCount || products.length })}</span>
                         <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
                     </div>

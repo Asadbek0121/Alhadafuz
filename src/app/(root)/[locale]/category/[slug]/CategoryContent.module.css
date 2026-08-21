@@ -3,6 +3,10 @@
     background: #fafafb;
     min-height: calc(100vh - 150px);
     padding-bottom: 90px;
+    /* Global mobil header balandligi: logo row h-24 (96px) + mobil search (~48px) */
+    --mobile-header-h: 144px;
+    /* Kategoriya mobil header balandligi: padding 12px*2 + back button ~32px */
+    --category-header-h: 56px;
 }
 
 @media (max-width: 992px) {
@@ -23,8 +27,17 @@
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     position: sticky;
-    top: 0;
-    z-index: 50;
+    /* Global header (sticky top:0 z-50) ostidan boshlanadi — collision yo'q */
+    top: var(--mobile-header-h);
+    z-index: 40;
+}
+
+/* Mobil toolbar (count + sort) — kategoriya header ostida sticky */
+.mobileToolbar {
+    position: sticky;
+    top: calc(var(--mobile-header-h) + var(--category-header-h));
+    z-index: 35;
+    background: #fafafb;
 }
 
 .backBtn {
