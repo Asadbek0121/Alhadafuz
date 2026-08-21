@@ -402,9 +402,11 @@ export default function CategoryContent({ category, banners = [], products = [],
     // avval root kategoriyalar, tanlanganda subkategoriyalar, so'ng mahsulotlar.
     // Leaf kategoriya (children yo'q) — to'g'ridan-to'g'ri mahsulotlar (mobil/desktop split).
     const isParentCategory = category.children && category.children.length > 0;
-    if (isMobile || isParentCategory) {
-        // Mobil drill-down: faqat ota kategoriyada (children bor) root ko'rsatiladi.
-        // Leaf kategoriya (children yo'q) — to'g'ridan-to'g'ri mahsulotlar.
+    if (isMobile) {
+        // Mobil drill-down: faqat mobil'da root/sub browser ko'rsatiladi.
+        // Desktop'da parent kategoriya ham `desktopWrapper` ishlatadi —
+        // subcategories grid + products. (`isParentCategory` desktop'da mobil
+        // branch'ni ishga tushirmaydi — aks holda root sahifasi bo'sh qolardi.)
         const isParent = category.children && category.children.length > 0;
         const showRoots = isParent && !selectedParent;
         const roots = rootCategories.length > 0 ? rootCategories : (category.parent ? [] : [category]);
