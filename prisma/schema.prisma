@@ -290,12 +290,25 @@ model OrderItem {
   image           String
   variant         String?
   fulfillmentType String?
+  /// Structured variant reference (snapshot — ProductVariant keyin o'zgarsa ham
+  /// order ma'lumoti buzilmaydi, lekin referens saqlanadi)
+  variantId       String?
+  /// O'qiladigan variant label snapshot: "Qora / XL"
+  variantSnapshot String?
+  /// Variant SKU snapshot
+  sku             String?
+  /// Variant barcode snapshot
+  barcode         String?
+  /// Mahsulot attributes snapshot (JSON) — sotib olingan paytdagi holat
+  attributesSnapshot String?
   order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product         Product @relation(fields: [productId], references: [id])
+  variantRel      ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@index([orderId])
   @@index([productId])
   @@index([vendorId])
+  @@index([variantId])
 }
 
 // Cargo — CHINA_ORDER buyurtmalari uchun kelajakdagi kargo hisoblash modeli.
@@ -350,6 +363,8 @@ model Product {
   reviews       Review[]
   wishlistItems WishlistItem[]
   categories    Category[]     @relation("ProductToCategory")
+  attributeValues ProductAttributeValue[]
+  variants      ProductVariant[]
 
   @@index([title])
   @@index([category])
@@ -374,6 +389,118 @@ model Category {
   productsOld     Product[]  @relation("ProductCategoryOld")
   banners         Banner[]   @relation("BannerToCategory")
   products        Product[]  @relation("ProductToCategory")
+  attributeDefinitions CategoryAttributeDefinition[]
+}
+
+/// Kategoriya darajasidagi dynamic attribute/schema definition.
+///
+/// Har bir kategoriya o'z attribute to'plamini belgilaydi (masalan "Kitob" →
+/// Muallif, ISBN, Nashriyot; "Kiyim" → Material, Jinsi, Mavsum). Admin shu
+/// model orqali product formaga dynamic fieldlar qo'shadi.
+///
+/// `forVariant = true` bo'lgan definition Variant o'qi sifatida ishlatiladi
+/// (masalan Rang, O'lcham) — bitta model attribute ham, variant ham bo'la oladi.
+model CategoryAttributeDefinition {
+  id         String        @id @default(cuid())
+  categoryId String
+  /// Ichki nom (slug-ish): masalan "material", "size", "color"
+  name       String
+  /// Default label (i18n key: `attributes.{name}` orqali override qilinadi)
+  label      String
+  type       AttributeType @default(TEXT)
+  required   Boolean       @default(false)
+  /// SELECT/MULTI_SELECT/COLOR uchun vergul bilan ajratilgan optionlar
+  /// masalan: "Qizil,Ko'k,Yashil" yoki "#FF0000,#0000FF,#00FF00"
+  options    String?
+  /// MEASUREMENT/NUMBER uchun o'lchov birligi: "kg", "cm", "m²", "GB", "MP"
+  unit       String?
+  minValue   Float?
+  maxValue   Float?
+  /// true bo'lsa — bu definition Variant o'qi (Rang/O'lcham kombinatsiyasi)
+  forVariant Boolean       @default(false)
+  order      Int           @default(0)
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  category Category                  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  values   ProductAttributeValue[]
+
+  @@index([categoryId])
+}
+
+/// Product → CategoryAttributeDefinition bo'yicha aniq qiymat.
+///
+/// Eski `Product.attributes` JSON bilan PARALLEL ishlaydi (transitional):
+/// yangi structured format shu jadvalda saqlanadi, eski JSON o'chirilmaydi.
+model ProductAttributeValue {
+  id             String    @id @default(cuid())
+  productId      String
+  attributeDefId String
+  /// JSON.stringify qiymat:
+  ///   TEXT/SELECT → "Qizil"
+  ///   NUMBER → 42
+  ///   BOOLEAN → true
+  ///   MULTI_SELECT → ["Qizil","Ko'k"]
+  ///   COLOR → "#FF0000"
+  ///   MEASUREMENT → {"value":12,"unit":"kg"}
+  ///   DATE → "2026-01-01"
+  value          String
+
+  attributeDef CategoryAttributeDefinition @relation(fields: [attributeDefId], references: [id], onDelete: Cascade)
+  product      Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, attributeDefId])
+  @@index([attributeDefId])
+}
+
+/// Product variant kombinatsiyasi. Masalan "Rang:Qora,O'lcham:XL".
+///
+/// `variantKey` — kombinatsiyaning canonical JSON stringi (kalitlar saralangan),
+/// shuning uchun bir xil variant 2 marta yaratilmaydi (`@@unique`).
+model ProductVariant {
+  id             String   @id @default(cuid())
+  productId      String
+  /// Canonical JSON: {"O'lcham":"XL","Rang":"Qora"} (kalitlar saralangan)
+  variantKey     String
+  /// O'qiladigan variant label: "Qora / XL" — UI va order snapshot uchun
+  variantLabel   String?
+  sku            String?
+  barcode        String?
+  /// Variant maxsus narxi. 0 bo'lsa Product.price ishlatiladi.
+  price          Float    @default(0)
+  /// Chizilgan eski narx
+  compareAtPrice Float?
+  /// Variant maxsus stock'i. -1 bo'lsa Product.stock ishlatiladi.
+  stock          Int      @default(-1)
+  /// gramm (kargo hisoblash uchun CHINA_ORDER)
+  weight         Float?
+  /// Fulfillment override — default Product.fulfillmentType
+  fulfillmentType String?
+  isDefault      Boolean  @default(false)
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  product    Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cartItems  CartItem[]
+  orderItems OrderItem[]
+  images     VariantImage[]
+
+  @@unique([productId, variantKey])
+  @@index([sku])
+}
+
+/// Variantga tegishli rasm (masalan Qora rangdagi mahsulot fotolari).
+model VariantImage {
+  id        String   @id @default(cuid())
+  variantId String
+  url       String
+  order     Int      @default(0)
+  isPrimary Boolean  @default(false)
+
+  variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
+
+  @@index([variantId])
 }
 
 model Banner {
@@ -499,11 +626,14 @@ model CartItem {
   productId String
   quantity  Int
   variant   String?
+  variantId String?
   fulfillmentType String?
   cart      Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
   product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantRel ProductVariant? @relation(fields: [variantId], references: [id])
 
-  @@unique([cartId, productId])
+  @@unique([cartId, productId, variantId])
+  @@index([variantId])
 }
 
 model Wishlist {
@@ -628,4 +758,18 @@ enum BannerPosition {
   SIDEBAR
   CATEGORY_TOP
   FOOTER
+}
+
+/// Dynamic attribute qiymat turlari. `CategoryAttributeDefinition.type` da
+/// ishlatiladi. TEXT — erkin matn, SELECT — bitta option, MULTI_SELECT — bir
+/// nechta option, MEASUREMENT — son+o'lchov birligi (masalan "12 kg").
+enum AttributeType {
+  TEXT
+  NUMBER
+  BOOLEAN
+  SELECT
+  MULTI_SELECT
+  COLOR
+  MEASUREMENT
+  DATE
 }
