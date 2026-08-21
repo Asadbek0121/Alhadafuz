@@ -73,6 +73,12 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
     // ishlatiladi (garantiya qilingan navigatsiya).
     const catHref = (slug: string) => `/${locale}/category/${slug}`;
 
+    // Telegram WebView'da relative `window.location.assign` ishonchsiz.
+    // Absolute URL bilan assign — barcha muhitda ishonchli.
+    const navigateTo = (slug: string) => {
+        window.location.assign(new URL(catHref(slug), window.location.origin).href);
+    };
+
     // Mobile'da root kategoriya (children bor) bosilganda drill-down ochiladi;
     // boshqa holatlarda <a> native navigatsiya qiladi.
     const handleNavClick = (e: React.MouseEvent, cat: any) => {
@@ -81,10 +87,10 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
             setSelectedRoot(cat);
             setActiveIdx(0);
         } else {
-            // Desktop yoki child'siz root — native + assign navigatsiya
+            // Desktop yoki child'siz root — preventDefault + absolute navigatsiya
             e.preventDefault();
             close();
-            window.location.assign(catHref(cat.slug));
+            navigateTo(cat.slug);
         }
     };
 
@@ -184,7 +190,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         onClick={(e) => {
                                             e.preventDefault();
                                             close();
-                                            window.location.assign(catHref(child.slug));
+                                            navigateTo(child.slug);
                                         }}
                                     >
                                         <span className={styles.catName}>{child.name}</span>
@@ -240,7 +246,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                     onClick={(e) => {
                                                         e.preventDefault();
                                                         close();
-                                                        window.location.assign(catHref(categories[activeIdx].slug));
+                                                        navigateTo(categories[activeIdx].slug);
                                                     }}
                                                 >
                                                     {t('view_all')}
@@ -257,13 +263,13 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                             className={styles.childLink}
                                                             style={{ textDecoration: 'none' }}
                                                             onClick={(e) => {
-                                                                // `preventDefault` MAJBURIY: native href + window.location.assign
+                                                                // `preventDefault` MAJBURIY: native href + JS navigatsiya
                                                                 // birga otganda close() anchor'ni DOM'dan olib tashlaydi va native
                                                                 // navigation bekor bo'ladi — natijada /uz ga tushib qolardi.
-                                                                // Faqat window.location.assign ishlatiladi (mobil drill-down bilan bir xil).
+                                                                // Absolute URL + window.location.href ishlatiladi (barcha muhitda).
                                                                 e.preventDefault();
                                                                 close();
-                                                                window.location.assign(catHref(sub.slug));
+                                                                navigateTo(sub.slug);
                                                             }}
                                                         >
                                                             {sub.name}
