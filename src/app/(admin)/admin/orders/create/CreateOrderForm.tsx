@@ -309,7 +309,7 @@ export default function CreateOrderForm({ users, products }: { users: any[], pro
                                 <Input
                                     value={formData.shippingAddress}
                                     onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })}
-                                    placeholder="At-Termiziy ko'chasi, 24-uy"
+                                    placeholder="Masalan: Alisher Navoiy ko'chasi, 24-uy"
                                 />
                             </div>
                             <div className="col-span-2 space-y-2">

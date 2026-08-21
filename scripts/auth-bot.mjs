@@ -331,7 +331,7 @@ bot.on('contact', async (msg) => {
             });
 
             // 3. Send OTP + deep-link button to reset-password page
-            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://uzm.uz';
+            const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz';
             const resetUrl = `${appUrl}/uz/auth/reset-password?phone=${encodeURIComponent(contactPhone)}&token=${otp}`;
 
             log('info', 'RESET_OTP_GENERATED', { chatId, actor, phone: contactPhone });

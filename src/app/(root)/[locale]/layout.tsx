@@ -94,9 +94,6 @@ export default async function LocaleLayout({
     name: SITE_NAME,
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
-    // Faqat DB'dagi haqiqiy qiymatlar qo'shiladi — fake/sinov ma'lumot yo'q.
-    // sameAs ataylab qo'shilmagan — haqiqiy ijtimoiy tarmoq profillari
-    // mavjud bo'lmaguncha generic/fake linklar ko'rsatilmaydi.
   };
 
   if (storeSettings?.phone) {
@@ -112,6 +109,27 @@ export default async function LocaleLayout({
       addressRegion: 'Surxondaryo',
       addressCountry: 'UZ',
     };
+  }
+
+  // DB'dagi haqiqiy social linklar — faqat brand nomiga mos keladiganlar qo'shiladi.
+  // Telegram link (Qalam_Books_rasmiy) bu HADAF emas, Qalam Books brendi — tashlab ketilgan.
+  // supportTelegram (Muhiddinovich_9) shaxsiy username — qo'shilmaydi.
+  if (storeSettings?.socialLinks) {
+    try {
+      const social = JSON.parse(storeSettings.socialLinks);
+      const sameAs: string[] = [];
+      if (social.instagram && social.instagram.includes('hadaf.market.uz')) {
+        sameAs.push(social.instagram);
+      }
+      if (social.youtube && social.youtube.includes('hadaf_market_uz')) {
+        sameAs.push(social.youtube);
+      }
+      if (sameAs.length > 0) {
+        jsonLdOrganization.sameAs = sameAs;
+      }
+    } catch {
+      // socialLinks JSON parse error — safe to ignore
+    }
   }
 
   const jsonLdWebsite = {

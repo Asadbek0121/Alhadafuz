@@ -154,7 +154,7 @@ export default function AdminSettingsPage() {
                                     id="shop-phone"
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
-                                    placeholder="+998 76 123 45 67"
+                                    placeholder="+998 __ ___ __ __"
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
@@ -166,7 +166,7 @@ export default function AdminSettingsPage() {
                                     id="shop-email"
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                                    placeholder="info@hadaf.uz"
+                                    placeholder="info@example.com"
                                     className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>

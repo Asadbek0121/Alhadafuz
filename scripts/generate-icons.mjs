@@ -3,30 +3,33 @@
  *
  * Run with: node scripts/generate-icons.mjs
  *
- * The source logo is a 1024x1024 canvas whose mark only occupies the middle
- * ~690x548 px. Favicons are tiny, so we trim that dead space first, then place
- * the mark on a square canvas with a small uniform margin.
+ * The source logo (1024x1024) is a stacked lockup: the "HADAF" wordmark on top
+ * (x167-855, y239-638), an underline bar, and the "MARKET" tagline below. On a
+ * 16-48px favicon the full lockup turns into an unreadable smear, so only the
+ * wordmark itself is used — that is the brand mark. The lockup's bottom two
+ * rows (bar + tagline) are excluded on purpose.
  *
  * sharp cannot write .ico, so the container is assembled by hand: an ICO is a
  * 6-byte header, one 16-byte directory entry per size, then the image payloads.
  * PNG payloads are used, which every browser in use today reads.
  */
 import sharp from 'sharp';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, rm } from 'node:fs/promises';
 
 const SOURCE = 'public/logo.png';
 
-// Measured content box of the mark inside the 1024x1024 source.
-const CONTENT = { left: 167, top: 238, width: 690, height: 548 };
+// Measured content box of the HADAF wordmark inside the 1024x1024 source.
+// This excludes the underline bar and the "MARKET" tagline below it.
+const CONTENT = { left: 167, top: 239, width: 689, height: 400 };
 
-// Mark fills 92% of the tile; the rest is breathing room so it does not touch
-// the edges of the browser's favicon slot.
-const FILL = 0.92;
+// Wordmark fills 94% of the tile width; the rest is breathing room so it does
+// not touch the edges of the browser's favicon slot.
+const FILL = 0.94;
 
 const ICO_SIZES = [16, 32, 48];
 
 /**
- * Trimmed mark centered on a transparent square, at full resolution.
+ * Trimmed wordmark centered on a transparent square, at full resolution.
  * Built once and reused, since it is the same for every output size.
  */
 async function squareSource() {
@@ -63,6 +66,28 @@ async function squareMark(source, size) {
         .toBuffer();
 }
 
+/**
+ * Wordmark on a solid white tile. Used for maskable PWA icons and the
+ * apple-touch-icon, where iOS/PWA clients paint their own background if the
+ * image is transparent. `fill` is the fraction of the tile the mark covers.
+ */
+async function tileMark(source, size, fill = 0.7) {
+    const mark = await sharp(source)
+        .resize(Math.round(size * fill), Math.round(size * fill), {
+            fit: 'contain',
+            background: { r: 0, g: 0, b: 0, alpha: 0 },
+        })
+        .png()
+        .toBuffer();
+
+    return sharp({
+        create: { width: size, height: size, channels: 4, background: { r: 255, g: 255, b: 255, alpha: 1 } },
+    })
+        .composite([{ input: mark, gravity: 'center' }])
+        .png({ compressionLevel: 9 })
+        .toBuffer();
+}
+
 /** Packs PNG buffers into a single .ico container. */
 function buildIco(entries) {
     const header = Buffer.alloc(6);
@@ -92,21 +117,42 @@ function buildIco(entries) {
 
 const source = await squareSource();
 
+// The favicon itself lives in src/app (Next.js file convention). A second copy
+// in public/ would shadow it at the same /favicon.ico path, so it is removed.
 const icoEntries = await Promise.all(
     ICO_SIZES.map(async (size) => ({ size, data: await squareMark(source, size) }))
 );
 await writeFile('src/app/favicon.ico', buildIco(icoEntries));
 console.log(`src/app/favicon.ico — ${ICO_SIZES.join('/')} px`);
+try {
+    await rm('public/favicon.ico');
+    console.log('public/favicon.ico — removed (shadows src/app/favicon.ico)');
+} catch {
+    // already gone
+}
 
-// Standalone PNGs: the manifest and apple-touch-icon previously pointed at the
-// 403 KB source logo while claiming to be 192x192.
+// Standalone PNGs for browsers/tools that ignore .ico sizes, plus the PWA
+// manifest and apple-touch-icon. Transparent for the browser/manifest icons,
+// solid white for apple-touch-icon and the maskable PWA variants.
 for (const [size, path] of [
-    [180, 'public/apple-touch-icon.png'],
+    [16, 'public/favicon-16x16.png'],
+    [32, 'public/favicon-32x32.png'],
     [192, 'public/icon-192.png'],
     [512, 'public/icon-512.png'],
 ]) {
     await writeFile(path, await squareMark(source, size));
     console.log(`${path} — ${size}x${size}`);
+}
+
+await writeFile('public/apple-touch-icon.png', await tileMark(source, 180, 0.82));
+console.log('public/apple-touch-icon.png — 180x180 (white tile)');
+
+for (const [size, path] of [
+    [192, 'public/icon-maskable-192.png'],
+    [512, 'public/icon-maskable-512.png'],
+]) {
+    await writeFile(path, await tileMark(source, size, 0.62));
+    console.log(`${path} — ${size}x${size} (maskable, white tile)`);
 }
 
 /**
@@ -120,7 +166,7 @@ for (const [size, path] of [
  */
 const OG = { width: 1200, height: 630 };
 
-// Sampled from the logo: the cart is this blue, the H is this orange.
+// Sampled from the logo: the H is this blue, the rest is this orange.
 const BRAND_BLUE = '#3973f8';
 const BRAND_ORANGE = '#f37409';
 

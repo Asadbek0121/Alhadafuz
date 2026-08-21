@@ -55,6 +55,14 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Favicon/SEO/branding complete fix** (Chrome favicon kichik + Google globe + eski contact'lar):
+  - **Root cause**: `generate-icons.mjs` butun logotipni (HADAF + bar + MARKET, 690x548) faviconga sig'dirardi — brand mark kichik edi. Google faviconga etarli aniqlik bermagani uchun globe (default) ikonka ko'rsatardi.
+  - **Fix**: favicon endi faqat HADAF wordmark (`public/logo.png` 167-855/239-638), 32x32 tab'da 30px enni egallaydi. Yangi: `src/app/favicon.ico` (16/32/48 ICO), `public/favicon-16/32.png`, `icon-192/512.png`, `icon-maskable-192/512.png`, `apple-touch-icon.png` (180 white tile), `og-image.png` (regenerated brand OG). `public/favicon.ico` o'chirildi (src/app'ga shadow bo'lardi — bitta authoritative source).
+  - **Manifest**: name "HADAF Market", short_name "HADAF", theme `#4361ee`, maskable icons.
+  - **Eski contact'lar tozalandi** (StoreSettings DB source of truth): invoices add/edit billFrom bo'sh default, auth-bot `uzm.uz`→`www.alhadaf.uz`, seed-delivery At-Termiziy→Alisher Navoiy, placeholder'lar generic.
+  - **Meta**: uz/ru/en description "eng katta online bozor" → customer-focused (Google spam risk yo'q).
+  - **JSON-LD**: Organization sameAs — real instagram/youtube (hadaf.market.uz, hadaf_market_uz) DB'dan qo'shildi; Qalam_Books_rasmiy (HADAF emas) va supportTelegram (shaxsiy) tashlab ketildi.
+  - Verification: tsc 0, ESLint 0 (1 pre-existing warning), build SUCCESS (Node 22).
 - **Desktop MegaMenu `/uz` redirect bug fix — root cause `LanguageSwitcher` global mousedown listener**: Katalog child kategoriya click'ida `/uz` ga "qaytish" muammosining haqiqiy sababi topildi: `LanguageSwitcher` (2 instance) `document` `mousedown`'da `closeAllMenus()` chaqirardi — katalog menyusi ichidagi native `<a>` child link'iga bosilganda menyu click'dan OLDIN unmount bo'lib, native navigation bekor qilinar edi (href to'g'ri edi, `setTimeout(close,0)` ham yordam bermasdi — click event anchor'ga yetmasdi). Fix: `LanguageSwitcher` `handleOutside` ga `#catalog-menu` guard qo'shildi. `close()` route'ni o'zgartirmaydi (faqat UI state). Mobile katalog/BottomNav/mobile drill-down o'zgarmadi. tsc 0 / lint 0 / build SUCCESS (101/101, Node 22). Real Chrome CDP test: child/root/view-all/language/overlay/X desktop + mobile drill-down SUCCESS. (`src/components/LanguageSwitcher.tsx`)
 - **Category Attribute Definition — Parent-chain inheritance + Standard Product Template seed**:
   - **Parent-chain inheritance** (backend): Yangi helper `src/lib/category-definitions.ts` — `getEffectiveCategoryDefinitions(categoryId)` parent chain bo'ylab recursion (visited Set bilan cycle-safe, infinite loop guard). Qoida: child parent defs'ni inherit qiladi, o'z local defs'ni qo'shadi, same `name` bilan override qilsa child g'alaba qiladi. Priority: child local > parent > grandparent. Order bo'yicha sort; har def'ga `_effectiveCategoryId` (manba kategoriya) qo'shiladi.
@@ -241,4 +249,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-21 (Desktop MegaMenu `/uz` bug fix — LanguageSwitcher mousedown root cause; Category Attribute Definition, Storefront variant integration, Phase C/D admin UI)
+2026-08-21 (Favicon/SEO/branding complete fix — wordmark-only crop, updated manifest, meta descriptions, old contacts cleanup, JSON-LD sameAs, build SUCCESS)

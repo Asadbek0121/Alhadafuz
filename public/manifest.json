@@ -1,11 +1,11 @@
 {
-    "name": "Hadaf Market - Onlayn Savdo",
-    "short_name": "Hadaf Market",
-    "description": "HADAF - O'zbekistonning onlayn savdo platformasi",
+    "name": "HADAF Market",
+    "short_name": "HADAF",
+    "description": "O'zbekiston bo'ylab onlayn xarid qilish platformasi — kiyim-kechak, kitoblar, elektronika va boshqa mahsulotlar marketplace'ida tezkor yetkazib berish.",
     "start_url": "/?pwa=true",
     "display": "standalone",
     "background_color": "#ffffff",
-    "theme_color": "#ffffff",
+    "theme_color": "#4361ee",
     "icons": [
         {
             "src": "/icon-192.png",
@@ -18,6 +18,18 @@
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "any"
+        },
+        {
+            "src": "/icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "/icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
         }
     ]
 }
