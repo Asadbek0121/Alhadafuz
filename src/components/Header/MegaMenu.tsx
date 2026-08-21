@@ -80,6 +80,11 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
             e.preventDefault();
             setSelectedRoot(cat);
             setActiveIdx(0);
+        } else {
+            // Desktop yoki child'siz root — native navigation (Telegram WebView'da ishonchli)
+            e.preventDefault();
+            close();
+            window.open(catHref(cat.slug), '_self');
         }
     };
 
@@ -176,6 +181,11 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                         href={catHref(child.slug)}
                                         className={styles.catItem}
                                         style={{ textDecoration: 'none' }}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            close();
+                                            window.open(catHref(child.slug), '_self');
+                                        }}
                                     >
                                         <span className={styles.catName}>{child.name}</span>
                                         <ChevronRight size={16} className={styles.arrow} />
@@ -232,7 +242,18 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             <div className={styles.childGrid}>
                                                 {categories[activeIdx].children && categories[activeIdx].children.length > 0 ? (
                                                     categories[activeIdx].children.map((sub: any) => (
-                                                        <a key={sub.id} href={catHref(sub.slug)} className={styles.childLink} style={{ textDecoration: 'none' }}>
+                                                        <a
+                                                            key={sub.id}
+                                                            href={catHref(sub.slug)}
+                                                            onClick={(e) => {
+                                                                // Telegram WebView'da ishonchli navigatsiya
+                                                                e.preventDefault();
+                                                                close();
+                                                                window.open(catHref(sub.slug), '_self');
+                                                            }}
+                                                            className={styles.childLink}
+                                                            style={{ textDecoration: 'none' }}
+                                                        >
                                                             {sub.name}
                                                         </a>
                                                     ))
