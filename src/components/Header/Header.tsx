@@ -19,7 +19,7 @@ import { Montserrat } from "next/font/google";
 
 const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useUserStore } from '@/store/useUserStore';
 import { useSession } from 'next-auth/react';
 import CartDrawer from '../Cart/CartDrawer';
@@ -36,6 +36,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
     const t = useTranslations('Header');
     const tProfile = useTranslations('Profile');
     const tNotif = useTranslations('Notifications');
+    const locale = useLocale();
 
     const { openAuthModal, user: storeUser, setUser, logout } = useUserStore();
     const { address, city, district, setLocation, setLoading: setLocationLoading, isLoading: isLocationLoading } = useLocationStore();
@@ -455,7 +456,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                             className="hidden lg:flex items-center gap-2.5 px-6 py-2.5 rounded-xl font-bold transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 bg-blue-600 text-white hover:bg-blue-700 shadow-blue-600/30"
                             onClick={() => {
                                 if (firstRootSlug) {
-                                    router.push(`/category/${firstRootSlug}`);
+                                    // Telegram WebView'da router.push ishonchsiz — native navigation
+                                    window.location.href = `/${locale}/category/${firstRootSlug}`;
                                 } else {
                                     setMenuMode('catalog');
                                     toggleCatalog();
