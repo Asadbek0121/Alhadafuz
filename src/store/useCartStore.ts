@@ -13,6 +13,8 @@ export interface CartItem {
     oldPrice?: number;
     /** Tanlangan variant JSON (masalan: `{"Rang":"Qizil","Xotira":"128GB"}`). Variant bo'lmasa undefined. */
     variant?: string;
+    /** O'qiladigan variant label (masalan: "Qora / M"). ProductVariant.variantLabel snapshot. */
+    variantLabel?: string;
     /** Fulfillment turi: `LOCAL` (oddiy) yoki `CHINA_ORDER` (Xitoydan buyurtma). Kargo alohida hisoblanadi. */
     fulfillmentType?: 'LOCAL' | 'CHINA_ORDER';
     /** Tanlangan ProductVariant ID. Variant bo'lmasa undefined. */

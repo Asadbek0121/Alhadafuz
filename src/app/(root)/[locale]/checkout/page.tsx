@@ -1012,8 +1012,8 @@ export default function CheckoutPage() {
 
                             <div className="flex flex-col gap-5 mb-8 max-h-[280px] overflow-y-auto custom-scrollbar pr-1">
                                 {items.map(item => {
-                                    let variantLabel: string | null = null;
-                                    if (item.variant) {
+                                    let variantLabel: string | null = item.variantLabel || null;
+                                    if (!variantLabel && item.variant) {
                                         try {
                                             const obj = JSON.parse(item.variant);
                                             variantLabel = Object.entries(obj).map(([k, v]) => `${k}: ${v}`).join(' · ');

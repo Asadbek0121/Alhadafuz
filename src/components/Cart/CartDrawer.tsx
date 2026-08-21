@@ -77,8 +77,8 @@ export default function CartDrawer() {
                                             {tChina('badge')} · {tChina('cargo_separate')}
                                         </div>
                                     )}
-                                    {parseVariantLabel(item.variant) && (
-                                        <div className={styles.variant}>{parseVariantLabel(item.variant)}</div>
+                                    {(item.variantLabel || parseVariantLabel(item.variant)) && (
+                                        <div className={styles.variant}>{item.variantLabel || parseVariantLabel(item.variant)}</div>
                                     )}
                                     {item.sku && (
                                         <div className={styles.variant}>SKU: {item.sku}</div>

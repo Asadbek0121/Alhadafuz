@@ -22,9 +22,12 @@ interface OrderItem {
     price: number;
     quantity: number;
     image: string;
-    product?: Product | null; // Optional relation
+    product?: Product | null;
     productId: string;
     fulfillmentType?: string;
+    variantSnapshot?: string;
+    variantLabel?: string;
+    sku?: string;
 }
 
 interface Order {
@@ -187,6 +190,12 @@ export default function OrderHistoryPage() {
                                                             <span className="inline-block mt-0.5 text-[8px] md:text-[10px] font-black text-red-500 bg-red-50 border border-red-100 rounded-full px-1.5 py-0.5">
                                                                 🇨🇳 Xitoydan
                                                             </span>
+                                                        )}
+                                                        {(item.variantSnapshot || item.variantLabel) && (
+                                                            <p className="text-[9px] md:text-xs text-slate-500 font-medium mt-0.5">{item.variantSnapshot || item.variantLabel}</p>
+                                                        )}
+                                                        {item.sku && (
+                                                            <p className="text-[9px] md:text-xs text-slate-400 font-medium">SKU: {item.sku}</p>
                                                         )}
                                                         <p className="text-[9px] md:text-xs text-text-muted font-medium mt-0.5">{item.quantity} x {item.price.toLocaleString()} {tHeader('som')}</p>
                                                     </div>

@@ -83,7 +83,7 @@ export default function CartPage() {
 
                     <div className="flex flex-col gap-0">
                         {items.map(item => {
-                            const variantLabel = parseVariantLabel(item.variant);
+                            const variantLabel = item.variantLabel || parseVariantLabel(item.variant);
                             return (
                             <div key={cartItemKey(item)} className="flex gap-3 md:gap-6 py-3 md:py-6 border-b border-slate-100 last:border-0 group">
                                 {/* Image */}

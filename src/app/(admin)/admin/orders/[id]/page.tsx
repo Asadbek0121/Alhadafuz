@@ -162,6 +162,12 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
                                             🇨🇳 China Order · Cargo keyin
                                         </span>
                                     )}
+                                    {(item.variantSnapshot || item.variantLabel) && (
+                                        <p className="text-xs font-semibold text-gray-500 mt-1">{item.variantSnapshot || item.variantLabel}</p>
+                                    )}
+                                    {item.sku && (
+                                        <p className="text-[10px] font-semibold text-gray-400 mt-0.5">SKU: {item.sku}</p>
+                                    )}
                                     <div className="flex items-center gap-3 mt-1.5">
                                         <span className="text-sm font-semibold text-blue-600">{item.product.price.toLocaleString()} so'm</span>
                                         <span className="text-xs text-gray-400">×</span>

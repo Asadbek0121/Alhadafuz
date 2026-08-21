@@ -342,6 +342,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                 discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
                 oldPrice: effectiveOldPrice,
                 variant: JSON.stringify(opts),
+                variantLabel: selectedVariant.variantLabel || undefined,
                 variantId: selectedVariant.id,
                 sku: selectedVariant.sku || undefined,
                 fulfillmentType: (effectiveFulfillment === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL') as 'LOCAL' | 'CHINA_ORDER',
