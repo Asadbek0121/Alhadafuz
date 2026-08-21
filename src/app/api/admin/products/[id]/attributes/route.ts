@@ -73,6 +73,9 @@ export async function GET(req: Request, context: { params: Promise<{ id: string 
             .map((def: any) => {
                 const v = valueMap.get(def.id);
                 return {
+                    // UI `AttributeDef.id` dan foydalanadi (key + values map).
+                    // `attributeDefId` legacy/backward-compat uchun ham saqlanadi.
+                    id: def.id,
                     attributeDefId: def.id,
                     name: def.name,
                     label: def.label,
