@@ -1,7 +1,7 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Link } from '@/navigation';
 import { useCartStore } from '@/store/useCartStore';
@@ -11,6 +11,15 @@ import { toast } from 'sonner';
 import Image from 'next/image';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { discountPercent, hasRealDiscount } from '@/lib/product-discount';
+import {
+    buildVariantAxes,
+    findVariantByOptions,
+    parseVariantOptions,
+    variantImages,
+    variantPrice,
+    variantStock,
+    variantFulfillment,
+} from '@/lib/variant-utils';
 import styles from './page.module.css';
 
 interface Review {
@@ -48,6 +57,8 @@ interface Product {
     categorySlug?: string;
     categoryId?: string;
     fulfillmentType?: string;
+    variants?: any[];
+    attributeValues?: any[];
 }
 
 export default function ProductContent({ initialProduct = null }: { initialProduct?: Product | null }) {
@@ -109,7 +120,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
         const delta = e.changedTouches[0].clientX - touchStartX.current;
         touchStartX.current = null;
         if (Math.abs(delta) < 50) return;
-        const images = product?.images || [];
+        const images = displayImages || [];
         if (images.length <= 1) return;
         if (delta < 0) setActiveImage(prev => (prev + 1) % images.length);
         else setActiveImage(prev => (prev - 1 + images.length) % images.length);
@@ -165,6 +176,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
 
     // Specs/attributes'dan tanlanadigan variantlar va static xususiyatlarni ajratadi
     const parseSpecs = (data: Product) => {
+        const hasVariantData = (data as any).variants?.length > 0;
         const specsSource = (data as any).specs || (data as any).attributes;
         let parsedSpecs: Record<string, string | string[]> | null = null;
 
@@ -181,6 +193,14 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
 
             Object.entries(parsedSpecs).forEach(([key, value]) => {
                 if (marketingKeys.includes(key)) return;
+
+                // Haqiqiy variant tizimi bo'lsa legacy spec-selection'lar ko'rsatilmaydi —
+                // variant selector asosiy UI. Static xususiyatlar (array bo'lmagan) saqlanadi.
+                if (hasVariantData) {
+                    const valStr = Array.isArray(value) ? value[0] : String(value);
+                    if (valStr) stats.push([key, valStr]);
+                    return;
+                }
 
                 if (Array.isArray(value) && value.length > 1) {
                     sels.push([key, value]);
@@ -204,6 +224,24 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
             parseSpecs(initialProduct);
         }
     }, []);
+
+    // Haqiqiy variantlar bo'lsa — default/first variant options'larini oldindan tanlaydi.
+    useEffect(() => {
+        if (!product?.variants?.length) return;
+        const def = product.variants.find((v: any) => v.isDefault) || product.variants[0];
+        if (!def) return;
+        const opts = parseVariantOptions(def);
+        if (Object.keys(opts).length === 0) return;
+        setSelectedOptions(prev => {
+            const next = { ...prev };
+            let changed = false;
+            for (const [k, v] of Object.entries(opts)) {
+                if (next[k] === undefined) { next[k] = v; changed = true; }
+            }
+            return changed ? next : prev;
+        });
+        setActiveImage(0);
+    }, [product?.id, product?.variants]);
 
     // Faqat initialProduct bo'lmasa client'dan fetch qilinadi (double-fetch oldini olish)
     useEffect(() => {
@@ -252,44 +290,93 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
             .catch(() => { });
     }, [product?.categoryId, product?.id]);
 
-    const maxQty = Math.max(1, product?.stock ?? 1);
+    // ===== Universal variant support =====
+    // Product'da `variants` bo'lsa — haqiqiy variant tizimi (Rang/O'lcham).
+    // Variantsiz (kitob) product'lar eski legacy spec-selection oqimida ishlaydi.
+    const variants = useMemo(() => product?.variants || [], [product]);
+    const hasVariants = variants.length > 0;
+    const variantAxes = useMemo(() => buildVariantAxes(variants), [variants]);
+
+    // Tanlangan variant — selectedOptions combination bo'yicha topiladi.
+    const selectedVariant = useMemo(() => {
+        if (!hasVariants) return null;
+        return findVariantByOptions(variants, selectedOptions);
+    }, [hasVariants, variants, selectedOptions]);
+
+    // Effektiv narx/stock/rasm — variant maxsus qiymat, aks holda product fallback.
+    const effectivePrice = hasVariants ? variantPrice(selectedVariant, product?.price ?? 0) : (product?.price ?? 0);
+    const effectiveStock = hasVariants ? variantStock(selectedVariant, product?.stock ?? 0) : (product?.stock ?? 0);
+    const displayImages = hasVariants
+        ? variantImages(selectedVariant, product?.images || [])
+        : (product?.images || []);
+    const effectiveFulfillment = hasVariants
+        ? (variantFulfillment(selectedVariant, product?.fulfillmentType) || product?.fulfillmentType)
+        : product?.fulfillmentType;
+
+    // Variant compareAtPrice (chizilgan eski narx) — faqat variant maxsus narx'ga ega bo'lsa.
+    const variantCompareAt = selectedVariant?.compareAtPrice && selectedVariant.compareAtPrice > effectivePrice
+        ? selectedVariant.compareAtPrice
+        : undefined;
+    const effectiveOldPrice = hasVariants ? variantCompareAt : product?.oldPrice;
+
+    const maxQty = Math.max(1, effectiveStock ?? 1);
     const changeQty = (delta: number) => {
         setQuantity(q => Math.min(maxQty, Math.max(1, q + delta)));
     };
 
-    const handleAddToCart = () => {
-        if (product) {
-            const variant = selections.length > 0 ? JSON.stringify(selectedOptions) : undefined;
-            addToCart({
+    const buildCartItem = (): Omit<import('@/store/useCartStore').CartItem, 'quantity'> | null => {
+        if (!product) return null;
+        // Haqiqiy variant tizimi bo'lsa variant tanlanmagan bo'lsa bloklanadi.
+        if (hasVariants) {
+            if (!selectedVariant) {
+                toast.error(tProduct('select_variant') || 'Iltimos, variant tanlang');
+                return null;
+            }
+            const opts = parseVariantOptions(selectedVariant);
+            return {
                 id: product.id,
                 title: product.title,
-                price: product.price,
-                image: product.images[0],
+                price: effectivePrice,
+                image: displayImages?.[0] || product.images[0],
                 hasDiscount: !!product.oldPrice || !!product.discount,
                 discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
-                oldPrice: product.oldPrice,
-                variant,
-                fulfillmentType: product.fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL',
-            }, false, quantity);
+                oldPrice: effectiveOldPrice,
+                variant: JSON.stringify(opts),
+                variantId: selectedVariant.id,
+                sku: selectedVariant.sku || undefined,
+                fulfillmentType: (effectiveFulfillment === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL') as 'LOCAL' | 'CHINA_ORDER',
+            };
+        }
+        // Legacy oqim (kitob): spec-selection'dan variant JSON snapshot.
+        const variant = selections.length > 0 ? JSON.stringify(selectedOptions) : undefined;
+        return {
+            id: product.id,
+            title: product.title,
+            price: product.price,
+            image: product.images[0],
+            hasDiscount: !!product.oldPrice || !!product.discount,
+            discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
+            oldPrice: product.oldPrice,
+            variant,
+            fulfillmentType: (product.fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL') as 'LOCAL' | 'CHINA_ORDER',
+        };
+    };
+
+    const handleAddToCart = () => {
+        const item = buildCartItem();
+        if (!item) return;
+        if (product) {
+            addToCart(item, false, quantity);
             toast.success(product.title + ' - ' + tHeader('savatcha'));
         }
     };
 
     const handleBuyNow = async () => {
+        const item = buildCartItem();
+        if (!item) return;
         if (product) {
             setBuying('buy');
-            const variant = selections.length > 0 ? JSON.stringify(selectedOptions) : undefined;
-            addToCart({
-                id: product.id,
-                title: product.title,
-                price: product.price,
-                image: product.images[0],
-                hasDiscount: !!product.oldPrice || !!product.discount,
-                discountType: product.discountType || ((!!product.oldPrice || !!product.discount) ? 'SALE' : undefined),
-                oldPrice: product.oldPrice,
-                variant,
-                fulfillmentType: product.fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL',
-            }, false, quantity);
+            addToCart(item, false, quantity);
             await router.push('/checkout');
             setBuying(null);
         }
@@ -326,15 +413,18 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
     // Kartadagi bilan bir xil mantiq: chegirma faqat admin uni belgilaganda
     // ko'rinadi, eski narxning o'zi chegirma e'lon qilmaydi
     const showDiscount = hasRealDiscount(product);
-    const discountPercentage = discountPercent(product);
+    const variantShowDiscount = hasVariants && effectiveOldPrice !== undefined && effectiveOldPrice > effectivePrice;
+    const discountPercentage = variantShowDiscount
+        ? Math.round(((effectiveOldPrice! - effectivePrice) / effectiveOldPrice!) * 100)
+        : discountPercent(product);
 
     const discountType = product.discountType;
     const isCampaignSticker = discountType === 'HOT' || discountType === 'PROMO';
-    const isOutOfStock = product.stock <= 0 || ['inactive', 'draft'].includes(product.status?.toLowerCase() || '');
-    const isLowStock = !isOutOfStock && product.stock < 10;
-    const isChina = product.fulfillmentType === 'CHINA_ORDER';
+    const isOutOfStock = effectiveStock <= 0 || ['inactive', 'draft'].includes(product.status?.toLowerCase() || '');
+    const isLowStock = !isOutOfStock && effectiveStock < 10;
+    const isChina = effectiveFulfillment === 'CHINA_ORDER';
 
-    const activeImg = product.images?.[activeImage] || product.images?.[0] || "https://placehold.co/400";
+    const activeImg = displayImages?.[activeImage] || displayImages?.[0] || "https://placehold.co/400";
 
     return (
         <div className="container" style={{ paddingBottom: '180px' }}>
@@ -357,7 +447,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                 {/* Left: Gallery */}
                 <div className={styles.gallerySection}>
                     <div className={styles.thumbnails}>
-                        {product.images?.map((img, i) => (
+                        {displayImages?.map((img, i) => (
                             <div
                                 key={i}
                                 className={`${styles.thumbItem} ${i === activeImage ? styles.thumbActive : ''}`}
@@ -491,15 +581,15 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                     <h1 className={styles.productTitle}>{product.title}</h1>
 
                     <div className={styles.priceSection}>
-                        {showDiscount && product.oldPrice && product.oldPrice > product.price && (
+                        {(showDiscount || variantShowDiscount) && effectiveOldPrice && effectiveOldPrice > effectivePrice && (
                             <div className={styles.oldPriceSect}>
-                                <span className={styles.oldPriceVal}>{product.oldPrice.toLocaleString()} {tHeader('som')}</span>
+                                <span className={styles.oldPriceVal}>{effectiveOldPrice.toLocaleString()} {tHeader('som')}</span>
                                 <span className={styles.saveBadge}>
-                                    {tProduct('benefit')}: {(product.oldPrice - product.price).toLocaleString()} {tHeader('som')}
+                                    {tProduct('benefit')}: {(effectiveOldPrice - effectivePrice).toLocaleString()} {tHeader('som')}
                                 </span>
                             </div>
                         )}
-                        <div className={styles.mainPrice}>{product.price.toLocaleString()} {tHeader('som')}</div>
+                        <div className={styles.mainPrice}>{effectivePrice.toLocaleString()} {tHeader('som')}</div>
 
                         {isChina && (
                             <div className="mt-4 p-4 bg-red-50 rounded-2xl border border-red-100" role="region" aria-label={tChina('badge_full')}>
@@ -571,7 +661,40 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                                 )}
                             </span>
                         </div>
+
+                        {/* SKU — variant tanlanganda ko'rsatiladi */}
+                        {selectedVariant?.sku && (
+                            <div className={styles.metaRow}>
+                                <span className={styles.metaLabel}>SKU:</span>
+                                <div className={styles.metaDots}></div>
+                                <span className={styles.metaValue}>{selectedVariant.sku}</span>
+                            </div>
+                        )}
                     </div>
+
+                    {/* Variant Selector — haqiqiy variant tizimi (Rang/O'lcham) */}
+                    {hasVariants && variantAxes.length > 0 && (
+                        <div className={styles.variantSelector}>
+                            {variantAxes.map(axis => (
+                                <div key={axis.key} className={styles.specGroup}>
+                                    <span className={styles.specGroupLabel}>{axis.key}</span>
+                                    <div className={styles.toggleGroup}>
+                                        {axis.values.map(opt => (
+                                            <button
+                                                key={opt}
+                                                type="button"
+                                                onClick={() => handleOptionSelect(axis.key, opt)}
+                                                className={`${styles.toggleBtn} ${selectedOptions[axis.key] === opt ? styles.toggleBtnActive : ''}`}
+                                                aria-pressed={selectedOptions[axis.key] === opt}
+                                            >
+                                                {opt}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
 
                     {/* Quantity */}
                     <div className={styles.qtyBlock}>

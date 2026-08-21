@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useCartStore, isChinaItem } from '@/store/useCartStore';
+import { useCartStore, isChinaItem, cartItemKey } from '@/store/useCartStore';
 import { useUserStore } from '@/store/useUserStore';
 import { CreditCard, Truck, MapPin, Banknote, ShieldAlert, Loader2, Edit2, CheckCircle2, Tag, XCircle, Store, Building, Clock, ChevronLeft, ChevronRight, Check } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
@@ -27,7 +27,7 @@ function generateIdempotencyKey(): string {
 /** Savat mazmunining fingerprint'i — idempotency key qachon yangilanishini aniqlaydi. */
 function cartFingerprint(items: any[]): string {
     return JSON.stringify(
-        items.map(i => `${i.id}::${i.variant || ''}::${i.quantity}`).sort()
+        items.map(i => `${i.id}::${i.variantId || i.variant || ''}::${i.quantity}`).sort()
     );
 }
 
@@ -523,6 +523,8 @@ export default function CheckoutPage() {
                         quantity: item.quantity,
                         image: item.image,
                         variant: item.variant,
+                        variantId: item.variantId,
+                        sku: item.sku,
                     })),
                     idempotencyKey,
                     total: grandTotal,
@@ -1018,11 +1020,14 @@ export default function CheckoutPage() {
                                         } catch { variantLabel = item.variant; }
                                     }
                                     return (
-                                    <div key={item.id + (item.variant || '')} className="flex justify-between items-center gap-4 group">
+                                    <div key={cartItemKey({ id: item.id, variantId: item.variantId, variant: item.variant })} className="flex justify-between items-center gap-4 group">
                                         <div className="flex-1 min-w-0">
                                             <p className="text-slate-900 font-bold text-sm line-clamp-1 group-hover:text-blue-600 transition-colors uppercase tracking-tight">{item.title}</p>
                                             {variantLabel && (
                                                 <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">{variantLabel}</p>
+                                            )}
+                                            {item.sku && (
+                                                <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">SKU: {item.sku}</p>
                                             )}
                                             <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-0.5">{item.quantity} <span className="text-[8px] mx-0.5 opacity-50">X</span> {(item.price).toLocaleString()}</p>
                                         </div>

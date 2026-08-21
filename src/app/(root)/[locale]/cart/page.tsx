@@ -110,12 +110,15 @@ export default function CartPage() {
                                             {variantLabel && (
                                                 <span className="text-[10px] md:text-xs text-slate-500 font-medium bg-slate-100 px-1.5 py-0.5 rounded w-fit">{variantLabel}</span>
                                             )}
+                                            {item.sku && (
+                                                <span className="text-[10px] md:text-xs text-slate-400 font-medium">SKU: {item.sku}</span>
+                                            )}
                                         </div>
-                                        <button
-                                            onClick={() => removeFromCart(item.id, item.variant)}
-                                            className="text-slate-300 hover:text-red-500 transition-colors p-1"
-                                            aria-label={tCart('clear_all')}
-                                        >
+                                            <button
+                                                onClick={() => removeFromCart(item.id, item.variant, item.variantId)}
+                                                className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                                                aria-label={tCart('clear_all')}
+                                            >
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -124,7 +127,7 @@ export default function CartPage() {
                                         {/* Controls */}
                                         <div className="flex items-center gap-1 md:gap-2 bg-slate-50 rounded-xl p-1 border border-slate-100">
                                             <button
-                                                onClick={() => updateQuantity(item.id, -1, item.variant)}
+                                                onClick={() => updateQuantity(item.id, -1, item.variant, item.variantId)}
                                                 disabled={item.quantity <= 1}
                                                 className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-95"
                                                 aria-label="-"
@@ -138,7 +141,7 @@ export default function CartPage() {
                                                 className="w-6 md:w-10 text-center bg-transparent font-bold text-slate-900 text-xs md:text-base outline-none"
                                             />
                                             <button
-                                                onClick={() => updateQuantity(item.id, 1, item.variant)}
+                                                onClick={() => updateQuantity(item.id, 1, item.variant, item.variantId)}
                                                 className="w-7 h-7 md:w-8 md:h-8 flex items-center justify-center bg-white rounded-lg shadow-sm text-slate-600 hover:text-blue-600 transition-all active:scale-95"
                                                 aria-label="+"
                                             >

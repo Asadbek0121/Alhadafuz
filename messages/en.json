@@ -302,6 +302,7 @@
   "Product": {
     "loading": "Loading...",
     "not_found": "Product not found",
+    "select_variant": "Please select a variant",
     "reviews": "reviews",
     "add_to_cart": "Add to Cart",
     "buy_one_click": "Buy now",

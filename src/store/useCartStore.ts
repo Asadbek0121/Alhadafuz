@@ -15,14 +15,21 @@ export interface CartItem {
     variant?: string;
     /** Fulfillment turi: `LOCAL` (oddiy) yoki `CHINA_ORDER` (Xitoydan buyurtma). Kargo alohida hisoblanadi. */
     fulfillmentType?: 'LOCAL' | 'CHINA_ORDER';
+    /** Tanlangan ProductVariant ID. Variant bo'lmasa undefined. */
+    variantId?: string;
+    /** Variant SKU (stock-keeping unit). */
+    sku?: string;
 }
 
 /**
- * Cart item identifikatori: `productId + variant`.
- * Variant `undefined` bo'lsa — variant-siz product alohida identity hisoblanadi.
+ * Cart item identifikatori: `productId + variantId` yoki `productId + variant` yoki `productId`.
+ * VariantId `undefined` bo'lsa variant JSON stringiga qaraydi, ikkalasi ham bo'lmasa
+ * variant-siz product identity hisoblanadi.
  */
-export function cartItemKey(item: Pick<CartItem, 'id' | 'variant'>): string {
-    return item.variant ? `${item.id}::${item.variant}` : item.id;
+export function cartItemKey(item: Pick<CartItem, 'id' | 'variantId' | 'variant'>): string {
+    return item.variantId ? `${item.id}::variantId::${item.variantId}`
+        : item.variant ? `${item.id}::${item.variant}`
+        : item.id;
 }
 
 /** Cart item Xitoydan buyurtmami? */
@@ -37,8 +44,8 @@ interface CartState {
 
     // Actions
     addToCart: (product: Omit<CartItem, 'quantity'>, openDrawer?: boolean, qty?: number) => void;
-    removeFromCart: (id: string, variant?: string) => void;
-    updateQuantity: (id: string, delta: number, variant?: string) => void;
+    removeFromCart: (id: string, variant?: string, variantId?: string) => void;
+    updateQuantity: (id: string, delta: number, variant?: string, variantId?: string) => void;
     clearCart: () => void;
     setItems: (items: CartItem[]) => void;
 
@@ -80,15 +87,15 @@ export const useCartStore = create<CartState>()(
                 };
             }),
 
-            removeFromCart: (id, variant) => set((state) => {
-                const key = variant ? `${id}::${variant}` : id;
+            removeFromCart: (id, variant, variantId) => set((state) => {
+                const key = variantId ? `${id}::variantId::${variantId}` : variant ? `${id}::${variant}` : id;
                 return {
                     items: state.items.filter(item => cartItemKey(item) !== key)
                 };
             }),
 
-            updateQuantity: (id, delta, variant) => set((state) => {
-                const key = variant ? `${id}::${variant}` : id;
+            updateQuantity: (id, delta, variant, variantId) => set((state) => {
+                const key = variantId ? `${id}::variantId::${variantId}` : variant ? `${id}::${variant}` : id;
                 return {
                     items: state.items.map(item => {
                         if (cartItemKey(item) !== key) return item;

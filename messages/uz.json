@@ -300,6 +300,7 @@
   "Product": {
     "loading": "Yuklanmoqda...",
     "not_found": "Mahsulot topilmadi",
+    "select_variant": "Iltimos, variant tanlang",
     "reviews": "ta sharh",
     "add_to_cart": "Savatchaga qo'shish",
     "buy_one_click": "Hozir xarid qilish",

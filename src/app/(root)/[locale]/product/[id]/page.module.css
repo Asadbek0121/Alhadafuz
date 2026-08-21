@@ -806,6 +806,13 @@
     margin-bottom: 10px;
 }
 
+/* Haqiqiy variant selector (Rang/O'lcham) — metaInfo ostida, qtyBlock ustida */
+.variantSelector {
+    margin-top: 24px;
+    padding-top: 20px;
+    border-top: 1px dashed #e5e7eb;
+}
+
 /* ===== Reviews ===== */
 .reviewsList {
     margin-bottom: 30px;

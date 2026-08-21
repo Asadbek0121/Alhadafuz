@@ -6,6 +6,9 @@ import { z } from "zod";
 const cartItemSchema = z.object({
     id: z.string(),
     quantity: z.number().min(1),
+    variantId: z.string().optional(),
+    variant: z.string().optional(),
+    fulfillmentType: z.string().optional(),
 });
 
 const syncSchema = z.object({
@@ -37,15 +40,23 @@ export async function POST(req: Request) {
             });
         }
 
-        // Merge logic
+        // Merge logic — productId + variantId bo'yicha (variant mahsulotlar alohida identity)
         for (const item of items) {
-            const existingItem = cart.items.find((i) => i.productId === item.id);
+            const existingItem = cart.items.find((i: any) =>
+                i.productId === item.id &&
+                (item.variantId ? i.variantId === item.variantId : !i.variantId)
+            );
 
             if (existingItem) {
                 // Update quantity (we could sum them up, or take default. Let's sum)
                 await prisma.cartItem.update({
                     where: { id: existingItem.id },
-                    data: { quantity: existingItem.quantity + item.quantity },
+                    data: {
+                        quantity: existingItem.quantity + item.quantity,
+                        variant: item.variant ?? existingItem.variant ?? null,
+                        variantId: item.variantId ?? existingItem.variantId ?? null,
+                        fulfillmentType: item.fulfillmentType ?? existingItem.fulfillmentType ?? null,
+                    },
                 });
             } else {
                 // Create new item
@@ -57,6 +68,9 @@ export async function POST(req: Request) {
                             cartId: cart.id,
                             productId: item.id,
                             quantity: item.quantity,
+                            variant: item.variant ?? null,
+                            variantId: item.variantId ?? null,
+                            fulfillmentType: item.fulfillmentType ?? null,
                         },
                     });
                 } catch (e) {
@@ -72,7 +86,7 @@ export async function POST(req: Request) {
             where: { userId },
             include: {
                 items: {
-                    include: { product: true },
+                    include: { product: true, variantRel: { select: { sku: true } } },
                 },
             },
         });
@@ -83,7 +97,10 @@ export async function POST(req: Request) {
             price: item.product.price,
             image: item.product.image,
             quantity: item.quantity,
-            fulfillmentType: item.product.fulfillmentType || 'LOCAL',
+            fulfillmentType: item.fulfillmentType || item.product.fulfillmentType || 'LOCAL',
+            variant: item.variant || undefined,
+            variantId: item.variantId || undefined,
+            sku: item.variantRel?.sku || undefined,
         })) || [];
 
         return NextResponse.json({ success: true, items: formattedItems });

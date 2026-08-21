@@ -15,6 +15,8 @@ const orderItemSchema = z.object({
     title: z.string().optional(),
     image: z.string().optional(),
     variant: z.string().optional(),
+    variantId: z.string().optional(),
+    sku: z.string().optional(),
 });
 
 const createOrderSchema = z.object({
@@ -100,6 +102,19 @@ export async function POST(req: Request) {
             console.warn("Could not fetch products from DB", e);
         }
 
+        // 2b. Fetch variants for items that carry a variantId (server-authoritative snapshot)
+        const variantIds = items.filter((i: any) => i.variantId).map((i: any) => i.variantId);
+        let dbVariants: any[] = [];
+        if (variantIds.length > 0) {
+            try {
+                dbVariants = await prisma.productVariant.findMany({
+                    where: { id: { in: variantIds } },
+                });
+            } catch (e) {
+                console.warn("Could not fetch variants from DB", e);
+            }
+        }
+
         let calculatedTotal = 0;
         const finalOrderItems: any[] = [];
 
@@ -115,7 +130,21 @@ export async function POST(req: Request) {
                 }, { status: 400 });
             }
 
-            const price = dbProduct.price;
+            // Variant tekshiruvi — variantId yuborilgan bo'lsa, variant mavjud va
+            // shu product'ga tegishli bo'lishi shart. Aks holda buyurtma qabul qilinmaydi.
+            let dbVariant: any = null;
+            if (item.variantId) {
+                dbVariant = dbVariants.find((v: any) => v.id === item.variantId && v.productId === item.id && v.isActive);
+                if (!dbVariant) {
+                    return NextResponse.json({
+                        error: `Variant topilmadi yoki sotuvdan olib tashlangan`,
+                        details: { productId: item.id, variantId: item.variantId }
+                    }, { status: 400 });
+                }
+            }
+
+            // Narx — variant maxsus narxi (0 bo'lmasa), aks holda product narxi.
+            const price = dbVariant && dbVariant.price !== 0 ? dbVariant.price : dbProduct.price;
             const title = dbProduct.title;
             const image = dbProduct.image;
 
@@ -128,8 +157,17 @@ export async function POST(req: Request) {
                 quantity: item.quantity,
                 image,
                 variant: item.variant || null,
-                // Fulfillment snapshot — Product authoritative; kargo alohida
-                fulfillmentType: dbProduct.fulfillmentType || 'LOCAL'
+                variantId: item.variantId || null,
+                // O'qiladigan variant label snapshot — keyin variant o'zgarsa ham order buzilmaydi
+                variantSnapshot: dbVariant?.variantLabel || null,
+                sku: dbVariant?.sku || item.sku || null,
+                barcode: dbVariant?.barcode || null,
+                // Mahsulot attributes snapshot (legacy JSON) — sotib olingan paytdagi holat
+                attributesSnapshot: typeof dbProduct.attributes === 'string' ? dbProduct.attributes : null,
+                // Fulfillment snapshot — Product authoritative; variant override qilishi mumkin.
+                // CHINA_ORDER product'da variant LOCAL bo'la olmaydi (backend qoidasi).
+                fulfillmentType: dbVariant?.fulfillmentType || dbProduct.fulfillmentType || 'LOCAL',
+                stockSource: dbVariant && dbVariant.stock !== -1 ? dbVariant : dbProduct,
             });
         }
 
@@ -276,20 +314,38 @@ export async function POST(req: Request) {
             // Create items and decrease stock
             for (const item of finalOrderItems) {
                 // 1. Fetch current stock to double check
-                const p = await tx.product.findUnique({
-                    where: { id: item.productId },
-                    select: { stock: true, title: true }
-                });
+                // Variant maxsus stock'ga ega bo'lsa variant stock'dan, aks holda product stock'dan tekshiramiz
+                const hasVariantStock = item.variantId && item.stockSource?.stock !== undefined && item.stockSource?.stock !== -1;
 
-                if (!p || p.stock < item.quantity) {
-                    throw new Error(`${p?.title || 'Mahsulot'} zahirasida yetarli miqdor yo'q (Qolgan: ${p?.stock || 0})`);
+                if (hasVariantStock) {
+                    // Variant stock'ini tekshiramiz
+                    const v = await tx.productVariant.findUnique({
+                        where: { id: item.variantId },
+                        select: { stock: true, id: true }
+                    });
+                    if (!v || v.stock < item.quantity) {
+                        throw new Error(`Variant (${item.variantSnapshot || item.variantId}) zahirasida yetarli miqdor yo'q (Qolgan: ${v?.stock || 0})`);
+                    }
+                    // Varian stock'ini kamaytiramiz (product stock'iga tegmiz)
+                    await tx.productVariant.update({
+                        where: { id: item.variantId },
+                        data: { stock: { decrement: item.quantity } }
+                    });
+                } else {
+                    // Product stock'ini tekshiramiz
+                    const p = await tx.product.findUnique({
+                        where: { id: item.productId },
+                        select: { stock: true, title: true }
+                    });
+                    if (!p || p.stock < item.quantity) {
+                        throw new Error(`${p?.title || 'Mahsulot'} zahirasida yetarli miqdor yo'q (Qolgan: ${p?.stock || 0})`);
+                    }
+                    // Product stock'ini kamaytiramiz
+                    await tx.product.update({
+                        where: { id: item.productId },
+                        data: { stock: { decrement: item.quantity } }
+                    });
                 }
-
-                // 2. Decrease Stock
-                await tx.product.update({
-                    where: { id: item.productId },
-                    data: { stock: { decrement: item.quantity } }
-                });
 
                 // 3. Create Order Item
                 await tx.orderItem.create({
@@ -302,6 +358,11 @@ export async function POST(req: Request) {
                         image: item.image,
                         variant: item.variant,
                         fulfillmentType: item.fulfillmentType || 'LOCAL',
+                        variantId: item.variantId || null,
+                        variantSnapshot: item.variantSnapshot || null,
+                        sku: item.sku || null,
+                        barcode: item.barcode || null,
+                        attributesSnapshot: item.attributesSnapshot || null,
                     }
                 });
             }

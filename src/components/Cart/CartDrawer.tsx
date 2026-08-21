@@ -80,16 +80,19 @@ export default function CartDrawer() {
                                     {parseVariantLabel(item.variant) && (
                                         <div className={styles.variant}>{parseVariantLabel(item.variant)}</div>
                                     )}
+                                    {item.sku && (
+                                        <div className={styles.variant}>SKU: {item.sku}</div>
+                                    )}
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
                                         <div className={styles.controls}>
-                                            <button onClick={() => updateQuantity(item.id, -1, item.variant)} title="Kamaytirish" aria-label="Mahsulot sonini kamaytirish">-</button>
+                                            <button onClick={() => updateQuantity(item.id, -1, item.variant, item.variantId)} title="Kamaytirish" aria-label="Mahsulot sonini kamaytirish">-</button>
                                             <span>{item.quantity}</span>
-                                            <button onClick={() => updateQuantity(item.id, 1, item.variant)} title="Ko'paytirish" aria-label="Mahsulot sonini ko'paytirish">+</button>
+                                            <button onClick={() => updateQuantity(item.id, 1, item.variant, item.variantId)} title="Ko'paytirish" aria-label="Mahsulot sonini ko'paytirish">+</button>
                                         </div>
                                         <div className={styles.price}>{(item.price * item.quantity).toLocaleString()} {tHeader('som')}</div>
                                     </div>
                                 </div>
-                                <button className={styles.remove} onClick={() => removeFromCart(item.id, item.variant)} title="O'chirish" aria-label="Mahsulotni savatdan o'chirish">
+                                <button className={styles.remove} onClick={() => removeFromCart(item.id, item.variant, item.variantId)} title="O'chirish" aria-label="Mahsulotni savatdan o'chirish">
                                     <Trash2 size={18} />
                                 </button>
                             </div>

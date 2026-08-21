@@ -4,6 +4,20 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Added
+- **Storefront Universal Product Variant integration (storefront endi variantlarni to'liq qo'llaydi)**:
+  - **Root cause**: Admin panel va backend (`GET /api/products/[id]` — `variants` + `attributeValues` + legacy attributes qaytaradi, Prisma schema'da `CartItem.variantId`/`OrderItem.variantId`/`variantSnapshot`/`sku`/`barcode`/`attributesSnapshot` bor) tayyor edi, lekin **storefront hech qatlamda variantlarni ishlatmadi**: `ProductContent` `variants` ma'lumotini o'qimadi, `addToCart` `variantId`/`sku` yubormadi, `CartItem` interface'da `variantId`/`sku` yo'q edi, `cart/sync` variantni yo'qotardi, orders API snapshot maydonlarini saqlamasdi.
+  - **Product detail** (`ProductContent.tsx`): `variants.length > 0` bo'lsa haqiqiy variant selector ko'rsatiladi (variantKey/variantLabel dan parse qilingan o'qlar — Rang/O'lcham). Variant tanlanganda price (`variant.price !== 0 ? variant.price : product.price`), stock (`variant.stock !== -1 ? variant.stock : product.stock`), SKU, `compareAtPrice` (chizilgan narx), gallery images (`VariantImage` — bo'lmasa product images) yangilanadi. Variant tanlanmasdan addToCart bloklanadi (`select_variant` toast). Variantsiz (kitob) mahsulotlar eski legacy spec-selection oqimida ishlaydi — variant selector ko'rinmaydi.
+  - **Yangi modul** `src/lib/variant-utils.ts`: `parseVariantKey` (canonical `k=v|k2=v2` parse, label'dan original case restore), `buildVariantAxes`, `findVariantByOptions` (case-insensitive, `variantKey` canonical match), `variantPrice/variantStock/variantImages/variantFulfillment` (fallback).
+  - **Cart identity** (`useCartStore.ts`): `CartItem`'ga `variantId` va `sku` qo'shildi; `cartItemKey` = `variantId` birinchi ustuvor (`id::variantId::<id>`), keyin `variant` JSON (`id::<variant>`), keyin product id. `removeFromCart`/`updateQuantity` endi `variantId` qabul qiladi.
+  - **Cart UI**: CartDrawer va cart page item'da variant label + `SKU: <sku>` ko'rsatiladi, update/remove `variantId` ni ishlatadi.
+  - **Checkout**: sidebar'da variant label + SKU ko'rsatiladi; POST payload `variantId`/`sku` yuboradi; `cartFingerprint` `variantId` ni hisobga oladi; key `cartItemKey` (variantId-aware).
+  - **Orders API** (`orders/route.ts`): schema'ga `variantId`/`sku` qo'shildi; server variantni DB'dan tekshiradi (topilmasa/o'chirilgan bo'lsa 400); narx server authoritative (`variant.price !== 0` → variant, aks holda product); `OrderItem`'ga `variantId`, `variantSnapshot` (variantLabel), `sku`, `barcode`, `attributesSnapshot` (product attributes JSON) saqlanadi; stock decrement variant-aware (`variant.stock !== -1` bo'lsa variant stock'idan, aks holda product stock'idan).
+  - **Cart sync fix** (`cart/sync/route.ts`): `variantId`/`variant`/`fulfillmentType` qabul qiladi, merge `productId + variantId` bo'yicha, create/update'da `variantId`/`variant`/`fulfillmentType` saqlanadi, response'da `variantId`/`variant`/`sku` qaytaradi.
+  - **CHINA_ORDER** bilan birga ishlaydi: variant selector + CHINA_ORDER block + kargo alohida — `effectiveFulfillment` variant override'dan keyin product'dan inherit qilinadi.
+  - DB schema o'zgarmadi (barcha maydonlar allaqachon `schema.prisma`'da bor edi). (Fayllar: `src/lib/variant-utils.ts` (yangi), `ProductContent.tsx`, `useCartStore.ts`, `CartDrawer.tsx`, cart/checkout page, `orders/route.ts`, `cart/sync/route.ts`, messages `Product.select_variant`)
+  - Verification: `npx tsc --noEmit` 0 error, ESLint 0, `next build` SUCCESS (101/101 static, 176 routes, Node 22).
+
 ### Fixed
 - **Universal Product Admin UI — forVariant Xususiyat/Variant ajratish (UX bug-fix)**:
   - **Root cause**: `UniversalProductSections.tsx` AttributeFields'ga HAMMA defs'ni (`forVariant=true` ham) uzatardi, VariantEditor'ga esa `forVariant=true` defs o'tardi — shuning uchun bitta definition (masalan Material) "Xususiyatlar" va "Variantlar" bo'limlarida IKKI JOYDA chiqardi.
