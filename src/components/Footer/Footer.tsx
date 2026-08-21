@@ -16,21 +16,28 @@ import { SocialLink } from '@/components/SocialIcons';
 
 const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
-export default function Footer() {
+export default function Footer({ initialSettings }: { initialSettings?: { phone?: string; email?: string; address?: string; socialLinks?: string } }) {
     const t = useTranslations('Footer');
     const pathname = usePathname();
     const isCheckout = pathname === '/checkout' || pathname?.includes('/checkout');
 
-    const [socials, setSocials] = useState({
-        telegram: 'https://t.me',
-        instagram: 'https://instagram.com',
-        facebook: 'https://facebook.com',
-        youtube: 'https://youtube.com'
+    const [socials, setSocials] = useState(() => {
+        const parsed = initialSettings?.socialLinks
+            ? normalizeSocialLinks(initialSettings.socialLinks)
+            : { telegram: '', instagram: '', facebook: '', youtube: '', supportTelegram: '' };
+        return {
+            telegram: parsed.telegram || 'https://t.me',
+            instagram: parsed.instagram || 'https://instagram.com',
+            facebook: parsed.facebook || 'https://facebook.com',
+            youtube: parsed.youtube || 'https://youtube.com'
+        };
     });
     const [contact, setContact] = useState({
-        phone: '+998 76 200 01 05',
-        address: "Termiz sh, At-Termiziy ko'chasi",
-        email: 'info@hadaf.uz'
+        // Server-render paytida DB'dagi haqiqiy qiymatlar ko'rinadi (Google snippet
+        // uchun). Client'da /api/settings yangilaydi — fallback eski hardcoded emas.
+        phone: initialSettings?.phone || '',
+        address: initialSettings?.address || '',
+        email: initialSettings?.email || ''
     });
     const [isVendorModalOpen, setIsVendorModalOpen] = useState(false);
     const tAbout = useTranslations('About');

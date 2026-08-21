@@ -27,8 +27,8 @@ async function getSettings() {
     if (!/^https?:\/\//i.test(telegram)) telegram = `https://t.me/${telegram.replace(/^@/, '')}`;
 
     const contactInfo = {
-        phone: settings?.phone || "+998 76 200 01 05",
-        email: settings?.email || "info@hadaf.uz",
+        phone: settings?.phone || "",
+        email: settings?.email || "",
         workingHours: "24/7",
         telegramUsername: telegram.split('/').pop() || "@hadaf_uz"
     };
@@ -87,7 +87,7 @@ export default async function SupportPage() {
             color: "text-purple-600",
             bg: "bg-purple-50"
         }
-    ];
+    ].filter((m: ContactMethod) => m.value && m.href && m.value.length > 0);
 
     return (
         <div className="max-w-5xl mx-auto py-2 md:py-12 px-4 md:px-5">

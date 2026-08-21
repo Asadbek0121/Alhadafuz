@@ -12,6 +12,7 @@ export default function OrderInvoicePage() {
     const id = params.id as string;
     const [order, setOrder] = useState<any>(null);
     const [loading, setLoading] = useState(true);
+    const [settings, setSettings] = useState<any>(null);
     const contentRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = useReactToPrint({
@@ -33,6 +34,10 @@ export default function OrderInvoicePage() {
             }
         };
         fetchOrder();
+        fetch('/api/settings')
+            .then(r => r.json())
+            .then(d => setSettings(d))
+            .catch(() => {});
     }, [id]);
 
     if (loading) return <div className="p-20 text-center animate-pulse font-black text-slate-300">INVOYS TAYYORLANMOQDA...</div>;
@@ -177,7 +182,7 @@ export default function OrderInvoicePage() {
                     <div className="bg-slate-50 p-6 rounded-2xl flex items-center justify-center gap-8">
                         <div className="text-center">
                             <p className="text-[8px] font-black text-slate-400 uppercase mb-1">Termiz, O'zbekiston</p>
-                            <p className="text-[10px] font-bold">+998 76 200 01 05</p>
+                            <p className="text-[10px] font-bold">{settings?.phone || ""}</p>
                         </div>
                         <div className="w-px h-8 bg-slate-200"></div>
                         <div className="text-center">

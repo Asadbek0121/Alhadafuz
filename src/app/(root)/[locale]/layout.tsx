@@ -21,6 +21,7 @@ import { ClientProviders } from "@/providers/ClientProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { routing } from "@/navigation";
 import { getCachedRootCategories } from '@/lib/data';
+import { prisma } from '@/lib/prisma';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -64,11 +65,21 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [messages, session, rootCategories] = await Promise.all([
+  const [messages, session, rootCategories, storeSettings] = await Promise.all([
     getMessages(),
     auth(),
     getCachedRootCategories(),
+    prisma.storeSettings.findUnique({ where: { id: 'default' } }),
   ]);
+
+  const footerSettings = storeSettings
+    ? {
+        phone: storeSettings.phone || '',
+        email: storeSettings.email || '',
+        address: storeSettings.address || '',
+        socialLinks: storeSettings.socialLinks || '',
+      }
+    : undefined;
 
   if (!['uz', 'ru', 'en'].includes(locale)) {
     notFound();
@@ -77,15 +88,31 @@ export default async function LocaleLayout({
   // Katalog tugmasi to'g'ridan-to'g'ri birinchi root kategoriya sahifasiga o'tadi.
   const firstRootSlug = (rootCategories && rootCategories[0]?.slug) || null;
 
-  const jsonLdOrganization = {
+  const jsonLdOrganization: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Organization',
     name: SITE_NAME,
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
+    // Faqat DB'dagi haqiqiy qiymatlar qo'shiladi — fake/sinov ma'lumot yo'q.
     // sameAs ataylab qo'shilmagan — haqiqiy ijtimoiy tarmoq profillari
     // mavjud bo'lmaguncha generic/fake linklar ko'rsatilmaydi.
   };
+
+  if (storeSettings?.phone) {
+    jsonLdOrganization.telephone = storeSettings.phone;
+  }
+  if (storeSettings?.email) {
+    jsonLdOrganization.email = storeSettings.email;
+  }
+  if (storeSettings?.address) {
+    jsonLdOrganization.address = {
+      '@type': 'PostalAddress',
+      streetAddress: storeSettings.address,
+      addressRegion: 'Surxondaryo',
+      addressCountry: 'UZ',
+    };
+  }
 
   const jsonLdWebsite = {
     '@context': 'https://schema.org',
@@ -120,7 +147,7 @@ export default async function LocaleLayout({
           <main className="min-h-screen flex flex-col">
             {children}
           </main>
-          <Footer />
+          <Footer initialSettings={footerSettings} />
           <BottomNav firstRootSlug={firstRootSlug} />
           <Toaster />
           <SupportChat />

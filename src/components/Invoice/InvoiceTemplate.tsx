@@ -212,13 +212,13 @@ export default function InvoiceTemplate({ order, settings, subTotal, grandTotal,
             <div className="footer">
                 <div className="footer-grid">
                     <div className="footer-item">
-                        <span style={{ color: '#2563eb', marginRight: '8px' }}>☎</span> {settings?.phone || "+998 76 200 01 05"}
+                        <span style={{ color: '#2563eb', marginRight: '8px' }}>☎</span> {settings?.phone || ""}
                     </div>
                     <div className="footer-item" style={{ justifyContent: 'center' }}>
-                        <span style={{ color: '#2563eb', marginRight: '8px' }}>✉</span> {settings?.email || "info@hadaf.uz"}
+                        <span style={{ color: '#2563eb', marginRight: '8px' }}>✉</span> {settings?.email || ""}
                     </div>
                     <div className="footer-item" style={{ justifyContent: 'flex-end', textAlign: 'right' }}>
-                        <span style={{ color: '#2563eb', marginRight: '8px' }}>📍</span> {settings?.address || "Termiz, Surxondaryo"}
+                        <span style={{ color: '#2563eb', marginRight: '8px' }}>📍</span> {settings?.address || ""}
                     </div>
                 </div>
             </div>
