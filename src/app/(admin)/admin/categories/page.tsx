@@ -4,12 +4,13 @@
 import styles from './CategoriesPage.module.css';
 
 import React, { useState, useEffect, Fragment, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import {
     Loader2, Plus, Trash2, Edit2, UploadCloud,
     CornerDownRight, ChevronDown, ChevronRight,
     Folder, FolderPlus, Search, X, Image as ImageIcon,
-    LayoutGrid, List, MoreVertical, CheckCircle2, XCircle, Save
+    LayoutGrid, List, MoreVertical, CheckCircle2, XCircle, Save, Settings2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
+    const router = useRouter();
     const [categories, setCategories] = useState<Category[]>([]);
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
@@ -234,6 +236,16 @@ export default function AdminCategoriesPage() {
                     </div>
 
                     <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full text-[#0085db] hover:bg-[#ecf2ff]"
+                            onClick={() => router.push(`/admin/categories/${category.id}/attributes`)}
+                            title="Xususiyatlarni boshqarish"
+                            aria-label={`${category.name} xususiyatlarini boshqarish`}
+                        >
+                            <Settings2 size={16} />
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"
@@ -545,6 +557,16 @@ export default function AdminCategoriesPage() {
                                                         </span>
                                                     </div>
                                                     <div className="col-span-2 flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 rounded-full text-[#0085db] hover:bg-[#ecf2ff]"
+                                                            onClick={() => router.push(`/admin/categories/${category.id}/attributes`)}
+                                                            title="Xususiyatlarni boshqarish"
+                                                            aria-label={`${category.name} xususiyatlarini boshqarish`}
+                                                        >
+                                                            <Settings2 size={16} />
+                                                        </Button>
                                                         <Button
                                                             variant="ghost"
                                                             size="icon"

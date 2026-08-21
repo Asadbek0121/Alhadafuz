@@ -5,6 +5,14 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 ## [Unreleased]
 
 ### Added
+- **Phase D — Category Attribute Definition Admin UI**:
+  - **Yangi route**: `/admin/categories/[id]/attributes/page.tsx` — category attribute definitions boshqaruv sahifasi (CRUD). `/admin/categories/[id]/page.tsx` → attributes ga `redirect()` (404 o'rniga). Product Builder'dagi "Kategoriya xususiyatlarini boshqarish" linklari (`UniversalProductSections.tsx:499,535`) endi shu real route'ga ishora qiladi (avval `/admin/categories/${categoryId}` 404 berardi).
+  - **CRUD UI**: `DefinitionForm.tsx` — 8 attribute type (TEXT/NUMBER/BOOLEAN/SELECT/MULTI_SELECT/COLOR/MEASUREMENT/DATE). Type'ga qarab dinamik maydonlar: SELECT/MULTI_SELECT/COLOR → Options (COLOR #HEX), MEASUREMENT → Unit, NUMBER → Min/Max. Required / "Variant turi" (forVariant) checkbox'lar, Order. Frontend `validateDefinitionTypeCombo` + backend authoritative; duplicate name → 409 xato ko'rsatiladi. POST create / PATCH edit / DELETE.
+  - **Definition list**: order bo'yicha sort, label/type/required/variant badge'lari, options/unit/min/max meta, Edit/Delete tugmalari. Qalambooks va boshqa kategoriyalar uchun xususiyatlar qo'shish imkoni.
+  - **Kategoriya ro'yxat navigatsiya**: `admin/categories/page.tsx` (tree+list) har bir kategoriyaga ⚙️ "Xususiyatlarni boshqarish" tugmasi qo'shildi.
+  - **Test data**: Qalambooks root kategoriyasiga (`cmo7j45hj0001ce6n7qnkascd`) 7 ta real definition DB'ga insert qilindi (Muallif TEXT required, Nashriyot TEXT, Til SELECT, Sahifa soni NUMBER min1/max10000, Muqova SELECT, ISBN TEXT, Nashr yili NUMBER) — forVariant=false.
+  - DB schema o'zgarmadi — yangi migration YO'Q.
+
 - **Phase C — Universal Product Admin UI**:
   - **Dynamic attributes**: `src/components/admin/product/AttributeFields.tsx` — 8 attribute type (TEXT/NUMBER/BOOLEAN/SELECT/MULTI_SELECT/COLOR/MEASUREMENT/DATE) uchun UI, category tanlanganda backend'dan yuklanadi, required yulduzchali, frontend validation, extras (legacy) read-only.
   - **Variant builder**: `src/components/admin/product/VariantEditor.tsx` — forVariant definition'lar asosida variant o'qlari (axes), values comma-input, kartezian kombinatsiya generator (duplicate + deletedKey skip), 50/batch chunk render + "Ko'proq ko'rsatish".

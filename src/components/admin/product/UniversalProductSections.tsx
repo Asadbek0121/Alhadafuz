@@ -496,7 +496,7 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
               {defs.length === 0 && (
                 <p className="text-sm text-[#9aa8bb] italic">
                   Bu kategoriya uchun xususiyatlar aniqlanmagan.{" "}
-                  <a href={`/admin/categories/${categoryId}`} className="text-[#0085db] font-semibold underline">
+                  <a href={`/admin/categories/${categoryId}/attributes`} className="text-[#0085db] font-semibold underline">
                     Kategoriya xususiyatlarini boshqarish
                   </a>
                 </p>
@@ -532,7 +532,7 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
             <p className="text-sm text-[#9aa8bb] italic">
               Variant yaratish uchun kategoriya xususiyatlarida "Variant turi" belgilangan
               definition kerak.{" "}
-              <a href={`/admin/categories/${categoryId}`} className="text-[#0085db] font-semibold underline">
+              <a href={`/admin/categories/${categoryId}/attributes`} className="text-[#0085db] font-semibold underline">
                 Kategoriya xususiyatlarini boshqarish
               </a>
             </p>
