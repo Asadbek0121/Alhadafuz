@@ -11,7 +11,6 @@ import SessionSync from "@/components/SessionSync";
 import { auth } from "@/auth";
 import AuthModalGate from "@/components/Auth/AuthModalGate";
 import MapModal from "@/components/LocationPicker/MapModal";
-import Script from "next/script";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
 import PinLock from "@/components/Auth/PinLock";
 import OfflineOverlayLazy from "@/components/OfflineOverlayLazy";
@@ -106,7 +105,6 @@ export default async function LocaleLayout({
 
   return (
     <>
-      <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrganization) }}
