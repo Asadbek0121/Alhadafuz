@@ -27,13 +27,17 @@ function readEnv() {
 }
 
 function deriveDirectUrl(databaseUrl) {
-    // Neon pooler host (ep-...-pooler) advisory lock'ni qo'llab-quvvatlaydi,
-    // faqat PgBouncer transaction mode'da emas. `pgbouncer=true` parametrini
-    // olib tashlash session-mode'ga o'tkazadi. TRUE direct host (poolersiz)
-    // serverless cold-start tufayli 10s da timeout berishi mumkin.
+    // Neon pooled URL: ...-pooler.neon.tech?...&pgbouncer=true
+    // 1. `&pgbouncer=true` parametrini olib tashlash (transaction-mode'da
+    //    advisory lock ishlamaydi).
+    // 2. `-pooler` host qismini ham olib tashlash — TRUE direct host
+    //    (ep-...-pooler -> ep-...). Neon pooler endpoint'ida Vercel build
+    //    muhitida advisory lock baribir timeout berishi mumkin (P1002), shuning
+    //    uchun migrate uchun to'g'ridan-to'g'ri compute endpoint ishlatiladi.
     return databaseUrl
         .replace(/&pgbouncer=true/gi, '')
-        .replace(/\?pgbouncer=true/gi, '');
+        .replace(/\?pgbouncer=true/gi, '')
+        .replace(/-pooler\./gi, '.');
 }
 
 const envFile = readEnv();
@@ -54,18 +58,19 @@ const direct = deriveDirectUrl(databaseUrl);
 const current = envVar('DIRECT_URL');
 if (!current) {
     process.env.DIRECT_URL = direct;
-    console.log('[prepare] Derived DIRECT_URL from DATABASE_URL (pgbouncer removed).');
+    console.log('[prepare] Derived DIRECT_URL from DATABASE_URL (true direct host).');
     try {
         fs.appendFileSync(envPath, `\nDIRECT_URL="${direct}"\n`);
         console.log('[prepare] Appended DIRECT_URL to .env');
     } catch {
         console.log('[prepare] Could not write .env (ignored).');
     }
-} else if (/[?&]pgbouncer=true/gi.test(current)) {
-    // DIRECT_URL mavjud, lekin pgbouncer=true bilan — bu migrate'da P1002
-    // beradi. Har doim to'g'ri variant bilan override qilamiz.
+} else if (/[?&]pgbouncer=true/gi.test(current) || /-pooler\./gi.test(current)) {
+    // DIRECT_URL mavjud, lekin hali pooler host / pgbouncer=true bilan —
+    // migrate'da P1002 beradi (advisory lock). Har doim to'g'ri variant
+    // (true direct host) bilan override qilamiz.
     process.env.DIRECT_URL = direct;
-    console.log('[prepare] DIRECT_URL contained pgbouncer=true -> normalized.');
+    console.log('[prepare] DIRECT_URL was pooler/pgbouncer -> normalized to true direct host.');
     try {
         const lines = envFile.split('\n').filter(l => !/^DIRECT_URL=/.test(l));
         lines.push(`DIRECT_URL="${direct}"`);
@@ -75,5 +80,5 @@ if (!current) {
         console.log('[prepare] Could not update .env (ignored).');
     }
 } else {
-    console.log('[prepare] DIRECT_URL already set (pgbouncer-free), keeping it.');
+    console.log('[prepare] DIRECT_URL already set (true direct host), keeping it.');
 }
