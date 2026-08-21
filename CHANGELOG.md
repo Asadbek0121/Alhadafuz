@@ -4,6 +4,9 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Fixed
+- **Vercel build P1002 (3-chi tuzatish)**: Neon pooler endpoint'ida stale advisory lock tufayli `prisma migrate deploy` doimiy P1002 berardi. `prepare-direct-url.mjs` endi DIRECT_URL ni **true direct host** (hostname'dan `-pooler` olib tashlab) ga normalizatsiya qiladi — pooling'da qolgan advisory lock muammosini bartaraf qiladi. (`scripts/prepare-direct-url.mjs`)
+
 ### Added
 - 🇨🇳 **Xitoydan buyurtma (CHINA_ORDER fulfillment)** — boshidan oxirigacha fulfillment modeli:
   - **DB**: `Product.fulfillmentType String @default("LOCAL")` (authoritative), `CartItem.fulfillmentType`/`OrderItem.fulfillmentType` (snapshot, nullable), yangi `Cargo` modeli (PENDING/CALCULATED/PAID — future placeholder, hozir real calculator yo'q). Migration `20260821051422_china_order_fulfillment`.

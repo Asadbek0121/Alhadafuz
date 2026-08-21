@@ -102,6 +102,7 @@ O'zbekiston bozoriga mo'ljallangan onlayn savdo platformasi (HADAF). Asosiy mint
 - Dev server: `npm run dev` (port 3000). Birinchi kompilyatsiya sekin (30s gacha) — sabr qiling.
 - `.env` gitignore'da — lokalda mavjud, lekin **commit qilmang**. `.env` masofaviy Neon DB'ga ulangan, shuning uchun lokal ishlash ham DB'ga ulanishni talab qiladi.
 - Prisma client sinxronlash: `npx prisma generate`.
+- **Migratsiya**: `prisma migrate dev` → migration → `prisma migrate deploy` (db push emas). `DIRECT_URL` **true direct host** (ep-...-neon.tech, `-pooler`siz) bo'lishi shart — Neon pooler'da stale advisory lock tufayli `prisma migrate deploy` P1002 beradi. `scripts/prepare-direct-url.mjs` build vaqtida DIRECT_URL ni DATABASE_URL'dan derive qiladi (pgbouncer=true + `-pooler` olib tashlab).
 - Sekin/suzuvchan narsalarni tekshirish uchun `scripts/` dagi debug skriptlardan foydalanish mumkin.
 
 ## Muhim environment variable'lar
