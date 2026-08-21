@@ -93,11 +93,23 @@
     gap: 10px;
 }
 
-/* Root kategoriyalar — mobil'da 3 ustun */
+/* Root kategoriyalar — 3 ustun (mobil), 6 ustun (desktop) */
 .cardGridRoot {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
     gap: 10px;
+}
+
+@media (min-width: 640px) {
+    .cardGridRoot {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .cardGridRoot {
+        grid-template-columns: repeat(6, 1fr);
+    }
 }
 
 .cardRoot {
@@ -151,11 +163,23 @@
     -webkit-box-orient: vertical;
 }
 
-/* Subkategoriyalar — mobil'da 4 ustun */
+/* Subkategoriyalar — 4 ustun (mobil), 8 ustun (desktop) */
 .cardGridSub {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+}
+
+@media (min-width: 640px) {
+    .cardGridSub {
+        grid-template-columns: repeat(5, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .cardGridSub {
+        grid-template-columns: repeat(8, 1fr);
+    }
 }
 
 .cardSub {

@@ -398,8 +398,11 @@ export default function CategoryContent({ category, banners = [], products = [],
         );
     };
 
-    // Faqat bitta DOM render qilinadi (mobil yoki desktop) — double DOM oldini olish
-    if (isMobile) {
+    // Ota kategoriyalar (children bor) — barcha viewport'larda drill-down:
+    // avval root kategoriyalar, tanlanganda subkategoriyalar, so'ng mahsulotlar.
+    // Leaf kategoriya (children yo'q) — to'g'ridan-to'g'ri mahsulotlar (mobil/desktop split).
+    const isParentCategory = category.children && category.children.length > 0;
+    if (isMobile || isParentCategory) {
         // Mobil drill-down: faqat ota kategoriyada (children bor) root ko'rsatiladi.
         // Leaf kategoriya (children yo'q) — to'g'ridan-to'g'ri mahsulotlar.
         const isParent = category.children && category.children.length > 0;
@@ -562,7 +565,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                         </div>
 
                         {products.length > 0 ? (
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                                 {products.map((p) => (
                                     <ProductCard key={p.id} id={p.id} title={p.title} price={p.price}
                                         oldPrice={p.oldPrice} image={p.image || '/placeholder.png'}
