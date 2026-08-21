@@ -4,7 +4,7 @@
 import { useRouter } from '@/navigation';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, ChevronRight, LayoutGrid, ArrowLeft, ShoppingBag, Package, ArrowUpDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, LayoutGrid, ArrowLeft, ShoppingBag, Package, ArrowUpDown, SlidersHorizontal, X } from 'lucide-react';
 import Image from 'next/image';
 import styles from './CategoryContent.module.css';
 import { useState, useEffect } from 'react';
@@ -41,6 +41,20 @@ interface CategoryContentProps {
     products?: any[];
     totalCount?: number;
     rootCategories?: any[];
+    initialFilters?: {
+        sort?: string;
+        category?: string;
+        minPrice?: string;
+        maxPrice?: string;
+        discount?: string;
+    };
+}
+
+interface FilterState {
+    category: string;
+    minPrice: string;
+    maxPrice: string;
+    discount: boolean;
 }
 
 const SORT_OPTIONS = ['recommended', 'price_asc', 'price_desc', 'newest', 'discount'] as const;
@@ -196,7 +210,7 @@ function SortToolbar({ sort, onSortChange }: { sort: string; onSortChange: (v: s
     );
 }
 
-export default function CategoryContent({ category, banners = [], products = [], totalCount, rootCategories = [] }: CategoryContentProps) {
+export default function CategoryContent({ category, banners = [], products = [], totalCount, rootCategories = [], initialFilters = {} }: CategoryContentProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
     const isMobile = useMediaQuery('(max-width: 992px)');
@@ -205,6 +219,25 @@ export default function CategoryContent({ category, banners = [], products = [],
     const locale = useLocale();
     // Mobil drill-down: null = root kategoriyalar ko'rsatiladi, tanlanganda subkategoriyalar
     const [selectedParent, setSelectedParent] = useState<any | null>(null);
+    // Filter drawer state
+    const [showFilters, setShowFilters] = useState(false);
+    const [showSort, setShowSort] = useState(false);
+    // Draft filters — Apply bosilganda URL ga yoziladi (har click'da request yuborilmaydi)
+    const [draftFilters, setDraftFilters] = useState<FilterState>({
+        category: initialFilters.category || '',
+        minPrice: initialFilters.minPrice || '',
+        maxPrice: initialFilters.maxPrice || '',
+        discount: initialFilters.discount === '1',
+    });
+
+    // Escape + scroll lock filter drawer uchun
+    useEffect(() => {
+        if (!showFilters) return;
+        const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setShowFilters(false); };
+        document.addEventListener('keydown', handler);
+        document.body.style.overflow = 'hidden';
+        return () => { document.removeEventListener('keydown', handler); document.body.style.overflow = ''; };
+    }, [showFilters]);
 
     // Track impressions once (bitta qatordan — double tracking oldini olish)
     useEffect(() => {
@@ -223,9 +256,147 @@ export default function CategoryContent({ category, banners = [], products = [],
         if (value) params.set('sort', value);
         else params.delete('sort');
         router.replace(`/category/${category.slug}?${params.toString()}`);
+        setShowSort(false);
+    };
+
+    // Faol filterlar soni (sort hisoblanmaydi)
+    const activeFilterCount =
+        (draftFilters.category ? 1 : 0) +
+        (draftFilters.minPrice ? 1 : 0) +
+        (draftFilters.maxPrice ? 1 : 0) +
+        (draftFilters.discount ? 1 : 0);
+
+    const buildUrl = (f: FilterState, sort?: string) => {
+        const params = new URLSearchParams();
+        if (sort) params.set('sort', sort);
+        if (f.category) params.set('category', f.category);
+        if (f.minPrice) params.set('minPrice', f.minPrice);
+        if (f.maxPrice) params.set('maxPrice', f.maxPrice);
+        if (f.discount) params.set('discount', '1');
+        const qs = params.toString();
+        return `/category/${category.slug}${qs ? `?${qs}` : ''}`;
+    };
+
+    const handleApplyFilters = () => {
+        router.replace(buildUrl(draftFilters, currentSort));
+        setShowFilters(false);
+    };
+
+    const handleClearFilters = () => {
+        const cleared: FilterState = { category: '', minPrice: '', maxPrice: '', discount: false };
+        setDraftFilters(cleared);
+        router.replace(buildUrl(cleared, currentSort));
+        setShowFilters(false);
     };
 
     const count = typeof totalCount === 'number' ? totalCount : products.length;
+
+    // Filter drawer — mobil'da bottom sheet, desktop'da ham ishlatiladi
+    const renderFilterDrawer = () => {
+        const filterTree = rootCategories.length > 0 ? rootCategories : [category];
+        return (
+            <>
+                {showFilters && (
+                    <div className="fixed inset-0 z-50 flex justify-end" role="dialog" aria-modal="true" aria-label={t('filters')}>
+                        <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFilters(false)} aria-hidden="true" />
+                        <div className="relative w-full max-w-sm bg-white shadow-2xl flex flex-col pb-[env(safe-area-inset-bottom)]">
+                            <div className="flex items-center justify-between border-b border-slate-100 p-5">
+                                <h2 className="text-lg font-black uppercase tracking-wider text-slate-900">{t('filters')}</h2>
+                                <button onClick={() => setShowFilters(false)} className="rounded-xl p-2 hover:bg-slate-100" aria-label={t('clear_filters')}>
+                                    <X size={20} />
+                                </button>
+                            </div>
+
+                            <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                                {/* Category filter */}
+                                <div>
+                                    <h3 className="mb-3 text-sm font-black uppercase tracking-wider text-slate-900">{t('category')}</h3>
+                                    <div className="space-y-1">
+                                        <button
+                                            onClick={() => setDraftFilters(f => ({ ...f, category: '' }))}
+                                            className={`flex w-full items-center rounded-xl px-4 py-2.5 text-left text-sm font-medium ${!draftFilters.category ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                        >
+                                            {t('all_categories')}
+                                        </button>
+                                        {filterTree.map((root: any) => (
+                                            <div key={root.id}>
+                                                <button
+                                                    onClick={() => setDraftFilters(f => ({ ...f, category: root.slug }))}
+                                                    className={`flex w-full items-center rounded-xl px-4 py-2.5 text-left text-sm font-bold ${draftFilters.category === root.slug ? 'bg-blue-50 text-blue-600' : 'text-slate-800 hover:bg-slate-50'}`}
+                                                >
+                                                    {root.name}
+                                                </button>
+                                                {(root.children || []).map((child: any) => (
+                                                    <button
+                                                        key={child.id}
+                                                        onClick={() => setDraftFilters(f => ({ ...f, category: child.slug }))}
+                                                        className={`flex w-full items-center rounded-xl py-2 pl-10 pr-4 text-left text-sm font-medium ${draftFilters.category === child.slug ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
+                                                    >
+                                                        <span className="mr-2 text-slate-300">└</span>{child.name}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+
+                                {/* Price range */}
+                                <div>
+                                    <h3 className="mb-3 text-sm font-black uppercase tracking-wider text-slate-900">{t('price')}</h3>
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="number"
+                                            placeholder={t('min_price')}
+                                            value={draftFilters.minPrice}
+                                            onChange={(e) => setDraftFilters(f => ({ ...f, minPrice: e.target.value }))}
+                                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500"
+                                        />
+                                        <span className="text-slate-400">—</span>
+                                        <input
+                                            type="number"
+                                            placeholder={t('max_price')}
+                                            value={draftFilters.maxPrice}
+                                            onChange={(e) => setDraftFilters(f => ({ ...f, maxPrice: e.target.value }))}
+                                            className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-medium outline-none focus:border-blue-500"
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Discount */}
+                                <div>
+                                    <label className="flex cursor-pointer items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            checked={draftFilters.discount}
+                                            onChange={(e) => setDraftFilters(f => ({ ...f, discount: e.target.checked }))}
+                                            className="h-5 w-5 rounded-lg border-slate-300 text-blue-600 focus:ring-blue-500"
+                                        />
+                                        <span className="text-sm font-bold text-slate-900">{t('discount_only')}</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Bottom actions */}
+                            <div className="flex gap-3 border-t border-slate-100 p-5">
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="flex-1 rounded-2xl bg-slate-100 py-3.5 text-sm font-black text-slate-700"
+                                >
+                                    {t('clear_filters')}
+                                </button>
+                                <button
+                                    onClick={handleApplyFilters}
+                                    className="flex-[2] rounded-2xl bg-blue-600 py-3.5 text-sm font-black text-white"
+                                >
+                                    {count > 0 ? t('results', { count }) : t('apply_filters')}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </>
+        );
+    };
 
     // Faqat bitta DOM render qilinadi (mobil yoki desktop) — double DOM oldini olish
     if (isMobile) {
@@ -237,6 +408,7 @@ export default function CategoryContent({ category, banners = [], products = [],
         const catHref = (slug: string) => `/${locale}/category/${slug}`;
 
         return (
+            <>
             <div className={styles.mobileWrapper}>
                 {/* Header */}
                 <div className={styles.mobileHeader}>
@@ -277,14 +449,6 @@ export default function CategoryContent({ category, banners = [], products = [],
                                 );
                             })}
                         </div>
-                    </div>
-                )}
-
-                {/* Toolbar: count + sort (faqat subkategoriya yoki mahsulot ko'rsatilganda) */}
-                {!showRoots && (
-                    <div className={`${styles.mobileToolbar} px-4 py-2 flex items-center justify-between gap-3`}>
-                        <span className="text-xs font-bold text-slate-500">{t('results', { count: totalCount || products.length })}</span>
-                        <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
                     </div>
                 )}
 
@@ -341,27 +505,101 @@ export default function CategoryContent({ category, banners = [], products = [],
                 </div>
 
                 {/* Products Grid (Mobile) */}
-                {!showRoots && products.length > 0 && (
+                {!showRoots && (
                     <div className="p-4 bg-gray-50 border-t mt-4">
-                        <h2 className="text-xl font-bold mb-4">{tHeader('mahsulotlar')}</h2>
-                        <div className="grid grid-cols-2 gap-3">
-                            {products.map((p) => (
-                                <ProductCard key={p.id} id={p.id} title={p.title} price={p.price}
-                                    oldPrice={p.oldPrice} image={p.image || '/placeholder.png'}
-                                    discount={p.discount} discountType={p.discountType}
-                                    isNew={p.isNew} freeDelivery={p.freeDelivery} hasVideo={p.hasVideo}
-                                    hasGift={p.hasGift} showLowStock={p.showLowStock}
-                                    allowInstallment={p.allowInstallment} stock={p.stock}
-                                    rating={p.rating} reviewCount={p.reviewsCount} />
-                            ))}
+                        {/* Product toolbar: count + filter + sort (product grid tepasida) */}
+                        <div className="flex items-center justify-between gap-2 mb-4">
+                            <span className="text-sm font-bold text-slate-600">
+                                {count > 0 ? t('results', { count }) : t('no_products')}
+                            </span>
+                            <div className="flex items-center gap-2">
+                                {/* Sort */}
+                                <div className="relative">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSort(s => !s)}
+                                        className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+                                    >
+                                        <ArrowUpDown size={14} />
+                                        {t('sort')}: {t(`sort_${currentSort || 'recommended'}`)}
+                                    </button>
+                                    {showSort && (
+                                        <>
+                                            <div className="fixed inset-0 z-40" onClick={() => setShowSort(false)} />
+                                            <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-2xl border border-slate-100 bg-white py-2 shadow-2xl">
+                                                {SORT_OPTIONS.map((key) => {
+                                                    const val = key === 'recommended' ? '' : key;
+                                                    const isActive = (currentSort === key) || (key === 'recommended' && !currentSort);
+                                                    return (
+                                                        <button
+                                                            key={key}
+                                                            onClick={() => handleSortChange(val)}
+                                                            className={`flex w-full items-center px-4 py-2.5 text-left text-sm font-medium ${isActive ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
+                                                        >
+                                                            {t(`sort_${key}`)}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+                                {/* Filter */}
+                                <button
+                                    type="button"
+                                    onClick={() => setShowFilters(true)}
+                                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+                                >
+                                    <SlidersHorizontal size={14} />
+                                    {t('filters')}
+                                    {activeFilterCount > 0 && (
+                                        <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-black text-white">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </button>
+                            </div>
                         </div>
+
+                        {products.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-3">
+                                {products.map((p) => (
+                                    <ProductCard key={p.id} id={p.id} title={p.title} price={p.price}
+                                        oldPrice={p.oldPrice} image={p.image || '/placeholder.png'}
+                                        discount={p.discount} discountType={p.discountType}
+                                        isNew={p.isNew} freeDelivery={p.freeDelivery} hasVideo={p.hasVideo}
+                                        hasGift={p.hasGift} showLowStock={p.showLowStock}
+                                        allowInstallment={p.allowInstallment} stock={p.stock}
+                                        rating={p.rating} reviewCount={p.reviewsCount} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-16 bg-white rounded-3xl border-2 border-dashed border-gray-200">
+                                <Package size={44} className="text-gray-300 mx-auto mb-4" />
+                                <p className="text-gray-500 font-medium">{t('no_results')}</p>
+                                <p className="text-gray-400 text-xs mt-2 mb-4">{t('no_results_desc')}</p>
+                                {activeFilterCount > 0 && (
+                                    <button
+                                        onClick={handleClearFilters}
+                                        className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold"
+                                    >
+                                        {t('clear_filters')}
+                                    </button>
+                                )}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>
+
+            {/* Filter Drawer */}
+            {renderFilterDrawer()}
+            </>
         );
     }
 
     return (
+        <>
         <div className={styles.desktopWrapper}>
             <div className="container py-8">
                 {/* Breadcrumbs / Back button */}
@@ -453,15 +691,33 @@ export default function CategoryContent({ category, banners = [], products = [],
                 )}
 
                 {/* Products Grid (Desktop) */}
-                <div className="mt-8">
-                    <div className="mb-6 flex items-center justify-between">
-                        <h2 className="text-2xl font-bold flex items-center gap-2">
-                            <ShoppingBag size={24} className="text-blue-600" />
-                            {tHeader('mahsulotlar')}
-                        </h2>
-                        <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
-                    </div>
-                    {products.length > 0 ? (
+                 <div className="mt-8">
+                     <div className="mb-6 flex items-center justify-between">
+                         <div>
+                             <h2 className="text-2xl font-bold flex items-center gap-2">
+                                 <ShoppingBag size={24} className="text-blue-600" />
+                                 {tHeader('mahsulotlar')}
+                             </h2>
+                             <p className="text-sm font-bold text-slate-500 mt-1">{count > 0 ? t('results', { count }) : t('no_products')}</p>
+                         </div>
+                         <div className="flex items-center gap-2">
+                             <SortToolbar sort={currentSort} onSortChange={handleSortChange} />
+                             <button
+                                 type="button"
+                                 onClick={() => setShowFilters(true)}
+                                 className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600"
+                             >
+                                 <SlidersHorizontal size={14} />
+                                 {t('filters')}
+                                 {activeFilterCount > 0 && (
+                                     <span className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-black text-white">
+                                         {activeFilterCount}
+                                     </span>
+                                 )}
+                             </button>
+                         </div>
+                     </div>
+                     {products.length > 0 ? (
                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
                             {products.map((p) => (
                                 <ProductCard
@@ -488,11 +744,21 @@ export default function CategoryContent({ category, banners = [], products = [],
                     ) : (
                         <div className="text-center py-20 bg-gray-50 rounded-3xl border-2 border-dashed border-gray-200">
                             <Package size={48} className="text-gray-300 mx-auto mb-4" />
-                            <p className="text-gray-500 text-lg">{t('no_products')}</p>
+                            <p className="text-gray-500 text-lg">{t('no_results')}</p>
+                            {activeFilterCount > 0 && (
+                                <button
+                                    onClick={handleClearFilters}
+                                    className="mt-4 px-6 py-2.5 bg-slate-900 text-white rounded-xl text-xs font-bold"
+                                >
+                                    {t('clear_filters')}
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
         </div>
+        {renderFilterDrawer()}
+        </>
     );
 }

@@ -64,7 +64,7 @@ export default async function CategoryPage({
     searchParams,
 }: {
     params: Promise<{ locale: string; slug: string }>;
-    searchParams?: Promise<{ sort?: string }>;
+    searchParams?: Promise<{ sort?: string; category?: string; minPrice?: string; maxPrice?: string; discount?: string }>;
 }) {
     const { locale, slug } = await params;
     const resolvedSearch = searchParams ? await searchParams : {};
@@ -103,29 +103,35 @@ export default async function CategoryPage({
         ...(category.children?.map((c: any) => c.id) || []),
         ...(category.parent ? [category.parent.id] : []),
     ];
+
+    // FILTERLAR: category (child slug), minPrice, maxPrice, discount
+    const where: any = {
+        isDeleted: false,
+        OR: [{ status: 'published' }, { status: 'ACTIVE' }],
+    };
+
+    // Tanlangan child kategoriya bo'lsa — shu child'ga filtr; aks holda default categoryIds
+    const filterSlug = resolvedSearch.category;
+    if (filterSlug && filterSlug !== category.slug) {
+        const child = category.children?.find((c: any) => c.slug === filterSlug);
+        if (child) {
+            where.categories = { some: { id: child.id } };
+        } else {
+            where.categories = { some: { id: { in: categoryIds } } };
+        }
+    } else {
+        where.categories = { some: { id: { in: categoryIds } } };
+    }
+
+    if (resolvedSearch.minPrice) where.price = { gte: Number(resolvedSearch.minPrice) };
+    if (resolvedSearch.maxPrice) {
+        where.price = { ...(where.price || {}), lte: Number(resolvedSearch.maxPrice) };
+    }
+    if (resolvedSearch.discount === '1') where.discount = { gt: 0 };
+
     const [products, totalCount] = await Promise.all([
-        (prisma as any).product.findMany({
-            where: {
-                isDeleted: false,
-                OR: [{ status: 'published' }, { status: 'ACTIVE' }],
-                categories: {
-                    some: {
-                        id: { in: categoryIds }
-                    }
-                }
-            },
-            take: 50,
-            orderBy,
-        }),
-        (prisma as any).product.count({
-            where: {
-                isDeleted: false,
-                OR: [{ status: 'published' }, { status: 'ACTIVE' }],
-                categories: {
-                    some: { id: { in: categoryIds } }
-                }
-            }
-        }),
+        (prisma as any).product.findMany({ where, take: 50, orderBy }),
+        (prisma as any).product.count({ where }),
     ]);
 
     // Filter banners by scheduling
@@ -161,6 +167,13 @@ export default async function CategoryPage({
                 products={products}
                 totalCount={totalCount}
                 rootCategories={rootCategories}
+                initialFilters={{
+                    sort: resolvedSearch.sort || '',
+                    category: filterSlug || '',
+                    minPrice: resolvedSearch.minPrice || '',
+                    maxPrice: resolvedSearch.maxPrice || '',
+                    discount: resolvedSearch.discount || '',
+                }}
             />
         </>
     );
