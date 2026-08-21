@@ -251,16 +251,26 @@ export default function VariantEditor({
 
   const drawerRow = drawerKey ? variants.find((v) => v.key === drawerKey) : null;
 
+  const activeAxes = axes.filter((a) => a.values.length > 0);
+  const singleValueAxis =
+    comboCandidates.length === 1 && activeAxes.length === 1 ? activeAxes[0] : null;
+  const comboBreakdown =
+    comboCandidates.length > 1
+      ? activeAxes.map((a) => a.values.length).join(" × ")
+      : null;
+
   return (
     <div className="space-y-6">
       {/* Axes (variant turi) */}
       <div>
         <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-          <h4 className="text-sm font-bold text-[#2A3547]">Variant turlari (o'qlar)</h4>
+          <h4 className="text-sm font-bold text-[#2A3547]">Sotib olish variantlari</h4>
           {axes.length > 0 && (
             <span className="text-xs font-semibold text-[#7c8fac]">
               {comboCandidates.length > 0
-                ? `${comboCandidates.length} kombinatsiya mumkin`
+                ? comboCandidates.length === 1
+                  ? "1 kombinatsiya mumkin"
+                  : `${comboCandidates.length} kombinatsiya mumkin (${comboBreakdown} = ${comboCandidates.length})`
                 : "Kombinatsiya uchun o'q qiymatlarini kiriting"}
             </span>
           )}
@@ -268,7 +278,8 @@ export default function VariantEditor({
 
         {axes.length === 0 && (
           <p className="text-xs text-[#9aa8bb] mb-3">
-            O'lcham, rang kabi variant o'qlarini qo'shing. O'qlar kategoriya
+            Masalan: Kiyim uchun "Rang" va "O'lcham" variant sifatida tanlanadi. Shunda
+            Qora/S, Qora/M, Oq/S kabi kombinatsiyalar avtomatik yaratiladi. O'qlar kategoriya
             xususiyatlaridan "Variant turi" sifatida belgilanganlardan tanlanadi.
           </p>
         )}
@@ -326,6 +337,16 @@ export default function VariantEditor({
             );
           })}
         </div>
+
+        {singleValueAxis && (
+          <div className="mt-3 rounded-lg border border-[#bfe3f7] bg-[#f0f8ff] px-3 py-2">
+            <p className="text-xs text-[#0068ad]">
+              "{singleValueAxis.label}" variant hozir bitta qiymatga ega —{" "}
+              {singleValueAxis.values[0]}. Shuning uchun faqat 1 kombinatsiya mavjud. Boshqa
+              qiymat qo'shsangiz kombinatsiyalar soni ko'payadi.
+            </p>
+          </div>
+        )}
 
         <div className="flex items-center gap-2 mt-3 flex-wrap">
           <select

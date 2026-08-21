@@ -4,6 +4,18 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Fixed
+- **Universal Product Admin UI — forVariant Xususiyat/Variant ajratish (UX bug-fix)**:
+  - **Root cause**: `UniversalProductSections.tsx` AttributeFields'ga HAMMA defs'ni (`forVariant=true` ham) uzatardi, VariantEditor'ga esa `forVariant=true` defs o'tardi — shuning uchun bitta definition (masalan Material) "Xususiyatlar" va "Variantlar" bo'limlarida IKKI JOYDA chiqardi.
+  - **Fix**: `attributeDefs = defs.filter(d => !d.forVariant)` — faqat "Xususiyatlar"ga; `variantDefs = defs.filter(d => d.forVariant)` — faqat "Variantlar"ga. Endi bir definition faqat BIRTA joyda ko'rinadi: `forVariant=false` → tavsifiy Xususiyat, `forVariant=true` → sotib olish varianti.
+  - **Validation**: endi faqat `attributeDefs` (Xususiyatlar bo'limida ko'rinadiganlar) required/type tekshiruvidan o'tadi. Variant qiymatlari VariantEditor orqali boshqariladi.
+  - **Save**: forVariant=true defs uchun product darajasidagi qiymat manbai variant o'qi — majburiy bo'lsa o'q qiymatlaridan derive qilinadi (`MULTI_SELECT` → array, aks holda birinchi qiymat; o'q bo'lmasa def.options fallback), backend "qiymati shart" xatosini oldini oladi. Backend o'zgarmadi.
+  - **UX sarlavhalar + yordamchi matn**: "Xususiyatlar" (tavsifiy xususiyatlar, xaridor tanlamaydi) va "Variantlar" (xaridor tanlaydigan: rang/o'lcham) uchun aniq sarlavha + tushuntirish. `VariantEditor` ichidagi "Variant turlari (o'qlar)" → "Sotib olish variantlari".
+  - **Bo'sh variant holati (kitob kabi)**: `forVariant=true` definition bo'lmasa → "Variantlar — Bu mahsulot uchun variantlar belgilanmagan." ko'rsatiladi, "Kombinatsiyalarni generatsiya qilish" tugmasi chiqmaydi.
+  - **Combination generator UX**: 1 kombinatsiya holatida tushuntirish ("'X' variant bitta qiymatga ega — ... shuning uchun faqat 1 kombinatsiya"), ko'p o'qli holatda kartezian breakdown ("6 kombinatsiya mumkin (2 × 3 = 6)").
+  - DB schema o'zgarmadi, backend API o'zgarmadi, yangi migration yo'q. (Fayllar: `src/components/admin/product/UniversalProductSections.tsx`, `src/components/admin/product/VariantEditor.tsx`)
+  - Verification: `npx tsc --noEmit` 0 error, ESLint 0, `npm run build` SUCCESS (101/101 static, Node 22).
+
 ### Added
 - **Phase D — Category Attribute Definition Admin UI**:
   - **Yangi route**: `/admin/categories/[id]/attributes/page.tsx` — category attribute definitions boshqaruv sahifasi (CRUD). `/admin/categories/[id]/page.tsx` → attributes ga `redirect()` (404 o'rniga). Product Builder'dagi "Kategoriya xususiyatlarini boshqarish" linklari (`UniversalProductSections.tsx:499,535`) endi shu real route'ga ishora qiladi (avval `/admin/categories/${categoryId}` 404 berardi).

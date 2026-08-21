@@ -1,11 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
+import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef } from "react";
 import { Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { AttributeDef, AttributeExtraValue, ProductAttributeRow, VariantAxis, VariantRow } from "./types";
 import { parseVariantKey } from "./types";
-import { validateAttributeValue } from "@/lib/universal-product";
+import { validateAttributeValue, parseOptions } from "@/lib/universal-product";
 import AttributeFields from "./AttributeFields";
 import VariantEditor from "./VariantEditor";
 
@@ -212,11 +212,14 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
       });
     }, [defs, variants]);
 
+    const attributeDefs = useMemo(() => defs.filter((d) => !d.forVariant), [defs]);
+    const variantDefs = useMemo(() => defs.filter((d) => d.forVariant), [defs]);
+
     // ---- validation ----
 
     const validate = useCallback((): string | null => {
       const errors: Record<string, string> = {};
-      for (const def of defs) {
+      for (const def of attributeDefs) {
         let v = valuesRef.current[def.id];
         // MEASUREMENT object bo'sh value bilan to'ldirilgan bo'lsa — bo'sh deb hisoblaymiz
         if (def.type === "MEASUREMENT" && v && typeof v === "object") {
@@ -244,7 +247,7 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
         return Object.values(errors)[0];
       }
       return null;
-    }, [defs, variants]);
+    }, [attributeDefs, variants]);
 
     // ---- save ----
 
@@ -255,6 +258,13 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
           if (defs.length > 0) {
             const attrs = defs.map((d) => {
               let v = valuesRef.current[d.id];
+              if (d.forVariant) {
+                const axis = axes.find((a) => a.defId === d.id);
+                const axisValues = axis && axis.values.length > 0 ? axis.values : parseOptions(d.options);
+                if (d.required && axisValues.length > 0) {
+                  v = d.type === "MULTI_SELECT" ? axisValues : axisValues[0];
+                }
+              }
               if (d.type === "MEASUREMENT" && v && typeof v === "object") {
                 const obj = v as { value?: unknown };
                 if (obj.value === undefined || obj.value === null || obj.value === "") v = null;
@@ -426,7 +436,7 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
           return false;
         }
       },
-      [defs, variants, deletedKeys]
+      [defs, axes, variants, deletedKeys]
     );
 
     useImperativeHandle(
@@ -437,8 +447,6 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
       }),
       [validate, saveAttributesAndVariants]
     );
-
-    const variantDefs = defs.filter((d) => d.forVariant);
 
     if (loadingDefs && defs.length === 0) {
       return (
@@ -471,7 +479,11 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
     return (
       <div className="space-y-8">
         <div>
-          <h3 className="text-base font-bold text-[#2A3547] mb-3">Xususiyatlar</h3>
+          <h3 className="text-base font-bold text-[#2A3547] mb-1">Xususiyatlar</h3>
+          <p className="text-sm text-[#7c8fac] mb-3">
+            Mahsulotning tavsifiy xususiyatlari — material, brend, mavsum kabi. Xaridor bularni
+            tanlamaydi, faqat ma'lumot sifatida ko'radi.
+          </p>
           {!categoryId ? (
             <p className="text-sm text-[#9aa8bb] italic">
               Xususiyatlar uchun kategoriya tanlanishi kerak.
@@ -479,7 +491,7 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
           ) : (
             <>
               <AttributeFields
-                defs={defs}
+                defs={attributeDefs}
                 values={values}
                 errors={attributeErrors}
                 extras={extraValues}
@@ -493,7 +505,7 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
                   });
                 }}
               />
-              {defs.length === 0 && (
+              {attributeDefs.length === 0 && (
                 <p className="text-sm text-[#9aa8bb] italic">
                   Bu kategoriya uchun xususiyatlar aniqlanmagan.{" "}
                   <a href={`/admin/categories/${categoryId}/attributes`} className="text-[#0085db] font-semibold underline">
@@ -505,10 +517,14 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
           )}
         </div>
 
-        {variantDefs.length > 0 || variants.length > 0 ? (
-          <div>
-            <h3 className="text-base font-bold text-[#2A3547] mb-3">Variantlar</h3>
-            {loadingVariants && variants.length === 0 ? (
+        <div>
+          <h3 className="text-base font-bold text-[#2A3547] mb-1">Variantlar</h3>
+          <p className="text-sm text-[#7c8fac] mb-3">
+            Xaridor mahsulotni tanlashda qaysi xususiyatlarni tanlashini belgilang. Masalan, rang
+            yoki o'lcham.
+          </p>
+          {variantDefs.length > 0 || variants.length > 0 ? (
+            loadingVariants && variants.length === 0 ? (
               <div className="py-4 text-center">
                 <Loader2 size={16} className="animate-spin inline-block text-[#0085db]" />
                 <span className="text-sm text-[#5A6A85] ml-2">Variantlar yuklanmoqda...</span>
@@ -524,20 +540,24 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
                 onDeletedKeysChange={setDeletedKeys}
                 disabled={disabled}
               />
-            )}
-          </div>
-        ) : (
-          <div>
-            <h3 className="text-base font-bold text-[#2A3547] mb-3">Variantlar</h3>
-            <p className="text-sm text-[#9aa8bb] italic">
-              Variant yaratish uchun kategoriya xususiyatlarida "Variant turi" belgilangan
-              definition kerak.{" "}
-              <a href={`/admin/categories/${categoryId}/attributes`} className="text-[#0085db] font-semibold underline">
-                Kategoriya xususiyatlarini boshqarish
-              </a>
-            </p>
-          </div>
-        )}
+            )
+          ) : (
+            <div>
+              <p className="text-sm text-[#9aa8bb] italic">
+                Variantlar — Bu mahsulot uchun variantlar belgilanmagan.
+              </p>
+              {categoryId && (
+                <p className="text-sm text-[#9aa8bb] italic mt-1">
+                  Variant qo'shish uchun kategoriya xususiyatlarida "Variant turi" belgilangan
+                  definition kerak.{" "}
+                  <a href={`/admin/categories/${categoryId}/attributes`} className="text-[#0085db] font-semibold underline">
+                    Kategoriya xususiyatlarini boshqarish
+                  </a>
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }
