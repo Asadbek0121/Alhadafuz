@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3000",
-    "build": "prisma migrate deploy && next build",
+    "build": "node scripts/prepare-direct-url.mjs && prisma migrate deploy && next build",
     "db:push": "prisma db push",
     "start": "next start",
     "lint": "eslint",
