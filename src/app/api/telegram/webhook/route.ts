@@ -182,16 +182,32 @@ async function uploadTelegramFile(fileId: string, label: string): Promise<string
  * telegramId bo'yicha foydalanuvchini topadi, bo'lmasa yaratadi.
  * `telegramId` ustuni `@unique` — shu sababli upsert ketma-ket kelgan
  * xabarlarda ikki marta yaratishga urinib xato bermaydi.
+ *
+ * Telegram profil rasmi `getUserProfilePhotos` orqali olinadi va `image`
+ * ustuniga yoziladi — admin panel /admin/chat'da avatar ko'rinadi.
  */
 async function findOrCreateTelegramUser(telegramId: string, from: any) {
     const name = [from?.first_name, from?.last_name].filter(Boolean).join(' ').trim()
         || from?.username
         || `Telegram ${telegramId}`;
 
+    // Telegram profil rasmini olish (bot ruxsat bergan bo'lsa)
+    let avatar: string | null = null;
+    try {
+        const photosRes = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/getUserProfilePhotos?user_id=${telegramId}&limit=1&offset=0`);
+        const photosData = await photosRes.json();
+        const fileId = photosData?.result?.photos?.[0]?.[0]?.file_id;
+        if (fileId) {
+            avatar = await uploadTelegramFile(fileId, 'profile_photo');
+        }
+    } catch (e) {
+        console.warn("Telegram avatar olish xatosi:", e);
+    }
+
     return prisma.user.upsert({
         where: { telegramId },
-        update: {},
-        create: { name, telegramId, role: 'USER', provider: 'telegram' }
+        update: avatar ? { name, image: avatar } : { name },
+        create: { name, telegramId, role: 'USER', provider: 'telegram', image: avatar }
     });
 }
 

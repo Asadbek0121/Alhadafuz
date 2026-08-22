@@ -3,6 +3,32 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
+/**
+ * Suhbat ro'yxatidagi vaqtni ixcham ko'rsatadi:
+ * - bugun yozilgan xabar → faqat vaqt (14:32)
+ * - kecha yozilgan xabar → "Kecha"
+ * - eskiroq xabar → sana (12.05 yoki 2025-01-03)
+ */
+function formatConversationTime(date: Date): string {
+    const now = new Date();
+    const d = new Date(date);
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startOfThatDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    const dayDiff = Math.round((startOfToday.getTime() - startOfThatDay.getTime()) / 86400000);
+
+    if (dayDiff === 0) {
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+    if (dayDiff === 1) {
+        return 'Kecha';
+    }
+    // Shu yil bo'lsa kun.oy, aks holda to'liq sana
+    if (d.getFullYear() === now.getFullYear()) {
+        return d.toLocaleDateString([], { day: '2-digit', month: '2-digit' });
+    }
+    return d.toLocaleDateString([], { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
 export async function GET(req: Request) {
     const session = await auth();
     const userRole = (session?.user as any)?.role;
@@ -96,7 +122,7 @@ export async function GET(req: Request) {
                 c.userId,
                 userMap.get(c.userId),
                 c.content,
-                new Date(c.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                formatConversationTime(c.createdAt),
                 c.unread
             )
         );
