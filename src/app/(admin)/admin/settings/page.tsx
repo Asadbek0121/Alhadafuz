@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { SocialIcon } from '@/components/SocialIcons';
 import TelegramSettings from '@/components/admin/TelegramSettings';
+import AnnouncementSettings from '@/components/admin/AnnouncementSettings';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { normalizeSocialLinks, serializeSocialLinks } from '@/lib/social-links';
@@ -305,6 +306,9 @@ export default function AdminSettingsPage() {
 
                     {/* Telegram Settings Component */}
                     <TelegramSettings />
+
+                    {/* Header announcement marquee boshqaruvi */}
+                    <AnnouncementSettings />
                 </div>
             </div>
         </div>

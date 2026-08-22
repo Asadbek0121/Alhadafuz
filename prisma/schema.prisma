@@ -624,6 +624,30 @@ model StoreSettings {
   cardNumber          String?
 }
 
+/// Header announcement marquee xabarlari.
+///
+/// Location (Surxondaryo) blokidan keyingi area'da ko'rinadi. Bir nechta
+/// faol announcement bitta uzluksiz marquee track'ida ketma-ket chiqadi.
+model Announcement {
+  id              String    @id @default(cuid())
+  text            String
+  /// Marquee background rangi (masalan #fef3c7 / yellow). Bo'sh = default.
+  backgroundColor String?
+  /// Matn rangi. Bo'sh = kontrast uchun avtomatik (bg qorong'i → och matn).
+  textColor       String?
+  /// Ikona (emoji yoki lib'dagi nom). Masalan 🛠️
+  icon            String?
+  isActive        Boolean   @default(true)
+  order           Int       @default(0)
+  startAt         DateTime?
+  endAt           DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+}
+
 model ActivityLog {
   id        String   @id @default(cuid())
   userId    String?
