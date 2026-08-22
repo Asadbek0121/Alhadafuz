@@ -150,12 +150,14 @@ export default function AboutPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="md:col-span-2 bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl p-4 md:p-5 text-white relative overflow-hidden group">
-                        <div className="absolute top-0 right-0 p-8 opacity-20 transform translate-x-10 -translate-y-10 group-hover:translate-x-0 group-hover:translate-y-0 transition-transform duration-500">
-                            <Users size={50} />
+                        {/* Icon — card ichida yuqori o'ngda, doimiy ichki padding bilan */}
+                        <div className="absolute top-3 right-3 md:top-4 md:right-4 opacity-20 transition-transform duration-500 group-hover:scale-110">
+                            <Users size={40} className="md:hidden" />
+                            <Users size={50} className="hidden md:block" />
                         </div>
-                        <div className="relative z-10">
+                        <div className="relative z-10 pr-12 md:pr-16">
                             <h3 className="text-base font-bold mb-2">{t('values_cards.v1_title')}</h3>
-                            <p className="text-blue-100 text-sm leading-relaxed max-w-lg">
+                            <p className="text-blue-100 text-sm leading-relaxed max-w-md">
                                 {t('values_cards.v1_desc')}
                             </p>
                         </div>
