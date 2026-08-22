@@ -606,7 +606,11 @@
     "biometric_setup_btn": "Активировать",
     "biometric_setup_skip": "Не сейчас, позже",
     "biometric_setup_success": "Биометрия активирована!",
-    "track_order": "Отследить"
+    "track_order": "Отследить",
+    "delivering": "Доставляется",
+    "picked_up": "Курьер забрал",
+    "assigned": "Назначен курьеру",
+    "completed": "Завершен"
   },
   "BottomNav": {
     "home": "Главная",

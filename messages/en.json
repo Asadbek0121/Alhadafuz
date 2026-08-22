@@ -629,7 +629,11 @@
     "pin_resend_tg": "Resend Code",
     "pin_set_btn": "Save PIN Code",
     "system_error": "A system error occurred",
-    "track_order": "Track"
+    "track_order": "Track",
+    "delivering": "Out for delivery",
+    "picked_up": "Picked up",
+    "assigned": "Assigned to courier",
+    "completed": "Completed"
   },
   "BottomNav": {
     "home": "Home",

@@ -630,7 +630,11 @@
     "pin_resend_tg": "Kodni qayta yuborish",
     "pin_set_btn": "PIN-kodni saqlash",
     "system_error": "Tizim xatosi yuz berdi",
-    "track_order": "Kuzatish"
+    "track_order": "Kuzatish",
+    "delivering": "Yetkazilmoqda",
+    "picked_up": "Kuryer oldi",
+    "assigned": "Kuryerga biriktirildi",
+    "completed": "Yakunlandi"
   },
   "BottomNav": {
     "home": "Bosh sahifa",

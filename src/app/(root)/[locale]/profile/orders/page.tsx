@@ -34,7 +34,7 @@ interface Order {
     id: string;
     createdAt: string;
     total: number;
-    status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "AWAITING_PAYMENT";
+    status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "AWAITING_PAYMENT" | "DELIVERING" | "PICKED_UP" | "ASSIGNED" | "COMPLETED";
     items: OrderItem[];
     paymentUrl?: string | null;
     paymentMethod: string;
@@ -94,6 +94,10 @@ export default function OrderHistoryPage() {
     const getStatusColor = (status: Order["status"]) => {
         switch (status) {
             case "DELIVERED": return "bg-green-100 text-green-700 border-green-200";
+            case "DELIVERING": return "bg-emerald-100 text-emerald-700 border-emerald-200";
+            case "PICKED_UP": return "bg-teal-100 text-teal-700 border-teal-200";
+            case "ASSIGNED": return "bg-indigo-100 text-indigo-700 border-indigo-200";
+            case "COMPLETED": return "bg-green-100 text-green-700 border-green-200";
             case "PROCESSING": return "bg-blue-100 text-blue-700 border-blue-200";
             case "SHIPPED": return "bg-purple-100 text-purple-700 border-purple-200";
             case "CANCELLED": return "bg-red-100 text-red-700 border-red-200";
