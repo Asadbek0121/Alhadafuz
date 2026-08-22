@@ -55,6 +55,14 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **HOME_TOP "Bugungi takliflar" — ko'p mahsulotli carousel** (`c0ce935`):
+  - Frontend tahlili: "Bugungi takliflar" = `Hero` fallback carousel (Hero.tsx:162-196), `fallbackProducts` (homepage products) bilan — faqat HOME_TOP banner bo'lmasa ko'rinadi. HOME_SIDE (promo card) bitta `productId` ishlatadi, HOME_TOP esa oddiy banner edi.
+  - Schema: `BannerProduct` M-N modeli (bannerId, productId, order, `@@unique([bannerId,productId])`) + `Banner.image` nullable. 2 migratsiya: `20260822094929_banner_product_carousel`, `20260822095208_banner_image_nullable`.
+  - Admin form: HOME_TOP position → "Bosh Sahifa - Bugungi Takliflar (Mahsulotlar Carouseli)". Oddiy banner fieldlari (rasm, tavsif, link, product/category bog'lash) yashirildi; o'rniga "Carousel mahsulotlari" bo'limi: `[+ Mahsulot qo'shish]` modal (qidiruv + ko'p tanlash + "Tanlanganlarni qo'shish"), tanlanganlar ro'yxati (↑↓ tartib, olib tashlash). Faqat title, faol/noFaol, tartib, boshlanish/tugash vaqti qoldi. HOME_SIDE/CATEGORY_TOP o'zgarmadi.
+  - API: POST `bannerProducts.create` (index=order), PATCH `bannerProducts.deleteMany+create` (productIds `undefined`=tegma, `[]`=hammasini o'chir). GET `include bannerProducts` (order bo'yicha).
+  - `lib/data.ts`: BANNER_SITE_FIELDS ga `bannerProducts` qo'shildi; `getCachedActiveBanners` → `products` array (isDeleted=false + status published/ACTIVE filter).
+  - Hero: mahsulotli HOME_TOP banner slider'dan ajratilib "Bugungi takliflar" fallback carousel'ida chiqariladi (sarlavha banner title, dizayn o'zgarmadi). Mahsulotlar card ma'lumotini o'zidan oladi — admin qayta kiritmaydi.
+  - Verification: tsc 0, lint 0, build SUCCESS, /api/banners 200.
 - **Admin banner formasi frontend tizimiga moslashtirildi** (dinamik position forma):
   - Frontend tahlili (`Hero.tsx`, `CategoryContent.tsx`, `api/banners`, `lib/data.ts`, `lib/banner-schema.ts`): HOME_TOP (slider) faqat `title/description/image/link/order/start/endDate` ishlatadi; HOME_SIDE (promo card) `image/title/discount/price/oldPrice/endDate/productId/link`; CATEGORY_TOP (category carousel) `title/description/image/link` + M-N `categories`.
   - `PositionMeta` ga yangi flaglar: `needsDescription` (HOME_SIDE da yashirin — frontend tavsifni ko'rsatmaydi), `needsProductLink`, `needsCategoryLink` (CATEGORY_TOP da ikkalasi yashirin — frontend o'qimaydi; link qo'lda kiritiladi).
@@ -264,4 +272,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Admin banner formasi frontend tizimiga moslashtirildi, admin chat shablonlari, build SUCCESS)
+2026-08-22 (HOME_TOP ko'p mahsulotli carousel — BannerProduct M-N, admin form, Hero carousel, build SUCCESS)
