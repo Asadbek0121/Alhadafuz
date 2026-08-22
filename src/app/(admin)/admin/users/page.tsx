@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
-import { Search, ChevronLeft, ChevronRight, User, Shield, Calendar, Mail } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, User, Shield, Calendar, Mail, Phone } from "lucide-react";
 import CreateUserModal from "./CreateUserModal";
 import type { Metadata } from "next";
 
@@ -15,7 +15,7 @@ async function getUsers(where: any, skip: number, take: number) {
             skip,
             take,
             orderBy: { createdAt: "desc" },
-            select: { id: true, name: true, email: true, role: true, createdAt: true },
+            select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
         }),
         prisma.user.count({ where }),
     ]);
@@ -86,6 +86,7 @@ export default async function TopshiriqUsersPage({
                         <thead>
                             <tr className="bg-gray-50/50 border-b border-gray-100">
                                 <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Foydalanuvchi</th>
+                                <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Telefon</th>
                                 <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Email</th>
                                 <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Rol</th>
                                 <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Qo'shilgan sana</th>
@@ -105,6 +106,12 @@ export default async function TopshiriqUsersPage({
                                             >
                                                 {user.name || "Nomsiz"}
                                             </Link>
+                                        </div>
+                                    </td>
+                                    <td className="py-2.5 px-4">
+                                        <div className="flex items-center gap-2 text-gray-500 font-medium">
+                                            <Phone size={14} className="text-gray-300" />
+                                            {user.phone || "—"}
                                         </div>
                                     </td>
                                     <td className="py-2.5 px-4">

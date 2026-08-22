@@ -15,24 +15,25 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, email, username, password, role } = body;
+        const { name, email, username, password, role, phone } = body;
 
         if (!email || !password || !name || !username) {
             return NextResponse.json({ error: "Barcha maydonlarni to'ldiring" }, { status: 400 });
         }
 
-        // Check uniqueness
+        // Check uniqueness — email, username va phone (phone bo'lsa)
         const existing = await prisma.user.findFirst({
             where: {
                 OR: [
                     { email: email },
-                    { username: username }
+                    { username: username },
+                    ...(phone ? [{ phone }] : [])
                 ]
             }
         });
 
         if (existing) {
-            return NextResponse.json({ error: "Email yoki username allaqachon mavjud" }, { status: 409 });
+            return NextResponse.json({ error: "Email, username yoki telefon allaqachon mavjud" }, { status: 409 });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
                 email,
                 username,
                 uniqueId,
+                phone: phone || null,
                 hashedPassword,
                 password: hashedPassword, // Store in both just in case
                 role: role || "VENDOR",
