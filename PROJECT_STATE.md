@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Announcement location bilan bir bar — marquee** (`883a81f`): desktop top bar ichida location fixed `w-[300px]` chapda (icon/typography/o'lcham o'zgarmadi, faqat fixed width), undan keyingi available space'da sariq marquee announcement uzluksiz harakatlanadi (`translateX -50%` cheksiz, hover pause). Dots/slide/popup yo'q. "Yordam xizmatiga" → SupportChat. Mobil/planshetda alohida compact row (`xl:hidden`). Header qolgan qismi o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
 - **Test rejimi announcement bar** (`345b9ad`): yuqorida 36px`li announcement — 3 xabar (🛠️ test rejim, 💬 Yordam xizmatiga xabar qoldiring, 🚀 fikr/takliflar) har 3.5s silliq almashadi. "Yordam xizmatiga" tugma → `useChatStore.openMenu` (mavjud SupportChat ochiladi). Header'dan yuqorida, barcha ekranlarda. Location bar (Surxondaryo viloyati, Termiz) saqlandi. Header dizayni o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
 - **Language switcher cycle** (`d4b383c`): dropdown/popup butunlay olib tashlandi. Tugma doim KEYINGI tilni ko'rsatadi (UZ→RU, RU→EN, EN→UZ) va bosilganda darhol o'tadi. Route + query parametrlar saqlanadi (`/uz/product/123?x` → `/ru/product/123?x`). next-intl `router.replace(pathname, {locale})` ishlatiladi, yangi lokalizatsiya mexanizmi yaratilmadi. Header dizayni o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
 - **"Kodni olish" tugmasi 3-state UX** (`929cf99`): disabled holat och-kulrang bo'sh blok (`background:#f1f5f9`) edi — endi xira blue button (opacity 0.5), matn readable, spinner yo'q. Loading faqat API request paytida: spinner + "Yuborilmoqda..." (`Auth.sending`). Checkbox checked bo'lganda darhol active blue, uncheck da disabled. Checkbox loading paytida lock (disabled + opacity). Button o'lchami uchala state'da bir xil. Dizayn/ranglar o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
@@ -280,4 +281,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Test rejimi announcement bar, language switcher cycle, build SUCCESS)
+2026-08-22 (Announcement marquee location bilan bir bar, build SUCCESS)
