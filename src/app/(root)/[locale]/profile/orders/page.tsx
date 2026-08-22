@@ -2,7 +2,7 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useEffect, useState } from "react";
-import { Package, ChevronDown, ChevronUp, Search, Filter, ShoppingCart, ExternalLink } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Search, Filter, ShoppingCart, ExternalLink, MapPin } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
 import { useCartStore } from "@/store/useCartStore";
 import Link from "next/link";
@@ -166,6 +166,16 @@ export default function OrderHistoryPage() {
                                             >
                                                 {t('pay_now').toUpperCase()}
                                             </Button>
+                                        )}
+                                        {['PICKED_UP', 'DELIVERING', 'ASSIGNED', 'PROCESSING'].includes(order.status) && (
+                                            <Link
+                                                href={`/tracking?order=${order.id}`}
+                                                className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black h-7 md:h-9 px-2.5 md:px-3.5 rounded-lg text-[10px] md:text-xs transition-colors"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <MapPin size={12} />
+                                                <span className="hidden xs:inline">{t('track_order')}</span>
+                                            </Link>
                                         )}
                                         <div className="text-slate-400 p-1 bg-slate-50 rounded-lg group-hover:bg-white transition-colors">
                                             {expandedOrder === order.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}

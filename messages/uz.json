@@ -2,10 +2,10 @@
   "Meta": {
     "title": "Hadaf Market",
     "description": "O'zbekiston bo'ylab onlayn xarid qilish uchun HADAF Market — kiyim-kechak, kitoblar, elektronika va boshqa mahsulotlar marketplace'ida tezkor yetkazib berish.",
- "home": {
-  "title": "Hadaf Market — Onlayn savdo va tezkor yetkazib berish",
-  "description": "Hadaf Market — kitoblar, sovg'alar, o'yinchoqlar, kiyim-kechak va boshqa mahsulotlarni onlayn xarid qiling. Termiz bo'ylab tezkor yetkazib berish."
- },
+    "home": {
+      "title": "Hadaf Market — Onlayn savdo va tezkor yetkazib berish",
+      "description": "Hadaf Market — kitoblar, sovg'alar, o'yinchoqlar, kiyim-kechak va boshqa mahsulotlarni onlayn xarid qiling. Termiz bo'ylab tezkor yetkazib berish."
+    },
     "about": {
       "title": "Biz haqimizda",
       "description": "HADAF Marketpleys tarixi, jamoasi va qadriyatlari. Surxondaryo va butun O'zbekiston aholisi uchun qulaylik, tezkorlik va halollik standartlarini belgilovchi platforma."
@@ -629,7 +629,8 @@
     "pin_verify_btn": "Tasdiqlash",
     "pin_resend_tg": "Kodni qayta yuborish",
     "pin_set_btn": "PIN-kodni saqlash",
-    "system_error": "Tizim xatosi yuz berdi"
+    "system_error": "Tizim xatosi yuz berdi",
+    "track_order": "Kuzatish"
   },
   "BottomNav": {
     "home": "Bosh sahifa",
