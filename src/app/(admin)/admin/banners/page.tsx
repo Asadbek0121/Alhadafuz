@@ -254,7 +254,8 @@ export default function AdminBannersPage() {
                 const res = await fetch(`/api/products?q=${encodeURIComponent(productSearch)}`);
                 if (res.ok) {
                     const data = await res.json();
-                    setProductResults(Array.isArray(data) ? data : []);
+                    // API `q` bilan `{ products: [...] }`, parametrsiz esa to'g'ridan-to'g'ri array qaytaradi
+                    setProductResults(Array.isArray(data) ? data : (data?.products ?? []));
                 }
             } catch (err) {
                 console.error("Search error:", err);
@@ -278,7 +279,10 @@ export default function AdminBannersPage() {
                 const res = await fetch(`/api/products?q=${encodeURIComponent(carouselPickerSearch)}&limit=20`);
                 if (res.ok) {
                     const data = await res.json();
-                    setCarouselPickerResults(Array.isArray(data) ? data : []);
+                    // API `q` bilan `{ products: [...] }` obyekt qaytaradi — array emas.
+                    // Ilgari `Array.isArray(data)` bo'lgani uchun qidiruv hech qachon
+                    // natija ko'rsatmasdi (obyekt array emas → []).
+                    setCarouselPickerResults(Array.isArray(data) ? data : (data?.products ?? []));
                 }
             } catch (err) {
                 console.error("Carousel search error:", err);
