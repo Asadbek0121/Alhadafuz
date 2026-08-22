@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useReducedMotion } from "framer-motion";
+import { useState, useEffect, useRef } from "react";
 import { useChatStore } from "@/store/useChatStore";
 
 interface Announcement {
@@ -37,18 +36,19 @@ const autoTextColor = (bg?: string | null) => isDarkBg(bg) ? "#f8fafc" : DEFAULT
  *
  * - Faol announcementlar `/api/announcements` dan keladi (keshlangan)
  * - Bir nechta faol xabar bitta uzluksiz track'da ketma-ket chiqadi
- * - Seamless infinite loop: matn 3 marta takrorlanadi, translateX cheksiz
- * - Fade edges: container chetlarida 40px gradient mask
- * - Hover'da pause (desktop), reduced-motion'da harakat sekin
- * - "Yordam xizmatiga" → mavjud SupportChat
+ * - Seamless infinite loop: matn yetarlicha marta takrorlanadi,
+ *   translateX bitta kopiya kengligida cheksiz aylanadi
+ * - Fade edges: container chetlarida gradient mask
+ * - Hover'da pause (CSS), "Yordam xizmatiga" → mavjud SupportChat
  */
 export default function AnnouncementBar() {
     const { openMenu } = useChatStore();
-    const reduceMotion = useReducedMotion();
     const [items, setItems] = useState<Announcement[]>([]);
     const [loading, setLoading] = useState(true);
     const trackRef = useRef<HTMLDivElement>(null);
-    const [dur, setDur] = useState(40);
+    const [dur, setDur] = useState(30);
+    // Har bir kopiya kengligi — seamless loop uchun translateX shunga tayanadi
+    const [copyCount, setCopyCount] = useState(3);
 
     useEffect(() => {
         let cancelled = false;
@@ -68,27 +68,36 @@ export default function AnnouncementBar() {
         return () => { cancelled = true; };
     }, []);
 
-    // Track kengligiga qarab animation duration dinamik.
-    // Tezlik ~30px/s: matn uzun bo'lsa duration uzayadi.
-    const measureDuration = useCallback(() => {
-        const el = trackRef.current;
-        if (!el) return;
-        const half = el.scrollWidth / 3;
-        setDur(Math.max(20, Math.round(half / 30)));
-    }, [items.length]);
-
+    // Track o'lchamini o'lchab: kopiya soni va duration'ni aniqlaymiz.
+    // Marquee hech qachon to'xtamaydi — faqat tezlik matn uzunligiga bog'liq.
     useEffect(() => {
-        measureDuration();
-        const t = setTimeout(measureDuration, 300);
-        window.addEventListener('resize', measureDuration);
-        return () => { clearTimeout(t); window.removeEventListener('resize', measureDuration); };
-    }, [measureDuration]);
+        if (items.length === 0) return;
+        let raf = 0;
+        const measure = () => {
+            const el = trackRef.current;
+            if (!el) return;
+            const copyEl = el.querySelector('[data-copy]') as HTMLElement | null;
+            if (!copyEl) return;
+            const copyW = copyEl.offsetWidth;
+            const containerW = el.parentElement?.clientWidth || 0;
+            // Konteynerni kamida 3 marta to'ldiradigan kopiya soni
+            const copies = Math.max(3, Math.ceil((containerW * 3) / Math.max(1, copyW)) + 1);
+            setCopyCount(copies);
+            // Tezlik ~35px/s — matn uzun bo'lsa duration uzayadi
+            setDur(Math.max(18, Math.round((copyW * copies) / (35 * 3))));
+        };
+        raf = window.requestAnimationFrame(measure);
+        const t = setTimeout(measure, 300);
+        window.addEventListener('resize', measure);
+        return () => { cancelAnimationFrame(raf); clearTimeout(t); window.removeEventListener('resize', measure); };
+    }, [items.length]);
 
     // Hech qanday faol xabar yo'q — announcement ko'rinmaydi (location bar qoladi)
     if (loading || items.length === 0) return null;
 
-    // Marquee track: har bir xabarni 3 marta takrorlab seamless halqa yasaymiz.
-    const tracks = [...items, ...items, ...items];
+    // Seamless loop: track = N kopiya (har kopiya = barcha announcementlar).
+    // translateX(-100%/N) bir kopiyaga teng — cheksiz takrorlanadi, jump yo'q.
+    const tracks = Array.from({ length: copyCount }, (_, i) => ({ items, key: i }));
 
     return (
         <div
@@ -98,48 +107,59 @@ export default function AnnouncementBar() {
                 color: items[0]?.textColor || autoTextColor(items[0]?.backgroundColor)
             }}
         >
-            {/* Fade edges — chap va o'ng chetlar yumshoq */}
+            {/* Fade edges — 80px, yumshoq, hard edge yo'q */}
             <div
-                className="absolute inset-y-0 left-0 w-[40px] z-10 pointer-events-none"
+                className="absolute inset-y-0 left-0 w-[80px] z-10 pointer-events-none"
                 style={{ background: `linear-gradient(to right, ${items[0]?.backgroundColor || DEFAULT_BG}, transparent)` }}
             />
             <div
-                className="absolute inset-y-0 right-0 w-[40px] z-10 pointer-events-none"
+                className="absolute inset-y-0 right-0 w-[80px] z-10 pointer-events-none"
                 style={{ background: `linear-gradient(to left, ${items[0]?.backgroundColor || DEFAULT_BG}, transparent)` }}
             />
 
             <div
                 ref={trackRef}
-                className="flex shrink-0 items-center marquee-announce"
+                data-track
+                className="marquee-announce"
                 style={{
-                    animationDuration: reduceMotion ? `${dur * 3}s` : `${dur}s`,
-                    animationPlayState: reduceMotion ? 'paused' : 'running'
+                    display: 'flex',
+                    alignItems: 'center',
+                    whiteSpace: 'nowrap',
+                    width: 'max-content',
+                    animationDuration: `${dur}s`,
+                    // translateX % elementi o'z kengligiga nisbatan — bitta kopiya
+                    // (100/N %) siljiganda layout aynan takrorlanadi (seamless)
+                    ['--marquee-shift' as any]: `${100 / copyCount}%`
                 }}
             >
-                {tracks.map((item, i) => (
-                    <span
-                        key={`${item.id}-${i}`}
-                        className="inline-flex items-center gap-1.5 whitespace-nowrap pr-12"
-                        style={{ fontSize: 12, fontWeight: 600, lineHeight: '34px' }}
-                    >
-                        {item.icon && <span>{item.icon}</span>}
-                        <span>
-                            {item.text.split('Yordam xizmatiga').map((part, pi, arr) => (
-                                <span key={pi}>
-                                    {part}
-                                    {pi < arr.length - 1 && (
-                                        <button
-                                            type="button"
-                                            onClick={openMenu}
-                                            className="font-black underline underline-offset-2 decoration-current/40 hover:decoration-current cursor-pointer"
-                                        >
-                                            Yordam xizmatiga
-                                        </button>
-                                    )}
+                {tracks.map(({ items: copyItems, key }) => (
+                    <div key={key} data-copy className="flex shrink-0 items-center">
+                        {copyItems.map((item) => (
+                            <span
+                                key={`${key}-${item.id}`}
+                                className="inline-flex items-center gap-1.5 pr-12"
+                                style={{ fontSize: 12, fontWeight: 600, lineHeight: '34px', whiteSpace: 'nowrap' }}
+                            >
+                                {item.icon && <span>{item.icon}</span>}
+                                <span>
+                                    {item.text.split('Yordam xizmatiga').map((part, pi, arr) => (
+                                        <span key={pi}>
+                                            {part}
+                                            {pi < arr.length - 1 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={openMenu}
+                                                    className="font-black underline underline-offset-2 decoration-current/40 hover:decoration-current cursor-pointer"
+                                                >
+                                                    Yordam xizmatiga
+                                                </button>
+                                            )}
+                                        </span>
+                                    ))}
                                 </span>
-                            ))}
-                        </span>
-                    </span>
+                            </span>
+                        ))}
+                    </div>
                 ))}
             </div>
 
@@ -148,12 +168,13 @@ export default function AnnouncementBar() {
                     animation-name: hadaf-announce-scroll;
                     animation-timing-function: linear;
                     animation-iteration-count: infinite;
+                    animation-play-state: running;
                     will-change: transform;
                 }
                 .marquee-announce:hover { animation-play-state: paused; }
                 @keyframes hadaf-announce-scroll {
                     0% { transform: translateX(0); }
-                    100% { transform: translateX(-33.3333%); }
+                    100% { transform: translateX(calc(-1 * var(--marquee-shift, 33.333%))); }
                 }
             `}</style>
         </div>

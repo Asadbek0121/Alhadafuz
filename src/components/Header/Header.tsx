@@ -411,9 +411,13 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                 {/* Desktop Top Bar: location (fixed) + announcement (marquee) */}
 
                 <div className="hidden xl:block w-full bg-slate-50 border-b border-slate-200 py-0 z-[51]">
-                    <div className="container flex items-center">
+                    <div className="w-full flex items-center">
+                        {/* Location — container content edge bilan align (pl dinamik).
+                            Container max-width 1400 (>=1440vw), 1280 (1280-1440), 100% (<1280).
+                            pl = container left padding + margin. */}
                         <div
                             className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity w-[300px] flex-none h-[34px]"
+                            style={{ paddingLeft: `max(24px, calc((100vw - 1400px) / 2 + 24px))` }}
                             onClick={openMap}
                         >
                             <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm shrink-0 group-hover:border-blue-300 transition-colors">
@@ -426,7 +430,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                             </div>
                         </div>
 
-                        {/* Announcement marquee — location'dan keyingi available space */}
+                        {/* Announcement marquee — qolgan kenglikni to'liq egallaydi,
+                            o'ng cheti viewport chetigacha yetadi. */}
                         <div className="flex-1 min-w-0">
                             <AnnouncementBar />
                         </div>
