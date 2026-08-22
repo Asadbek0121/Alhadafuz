@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useUserStore } from '@/store/useUserStore';
-import { X, Loader2, Phone } from 'lucide-react';
+import { X, Loader2, Phone, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
 import { useRouter } from '@/navigation';
@@ -18,8 +18,7 @@ import DocumentViewer from './DocumentViewer';
 import styles from './AuthModal.module.css';
 
 // Faqat shu sayt ichidagi manzillarga yo'naltirish — open-redirect himoyasi
-const getSafeCallbackUrl = () => {
-    const params = new URLSearchParams(window.location.search);
+const getSafeCallbackUrl = () => {    const params = new URLSearchParams(window.location.search);
     const cb = params.get('callbackUrl');
     if (!cb) return null;
     try {
@@ -64,7 +63,6 @@ export default function AuthModal({
     const modalRef = React.useRef<HTMLDivElement>(null);
     const phoneInputRef = React.useRef<HTMLInputElement>(null);
     const otpInputRef = React.useRef<HTMLInputElement>(null);
-    const confirmBtnRef = React.useRef<HTMLButtonElement>(null);
     const openedByRef = React.useRef<HTMLElement | null>(null);
 
     // `?resetSuccess=true` bilan kelganda muvaffaqiyat ekrani ko'rsatiladi va
@@ -89,6 +87,10 @@ export default function AuthModal({
     const [showTermsWarning, setShowTermsWarning] = useState(false);
     /** Hujjat viewer: 'terms' (Ommaviy oferta) yoki 'privacy' (Maxfiylik siyosati). */
     const [docViewer, setDocViewer] = useState<'terms' | 'privacy' | null>(null);
+    /** OTP inline xato — input ostida ko'rinadi (toast o'rniga aniqroq). */
+    const [otpError, setOtpError] = useState<string | null>(null);
+    /** OTP muvaffaqiyatli tasdiqlanganda "✅ Tasdiqlandi" holati. */
+    const [otpVerified, setOtpVerified] = useState(false);
 
     // Escape bilan yopish: hujjat viewer ochiq bo'lsa avval uni, aks holda modalni
     useEffect(() => {
@@ -119,6 +121,8 @@ export default function AuthModal({
                 setIsVerifying(false);
                 setOtp('');
                 setIsSuccess(false);
+                setOtpError(null);
+                setOtpVerified(false);
             }, 300);
             return () => clearTimeout(t);
         }
@@ -215,6 +219,9 @@ export default function AuthModal({
             toast.error(t('phone_invalid'));
             return;
         }
+        setOtpError(null);
+        setOtpVerified(false);
+        setOtp('');
         setIsLoading(true);
 
         try {
@@ -277,23 +284,32 @@ export default function AuthModal({
                 // eski versiyalarda `result.error` ichida bo'lardi — ikkalasini ham tekshiramiz
                 const err = result?.code || result.error || "";
                 const hasErr = (s: string) => err.includes(s) || (result.error || "").includes(s);
+                setOtpVerified(false);
                 if (hasErr("ACCOUNT_LOCKED")) {
+                    setOtpError(t('account_locked'));
                     toast.error(t('account_locked'));
                 } else if (hasErr("OTP_INVALID")) {
-                    toast.error(t('otp_invalid'));
+                    // Noto'g'ri yoki muddati o'tgan kod — input ostida aniq xato,
+                    // input tozalanadi va qayta kiritish mumkin
+                    setOtpError(t('otp_invalid'));
                     setOtp("");
                     // Xato kodda fokusni yana OTP maydoniga qaytarish (klaviatura flow)
                     setTimeout(() => otpInputRef.current?.focus(), 100);
                 } else if (hasErr("USER_NOT_FOUND")) {
+                    setOtpError(t('user_not_found'));
                     toast.error(t('user_not_found'));
                 } else if (hasErr("INVALID_NAME")) {
+                    setOtpError(t('name_invalid'));
                     toast.error(t('name_invalid'));
                     setIsVerifying(false);
                 } else {
+                    setOtpError(t('login_error_generic'));
                     toast.error(t('login_error_generic'));
                 }
                 localStorage.removeItem('mergeCartOnLogin');
             } else {
+                setOtpError(null);
+                setOtpVerified(true);
                 handleSuccess(mode === 'login' ? t('welcome') : t('register_success'));
             }
         } catch (error) {
@@ -304,29 +320,23 @@ export default function AuthModal({
         }
     };
 
+    // Enter bilan ham tasdiqlash mumkin (form submit). Kod to'liq bo'lmasa
+    // avtomatik verify boshlanmaydi — inline xato emas, shunchaki e'tiborsiz qoladi.
     const handleVerifyOTP = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (otp.length === 6) {
+        if (otp.length === 6 && !isLoading) {
+            setOtpError(null);
             await performVerification(otp);
-        } else {
-            toast.error(t('code_incomplete'));
         }
     };
 
-    // Auto-verify when code is fully entered
+    // 6 raqam to'liq kiritilganda avtomatik verification — "Tasdiqlash" tugmasi
+    // yo'q (User UX: kodni yozadi, 6-raqam bilan avtomatik yuboriladi).
     useEffect(() => {
         if (otp.length === 6 && isVerifying && !isLoading) {
             performVerification(otp);
         }
     }, [otp, isVerifying]);
-
-    // 6 raqam to'liq kiritilganda fokusni "Tasdiqlash" tugmasiga o'tkazish —
-    // Enter bilan ham tasdiqlash mumkin (klaviatura flow)
-    useEffect(() => {
-        if (otp.length === 6 && isVerifying && !isLoading) {
-            confirmBtnRef.current?.focus();
-        }
-    }, [otp, isVerifying, isLoading]);
 
     const handleSocialLogin = async (provider: string) => {
         if (!termsAccepted) {
@@ -464,13 +474,22 @@ export default function AuthModal({
 
                                         <form onSubmit={isVerifying ? handleVerifyOTP : handleSendOTP} className="space-y-2 lg:space-y-4">
                                             {isVerifying ? (
-                                                <div className="space-y-6">
-                                                    <div className="bg-slate-50 p-4 rounded-2xl flex items-center justify-between border border-slate-100">
-                                                        <div className="flex items-center gap-3">
-                                                            <Phone size={18} className="text-blue-600" />
-                                                            <span className="font-bold text-slate-700">{phone}</span>
+                                                <div className="space-y-5">
+                                                    {/* Telefon bloki — compact, bir qator, number + action o'ngda */}
+                                                    <div className="bg-slate-50 rounded-2xl border border-slate-100 px-4 py-3 flex items-center justify-between gap-3">
+                                                        <div className="flex items-center gap-2.5 min-w-0">
+                                                            <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-blue-600 flex-none">
+                                                                <Phone size={15} />
+                                                            </div>
+                                                            <span className="font-bold text-slate-700 text-sm truncate">{phone}</span>
                                                         </div>
-                                                        <button type="button" onClick={() => setIsVerifying(false)} className="text-[10px] font-black uppercase text-blue-600 hover:underline">{t('change_number')}</button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setIsVerifying(false); setOtpError(null); setOtp(""); }}
+                                                            className="text-[10px] font-black uppercase text-blue-600 hover:underline whitespace-nowrap flex-none"
+                                                        >
+                                                            {t('change_number')}
+                                                        </button>
                                                     </div>
 
                                                     <div className={styles.inputGroup}>
@@ -478,27 +497,63 @@ export default function AuthModal({
                                                         <input
                                                             ref={otpInputRef}
                                                             type="text"
+                                                            inputMode="numeric"
+                                                            autoComplete="one-time-code"
+                                                            maxLength={6}
                                                             placeholder="······"
                                                             value={otp}
-                                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                                                            disabled={isLoading}
+                                                            onChange={(e) => {
+                                                                setOtpError(null);
+                                                                setOtpVerified(false);
+                                                                setOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                                                            }}
+                                                            onPaste={(e) => {
+                                                                // Paste orqali kod to'liq kelsa ham auto-verify ishlaydi
+                                                                const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                                                                if (pasted.length >= 6) {
+                                                                    e.preventDefault();
+                                                                    setOtpError(null);
+                                                                    setOtp(pasted);
+                                                                }
+                                                            }}
                                                             required
-                                                            className={`${styles.inputField} text-center tracking-[8px] text-2xl font-black placeholder:tracking-[2px]`}
+                                                            aria-invalid={!!otpError}
+                                                            className={`${styles.inputField} text-center tracking-[8px] text-2xl font-black placeholder:tracking-[2px] ${otpError ? 'border-red-400 focus:border-red-500 focus:ring-red-500/10' : ''} ${isLoading ? 'opacity-60' : ''}`}
                                                         />
+
+                                                        {/* Inline xato — input ostida aniq tushuntirish */}
+                                                        {otpError && (
+                                                            <p className="mt-2 text-xs font-bold text-red-500 flex items-center gap-1.5" role="alert">
+                                                                <ShieldAlert size={13} />
+                                                                {otpError}
+                                                            </p>
+                                                        )}
+
+                                                        {/* Auto-verify loading holati — "Tekshirilmoqda..." */}
+                                                        {isLoading && !otpVerified && (
+                                                            <div className="mt-2 flex items-center gap-2 text-xs font-bold text-blue-600">
+                                                                <Loader2 size={13} className="animate-spin" />
+                                                                {t('checking')}
+                                                            </div>
+                                                        )}
+
+                                                        {/* Tasdiqlangan holat */}
+                                                        {otpVerified && (
+                                                            <div className="mt-2 flex items-center gap-1.5 text-xs font-bold text-emerald-600">
+                                                                <CheckCircle2 size={13} />
+                                                                {t('verified')}
+                                                            </div>
+                                                        )}
                                                     </div>
 
                                                     <div className="space-y-3">
-                                                        {/* disabled emas — aks holda auto-verify paytida fokus tugmadan tushib ketadi.
-                                                            Double-submit performVerification ichidagi isLoading guard bilan himoyalangan. */}
-                                                        <button ref={confirmBtnRef} type="submit" aria-busy={isLoading} className={styles.primaryBtn}>
-                                                            {isLoading ? <Loader2 className="animate-spin" /> : t('confirm')}
-                                                        </button>
-
                                                         {timeLeft > 0 ? (
                                                             <div className="text-center text-xs font-bold text-slate-400">
                                                                 {t('resend_in')} <span className="text-blue-600 ml-1">{Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, '0')}</span>
                                                             </div>
                                                         ) : (
-                                                            <button type="button" onClick={handleSendOTP} className="w-full text-center text-xs font-black text-blue-600 hover:underline uppercase">{t('resend')}</button>
+                                                            <button type="button" onClick={handleSendOTP} disabled={isLoading} className="w-full text-center text-xs font-black text-blue-600 hover:underline uppercase disabled:opacity-50">{t('resend')}</button>
                                                         )}
 
                                                         <div className="relative py-2">
