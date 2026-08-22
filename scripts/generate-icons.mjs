@@ -1,17 +1,13 @@
 /**
- * Generates the HADAF favicon + app icons from public/logo.png.
+ * Generates the HADAF favicon + app icons from the brand logo.
  *
  * Run with: node scripts/generate-icons.mjs
  *
- * The source logo (1024x1024) is a stacked lockup: the "HADAF" wordmark on top
- * (x167-855, y239-638), an underline bar, and the "MARKET" tagline below.
- *
- * FAVICON MARK: the full wordmark is 689x400 (aspect 1.72:1) — on a square
- * 16-48px favicon it leaves the brand mark tiny (only ~55% of the canvas
- * height). Instead we use the brand's "H" letter alone: the H is the blue
- * first letter at x167-439, y239-638 (272x360 after trim). It is the most
- * recognisable HADAF mark and reads clearly at 16px. It is centered on the
- * square canvas filling ~88% of the height so it is large and crisp.
+ * SOURCE is the current authoritative HADAF logo asset:
+ * public/assets/96a584ea-7804-4a1c-9de7-42f6a09f01e9.png (1254x1254).
+ * Its content box is x76-1183, y228-1064 (1108x837) — the full HADAF wordmark
+ * (blue H + orange ADF). The favicon uses the whole wordmark, centered on a
+ * square canvas and scaled so it fills ~88% of the tile, never clipped.
  *
  * sharp cannot write .ico, so the container is assembled by hand: an ICO is a
  * 6-byte header, one 16-byte directory entry per size, then the image payloads.
@@ -20,13 +16,10 @@
 import sharp from 'sharp';
 import { writeFile, rm } from 'node:fs/promises';
 
-const SOURCE = 'public/logo.png';
+const SOURCE = 'public/assets/96a584ea-7804-4a1c-9de7-42f6a09f01e9.png';
 
-// Measured content box of the blue "H" (brand mark) inside the 1024x1024
-// source. This is the first letter of the HADAF wordmark, brand blue.
-// Generous box — squareSource() trims transparent edges afterwards, so a wide
-// crop cannot clip the letter; it only guarantees the full H is captured.
-const CONTENT = { left: 160, top: 270, width: 340, height: 520 };
+// Measured content box of the full HADAF wordmark inside the 1254x1254 source.
+const CONTENT = { left: 76, top: 228, width: 1108, height: 837 };
 
 // H mark fills 88% of the tile height; the rest is breathing room so it does
 // not touch the edges of the browser's favicon slot.
