@@ -26,6 +26,7 @@ import CartDrawer from '../Cart/CartDrawer';
 import MegaMenu from './MegaMenu';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
+import AnnouncementBar from './AnnouncementBar';
 import NotificationIcon from '../ui/NotificationIcon';
 
 
@@ -400,6 +401,9 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
 
     return (
         <>
+            {/* Test rejim announcement — header'dan yuqorida, barcha ekranlarda */}
+            <AnnouncementBar />
+
             <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300">
                 {/* Desktop Top Bar (Location) */}
 
