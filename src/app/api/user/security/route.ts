@@ -32,7 +32,21 @@ export async function POST(req: Request) {
 
             const userPassword = user.password || user.hashedPassword;
             if (userPassword) {
-                const isMatch = await bcrypt.compare(currentPassword, userPassword);
+                // Auth (src/auth.ts) bilan bir xil mantiq: parol argon2 yoki
+                // bcrypt bilan hashlangan bo'lishi mumkin. Ilgari faqat bcrypt
+                // tekshirilardi — argon2 hashlangan parol bor foydalanuvchida
+                // "Incorrect current password" xatosi chiqib, parolni
+                // o'zgartirib bo'lmasdi.
+                let isMatch = false;
+                try {
+                    if (userPassword.startsWith('$argon2')) {
+                        isMatch = await argon2.verify(userPassword, currentPassword);
+                    } else {
+                        isMatch = await bcrypt.compare(currentPassword, userPassword);
+                    }
+                } catch (e) {
+                    console.error("Hash error:", e);
+                }
                 if (!isMatch) {
                     return NextResponse.json({ error: 'Incorrect current password' }, { status: 403 });
                 }
