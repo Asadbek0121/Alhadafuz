@@ -55,6 +55,12 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Kuryer tracking dashboard — real-time buyurtma kuzatish**:
+  - Yangi `/api/orders/tracking`: user'ning faol COURIER buyurtmalari (ASSIGNED/PROCESSING/PICKED_UP/DELIVERING) — kuryer joylashuvi (lat/lng, vehicle, lastLocationAt, courierLevel), do'kon (boshlang'ich nuqta), mijoz manzili, maskalangan kuryer telefon raqami, location age ("necha daqiqa oldin").
+  - Yangi `/uz/tracking` sahifa: Yandex xaritada do'kon → kuryer → manzil marshruti (MultiRoute), buyurtmalar ro'yxati, kuryer info card (ism/telefon/transport/daraja), 8s polling, `?order=ID` parametri orqali oldindan tanlash.
+  - Profile orders'da faol buyurtmalar uchun "Kuzatish" tugmasi → `/tracking?order=ID`.
+  - i18n: `Profile.track_order` (uz: Kuzatish, ru: Отследить, en: Track).
+  - Verification: tsc 0, lint 0, build SUCCESS. Test order (DELIVERING) API SQL'da kuryer lat/vehicle bilan qaytdi, keyin tozalandi.
 - **Favicon/SEO/branding complete fix** (Chrome favicon kichik + Google globe + eski contact'lar):
   - **Root cause**: `generate-icons.mjs` butun logotipni (HADAF + bar + MARKET, 690x548) faviconga sig'dirardi — brand mark kichik edi. Google faviconga etarli aniqlik bermagani uchun globe (default) ikonka ko'rsatardi.
   - **Fix**: favicon endi faqat HADAF wordmark (`public/logo.png` 167-855/239-638), 32x32 tab'da 30px enni egallaydi. Yangi: `src/app/favicon.ico` (16/32/48 ICO), `public/favicon-16/32.png`, `icon-192/512.png`, `icon-maskable-192/512.png`, `apple-touch-icon.png` (180 white tile), `og-image.png` (regenerated brand OG). `public/favicon.ico` o'chirildi (src/app'ga shadow bo'lardi — bitta authoritative source).
