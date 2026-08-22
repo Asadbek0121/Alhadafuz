@@ -151,17 +151,27 @@ try {
     // already gone
 }
 
-// Standalone PNGs for browsers/tools that ignore .ico sizes, plus the PWA
-// manifest and apple-touch-icon. Transparent for the browser/manifest icons,
-// solid white for apple-touch-icon and the maskable PWA variants.
+// Standalone PNGs for the PWA manifest and apple-touch-icon. The site favicon
+// itself is ONLY src/app/favicon.ico (single authoritative source — Next.js
+// emits <link rel="icon" href="/favicon.ico"> from it). No extra
+// public/favicon-*.png duplicates are emitted so there is no conflicting source.
 for (const [size, path] of [
-    [16, 'public/favicon-16x16.png'],
-    [32, 'public/favicon-32x32.png'],
     [192, 'public/icon-192.png'],
     [512, 'public/icon-512.png'],
 ]) {
     await writeFile(path, await squareMark(source, size));
     console.log(`${path} — ${size}x${size}`);
+}
+
+// Clean up legacy standalone favicon PNGs that are no longer referenced anywhere
+// (they were only produced by older versions of this script).
+for (const path of ['public/favicon-16x16.png', 'public/favicon-32x32.png']) {
+    try {
+        await rm(path);
+        console.log(`${path} — removed (single favicon source is favicon.ico)`);
+    } catch {
+        // already gone
+    }
 }
 
 await writeFile('public/apple-touch-icon.png', await tileMark(source, 180, 0.82));
