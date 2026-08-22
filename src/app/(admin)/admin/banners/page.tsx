@@ -551,31 +551,31 @@ export default function AdminBannersPage() {
     });
 
     return (
-        <div className="p-6 space-y-8 bg-gray-50/50 min-h-screen">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="p-5 space-y-4 bg-gray-50/50 min-h-screen">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                 <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-gray-900">Bannerlar Boshqaruvi</h1>
-                    <p className="text-gray-500 mt-1">Reklama va e'lonlar uchun bannerlar tizimi</p>
+                    <h1 className="text-xl font-extrabold tracking-tight text-gray-900">Bannerlar Boshqaruvi</h1>
+                    <p className="text-gray-500 mt-0.5 text-sm">Reklama va e'lonlar uchun bannerlar tizimi</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     {expiredActiveCount > 0 && (
                         <Button
                             variant="outline"
                             onClick={handleDeactivateExpired}
                             disabled={cleaningUp}
-                            className="gap-2 rounded-xl border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-5"
+                            className="gap-2 rounded-lg border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 px-3.5 h-9"
                             title="endDate o'tgan faol bannerlarni isActive=false qilish"
                         >
-                            {cleaningUp ? <Loader2 size={18} className="animate-spin" /> : <AlertTriangle size={18} />}
+                            {cleaningUp ? <Loader2 size={16} className="animate-spin" /> : <AlertTriangle size={16} />}
                             {cleaningUp ? "Yopilmoqda..." : `Muddati o'tganlarni yopish (${expiredActiveCount})`}
                         </Button>
                     )}
                     <Button
                         onClick={() => { setShowForm(!showForm); if (showForm) resetForm(); }}
-                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-xl shadow-lg shadow-blue-100 transition-all active:scale-95 px-6"
+                        className="bg-blue-600 hover:bg-blue-700 text-white gap-2 rounded-lg shadow-md shadow-blue-100 transition-all active:scale-95 px-4 h-9"
                         aria-label={showForm ? "Formani yopish" : "Yangi banner qo'shish"}
                     >
-                        {showForm ? <X size={18} /> : <Plus size={18} />}
+                        {showForm ? <X size={16} /> : <Plus size={16} />}
                         {showForm ? "Yopish" : "Yangi Banner"}
                     </Button>
                 </div>
@@ -587,15 +587,15 @@ export default function AdminBannersPage() {
                         initial={{ opacity: 0, y: -20 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -20 }}
-                        className="bg-white p-8 rounded-3xl border border-gray-100 shadow-2xl shadow-gray-200/50"
+                        className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm"
                     >
-                        <h2 className="text-xl font-black text-gray-900 mb-6 flex items-center gap-2">
-                            {editId ? <Edit2 className="text-blue-600" size={24} /> : <ImageIcon className="text-blue-600" size={24} />}
+                        <h2 className="text-lg font-black text-gray-900 mb-4 flex items-center gap-2">
+                            {editId ? <Edit2 className="text-blue-600" size={20} /> : <ImageIcon className="text-blue-600" size={20} />}
                             {editId ? 'Banner tahrirlash' : 'Yangi banner qo\'shish'}
                         </h2>
 
-                        <form onSubmit={handleSubmit} className="space-y-8">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label htmlFor="banner-title" className="text-sm font-bold text-gray-700 ml-1">Sarlavha (Title)</label>
@@ -604,7 +604,7 @@ export default function AdminBannersPage() {
                                             value={title}
                                             onChange={e => setTitle(e.target.value)}
                                             required
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                             placeholder="Masalan: Yozgi chegirmalar"
                                         />
                                     </div>
@@ -615,7 +615,7 @@ export default function AdminBannersPage() {
                                             id="banner-position"
                                             value={position}
                                             onChange={e => setPosition(e.target.value as PositionMeta['value'])}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium appearance-none"
                                             title="Banner joylashuvini tanlang"
                                             aria-label="Banner joylashuvi"
                                         >
@@ -639,7 +639,7 @@ export default function AdminBannersPage() {
                                             id="banner-description"
                                             value={description}
                                             onChange={e => setDescription(e.target.value)}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium min-h-[100px]"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium min-h-[72px]"
                                             placeholder="Sarlavha ostida chiqadigan matn"
                                         />
                                         <p className="text-xs text-gray-500 ml-1">
@@ -652,7 +652,7 @@ export default function AdminBannersPage() {
                                     <div className="space-y-2">
                                         <span className="text-sm font-bold text-gray-700 ml-1">Status</span>
                                         <div className="flex items-center gap-4">
-                                            <label htmlFor="status-active" className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                            <label htmlFor="status-active" className={`flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${isActive ? 'bg-emerald-50 border-emerald-200 text-emerald-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
                                                 <input
                                                     id="status-active"
                                                     type="radio"
@@ -661,9 +661,9 @@ export default function AdminBannersPage() {
                                                     checked={isActive}
                                                     onChange={() => setIsActive(true)}
                                                 />
-                                                <CheckCircle2 size={18} /> Faol
+                                                <CheckCircle2 size={16} /> Faol
                                             </label>
-                                            <label htmlFor="status-inactive" className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-2xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
+                                            <label htmlFor="status-inactive" className={`flex-1 flex items-center justify-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${!isActive ? 'bg-slate-50 border-slate-300 text-slate-700 font-bold' : 'bg-white border-gray-200 text-gray-500'}`}>
                                                 <input
                                                     id="status-inactive"
                                                     type="radio"
@@ -672,7 +672,7 @@ export default function AdminBannersPage() {
                                                     checked={!isActive}
                                                     onChange={() => setIsActive(false)}
                                                 />
-                                                <XCircle size={18} /> Nofaol
+                                                <XCircle size={16} /> Nofaol
                                             </label>
                                         </div>
                                     </div>
@@ -711,12 +711,12 @@ export default function AdminBannersPage() {
                                             )}
 
                                             <div className="relative">
-                                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                                 <input
                                                     id="banner-category-picker"
                                                     value={categoryPickerSearch}
                                                     onChange={e => setCategoryPickerSearch(e.target.value)}
-                                                    className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                    className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                     placeholder="Kategoriya nomi bo'yicha filtrlash..."
                                                 />
                                             </div>
@@ -732,7 +732,7 @@ export default function AdminBannersPage() {
                                                     pickerResults.map(cat => (
                                                         <label
                                                             key={cat.id}
-                                                            className="flex items-center gap-3 p-3 hover:bg-gray-50 cursor-pointer transition-colors"
+                                                            className="flex items-center gap-2.5 p-2 hover:bg-gray-50 cursor-pointer transition-colors"
                                                         >
                                                             <input
                                                                 type="checkbox"
@@ -774,7 +774,7 @@ export default function AdminBannersPage() {
                                                         min="0"
                                                         value={price}
                                                         onChange={e => setPrice(e.target.value)}
-                                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                         placeholder="Masalan: 549000"
                                                     />
                                                 </div>
@@ -786,7 +786,7 @@ export default function AdminBannersPage() {
                                                         min="0"
                                                         value={oldPrice}
                                                         onChange={e => setOldPrice(e.target.value)}
-                                                        className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                        className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                         placeholder="Masalan: 819000"
                                                     />
                                                 </div>
@@ -798,7 +798,7 @@ export default function AdminBannersPage() {
                                                     id="banner-discount"
                                                     value={discount}
                                                     onChange={e => { discountTouched.current = true; setDiscount(e.target.value); }}
-                                                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                     placeholder="-34%"
                                                 />
                                                 <p className="text-xs text-gray-500 ml-1">
@@ -825,7 +825,7 @@ export default function AdminBannersPage() {
                                                 min="0"
                                                 value={order}
                                                 onChange={e => setOrder(e.target.value)}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                 placeholder="0"
                                             />
                                             <p className="text-xs text-gray-500 ml-1">Kichik raqam oldin chiqadi</p>
@@ -841,7 +841,7 @@ export default function AdminBannersPage() {
                                                 type="datetime-local"
                                                 value={startDate}
                                                 onChange={e => setStartDate(e.target.value)}
-                                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                 title="Banner qachondan boshlab ko'rinishi"
                                             />
                                             <p className="text-xs text-gray-500 ml-1">Bo'sh = darhol ko'rinadi</p>
@@ -856,7 +856,7 @@ export default function AdminBannersPage() {
                                             value={endDate}
                                             min={startDate || undefined}
                                             onChange={e => setEndDate(e.target.value)}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                             title="Banner qachon to'xtashi"
                                         />
                                         <p className="text-xs text-gray-500 ml-1">
@@ -883,12 +883,12 @@ export default function AdminBannersPage() {
                                             <div className="space-y-2 relative">
                                                 <label htmlFor="banner-product-search" className="text-xs font-bold text-gray-500 ml-1">Mahsulotga bog'lash</label>
                                                 <div className="relative">
-                                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                                     <input
                                                         id="banner-product-search"
                                                         value={productSearch}
                                                         onChange={e => setProductSearch(e.target.value)}
-                                                        className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                         placeholder="Mahsulot nomini qidirish..."
                                                     />
                                                     {isSearchingProduct && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-blue-500" size={16} />}
@@ -909,9 +909,9 @@ export default function AdminBannersPage() {
                                                                     setTargetCategoryId(null);
                                                                     setCategorySearch('');
                                                                 }}
-                                                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                                                                className="w-full flex items-center gap-2.5 p-2 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                                                             >
-                                                                <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden">
+                                                                <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden">
                                                                     <img src={p.image} alt="" className="w-full h-full object-cover" />
                                                                 </div>
                                                                 <div className="text-left">
@@ -941,12 +941,12 @@ export default function AdminBannersPage() {
                                             <div className="space-y-2 relative">
                                                 <label htmlFor="banner-category-search" className="text-xs font-bold text-gray-500 ml-1">Kategoriyaga bog'lash</label>
                                                 <div className="relative">
-                                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
                                                     <input
                                                         id="banner-category-search"
                                                         value={categorySearch}
                                                         onChange={e => setCategorySearch(e.target.value)}
-                                                        className="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                                        className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                                         placeholder="Kategoriya qidirish..."
                                                     />
                                                     {!categoriesLoaded && <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 animate-spin text-blue-500" size={16} />}
@@ -965,10 +965,10 @@ export default function AdminBannersPage() {
                                                                     setProductId(null);
                                                                     setProductSearch('');
                                                                 }}
-                                                                className="w-full flex items-center gap-3 p-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
+                                                                className="w-full flex items-center gap-2.5 p-2 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0"
                                                             >
-                                                                <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
-                                                                    <Folder className="text-gray-400" size={20} />
+                                                                <div className="w-8 h-8 rounded-lg bg-gray-100 overflow-hidden flex items-center justify-center">
+                                                                    <Folder className="text-gray-400" size={16} />
                                                                 </div>
                                                                 <div className="text-left font-bold text-gray-900">
                                                                     {c.name}
@@ -1001,7 +1001,7 @@ export default function AdminBannersPage() {
                                             id="banner-link"
                                             value={link}
                                             onChange={e => setLink(e.target.value)}
-                                            className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                             placeholder="Masalan: /category/yozgi-chegirmalar"
                                         />
                                         <p className="text-xs text-gray-500 ml-1">
@@ -1026,7 +1026,7 @@ export default function AdminBannersPage() {
                                                 setDragActive(false);
                                                 void handleFiles(e.dataTransfer?.files ?? null);
                                             }}
-                                            className={`flex flex-col items-center gap-4 p-6 rounded-3xl border border-dashed transition-colors ${
+                                            className={`flex flex-col items-center gap-3 p-4 rounded-2xl border border-dashed transition-colors ${
                                                 dragActive
                                                     ? 'bg-blue-50 border-blue-400'
                                                     : image
@@ -1066,8 +1066,8 @@ export default function AdminBannersPage() {
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center text-center">
-                                                    <div className="w-16 h-16 rounded-2xl bg-white border border-gray-100 flex items-center justify-center text-gray-300 mb-2">
-                                                        {uploading ? <Loader2 size={28} className="animate-spin text-blue-500" /> : <ImageIcon size={32} />}
+                                                    <div className="w-10 h-10 rounded-xl bg-white border border-gray-100 flex items-center justify-center text-gray-300 mb-2">
+                                                        {uploading ? <Loader2 size={18} className="animate-spin text-blue-500" /> : <ImageIcon size={20} />}
                                                     </div>
                                                     <p className="text-xs font-bold text-gray-500">
                                                         {dragActive ? "Faylni shu yerga tashlang" : "Rasmni tashlang, tanlang yoki Ctrl+V bosing"}
@@ -1078,7 +1078,7 @@ export default function AdminBannersPage() {
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-2 flex-wrap justify-center">
-                                                <label htmlFor="banner-file-input" className="px-6 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95 flex items-center gap-2">
+                                                <label htmlFor="banner-file-input" className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer transition-all shadow-sm active:scale-95 flex items-center gap-2">
                                                     {uploading ? <Loader2 className="animate-spin" size={14} /> : <UploadCloud size={14} />}
                                                     {uploading ? "Yuklanmoqda..." : image ? "Almashtirish" : "Tanlash"}
                                                     <input
@@ -1104,26 +1104,26 @@ export default function AdminBannersPage() {
                             </div>
 
 
-                            <div className="flex gap-3 pt-6 border-t border-gray-50 items-center">
+                            <div className="flex gap-3 pt-4 border-t border-gray-50 items-center">
                                 <Button
                                     type="submit"
                                     disabled={submitting || uploading}
-                                    className="bg-blue-600 hover:bg-blue-700 text-white px-8 h-12 rounded-2xl shadow-xl shadow-blue-200 font-bold disabled:opacity-60"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 h-10 rounded-xl shadow-md shadow-blue-200 font-bold disabled:opacity-60"
                                 >
-                                    {submitting ? <Loader2 className="animate-spin" size={20} /> : <Plus size={20} />}
+                                    {submitting ? <Loader2 className="animate-spin" size={16} /> : <Plus size={16} />}
                                     {submitting ? "Saqlanmoqda..." : editId ? "Saqlash" : "Yarating"}
                                 </Button>
                                 <Button
                                     type="button"
                                     variant="outline"
                                     onClick={() => { setShowForm(false); resetForm(); }}
-                                    className="h-12 px-8 rounded-2xl font-bold border-gray-200 text-gray-500 hover:bg-gray-50"
+                                    className="h-10 px-4 rounded-xl font-bold border-gray-200 text-gray-500 hover:bg-gray-50"
                                 >
                                     Bekor qilish
                                 </Button>
                                 {uploading && (
                                     <span className="text-xs font-bold text-gray-400 flex items-center gap-1.5">
-                                        <Loader2 size={13} className="animate-spin" /> Rasm yuklanmoqda, kuting...
+                                        <Loader2 size={12} className="animate-spin" /> Rasm yuklanmoqda, kuting...
                                     </span>
                                 )}
                             </div>
@@ -1135,18 +1135,18 @@ export default function AdminBannersPage() {
             <AnimatePresence>
                 {!showForm && (
                     <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3"
                             >
-                                <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600">
-                                    <Eye size={24} />
+                                <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+                                    <Eye size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Jami ko'rishlar</p>
-                                    <p className="text-2xl font-black text-gray-900">{totalImpressions.toLocaleString()}</p>
+                                    <p className="text-xs font-medium text-gray-500">Jami ko'rishlar</p>
+                                    <p className="text-lg font-black text-gray-900">{totalImpressions.toLocaleString()}</p>
                                 </div>
                             </motion.div>
 
@@ -1154,14 +1154,14 @@ export default function AdminBannersPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.1 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3"
                             >
-                                <div className="w-12 h-12 rounded-2xl bg-purple-50 flex items-center justify-center text-purple-600">
-                                    <MousePointerClick size={24} />
+                                <div className="w-9 h-9 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+                                    <MousePointerClick size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Jami bosishlar</p>
-                                    <p className="text-2xl font-black text-gray-900">{totalClicks.toLocaleString()}</p>
+                                    <p className="text-xs font-medium text-gray-500">Jami bosishlar</p>
+                                    <p className="text-lg font-black text-gray-900">{totalClicks.toLocaleString()}</p>
                                 </div>
                             </motion.div>
 
@@ -1169,14 +1169,14 @@ export default function AdminBannersPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.2 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3"
                             >
-                                <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-600">
-                                    <TrendingUp size={24} />
+                                <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                    <TrendingUp size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">O'rtacha CTR</p>
-                                    <p className="text-2xl font-black text-gray-900">{avgCTR}%</p>
+                                    <p className="text-xs font-medium text-gray-500">O'rtacha CTR</p>
+                                    <p className="text-lg font-black text-gray-900">{avgCTR}%</p>
                                 </div>
                             </motion.div>
 
@@ -1184,14 +1184,14 @@ export default function AdminBannersPage() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.3 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm flex items-center gap-4"
+                                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3"
                             >
-                                <div className="w-12 h-12 rounded-2xl bg-orange-50 flex items-center justify-center text-orange-600">
-                                    <BarChart3 size={24} />
+                                <div className="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-orange-600">
+                                    <BarChart3 size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-gray-500">Saytda ko'rinadi</p>
-                                    <p className="text-2xl font-black text-gray-900">{visibleBannersCount} / {banners.length}</p>
+                                    <p className="text-xs font-medium text-gray-500">Saytda ko'rinadi</p>
+                                    <p className="text-lg font-black text-gray-900">{visibleBannersCount} / {banners.length}</p>
                                     {activeBannersCount > visibleBannersCount && (
                                         <p className="text-[11px] font-bold text-red-500 mt-0.5">
                                             {activeBannersCount - visibleBannersCount} ta &quot;faol&quot; banner ko&apos;rinmaydi
@@ -1201,18 +1201,18 @@ export default function AdminBannersPage() {
                             </motion.div>
                         </div>
 
-                        <div className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden min-h-[500px]">
-                            <div className="p-6 border-b border-gray-50">
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
+                            <div className="p-4 border-b border-gray-50">
                         <div className="flex flex-col lg:flex-row lg:items-center gap-3 lg:justify-between">
                             <div className="relative w-full lg:w-80">
                                 <label htmlFor="banners-search" className="sr-only">Bannerlarni qidirish</label>
-                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                                 <input
                                     id="banners-search"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Bannerlarni qidirish..."
-                                    className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
+                                    className="w-full pl-9 pr-10 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-sm font-medium shadow-sm"
                                 />
                             </div>
                             <div className="flex items-center gap-2 flex-wrap">
@@ -1223,9 +1223,9 @@ export default function AdminBannersPage() {
                                         onClick={() => setStatusFilter(value)}
                                         title={`${label} bannerlar`}
                                         aria-pressed={statusFilter === value}
-                                        className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
                                             statusFilter === value
-                                                ? 'bg-blue-600 text-white shadow-md shadow-blue-200'
+                                                ? 'bg-blue-600 text-white shadow-sm shadow-blue-200'
                                                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                                         }`}
                                     >
@@ -1240,34 +1240,34 @@ export default function AdminBannersPage() {
                                 <table className="w-full text-left border-collapse">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-100 text-xs font-bold text-gray-500 uppercase tracking-wider">
-                                            <th className="px-6 py-4">Rasm</th>
-                                            <th className="px-6 py-4">Sarlavha</th>
-                                            <th className="px-6 py-4">Joylashuv</th>
-                                            <th className="px-6 py-4 text-center">📊 Clicks</th>
-                                            <th className="px-6 py-4 text-center">👁️ Views</th>
-                                            <th className="px-6 py-4 text-center">📈 CTR</th>
-                                            <th className="px-6 py-4 text-center">Saytdagi holati</th>
-                                            <th className="px-6 py-4 text-right">Amallar</th>
+                                            <th className="px-4 py-2.5">Rasm</th>
+                                            <th className="px-4 py-2.5">Sarlavha</th>
+                                            <th className="px-4 py-2.5">Joylashuv</th>
+                                            <th className="px-4 py-2.5 text-center">📊 Clicks</th>
+                                            <th className="px-4 py-2.5 text-center">👁️ Views</th>
+                                            <th className="px-4 py-2.5 text-center">📈 CTR</th>
+                                            <th className="px-4 py-2.5 text-center">Saytdagi holati</th>
+                                            <th className="px-4 py-2.5 text-right">Amallar</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-gray-50">
                                         {loading ? (
                                             <tr>
-                                                <td colSpan={8} className="text-center py-20 text-gray-400 font-medium">Yuklanmoqda...</td>
+                                                <td colSpan={8} className="text-center py-10 text-gray-400 font-medium">Yuklanmoqda...</td>
                                             </tr>
                                         ) : filteredBanners.length === 0 ? (
                                             <tr>
-                                                <td colSpan={8} className="text-center py-20 text-gray-400 font-medium">Bannerlar topilmadi</td>
+                                                <td colSpan={8} className="text-center py-10 text-gray-400 font-medium">Bannerlar topilmadi</td>
                                             </tr>
                                         ) : (
                                             filteredBanners.map((banner) => (
                                                 <tr key={banner.id} className="hover:bg-gray-50/50 transition-colors group">
-                                                    <td className="px-6 py-4">
-                                                        <div className="w-16 h-10 rounded-lg bg-gray-100 overflow-hidden border border-gray-200">
+                                                    <td className="px-4 py-2.5">
+                                                        <div className="w-14 h-9 rounded-md bg-gray-100 overflow-hidden border border-gray-200">
                                                             <img src={banner.image} alt="" className="w-full h-full object-cover" />
                                                         </div>
                                                     </td>
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-4 py-2.5">
                                                         <p className="font-bold text-gray-900 text-sm">{banner.title}</p>
                                                         {/* Kategoriya banneri qaysi sahifalarda ko'rinishi */}
                                                         {banner.position === 'CATEGORY_TOP' && (
@@ -1279,19 +1279,19 @@ export default function AdminBannersPage() {
                                                             </p>
                                                         )}
                                                     </td>
-                                                    <td className="px-6 py-4">
+                                                    <td className="px-4 py-2.5">
                                                         <span className="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-bold uppercase tracking-wider">
                                                             {POSITIONS.find(p => p.value === banner.position)?.label || banner.position}
                                                         </span>
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 py-2.5 text-center">
                                                         <span className="font-bold text-blue-600">{banner.clickCount || 0}</span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 py-2.5 text-center">
                                                         <span className="font-bold text-purple-600">{banner.impressionCount || 0}</span>
                                                     </td>
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 py-2.5 text-center">
                                                         {(() => {
                                                             const ctr = banner.impressionCount && banner.impressionCount > 0
                                                                 ? ((banner.clickCount || 0) / banner.impressionCount * 100).toFixed(1)
@@ -1308,7 +1308,7 @@ export default function AdminBannersPage() {
                                                         })()}
                                                     </td>
 
-                                                    <td className="px-6 py-4 text-center">
+                                                    <td className="px-4 py-2.5 text-center">
                                                         {/*
                                                           Ilgari faqat isActive ko'rsatilardi — "Faol" deb
                                                           turgan banner sayt tomonida bir necha sababdan
@@ -1338,7 +1338,7 @@ export default function AdminBannersPage() {
                                                             );
                                                         })()}
                                                     </td>
-                                                    <td className="px-6 py-4 text-right">
+                                                    <td className="px-4 py-2.5 text-right">
                                                         <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <Button
                                                                 variant="ghost"

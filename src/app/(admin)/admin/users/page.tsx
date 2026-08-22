@@ -47,12 +47,12 @@ export default async function TopshiriqUsersPage({
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="p-8 bg-gray-50/50 min-h-screen space-y-8">
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-4">
+        <div className="p-5 bg-gray-50/50 min-h-screen space-y-4">
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-3">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                        <div className="p-3 bg-blue-100 rounded-2xl text-blue-600">
-                            <User size={24} />
+                    <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                        <div className="p-2 bg-blue-100 rounded-xl text-blue-600">
+                            <User size={18} />
                         </div>
                         Foydalanuvchilar
                         <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
@@ -66,13 +66,13 @@ export default async function TopshiriqUsersPage({
                     {/* Search */}
                     <form className="relative w-full md:w-96 group">
                         <label htmlFor="user-search" className="sr-only">Foydalanuvchilarni qidirish</label>
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={20} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={16} />
                         <input
                             id="user-search"
                             name="q"
                             defaultValue={query}
                             placeholder="Email yoki ism orqali qidirish..."
-                            className="w-full pl-12 pr-4 py-4 rounded-2xl border-none bg-white shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:scale-[1.02] transition-all outline-none font-medium placeholder:text-gray-300"
+                            className="w-full pl-10 pr-4 py-2.5 rounded-xl border-none bg-white shadow-sm ring-1 ring-gray-100 focus:ring-2 focus:ring-blue-500/20 focus:scale-[1.02] transition-all outline-none font-medium placeholder:text-gray-300"
                             aria-label="Email yoki ism orqali qidirish"
                         />
                     </form>
@@ -80,24 +80,24 @@ export default async function TopshiriqUsersPage({
                 </div>
             </div>
 
-            <div className="bg-white rounded-[32px] border border-gray-100 shadow-xl shadow-gray-200/50 overflow-hidden">
+            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full">
                         <thead>
                             <tr className="bg-gray-50/50 border-b border-gray-100">
-                                <th className="text-left py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest">Foydalanuvchi</th>
-                                <th className="text-left py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest">Email</th>
-                                <th className="text-left py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest">Rol</th>
-                                <th className="text-left py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest">Qo'shilgan sana</th>
+                                <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Foydalanuvchi</th>
+                                <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Email</th>
+                                <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Rol</th>
+                                <th className="text-left py-2.5 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Qo'shilgan sana</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-50">
                             {users.map((user: any) => (
                                 <tr key={user.id} className="group hover:bg-blue-50/30 transition-colors">
-                                    <td className="py-5 px-8">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold text-lg">
-                                                {user.name?.[0]?.toUpperCase() || <User size={18} />}
+                                    <td className="py-2.5 px-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold text-base">
+                                                {user.name?.[0]?.toUpperCase() || <User size={16} />}
                                             </div>
                                             <Link
                                                 href={`/admin/users/${user.id}`}
@@ -107,13 +107,13 @@ export default async function TopshiriqUsersPage({
                                             </Link>
                                         </div>
                                     </td>
-                                    <td className="py-5 px-8">
+                                    <td className="py-2.5 px-4">
                                         <div className="flex items-center gap-2 text-gray-500 font-medium">
                                             <Mail size={14} className="text-gray-300" />
                                             {user.email}
                                         </div>
                                     </td>
-                                    <td className="py-5 px-8">
+                                    <td className="py-2.5 px-4">
                                         <span
                                             className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide ${user.role === "ADMIN"
                                                 ? "bg-blue-600 text-white shadow-lg shadow-blue-100"
@@ -126,7 +126,7 @@ export default async function TopshiriqUsersPage({
                                             {user.role}
                                         </span>
                                     </td>
-                                    <td className="py-5 px-8">
+                                    <td className="py-2.5 px-4">
                                         <div className="flex items-center gap-2 text-gray-400 font-medium text-sm">
                                             <Calendar size={14} />
                                             {new Date(user.createdAt).toLocaleDateString()}
@@ -139,12 +139,12 @@ export default async function TopshiriqUsersPage({
                 </div>
 
                 {users.length === 0 && (
-                    <div className="py-20 flex flex-col items-center justify-center text-center">
-                        <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
-                            <User className="text-gray-300" size={40} />
+                    <div className="py-10 flex flex-col items-center justify-center text-center">
+                        <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mb-3">
+                            <User className="text-gray-300" size={24} />
                         </div>
-                        <h3 className="text-xl font-bold text-gray-900">Foydalanuvchilar topilmadi</h3>
-                        <p className="text-gray-500 mt-2">Qidiruv so'zini o'zgartirib ko'ring</p>
+                        <h3 className="text-lg font-bold text-gray-900">Foydalanuvchilar topilmadi</h3>
+                        <p className="text-gray-500 mt-1">Qidiruv so'zini o'zgartirib ko'ring</p>
                     </div>
                 )}
             </div>
@@ -155,19 +155,19 @@ export default async function TopshiriqUsersPage({
                     {page > 1 && (
                         <Link
                             href={`/admin/users?page=${page - 1}&q=${query}`}
-                            className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            className="h-9 px-4 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                             aria-label="Oldingi sahifa"
                         >
                             <ChevronLeft size={18} /> Oldingi
                         </Link>
                     )}
-                    <div className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-400 font-medium flex items-center gap-2 shadow-sm">
+                    <div className="h-9 px-4 rounded-xl bg-white border border-gray-200 text-gray-400 font-medium flex items-center gap-2 shadow-sm">
                         Sahifa <span className="text-gray-900 font-bold">{page}</span> / {totalPages}
                     </div>
                     {page < totalPages && (
                         <Link
                             href={`/admin/users?page=${page + 1}&q=${query}`}
-                            className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            className="h-9 px-4 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                             aria-label="Keyingi sahifa"
                         >
                             Keyingi <ChevronRight size={18} />

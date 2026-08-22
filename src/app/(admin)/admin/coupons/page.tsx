@@ -135,15 +135,15 @@ export default function AdminCouponsPage() {
     );
 
     return (
-        <div className="p-6 max-w-[1600px] mx-auto">
+        <div className="p-5 max-w-[1600px] mx-auto">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
                 <div>
-                    <h1 className="text-2xl font-black text-slate-900 flex items-center gap-3">
-                        <Ticket className="text-blue-600" />
+                    <h1 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                        <Ticket className="text-blue-600" size={20} />
                         Kuponlar boshqaruvi
                     </h1>
-                    <p className="text-slate-500 text-sm mt-1">Promokodlarni yaratish va tahrirlash</p>
+                    <p className="text-slate-500 text-sm mt-0.5">Promokodlarni yaratish va tahrirlash</p>
                 </div>
                 <button
                     onClick={() => {
@@ -151,43 +151,43 @@ export default function AdminCouponsPage() {
                         resetForm();
                         setIsAddModalOpen(true);
                     }}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                    className="bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
                     title="Yangi kupon yaratish"
                     aria-label="Yangi kupon yaratish"
                 >
-                    <Plus size={20} />
+                    <Plus size={16} />
                     Yangi kupon
                 </button>
             </div>
 
             {/* Stats & Search */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
-                        <Ticket size={24} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                        <Ticket size={18} />
                     </div>
                     <div>
-                        <div className="text-2xl font-black text-slate-900">{coupons.length}</div>
+                        <div className="text-lg font-black text-slate-900">{coupons.length}</div>
                         <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Jami kuponlar</div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                        <CheckCircle2 size={24} />
+                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                        <CheckCircle2 size={18} />
                     </div>
                     <div>
-                        <div className="text-2xl font-black text-slate-900">{coupons.filter(c => c.isActive).length}</div>
+                        <div className="text-lg font-black text-slate-900">{coupons.filter(c => c.isActive).length}</div>
                         <div className="text-xs font-bold text-slate-500 uppercase tracking-wider">Faol kuponlar</div>
                     </div>
                 </div>
-                <div className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-sm relative">
+                <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm relative">
                     <label htmlFor="coupon-search" className="sr-only">Kupon kodini qidirish</label>
-                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                     <input
                         id="coupon-search"
                         type="text"
                         placeholder="Kupon kodini qidiring..."
-                        className="w-full h-full pl-12 pr-4 bg-transparent outline-none font-bold text-slate-700 placeholder:text-slate-400"
+                        className="w-full h-full pl-10 pr-4 bg-transparent outline-none font-bold text-slate-700 placeholder:text-slate-400 text-sm"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         aria-label="Kupon kodini qidiring"
@@ -196,63 +196,63 @@ export default function AdminCouponsPage() {
             </div>
 
             {/* Table */}
-            <div className="bg-white rounded-[2.5rem] border border-slate-100 shadow-xl overflow-hidden">
+            <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-50/50 border-b border-slate-100">
-                                <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-wider">Kupon kodi</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-wider">Chegirma</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-wider">Muddat</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-wider">Ishlatildi</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-wider">Holati</th>
-                                <th className="px-6 py-5 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Amallar</th>
+                                <th className="px-4 py-2.5 text-xs font-black text-slate-500 uppercase tracking-wider">Kupon kodi</th>
+                                <th className="px-4 py-2.5 text-xs font-black text-slate-500 uppercase tracking-wider">Chegirma</th>
+                                <th className="px-4 py-2.5 text-xs font-black text-slate-500 uppercase tracking-wider">Muddat</th>
+                                <th className="px-4 py-2.5 text-xs font-black text-slate-500 uppercase tracking-wider">Ishlatildi</th>
+                                <th className="px-4 py-2.5 text-xs font-black text-slate-500 uppercase tracking-wider">Holati</th>
+                                <th className="px-4 py-2.5 text-xs font-black text-slate-500 uppercase tracking-wider text-right">Amallar</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-50">
                             {loading ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-20 text-center">
-                                        <Loader2 className="animate-spin inline-block text-blue-600" size={40} />
+                                    <td colSpan={6} className="px-4 py-10 text-center">
+                                        <Loader2 className="animate-spin inline-block text-blue-600" size={24} />
                                     </td>
                                 </tr>
                             ) : filteredCoupons.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-20 text-center text-slate-500 font-bold">
+                                    <td colSpan={6} className="px-4 py-10 text-center text-slate-500 font-bold">
                                         Kuponlar topilmadi
                                     </td>
                                 </tr>
                             ) : filteredCoupons.map((coupon) => (
                                 <tr key={coupon.id} className="hover:bg-slate-50/30 transition-colors group">
-                                    <td className="px-6 py-5">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-black">
+                                    <td className="px-4 py-2.5">
+                                        <div className="flex items-center gap-2.5">
+                                            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center font-black text-sm">
                                                 {coupon.code[0]}
                                             </div>
-                                            <span className="font-black text-slate-900 text-lg uppercase">{coupon.code}</span>
+                                            <span className="font-black text-slate-900 text-sm uppercase">{coupon.code}</span>
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 text-emerald-600 font-bold text-sm">
-                                            <Tag size={14} />
+                                    <td className="px-4 py-2.5">
+                                        <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-600 font-bold text-xs">
+                                            <Tag size={12} />
                                             {coupon.discountValue}{coupon.discountType === 'PERCENTAGE' ? '%' : " so'm"}
                                         </div>
                                         {coupon.minAmount > 0 && (
-                                            <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase">
+                                            <div className="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">
                                                 Min: {coupon.minAmount.toLocaleString()}
                                             </div>
                                         )}
                                     </td>
-                                    <td className="px-6 py-5">
-                                        <div className="text-sm font-bold text-slate-700">
+                                    <td className="px-4 py-2.5">
+                                        <div className="text-xs font-bold text-slate-700">
                                             {new Date(coupon.expiryDate).toLocaleDateString()}
                                         </div>
-                                        <div className="text-[10px] text-slate-400 font-bold mt-1 uppercase">
+                                        <div className="text-[10px] text-slate-400 font-bold mt-0.5 uppercase">
                                             {new Date(coupon.expiryDate) < new Date() ? "Muddati tugagan" : "Amal qilmoqda"}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5">
-                                        <div className="w-full max-w-[100px] h-2 bg-slate-100 rounded-full overflow-hidden mb-2">
+                                    <td className="px-4 py-2.5">
+                                        <div className="w-full max-w-[100px] h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1.5">
                                             <div
                                                 className="h-full bg-blue-600 rounded-full"
                                                 style={{ width: `${Math.min((coupon.usedCount / coupon.usageLimit) * 100, 100)}%` }}
@@ -262,7 +262,7 @@ export default function AdminCouponsPage() {
                                             {coupon.usedCount} / {coupon.usageLimit}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-5">
+                                    <td className="px-4 py-2.5">
                                         {coupon.isActive ? (
                                             <span className="inline-flex items-center gap-1 text-emerald-600 text-xs font-black uppercase">
                                                 <CheckCircle2 size={14} /> Faol
@@ -273,23 +273,23 @@ export default function AdminCouponsPage() {
                                             </span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-5 text-right">
-                                        <div className="flex justify-end gap-2">
+                                    <td className="px-4 py-2.5 text-right">
+                                        <div className="flex justify-end gap-1.5">
                                             <button
                                                 onClick={() => handleEdit(coupon)}
-                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
                                                 title="Tahrirlash"
                                                 aria-label={`${coupon.code} kuponini tahrirlash`}
                                             >
-                                                <Edit2 size={18} />
+                                                <Edit2 size={16} />
                                             </button>
                                             <button
                                                 onClick={() => handleDelete(coupon.id)}
-                                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                                                className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
                                                 title="O'chirish"
                                                 aria-label={`${coupon.code} kuponini o'chirish`}
                                             >
-                                                <Trash2 size={18} />
+                                                <Trash2 size={16} />
                                             </button>
                                         </div>
                                     </td>
@@ -315,11 +315,11 @@ export default function AdminCouponsPage() {
                             initial={{ scale: 0.9, opacity: 0, y: 20 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 20 }}
-                            className="bg-white rounded-[2.5rem] w-full max-w-2xl overflow-hidden relative shadow-2xl"
+                            className="bg-white rounded-2xl w-full max-w-md overflow-hidden relative shadow-2xl"
                         >
                             <form onSubmit={handleSubmit}>
-                                <div className="p-8 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                                    <h2 className="text-xl font-black text-slate-900">
+                                <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                                    <h2 className="text-lg font-black text-slate-900">
                                         {editingCoupon ? "Kuponni tahrirlash" : "Yangi kupon yaratish"}
                                     </h2>
                                     <button
@@ -328,18 +328,18 @@ export default function AdminCouponsPage() {
                                         className="text-slate-400 hover:text-slate-600"
                                         title="Yopish"
                                     >
-                                        <XCircle size={24} />
+                                        <XCircle size={20} />
                                     </button>
                                 </div>
 
-                                <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 max-h-[70vh] overflow-y-auto custom-scrollbar">
+                                <div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[70vh] overflow-y-auto custom-scrollbar">
                                     <div className="md:col-span-2">
-                                        <label htmlFor="couponCode" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Kupon kodi</label>
+                                        <label htmlFor="couponCode" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Kupon kodi</label>
                                         <input
                                             id="couponCode"
                                             type="text"
                                             required
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 uppercase"
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 uppercase"
                                             value={formData.code}
                                             onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                                             placeholder="MASALAN: RAMAZON20"
@@ -347,10 +347,10 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="discountType" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma turi</label>
+                                        <label htmlFor="discountType" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Chegirma turi</label>
                                         <select
                                             id="discountType"
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 appearance-none cursor-pointer"
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900 appearance-none cursor-pointer"
                                             value={formData.discountType}
                                             onChange={(e) => setFormData({ ...formData, discountType: e.target.value as any })}
                                             title="Chegirma turini tanlang"
@@ -361,12 +361,12 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="discountValue" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Chegirma miqdori</label>
+                                        <label htmlFor="discountValue" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Chegirma miqdori</label>
                                         <input
                                             id="discountValue"
                                             type="number"
                                             required
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                             value={formData.discountValue === 0 ? "" : formData.discountValue}
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => setFormData({ ...formData, discountValue: e.target.value === "" ? 0 : Number(e.target.value) })}
@@ -374,11 +374,11 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="minAmount" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Minimal buyurtma</label>
+                                        <label htmlFor="minAmount" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Minimal buyurtma</label>
                                         <input
                                             id="minAmount"
                                             type="number"
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                             value={formData.minAmount === 0 ? "" : formData.minAmount}
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => setFormData({ ...formData, minAmount: e.target.value === "" ? 0 : Number(e.target.value) })}
@@ -386,12 +386,12 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="usageLimit" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Ishlatish limiti</label>
+                                        <label htmlFor="usageLimit" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Ishlatish limiti</label>
                                         <input
                                             id="usageLimit"
                                             type="number"
                                             required
-                                            className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
+                                            className="w-full bg-slate-50 border border-slate-100 rounded-xl px-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                             value={formData.usageLimit === 0 ? "" : formData.usageLimit}
                                             onFocus={(e) => e.target.select()}
                                             onChange={(e) => setFormData({ ...formData, usageLimit: e.target.value === "" ? 0 : Number(e.target.value) })}
@@ -399,14 +399,14 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="startDate" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Boshlanish sanasi</label>
+                                        <label htmlFor="startDate" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Boshlanish sanasi</label>
                                         <div className="relative">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                                             <input
                                                 id="startDate"
                                                 type="date"
                                                 required
-                                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-9 pr-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                                 value={formData.startDate}
                                                 onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                                             />
@@ -414,14 +414,14 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div>
-                                        <label htmlFor="expiryDate" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-2">Tugash sanasi</label>
+                                        <label htmlFor="expiryDate" className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Tugash sanasi</label>
                                         <div className="relative">
-                                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                                            <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                                             <input
                                                 id="expiryDate"
                                                 type="date"
                                                 required
-                                                className="w-full bg-slate-50 border border-slate-100 rounded-2xl pl-12 pr-5 py-4 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
+                                                className="w-full bg-slate-50 border border-slate-100 rounded-xl pl-9 pr-3 py-2.5 outline-none focus:ring-2 focus:ring-blue-600/10 focus:border-blue-600 font-bold text-slate-900"
                                                 value={formData.expiryDate}
                                                 onChange={(e) => setFormData({ ...formData, expiryDate: e.target.value })}
                                             />
@@ -429,30 +429,30 @@ export default function AdminCouponsPage() {
                                     </div>
 
                                     <div className="md:col-span-2">
-                                        <label htmlFor="isActive" className="flex items-center gap-3 cursor-pointer">
+                                        <label htmlFor="isActive" className="flex items-center gap-2.5 cursor-pointer">
                                             <input
                                                 id="isActive"
                                                 type="checkbox"
-                                                className="w-6 h-6 rounded-lg accent-blue-600"
+                                                className="w-4 h-4 rounded accent-blue-600"
                                                 checked={formData.isActive}
                                                 onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                                             />
-                                            <span className="font-bold text-slate-700">Kupon hozirda faol bo'lsin</span>
+                                            <span className="font-bold text-slate-700 text-sm">Kupon hozirda faol bo'lsin</span>
                                         </label>
                                     </div>
                                 </div>
 
-                                <div className="p-8 bg-slate-50/50 border-t border-slate-100 flex gap-4">
+                                <div className="p-4 bg-slate-50/50 border-t border-slate-100 flex gap-3">
                                     <button
                                         type="button"
                                         onClick={() => setIsAddModalOpen(false)}
-                                        className="flex-1 px-6 py-4 rounded-2xl font-bold text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
+                                        className="flex-1 px-4 py-2.5 rounded-xl font-bold text-slate-500 hover:bg-slate-100 transition-all active:scale-95"
                                     >
                                         Bekor qilish
                                     </button>
                                     <button
                                         type="submit"
-                                        className="flex-[2] bg-blue-600 text-white px-6 py-4 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+                                        className="flex-[2] bg-blue-600 text-white px-4 py-2.5 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95"
                                     >
                                         {editingCoupon ? "Saqlash" : "Yaratish"}
                                     </button>

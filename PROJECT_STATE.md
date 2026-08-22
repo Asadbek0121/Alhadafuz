@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Admin panel UX — 8 sahifa kartalarini ixchamlashtirish**: users, products, coupons, banners, stores, payments, payments/logs, settings sahifalaridagi stat/header card (`p-8/10` → `p-4/5`, `rounded-[32..56px]` → `rounded-2xl/3xl`, `text-3xl/2xl` → `text-xl/lg`), ro'yxat item va avatarlar (`w-16` → `w-9`, icon `w-12/16` → `w-8/10`), table (`py-6 px-8` → `py-2.5 px-4`), modal (`p-10 rounded-[48px] max-w-2xl` → `p-5 rounded-2xl max-w-md`), button (`h-14/16` → `h-10/11`), input (`p-4` → `p-2.5`), grid gap (`gap-8/10` → `gap-3/4`) — ixchamlashtirildi. Funksionallik (fetch/CRUD/modal/map) buzilmadi; xarita (`stores` map `h-64` + full-screen modal, `banners` aspect-ratio preview) katta qoldi. Rang/font/layout/breakpoint'lar saqlandi. Verification: tsc 0, lint 0 (1 pre-existing warning), build SUCCESS, 8 route HTTP 200.
 - **Kuryer tracking dashboard — real-time buyurtma kuzatish**:
   - Yangi `/api/orders/tracking`: user'ning faol COURIER buyurtmalari (ASSIGNED/PROCESSING/PICKED_UP/DELIVERING) — kuryer joylashuvi (lat/lng, vehicle, lastLocationAt, courierLevel), do'kon (boshlang'ich nuqta), mijoz manzili, maskalangan kuryer telefon raqami, location age ("necha daqiqa oldin").
   - Yangi `/uz/tracking` sahifa: Yandex xaritada do'kon → kuryer → manzil marshruti (MultiRoute), buyurtmalar ro'yxati, kuryer info card (ism/telefon/transport/daraja), 8s polling, `?order=ID` parametri orqali oldindan tanlash.
@@ -255,4 +256,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-21 (Favicon/SEO/branding complete fix — wordmark-only crop, updated manifest, meta descriptions, old contacts cleanup, JSON-LD sameAs, build SUCCESS)
+2026-08-22 (Admin panel UX — 8 sahifa kartalari compact qilindi, build SUCCESS)

@@ -4,6 +4,14 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Changed
+- **Admin panel UX — 8 sahifa kartalarini ixchamlashtirish (compact)**:
+  - **Sabab**: Admin sahifalardagi stat/list/modal kartalar juda katta edi (`p-8/p-10`, `rounded-[32px..56px]`, `text-3xl/2xl`, `h-14/16` button'lar) — 1280-1920px ekranlarda ma'lumot sichib, sahifalar cho'zilib ketardi.
+  - **Qo'llangan o'lchamlar**: Stat/header card `p-8/p-10` → `p-4/p-5`, `rounded-[32px]/[40px]/[48px]` → `rounded-2xl/rounded-3xl`, `text-3xl/text-2xl` → `text-xl/text-lg`; ro'yxat item `p-6/p-8` → `p-4`, avatar `w-16` → `w-9`, icon `w-12/w-14/w-16` → `w-8/w-9/w-10`; table `py-6 px-8` → `py-2.5 px-4`, `text-xs` → `text-[11px]`; modal `p-10 rounded-[48px]` → `p-5 rounded-2xl`, `max-w-2xl` → `max-w-md`; button `h-14/h-16` → `h-10/h-11`, `px-8 py-6` → `px-4 py-2.5`; form input `p-4/py-5` → `p-2.5/py-3`; grid gap `gap-8/gap-10` → `gap-3/gap-4`.
+  - **O'zgartirilgan sahifalar (8)**: `users`, `products`, `coupons`, `banners`, `stores`, `payments`, `payments/logs`, `settings` — barchasi `src/app/(admin)/admin/` da.
+  - **Saqlangan/ataylab katta qoldirilgan**: Funksionallik (fetch, modal, CRUD, map) buzilmadi. Xarita elementlari (`stores` inline map `h-64`, full-screen map modal `max-w-4xl h-[90vh]`, `banners` rasm preview `aspectRatio`), ranglar, font weight, layout, `md:`/`lg:` responsive breakpoint'lar saqlandi. Faqat o'lchamlar compact qilindi.
+  - Verification: `npx tsc --noEmit` 0 error, ESLint o'zgargan 8 fayl 0 error (1 pre-existing warning — products `no-img-element` disable), `npm run build` SUCCESS (barcha 8 admin route compileylandi). Runtime: `/admin/{users,products,coupons,banners,stores,payments,payments/logs,settings}` → HTTP 200.
+
 ### Fixed
 - **Favicon/SEO/branding complete fix (Chrome favicon kichik + Google globe + eski contactlar)**:
   - **Favicon root cause**: avvalgi `scripts/generate-icons.mjs` butun logotip (HADAF + underline bar + MARKET tagline, 690x548) ni kesib, 16-48px faviconga sig'dirardi — "MARKET" yozuvi va bar kichik o'lchamda o'qib bo'lmas bled edi va brand mark faviconda deyarli ko'rinmas, juda kichik edi. Google faviconga yetarli kontrast/aniqlik bermagani uchun natijada globe (default) ikonkasi ko'rsatardi.

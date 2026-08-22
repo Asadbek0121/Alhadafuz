@@ -90,9 +90,9 @@ export default async function AdminProductsPage({
     const totalPages = Math.ceil(total / limit);
 
     return (
-        <div className="p-8 bg-gray-50/50 min-h-screen space-y-8">
+        <div className="p-5 bg-gray-50/50 min-h-screen space-y-4">
             {isSchemaOutdated && (
-                <div className="bg-amber-50 border border-amber-200 p-4 rounded-2xl flex items-start gap-4">
+                <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl flex items-start gap-3">
                     <AlertCircle className="text-amber-600 flex-shrink-0 mt-1" size={20} />
                     <div className="space-y-1">
                         <p className="font-bold text-amber-900">Ma'lumotlar bazasi sxemasi eskirgan!</p>
@@ -104,11 +104,11 @@ export default async function AdminProductsPage({
                 </div>
             )}
 
-            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-end md:items-center gap-3">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight flex items-center gap-3">
-                        <div className="p-3 bg-indigo-100 rounded-2xl text-indigo-600">
-                            <Package size={24} />
+                    <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                        <div className="p-2 bg-indigo-100 rounded-xl text-indigo-600">
+                            <Package size={18} />
                         </div>
                         Mahsulotlar
                         <span className="text-sm font-bold bg-gray-100 text-gray-500 px-3 py-1 rounded-full">
@@ -120,26 +120,26 @@ export default async function AdminProductsPage({
                     </p>
                 </div>
 
-                <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+                <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
                     <AdminProductSearch />
                     <Link
                         href="/admin/products/new"
-                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl px-6 py-3 shadow-xl shadow-indigo-200/50 transition-all active:scale-95 font-black tracking-tight uppercase text-sm whitespace-nowrap"
+                        className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl px-4 py-2.5 shadow-md shadow-indigo-200/50 transition-all active:scale-95 font-black tracking-tight uppercase text-sm whitespace-nowrap"
                         title="Yangi mahsulot qo'shish"
                         aria-label="Yangi mahsulot qo'shish"
                     >
-                        <Plus size={18} strokeWidth={3} /> Yangi mahsulot
+                        <Plus size={16} strokeWidth={3} /> Yangi mahsulot
                     </Link>
                 </div>
             </div>
 
             {products.length === 0 ? (
-                <div className="bg-white rounded-[32px] p-20 border border-gray-100 text-center space-y-4">
-                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-300">
-                        <Package size={40} />
+                <div className="bg-white rounded-2xl p-10 border border-gray-100 text-center space-y-3">
+                    <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center mx-auto text-gray-300">
+                        <Package size={24} />
                     </div>
                     <div className="space-y-1">
-                        <h3 className="text-xl font-bold text-gray-900">Mahsulotlar topilmadi</h3>
+                        <h3 className="text-lg font-bold text-gray-900">Mahsulotlar topilmadi</h3>
                         <p className="text-gray-500 max-w-xs mx-auto">
                             {query ? `"${query}" bo'yicha hech narsa topilmadi. Boshqa so'z bilan qidirib ko'ring.` : "Hali hech qanday mahsulot qo'shilmagan."}
                         </p>
@@ -151,9 +151,9 @@ export default async function AdminProductsPage({
                     )}
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {products.map((product: any) => (
-                        <div key={product.id} className="bg-white rounded-[24px] overflow-hidden border border-gray-100 flex flex-col group hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 relative">
+                        <div key={product.id} className="bg-white rounded-2xl overflow-hidden border border-gray-100 flex flex-col group hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 relative">
                             <div className="aspect-[4/3] bg-gray-50 relative overflow-hidden">
                                 {/* eslint-disable-next-line @next/next/no-img-element */}
                                 <img
@@ -187,14 +187,14 @@ export default async function AdminProductsPage({
                                 </div>
                             </div>
 
-                            <div className="p-5 flex-1 flex flex-col">
-                                <h3 className="text-lg font-bold text-gray-900 leading-tight mb-2 line-clamp-2 min-h-[44px]" title={product.title}>
+                            <div className="p-4 flex-1 flex flex-col">
+                                <h3 className="text-sm font-bold text-gray-900 leading-tight mb-2 line-clamp-2 min-h-[32px]" title={product.title}>
                                     {product.title}
                                 </h3>
 
-                                <div className="flex flex-col gap-1 mb-4">
+                                <div className="flex flex-col gap-1 mb-3">
                                     <div className="flex items-center gap-2">
-                                        <div className="text-indigo-600 font-black text-xl">
+                                        <div className="text-indigo-600 font-black text-base">
                                             {product.price.toLocaleString()} <span className="text-xs font-bold text-indigo-400 uppercase">so'm</span>
                                         </div>
                                         {product.oldPrice && product.oldPrice > product.price && (
@@ -220,7 +220,7 @@ export default async function AdminProductsPage({
                                 <div className="mt-auto grid grid-cols-2 gap-2">
                                     <Link
                                         href={`/admin/products/${product.id}`}
-                                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl bg-gray-50 text-gray-600 font-bold text-xs hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
+                                        className="flex items-center justify-center gap-2 py-2 rounded-lg bg-gray-50 text-gray-600 font-bold text-xs hover:bg-indigo-50 hover:text-indigo-600 transition-colors"
                                     >
                                         <Edit size={14} strokeWidth={2.5} /> Tahrirlash
                                     </Link>
@@ -234,23 +234,23 @@ export default async function AdminProductsPage({
 
             {/* Pagination */}
             {totalPages > 1 && (
-                <div className="flex justify-center gap-2 pt-8">
+                <div className="flex justify-center gap-2 pt-4">
                     {page > 1 && (
                         <Link
                             href={`/admin/products?page=${page - 1}${query ? `&q=${query}` : ""}`}
-                            className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            className="h-9 px-4 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                             aria-label="Oldingi sahifaga o'tish"
                         >
                             <ChevronLeft size={18} /> Oldingi
                         </Link>
                     )}
-                    <div className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-400 font-medium flex items-center gap-2 shadow-sm">
+                    <div className="h-9 px-4 rounded-xl bg-white border border-gray-200 text-gray-400 font-medium flex items-center gap-2 shadow-sm">
                         Sahifa <span className="text-gray-900 font-bold">{page}</span> / {totalPages}
                     </div>
                     {page < totalPages && (
                         <Link
                             href={`/admin/products?page=${page + 1}${query ? `&q=${query}` : ""}`}
-                            className="h-10 px-6 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
+                            className="h-9 px-4 rounded-xl bg-white border border-gray-200 text-gray-600 font-bold flex items-center gap-2 hover:bg-gray-50 hover:border-gray-300 transition-all shadow-sm"
                             aria-label="Keyingi sahifaga o'tish"
                         >
                             Keyingi <ChevronRight size={18} />

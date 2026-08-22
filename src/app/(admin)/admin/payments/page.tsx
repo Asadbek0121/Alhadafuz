@@ -179,18 +179,18 @@ export default function PaymentMethodsPage() {
     );
 
     if (isLoading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+        <div className="flex flex-col items-center justify-center min-h-[200px] space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             <p className="text-gray-400 font-medium animate-pulse">Platforma sozlamalari yuklanmoqda...</p>
         </div>
     );
 
     return (
-        <div className="p-8 space-y-8 bg-gray-50/30 min-h-screen">
+        <div className="p-5 space-y-4 bg-gray-50/30 min-h-screen">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">To'lov Tizimlari</h1>
+                    <h1 className="text-xl font-black text-gray-900 tracking-tight">To'lov Tizimlari</h1>
                     <div className="flex items-center gap-2">
                         <div className="flex -space-x-2">
                             {['CLICK', 'PAYME', 'UZUM'].map((p, i) => (
@@ -202,25 +202,25 @@ export default function PaymentMethodsPage() {
                         <p className="text-gray-500 text-sm font-medium ml-2">Integratsiya va tranzaksiyalar boshqaruvi</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                     <Link href="/admin/payments/logs">
-                        <Button variant="outline" className="gap-2 border-gray-200 bg-white/80 hover:bg-white rounded-2xl h-12 shadow-sm font-bold">
-                            <List size={18} /> Audit Jurnali
+                        <Button variant="outline" className="gap-2 border-gray-200 bg-white/80 hover:bg-white rounded-xl h-10 shadow-sm font-bold">
+                            <List size={16} /> Audit Jurnali
                         </Button>
                     </Link>
                     <Button
                         onClick={() => handleOpenModal()}
-                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl h-12 shadow-xl shadow-blue-200/50 transition-all active:scale-95 px-6 font-black tracking-tight"
+                        className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 shadow-md shadow-blue-200/50 transition-all active:scale-95 px-4 font-black tracking-tight"
                     >
-                        <Plus size={20} /> YANGI TIZIM
+                        <Plus size={18} /> YANGI TIZIM
                     </Button>
                 </div>
             </div>
 
             {/* Main Content Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 {/* Stats Grid */}
-                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="lg:col-span-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <StatBox label="JAMI METODLAR" value={methods?.length || 0} icon={<Wallet />} color="blue" />
                     <StatBox label="FAOL HOLATDA" value={methods?.filter(m => m.isActive).length || 0} icon={<CheckCircle2 />} color="emerald" />
                     <StatBox label="O'CHIRILGAN" value={methods?.filter(m => !m.isActive).length || 0} icon={<X />} color="gray" />
@@ -228,45 +228,45 @@ export default function PaymentMethodsPage() {
                 </div>
 
                 {/* Search and List */}
-                <div className="lg:col-span-3 space-y-6">
+                <div className="lg:col-span-3 space-y-4">
                     <div className="relative group max-w-md">
                         <label htmlFor="payment-search" className="sr-only">To'lov tizimlarini qidirish</label>
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={18} />
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" size={16} />
                         <input
                             id="payment-search"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             placeholder="Metod nomi yoki provider bo'yicha qidirish..."
-                            className="w-full pl-11 pr-4 py-4 bg-white/80 backdrop-blur border border-gray-100 rounded-[24px] shadow-sm outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-gray-900 italic"
+                            className="w-full pl-9 pr-4 py-2.5 bg-white/80 backdrop-blur border border-gray-100 rounded-xl shadow-sm outline-none focus:ring-4 focus:ring-blue-500/5 focus:border-blue-500 transition-all font-bold text-gray-900 italic"
                             aria-label="Metod nomi yoki provider bo'yicha qidirish"
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {filteredMethods?.map((method, index) => (
                             <motion.div
                                 key={method.id}
                                 initial={{ opacity: 0, scale: 0.95 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group bg-white rounded-[40px] border border-gray-100 p-8 hover:shadow-2xl hover:shadow-blue-900/10 transition-all relative overflow-hidden flex flex-col justify-between"
+                                className="group bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-xl hover:shadow-blue-900/10 transition-all relative overflow-hidden flex flex-col justify-between"
                             >
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-gray-50 to-transparent rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-700" />
+                                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-gray-50 to-transparent rounded-full -mr-12 -mt-12 group-hover:scale-150 transition-transform duration-700" />
 
-                                <div className="relative space-y-6">
+                                <div className="relative space-y-4">
                                     <div className="flex items-start justify-between">
-                                        <div className={`w-16 h-16 rounded-[24px] ${PROVIDER_CONFIG[method.provider]?.bg || 'bg-gray-50'} flex items-center justify-center ${PROVIDER_CONFIG[method.provider]?.iconColor || 'text-gray-400'} shadow-lg shadow-gray-200/20 group-hover:rotate-6 transition-transform`}>
-                                            {method.provider === 'CASH' ? <Banknote size={32} /> :
-                                                method.provider === 'CARD' ? <Landmark size={32} /> : <CreditCard size={32} />}
+                                        <div className={`w-10 h-10 rounded-xl ${PROVIDER_CONFIG[method.provider]?.bg || 'bg-gray-50'} flex items-center justify-center ${PROVIDER_CONFIG[method.provider]?.iconColor || 'text-gray-400'} shadow-sm shadow-gray-200/20 group-hover:rotate-6 transition-transform`}>
+                                            {method.provider === 'CASH' ? <Banknote size={20} /> :
+                                                method.provider === 'CARD' ? <Landmark size={20} /> : <CreditCard size={20} />}
                                         </div>
-                                        <div className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm ${method.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
+                                        <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm ${method.isActive ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-gray-50 text-gray-400 border border-gray-100'}`}>
                                             {method.isActive ? 'ONLINE' : 'OFFLINE'}
                                         </div>
                                     </div>
 
                                     <div>
-                                        <h3 className="text-2xl font-black text-gray-900 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">{method.name}</h3>
-                                        <div className="flex items-center gap-2 mt-2">
+                                        <h3 className="text-lg font-black text-gray-900 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">{method.name}</h3>
+                                        <div className="flex items-center gap-2 mt-1">
                                             <span className={`w-2 h-2 rounded-full ${method.isActive ? 'bg-emerald-500 animate-pulse' : 'bg-gray-300'}`} />
                                             <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{method.provider}</span>
                                             <span className="text-[10px] font-black text-gray-300">•</span>
@@ -276,26 +276,26 @@ export default function PaymentMethodsPage() {
 
                                     {method.details && (
                                         <div className="relative group/detail">
-                                            <div className="text-xs font-bold text-gray-500 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 break-all pr-10 italic">
+                                            <div className="text-xs font-bold text-gray-500 bg-gray-50/50 p-3 rounded-xl border border-gray-100 break-all pr-10 italic">
                                                 {method.details}
                                             </div>
                                             <button
                                                 onClick={() => copyToClipboard(method.details!)}
-                                                className="absolute right-3 top-1/2 -translate-y-1/2 p-2 hover:bg-white rounded-lg opacity-0 group-hover/detail:opacity-100 transition-all text-gray-400 hover:text-blue-500"
+                                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 hover:bg-white rounded-lg opacity-0 group-hover/detail:opacity-100 transition-all text-gray-400 hover:text-blue-500"
                                             >
-                                                <Copy size={14} />
+                                                <Copy size={12} />
                                             </button>
                                         </div>
                                     )}
                                 </div>
 
-                                <div className="mt-10 flex items-center gap-3">
+                                <div className="mt-4 flex items-center gap-2">
                                     <Button
                                         onClick={() => handleOpenModal(method)}
                                         variant="outline"
-                                        className="flex-1 rounded-2xl h-14 border-gray-100 bg-gray-50/50 hover:bg-blue-600 hover:text-white font-black uppercase tracking-widest gap-2 group/edit transition-all shadow-sm"
+                                        className="flex-1 rounded-xl h-10 border-gray-100 bg-gray-50/50 hover:bg-blue-600 hover:text-white font-black uppercase tracking-widest gap-2 group/edit transition-all shadow-sm"
                                     >
-                                        <Settings size={18} className="group-hover/edit:rotate-180 transition-transform duration-500 text-gray-400 group-hover:text-white" />
+                                        <Settings size={16} className="group-hover/edit:rotate-180 transition-transform duration-500 text-gray-400 group-hover:text-white" />
                                         Sozlash
                                     </Button>
                                     <Button
@@ -303,11 +303,11 @@ export default function PaymentMethodsPage() {
                                             if (confirm("Haqiqatan ham o'chirmoqchimisiz?")) deleteMutation.mutate(method.id);
                                         }}
                                         variant="ghost"
-                                        className="rounded-2xl h-14 w-14 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                                        className="rounded-xl h-10 w-10 text-gray-300 hover:text-red-500 hover:bg-red-50 transition-all"
                                         title="O'chirish"
                                         aria-label={`${method.name} tizimini o'chirish`}
                                     >
-                                        <Trash2 size={20} />
+                                        <Trash2 size={16} />
                                     </Button>
                                 </div>
                             </motion.div>
@@ -315,12 +315,12 @@ export default function PaymentMethodsPage() {
                     </div>
 
                     {filteredMethods?.length === 0 && (
-                        <div className="text-center py-32 bg-white rounded-[40px] border-2 border-dashed border-gray-100 flex flex-col items-center">
-                            <div className="w-24 h-24 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-6">
-                                <Search size={48} />
+                        <div className="text-center py-16 bg-white rounded-2xl border-2 border-dashed border-gray-100 flex flex-col items-center">
+                            <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center text-gray-200 mb-4">
+                                <Search size={24} />
                             </div>
-                            <h3 className="text-2xl font-black text-gray-900 tracking-tight italic uppercase">Natija topilmadi</h3>
-                            <p className="text-gray-400 mt-2 max-w-xs mx-auto text-sm font-medium leading-relaxed">Qidiruv mezonlarini o'zgartiring yoki yangi to'lov metodini ro'yxatdan o'tkazing.</p>
+                            <h3 className="text-lg font-black text-gray-900 tracking-tight italic uppercase">Natija topilmadi</h3>
+                            <p className="text-gray-400 mt-1 max-w-xs mx-auto text-sm font-medium leading-relaxed">Qidiruv mezonlarini o'zgartiring yoki yangi to'lov metodini ro'yxatdan o'tkazing.</p>
                         </div>
                     )}
                 </div>
@@ -341,18 +341,18 @@ export default function PaymentMethodsPage() {
                             initial={{ scale: 0.9, opacity: 0, y: 40 }}
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.9, opacity: 0, y: 40 }}
-                            className="bg-white rounded-[48px] w-full max-w-2xl p-8 md:p-12 relative shadow-2xl overflow-hidden flex flex-col md:flex-row gap-10"
+                            className="bg-white rounded-2xl w-full max-w-md p-5 md:p-6 relative shadow-2xl overflow-hidden flex flex-col md:flex-row gap-4"
                         >
                             {/* Left Side: Guide */}
-                            <div className="md:w-1/3 space-y-6 border-r border-gray-100 pr-0 md:pr-10 hidden md:block">
-                                <div className={`w-16 h-16 rounded-3xl ${PROVIDER_CONFIG[formData.provider]?.bg || 'bg-blue-50'} flex items-center justify-center ${PROVIDER_CONFIG[formData.provider]?.iconColor || 'text-blue-500'} mb-6 shadow-inner`}>
-                                    <Info size={32} />
+                            <div className="md:w-1/3 space-y-4 border-r border-gray-100 pr-0 md:pr-6 hidden md:block">
+                                <div className={`w-10 h-10 rounded-xl ${PROVIDER_CONFIG[formData.provider]?.bg || 'bg-blue-50'} flex items-center justify-center ${PROVIDER_CONFIG[formData.provider]?.iconColor || 'text-blue-500'} mb-4 shadow-inner`}>
+                                    <Info size={20} />
                                 </div>
-                                <h4 className="text-lg font-black text-gray-900 leading-tight">Qo'llanma: {formData.provider}</h4>
-                                <p className="text-sm font-medium text-gray-500 leading-relaxed italic">
+                                <h4 className="text-base font-black text-gray-900 leading-tight">Qo'llanma: {formData.provider}</h4>
+                                <p className="text-xs font-medium text-gray-500 leading-relaxed italic">
                                     {PROVIDER_CONFIG[formData.provider]?.guide || "Ushbu to'lov tizimini sozlash uchun kerakli ma'lumotlarni kiriting."}
                                 </p>
-                                <div className="p-5 bg-blue-50/50 rounded-2xl space-y-3">
+                                <div className="p-4 bg-blue-50/50 rounded-xl space-y-2.5">
                                     <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest leading-none">Status</p>
                                     <div className="flex items-center gap-2">
                                         <div className="w-2 h-2 rounded-full bg-blue-500" />
@@ -362,20 +362,20 @@ export default function PaymentMethodsPage() {
                             </div>
 
                             {/* Right Side: Form */}
-                            <div className="flex-1 space-y-6">
-                                <div className="flex items-center justify-between mb-4">
+                            <div className="flex-1 space-y-4">
+                                <div className="flex items-center justify-between mb-3">
                                     <div>
-                                        <h2 className="text-2xl font-black text-gray-900 uppercase italic tracking-tight">
+                                        <h2 className="text-lg font-black text-gray-900 uppercase italic tracking-tight">
                                             {editingMethod ? "Tahrirlash" : "Ro'yxatga olish"}
                                         </h2>
                                         <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1">Metod parametrlarini sozlash</p>
                                     </div>
-                                    <button onClick={() => setIsModalOpen(false)} className="p-3 hover:bg-gray-50 rounded-2xl transition-all md:hidden">
-                                        <X size={24} className="text-gray-400" />
+                                    <button onClick={() => setIsModalOpen(false)} className="p-2 hover:bg-gray-50 rounded-xl transition-all md:hidden">
+                                        <X size={20} className="text-gray-400" />
                                     </button>
                                 </div>
 
-                                <div className="space-y-5">
+                                <div className="space-y-4">
                                     <div className="space-y-2">
                                         <label htmlFor="method-name" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Ekranda ko'rinuvchi nom</label>
                                         <input
@@ -384,11 +384,11 @@ export default function PaymentMethodsPage() {
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="Masalan: Karta orqali to'lash"
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 italic text-lg"
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-black text-gray-900 italic text-base"
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-2 gap-5">
+                                    <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
                                             <label htmlFor="method-provider" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Tizim (Provider)</label>
                                             <div className="relative">
@@ -396,7 +396,7 @@ export default function PaymentMethodsPage() {
                                                     id="method-provider"
                                                     value={formData.provider}
                                                     onChange={e => setFormData({ ...formData, provider: e.target.value })}
-                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 appearance-none italic"
+                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-black text-gray-900 appearance-none italic"
                                                 >
                                                     <option value="CLICK">CLICK</option>
                                                     <option value="PAYME">PAYME</option>
@@ -404,7 +404,7 @@ export default function PaymentMethodsPage() {
                                                     <option value="CASH">NAQD PUL</option>
                                                     <option value="CARD">KARTA (P2P)</option>
                                                 </select>
-                                                <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                                                <ChevronRight size={16} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
                                             </div>
                                         </div>
                                         <div className="space-y-2">
@@ -414,13 +414,13 @@ export default function PaymentMethodsPage() {
                                                     id="method-type"
                                                     value={formData.type}
                                                     onChange={e => setFormData({ ...formData, type: e.target.value })}
-                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-black text-gray-900 appearance-none italic"
+                                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-black text-gray-900 appearance-none italic"
                                                 >
                                                     <option value="MERCHANT">API MERCHANT</option>
                                                     <option value="P2P">P2P TRANSFER</option>
                                                     <option value="OFFLINE">OFFLINE (NAQD)</option>
                                                 </select>
-                                                <ChevronRight size={18} className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
+                                                <ChevronRight size={16} className="absolute right-3 top-1/2 -translate-y-1/2 rotate-90 text-gray-400 pointer-events-none" />
                                             </div>
                                         </div>
                                     </div>
@@ -440,7 +440,7 @@ export default function PaymentMethodsPage() {
                                                 setFormData({ ...formData, details: val });
                                             }}
                                             placeholder={formData.provider === 'CARD' ? "8600 ...." : "Mijozga ko'rinuvchi qo'shimcha ma'lumot"}
-                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold placeholder:font-medium italic"
+                                            className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-bold placeholder:font-medium italic"
                                         />
                                     </div>
 
@@ -454,39 +454,39 @@ export default function PaymentMethodsPage() {
                                             value={formData.config}
                                             onChange={e => setFormData({ ...formData, config: e.target.value })}
                                             placeholder='{"service_id": "...", "merchant_id": "..."}'
-                                            className="w-full bg-[#0f172a] border-2 border-transparent focus:border-blue-500 p-4 rounded-[24px] outline-none transition-all font-mono text-[11px] text-emerald-400 min-h-[100px] shadow-inner"
+                                            className="w-full bg-[#0f172a] border-2 border-transparent focus:border-blue-500 p-3 rounded-xl outline-none transition-all font-mono text-[11px] text-emerald-400 min-h-[80px] shadow-inner"
                                         />
                                     </div>
 
-                                    <div className="flex items-center justify-between p-4 bg-gray-50/80 rounded-[20px] border border-gray-100">
-                                        <div className="flex items-center gap-3">
+                                    <div className="flex items-center justify-between p-3 bg-gray-50/80 rounded-xl border border-gray-100">
+                                        <div className="flex items-center gap-2.5">
                                             <div className={`w-3 h-3 rounded-full ${formData.isActive ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-gray-300'}`} />
                                             <span className="text-xs font-black text-gray-900 uppercase italic tracking-tighter">{formData.isActive ? "Tizim hozirda ochiq" : "Tizim vaqtincha yopiq"}</span>
                                         </div>
                                         <button
                                             type="button"
                                             onClick={() => setFormData({ ...formData, isActive: !formData.isActive })}
-                                            className={`w-12 h-6 rounded-full p-1 transition-all duration-300 ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                                            className={`w-11 h-6 rounded-full p-1 transition-all duration-300 ${formData.isActive ? 'bg-emerald-500' : 'bg-gray-300'}`}
                                             title={formData.isActive ? "Tizimni o'chirish" : "Tizimni yoqish"}
                                             aria-label={formData.isActive ? "Tizimni o'chirish" : "Tizimni yoqish"}
                                         >
-                                            <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 ${formData.isActive ? 'translate-x-6' : 'translate-x-0'}`} />
+                                            <div className={`w-4 h-4 bg-white rounded-full transition-all duration-300 ${formData.isActive ? 'translate-x-5' : 'translate-x-0'}`} />
                                         </button>
                                     </div>
 
                                     <Button
                                         onClick={handleSave}
                                         disabled={createMutation.isPending || updateMutation.isPending}
-                                        className="w-full bg-gray-900 border-b-4 border-gray-950 hover:bg-black text-white h-16 rounded-[24px] font-black text-lg gap-3 shadow-2xl transition-all active:translate-y-1 active:border-b-0 mt-2 uppercase tracking-tight italic"
+                                        className="w-full bg-gray-900 border-b-4 border-gray-950 hover:bg-black text-white h-11 rounded-xl font-black text-sm gap-2.5 shadow-lg transition-all active:translate-y-1 active:border-b-0 mt-2 uppercase tracking-tight italic"
                                     >
                                         {(createMutation.isPending || updateMutation.isPending) ? (
                                             <div className="flex items-center gap-2">
-                                                <Loader2 className="animate-spin" />
+                                                <Loader2 className="animate-spin" size={16} />
                                                 <span>JARAYONDA...</span>
                                             </div>
                                         ) : (
                                             <>
-                                                <Save size={24} />
+                                                <Save size={18} />
                                                 MA'LUMOTLARNI SAQLASH
                                             </>
                                         )}
@@ -510,16 +510,16 @@ function StatBox({ label, value, icon, color }: { label: string, value: any, ico
     };
 
     return (
-        <div className="bg-white p-7 rounded-[40px] border border-gray-100 shadow-sm flex items-center gap-6 transition-all hover:shadow-2xl hover:-translate-y-2 group relative overflow-hidden">
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3 transition-all hover:shadow-xl hover:-translate-y-1 group relative overflow-hidden">
             <div className={`absolute -right-4 -bottom-4 opacity-[0.03] group-hover:scale-150 transition-transform duration-700 text-black`}>
                 {icon}
             </div>
-            <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center border-2 ${colors[color]} shadow-xl group-hover:rotate-12 transition-all duration-500`}>
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${colors[color]} shadow-md group-hover:rotate-12 transition-all duration-500`}>
                 {icon}
             </div>
             <div>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] italic">{label}</p>
-                <p className="text-3xl font-black text-gray-900 mt-0.5 tracking-tight italic">{value}</p>
+                <p className="text-lg font-black text-gray-900 mt-0.5 tracking-tight italic">{value}</p>
             </div>
         </div>
     );

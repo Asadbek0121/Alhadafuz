@@ -81,43 +81,43 @@ export default function AdminSettingsPage() {
     };
 
     if (loading) return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <Loader2 className="w-10 h-10 animate-spin text-blue-500" />
+        <div className="flex flex-col items-center justify-center min-h-[200px] space-y-3">
+            <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
             <p className="text-gray-400 font-medium animate-pulse">Sozlamalar yuklanmoqda...</p>
         </div>
     );
 
     return (
-        <div className="p-8 space-y-8 bg-gray-50/30 min-h-screen">
+        <div className="p-5 space-y-4 bg-gray-50/30 min-h-screen">
             {/* Header Section */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                 <div className="space-y-1">
-                    <h1 className="text-3xl font-black text-gray-900 tracking-tight">Do'kon Sozlamalari</h1>
+                    <h1 className="text-xl font-black text-gray-900 tracking-tight">Do'kon Sozlamalari</h1>
                     <p className="text-gray-500 text-sm font-medium">Platformaning asosiy ma'lumotlari va aloqa vositalari</p>
                 </div>
                 <Button
                     onClick={handleSubmit}
                     disabled={saving}
-                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl h-12 shadow-xl shadow-blue-200/50 transition-all active:scale-95 px-8 font-black tracking-tight uppercase"
+                    className="gap-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl h-10 shadow-md shadow-blue-200/50 transition-all active:scale-95 px-4 font-black tracking-tight uppercase"
                 >
-                    {saving ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                    {saving ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}
                     {saving ? "SAQLANMOQDA..." : "SAQLASH"}
                 </Button>
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                 {/* Left Column: General & Contact */}
-                <div className="xl:col-span-2 space-y-8">
+                <div className="xl:col-span-2 space-y-4">
 
                     {/* General Settings Card */}
-                    <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 rounded-2xl bg-indigo-50 flex items-center justify-center text-indigo-500 shadow-inner">
-                                <Store size={24} />
+                    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm relative overflow-hidden group">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 shadow-inner">
+                                <Store size={18} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Asosiy Ma'lumotlar</h3>
-                                <p className="text-sm font-medium text-gray-400">Sayt nomi va brending</p>
+                                <h3 className="text-lg font-black text-gray-900 tracking-tight">Asosiy Ma'lumotlar</h3>
+                                <p className="text-xs font-medium text-gray-400">Sayt nomi va brending</p>
                             </div>
                         </div>
 
@@ -128,24 +128,24 @@ export default function AdminSettingsPage() {
                                 value={formData.siteName}
                                 onChange={e => setFormData({ ...formData, siteName: e.target.value })}
                                 placeholder="Hadaf Market"
-                                className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 text-lg placeholder:font-medium placeholder:text-gray-300"
+                                className="w-full bg-gray-50 border-2 border-transparent focus:border-indigo-500 focus:bg-white p-2.5 rounded-xl outline-none transition-all font-bold text-gray-900 text-base placeholder:font-medium placeholder:text-gray-300"
                             />
                         </div>
                     </div>
 
                     {/* Contact Info Card */}
-                    <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-inner">
-                                <MapPin size={24} />
+                    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm relative overflow-hidden group">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-500 shadow-inner">
+                                <MapPin size={18} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Aloqa Ma'lumotlari</h3>
-                                <p className="text-sm font-medium text-gray-400">Footer va kontaktlar sahifasi uchun</p>
+                                <h3 className="text-lg font-black text-gray-900 tracking-tight">Aloqa Ma'lumotlari</h3>
+                                <p className="text-xs font-medium text-gray-400">Footer va kontaktlar sahifasi uchun</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label htmlFor="shop-phone" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1 flex items-center gap-1">
                                     <Phone size={10} /> Telefon Raqam
@@ -155,7 +155,7 @@ export default function AdminSettingsPage() {
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     placeholder="+998 __ ___ __ __"
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-2.5 rounded-xl outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -167,7 +167,7 @@ export default function AdminSettingsPage() {
                                     value={formData.email}
                                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                                     placeholder="info@example.com"
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-2.5 rounded-xl outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
                             <div className="col-span-1 md:col-span-2 space-y-2">
@@ -178,7 +178,7 @@ export default function AdminSettingsPage() {
                                     onChange={e => setFormData({ ...formData, address: e.target.value })}
                                     placeholder="Termiz shahri, ..."
                                     rows={2}
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-4 rounded-[24px] outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 resize-none"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-emerald-500 focus:bg-white p-2.5 rounded-xl outline-none transition-all font-medium text-gray-900 placeholder:text-gray-300 resize-none"
                                 />
                             </div>
                             <div className="col-span-1 md:col-span-2 space-y-2">
@@ -186,13 +186,13 @@ export default function AdminSettingsPage() {
                                     <MessageCircle size={10} /> Qo'llab-quvvatlash Telegrami (Username)
                                 </label>
                                 <div className="relative">
-                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">@</span>
+                                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 font-bold">@</span>
                                     <input
                                         id="support-telegram"
                                         value={(formData.socialLinks as any).supportTelegram?.replace('@', '') || ''}
                                         onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, supportTelegram: e.target.value } } as any)}
                                         placeholder="hadaf_uz"
-                                        className="w-full bg-blue-50/30 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 pl-8 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                        className="w-full bg-blue-50/30 border-2 border-transparent focus:border-blue-500 focus:bg-white p-2.5 pl-7 rounded-xl outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                     />
                                 </div>
                                 <p className="text-[10px] text-gray-400 ml-1 font-medium">Agar bo'sh qoldirilsa, asosiy kanal havolasi ishlatiladi.</p>
@@ -201,18 +201,18 @@ export default function AdminSettingsPage() {
                     </div>
 
                     {/* Payment Info Card */}
-                    <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-inner">
-                                <CreditCard size={24} />
+                    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm relative overflow-hidden group">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 shadow-inner">
+                                <CreditCard size={18} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tight">To'lov Ma'lumotlari (P2P)</h3>
-                                <p className="text-sm font-medium text-gray-400">Haridorlar kartadan to'lov qilishlari uchun</p>
+                                <h3 className="text-lg font-black text-gray-900 tracking-tight">To'lov Ma'lumotlari (P2P)</h3>
+                                <p className="text-xs font-medium text-gray-400">Haridorlar kartadan to'lov qilishlari uchun</p>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label htmlFor="card-number" className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Karta Raqami</label>
                                 <input
@@ -220,7 +220,7 @@ export default function AdminSettingsPage() {
                                     value={formData.cardNumber}
                                     onChange={e => setFormData({ ...formData, cardNumber: e.target.value })}
                                     placeholder="8600 0000 0000 0000"
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-2.5 rounded-xl outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -230,7 +230,7 @@ export default function AdminSettingsPage() {
                                     value={formData.cardHolderName}
                                     onChange={e => setFormData({ ...formData, cardHolderName: e.target.value })}
                                     placeholder="FALONCHIYEV FALONCHI"
-                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-4 rounded-[20px] outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
+                                    className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-2.5 rounded-xl outline-none transition-all font-bold text-gray-900 placeholder:font-medium placeholder:text-gray-300"
                                 />
                             </div>
                         </div>
@@ -238,65 +238,65 @@ export default function AdminSettingsPage() {
                 </div>
 
                 {/* Right Column: Social & Telegram */}
-                <div className="space-y-8">
+                <div className="space-y-4">
                     {/* Social Media Card */}
-                    <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm relative overflow-hidden group">
-                        <div className="flex items-center gap-4 mb-8">
-                            <div className="w-12 h-12 rounded-2xl bg-pink-50 flex items-center justify-center text-pink-500 shadow-inner">
-                                <Globe size={24} />
+                    <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm relative overflow-hidden group">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="w-9 h-9 rounded-xl bg-pink-50 flex items-center justify-center text-pink-500 shadow-inner">
+                                <Globe size={18} />
                             </div>
                             <div>
-                                <h3 className="text-xl font-black text-gray-900 tracking-tight">Ijtimoiy Tarmoqlar</h3>
-                                <p className="text-sm font-medium text-gray-400">Saytda ko'rsatiladigan havolalar</p>
+                                <h3 className="text-lg font-black text-gray-900 tracking-tight">Ijtimoiy Tarmoqlar</h3>
+                                <p className="text-xs font-medium text-gray-400">Saytda ko'rsatiladigan havolalar</p>
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-2.5">
                                 <label htmlFor="social-telegram" className="sr-only">Telegram</label>
-                                <SocialIcon brand="telegram" size={40} />
+                                <SocialIcon brand="telegram" size={32} />
                                 <input
                                     id="social-telegram"
                                     value={formData.socialLinks.telegram}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, telegram: e.target.value } })}
                                     placeholder="t.me/kanal"
-                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-medium text-sm"
+                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-blue-500 focus:bg-white p-2 rounded-lg outline-none transition-all font-medium text-sm"
                                     aria-label="Telegram kanali"
                                 />
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
                                 <label htmlFor="social-instagram" className="sr-only">Instagram</label>
-                                <SocialIcon brand="instagram" size={40} />
+                                <SocialIcon brand="instagram" size={32} />
                                 <input
                                     id="social-instagram"
                                     value={formData.socialLinks.instagram}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, instagram: e.target.value } })}
                                     placeholder="instagram.com/profile"
-                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-pink-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-medium text-sm"
+                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-pink-500 focus:bg-white p-2 rounded-lg outline-none transition-all font-medium text-sm"
                                     aria-label="Instagram sahifasi"
                                 />
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
                                 <label htmlFor="social-facebook" className="sr-only">Facebook</label>
-                                <SocialIcon brand="facebook" size={40} />
+                                <SocialIcon brand="facebook" size={32} />
                                 <input
                                     id="social-facebook"
                                     value={formData.socialLinks.facebook}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, facebook: e.target.value } })}
                                     placeholder="facebook.com/page"
-                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white p-3 rounded-xl outline-none transition-all font-medium text-sm"
+                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-blue-600 focus:bg-white p-2 rounded-lg outline-none transition-all font-medium text-sm"
                                     aria-label="Facebook sahifasi"
                                 />
                             </div>
-                            <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2.5">
                                 <label htmlFor="social-youtube" className="sr-only">Youtube</label>
-                                <SocialIcon brand="youtube" size={40} />
+                                <SocialIcon brand="youtube" size={32} />
                                 <input
                                     id="social-youtube"
                                     value={formData.socialLinks.youtube}
                                     onChange={e => setFormData({ ...formData, socialLinks: { ...formData.socialLinks, youtube: e.target.value } })}
                                     placeholder="youtube.com/channel"
-                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-red-500 focus:bg-white p-3 rounded-xl outline-none transition-all font-medium text-sm"
+                                    className="flex-1 bg-gray-50 border-2 border-transparent focus:border-red-500 focus:bg-white p-2 rounded-lg outline-none transition-all font-medium text-sm"
                                     aria-label="Youtube kanali"
                                 />
                             </div>
