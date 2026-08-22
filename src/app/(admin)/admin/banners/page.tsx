@@ -58,6 +58,12 @@ interface PositionMeta {
     usesPricing: boolean;
     /** Shu joylashuv kategoriyaga bog'lanishi shartmi. */
     needsCategories: boolean;
+    /** Frontendda tavsif (description) ko'rinadimi. */
+    needsDescription: boolean;
+    /** Frontendda mahsulotga bog'lash (productId) ishlatiladimi. */
+    needsProductLink: boolean;
+    /** Frontendda kategoriyaga bog'lash (targetCategoryId) ishlatiladimi. */
+    needsCategoryLink: boolean;
 }
 
 const POSITIONS: PositionMeta[] = [
@@ -68,7 +74,10 @@ const POSITIONS: PositionMeta[] = [
         aspect: '1200 / 450',
         surface: 'Bosh sahifadagi katta slider. Rasm, sarlavha, tavsif va "Batafsil" tugmasi ko\'rinadi. Bir nechta banner qo\'shsangiz avtomatik almashib turadi (tartibni "Tartib" belgilaydi).',
         usesPricing: false,
-        needsCategories: false
+        needsCategories: false,
+        needsDescription: true,
+        needsProductLink: true,
+        needsCategoryLink: true
     },
     {
         value: 'HOME_SIDE',
@@ -77,7 +86,10 @@ const POSITIONS: PositionMeta[] = [
         aspect: '1 / 1',
         surface: 'Bosh sahifaning o\'ng tomonidagi "Hot Deal" kartasi. Narx, eski narx, chegirma belgisi va tugash vaqti sanoq-taxtasi shu yerda ishlaydi. Saytda faqat BITTA yon banner ko\'rinadi — eng kichik tartib raqamli.',
         usesPricing: true,
-        needsCategories: false
+        needsCategories: false,
+        needsDescription: false,
+        needsProductLink: true,
+        needsCategoryLink: false
     },
     {
         value: 'CATEGORY_TOP',
@@ -86,7 +98,10 @@ const POSITIONS: PositionMeta[] = [
         aspect: '1200 / 250',
         surface: 'Kategoriya sahifasining yuqorisidagi karusel. Ko\'rinishi uchun pastdagi "Qaysi kategoriya sahifalarida ko\'rinadi" ro\'yxatidan kamida bitta kategoriya tanlanishi SHART.',
         usesPricing: false,
-        needsCategories: true
+        needsCategories: true,
+        needsDescription: true,
+        needsProductLink: false,
+        needsCategoryLink: false
     }
 ];
 
@@ -395,31 +410,34 @@ export default function AdminBannersPage() {
             const url = editId ? `/api/admin/banners/${editId}` : '/api/admin/banners';
             const method = editId ? 'PATCH' : 'POST';
 
-            // Narx/chegirma bloki faqat yon promo kartada render bo'ladi —
-            // boshqa joylashuvlar uchun bazaga saqlamaymiz.
-            const pricingApplies = positionMeta.usesPricing;
+                    // Narx/chegirma bloki faqat yon promo kartada render bo'ladi —
+                    // boshqa joylashuvlar uchun bazaga saqlamaymiz.
+                    const pricingApplies = positionMeta.usesPricing;
+                    // Mahsulot/kategoriya havolasi faqat frontend ishlatadigan
+                    // joylashuvlar uchun saqlanadi (CATEGORY_TOP ularni o'qimaydi).
+                    const linkApplies = positionMeta.needsProductLink || positionMeta.needsCategoryLink;
 
-            const res = await fetch(url, {
-                method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    title: title.trim(),
-                    description: description.trim() || null,
-                    image,
-                    link: link.trim() || null,
-                    position,
-                    isActive,
-                    order: parseInt(order) || 0,
-                    price: pricingApplies && price ? parseFloat(price) : null,
-                    oldPrice: pricingApplies && oldPrice ? parseFloat(oldPrice) : null,
-                    discount: pricingApplies ? (discount.trim() || null) : null,
-                    startDate: startDate || null,
-                    endDate: endDate || null,
-                    productId,
-                    targetCategoryId,
-                    categoryIds
-                })
-            });
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            title: title.trim(),
+                            description: description.trim() || null,
+                            image,
+                            link: link.trim() || null,
+                            position,
+                            isActive,
+                            order: parseInt(order) || 0,
+                            price: pricingApplies && price ? parseFloat(price) : null,
+                            oldPrice: pricingApplies && oldPrice ? parseFloat(oldPrice) : null,
+                            discount: pricingApplies ? (discount.trim() || null) : null,
+                            startDate: startDate || null,
+                            endDate: endDate || null,
+                            productId: linkApplies ? productId : null,
+                            targetCategoryId: linkApplies ? targetCategoryId : null,
+                            categoryIds
+                        })
+                    });
 
             if (res.ok) {
                 toast.success(editId ? "Banner yangilandi" : "Banner yaratildi");
@@ -633,21 +651,21 @@ export default function AdminBannersPage() {
                                         </div>
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label htmlFor="banner-description" className="text-sm font-bold text-gray-700 ml-1">Tavsif (Description) - ixtiyoriy</label>
-                                        <textarea
-                                            id="banner-description"
-                                            value={description}
-                                            onChange={e => setDescription(e.target.value)}
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium min-h-[72px]"
-                                            placeholder="Sarlavha ostida chiqadigan matn"
-                                        />
-                                        <p className="text-xs text-gray-500 ml-1">
-                                            {positionMeta.value === 'HOME_SIDE'
-                                                ? "Yon promo kartada tavsif ko'rinmaydi — bu joyni sarlavha, narx va sanoq-taxta egallaydi."
-                                                : "Saytda sarlavha ostida, 2 qatorga qisqartirilgan holda chiqadi."}
-                                        </p>
-                                    </div>
+                                    {positionMeta.needsDescription && (
+                                        <div className="space-y-2">
+                                            <label htmlFor="banner-description" className="text-sm font-bold text-gray-700 ml-1">Tavsif (Description) - ixtiyoriy</label>
+                                            <textarea
+                                                id="banner-description"
+                                                value={description}
+                                                onChange={e => setDescription(e.target.value)}
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium min-h-[72px]"
+                                                placeholder="Sarlavha ostida chiqadigan matn"
+                                            />
+                                            <p className="text-xs text-gray-500 ml-1">
+                                                Saytda sarlavha ostida, 2 qatorga qisqartirilgan holda chiqadi.
+                                            </p>
+                                        </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <span className="text-sm font-bold text-gray-700 ml-1">Status</span>
@@ -871,15 +889,16 @@ export default function AdminBannersPage() {
                                             </p>
                                         )}
                                     </div>
-
                                     {/*
                                       Bu ikki boshqaruv "banner bosilganda qayerga o'tadi"ni
                                       belgilaydi (yuqoridagi kategoriya ro'yxati esa "qayerda
                                       ko'rinadi" — ular boshqa-boshqa narsa).
                                     */}
+                                    {(positionMeta.needsProductLink || positionMeta.needsCategoryLink) && (
                                     <div className="space-y-2">
                                         <span className="text-sm font-bold text-gray-700 ml-1">Banner bosilganda qayerga o'tadi</span>
-                                        <div className="grid grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            {positionMeta.needsProductLink && (
                                             <div className="space-y-2 relative">
                                                 <label htmlFor="banner-product-search" className="text-xs font-bold text-gray-500 ml-1">Mahsulotga bog'lash</label>
                                                 <div className="relative">
@@ -937,7 +956,9 @@ export default function AdminBannersPage() {
                                                     </div>
                                                 )}
                                             </div>
+                                            )}
 
+                                            {positionMeta.needsCategoryLink && (
                                             <div className="space-y-2 relative">
                                                 <label htmlFor="banner-category-search" className="text-xs font-bold text-gray-500 ml-1">Kategoriyaga bog'lash</label>
                                                 <div className="relative">
@@ -977,6 +998,7 @@ export default function AdminBannersPage() {
                                                         ))}
                                                     </div>
                                                 )}
+
                                                 {targetCategoryId && (
                                                     <div className="flex items-center gap-2 mt-2 p-2 bg-purple-50 text-purple-700 rounded-xl text-xs font-bold w-fit">
                                                         <CheckCircle2 size={14} /> Biriktirilgan
@@ -992,8 +1014,10 @@ export default function AdminBannersPage() {
                                                     </div>
                                                 )}
                                             </div>
+                                            )}
                                         </div>
                                     </div>
+                                    )}
 
                                     <div className="space-y-2">
                                         <label htmlFor="banner-link" className="text-sm font-bold text-gray-700 ml-1">Havola (Link) - ixtiyoriy</label>
