@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Profile Security parol o'zgartirish fix** (`3c1ac1d`): `/uz/profile/security` parol almashtirish argon2 hashlangan parol bor foydalanuvchida doim "Incorrect current password" qaytarardi (route faqat `bcrypt.compare` ishlatardi). Endi `src/auth.ts:137-140` bilan bir xil mantiq: `$argon2` prefiksiga qarab `argon2.verify` yoki `bcrypt.compare`. Verification: tsc 0, lint 0, sahifa 200.
 - **HOME_TOP "Bugungi takliflar" — ko'p mahsulotli carousel** (`c0ce935`):
   - Frontend tahlili: "Bugungi takliflar" = `Hero` fallback carousel (Hero.tsx:162-196), `fallbackProducts` (homepage products) bilan — faqat HOME_TOP banner bo'lmasa ko'rinadi. HOME_SIDE (promo card) bitta `productId` ishlatadi, HOME_TOP esa oddiy banner edi.
   - Schema: `BannerProduct` M-N modeli (bannerId, productId, order, `@@unique([bannerId,productId])`) + `Banner.image` nullable. 2 migratsiya: `20260822094929_banner_product_carousel`, `20260822095208_banner_image_nullable`.
@@ -272,4 +273,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (HOME_TOP ko'p mahsulotli carousel — BannerProduct M-N, admin form, Hero carousel, build SUCCESS)
+2026-08-22 (Profile security parol fix, HOME_TOP ko'p mahsulotli carousel, admin banner formasi, build SUCCESS)
