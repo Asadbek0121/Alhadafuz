@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **SMS OTP auto-verify** (`30f737f`): "Tasdiqlash" tugmasi olib tashlandi — 6-raqam kiritilishi bilan avtomatik verify. Input: `inputMode=numeric`, `autoComplete=one-time-code`, maxLength=6, faqat raqam, paste qo'llab-quvvatlanadi, verify paytida disabled. Loading "Tekshirilmoqda...", success "✅ Tasdiqlandi", inline xato input ostida (role=alert). Telefon bloki compact: icon + bir qatorda raqam (truncate) + "Raqamni o'zgartirish" o'ngda. Timer/resend/Telegram saqlandi. i18n `verified` 3 tilda. Dizayn o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
 - **Login document viewer modal** (`876328d`): "Ommaviy oferta" / "Maxfiylik siyosati" linklari endi login modal USTIDA alohida yuqori z-index (`z-10050`) viewer modal ochadi (ilgari `<Link href>` bilan sahifa orqa fonda ochilardi). Yangi `DocumentViewer.tsx`: white panel, sarlavha, `← Ortga`/`Yopish`, faqat hujjat qatlami scroll, body scroll blok, login modal mount bo'lib qoladi (phone/checkbox state saqlanadi), Escape avval viewer'ni yopadi. Matn Terms/Privacy i18n messages'dan to'liq o'qiladigan formatda. Yangi `/offer` → `/terms` redirect. Checkbox mantiqi (tugma disabled, Google tekshiruvi) saqlanib qoldi. Verification: tsc 0, lint 0, build SUCCESS.
 - **Tracking birlashtirish** (`0e73f5e`): `/uz/track/[id]` eski single-order sahifa → server-side redirect `/delivery?order=ID`. Endi barcha tracking `/uz/delivery` multi-order dashboard orqali (bitta buyurtma `?order=` bilan tanlanadi, zoom qilinadi). Admin orders'dagi `/track/ID` linklari ishlayveradi. `/api/orders/[id]/track` endi ishlatilmaydi.
 - **Admin banner mahsulot qidiruv fix** (`92b786e`): `/api/products?q=...` `{ products: [...] }` obyekt qaytaradi, parametrsiz esa array. Admin form `Array.isArray(data)` deb tekshirib obyektni tashlab yuborardi → carousel "Mahsulot qo'shish" qidiruvi va "mahsulotga bog'lash" hech qachon natija ko'rsatmasdi. Endi `data?.products` ham o'qiladi.
@@ -276,4 +277,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Login document viewer modal, /offer route, tracking birlashtirildi, build SUCCESS)
+2026-08-22 (SMS OTP auto-verify + telefon card, login document viewer, build SUCCESS)
