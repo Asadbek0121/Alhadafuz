@@ -153,9 +153,16 @@ export default function DeliveryPage() {
     };
 
     const selectedList = useMemo(() => orders.filter(o => selectedIds.has(o.id)), [orders, selectedIds]);
+    // updateMarkers stable bo'lishi uchun (deps: []) — polling'da qayta
+    // yaratilmasin va init effect faqat bir marta ishlasin.
+    const selectedListRef = useRef(selectedList);
+    selectedListRef.current = selectedList;
 
     // ── Map markers ──
-    const updateMarkers = useCallback(() => {
+    // shouldFit=false: polling'da markerlarni yangilaydi, lekin xaritani
+    // zoom qilmaydi (foydalanuvchi qo'lda zoom qilganini saqlaydi).
+    // shouldFit=true: order tanlanganda/birinchi yuklashda bounds'ga zoom.
+    const updateMarkers = useCallback((shouldFit = false) => {
         const ymaps = (window as any).ymaps;
         if (!ymaps || !mapRef.current) return;
 
@@ -164,6 +171,7 @@ export default function DeliveryPage() {
         markersRef.current = new Map();
         if (multiRouteRef.current) { mapRef.current.geoObjects.remove(multiRouteRef.current); multiRouteRef.current = null; }
 
+        const selectedList = selectedListRef.current;
         if (selectedList.length === 0) return;
 
         // Show selected orders on map
@@ -205,23 +213,34 @@ export default function DeliveryPage() {
                 bounds.push([order.orderLat!, order.orderLng!]);
             }
 
-            // Route for single selected order
+            // Route for single selected order — boundsAutoApply:false shart,
+            // aks holda marshrut butun ekranga sig'dirilib zoom kichrayadi.
             if (selectedList.length === 1 && hasStore && order.store && hasDest) {
                 const refs: any[] = [[order.store.lat, order.store.lng]];
                 if (hasCourier) refs.push([order.courierLat!, order.courierLng!]);
                 refs.push([order.orderLat!, order.orderLng!]);
                 multiRouteRef.current = new ymaps.multiRouter.MultiRoute({
                     referencePoints: refs, params: { routingMode: 'auto' }
-                }, { routeActiveStrokeWidth: 5, routeActiveStrokeColor: color });
+                }, {
+                    routeActiveStrokeWidth: 5, routeActiveStrokeColor: color,
+                    boundsAutoApply: false,
+                });
                 mapRef.current.geoObjects.add(multiRouteRef.current);
             }
         });
 
-        // Fit bounds
-        if (bounds.length > 0) {
-            mapRef.current.setBounds(bounds, { checkZoomRange: true, zoomMargin: 50 });
+        // Fit bounds — checkZoomRange:false shart, aks holda Yandex zoom'ni
+        // viewport chegarasiga sig'dirib kichraytirib qo'yadi. Buni FAQAT
+        // order tanlanganda bajarish kerak (marker yangilanishida emas) —
+        // aks holda foydalanuvchining qo'lda qilgan zoomi bekor bo'ladi.
+        if (bounds.length > 0 && shouldFit) {
+            mapRef.current.setBounds(bounds, {
+                checkZoomRange: false,
+                zoomMargin: 40,
+                preciseZoom: true,
+            });
         }
-    }, [selectedList]);
+    }, []);
 
     // Init map — div DOM'da mavjud bo'lgandagina. Yandex script erta yuklansa
     // (loading/empty holatda div hali render bo'lmagan) null.offsetWidth xatosi
@@ -237,12 +256,25 @@ export default function DeliveryPage() {
                     center: TERMEZ_CENTER, zoom: 12,
                     controls: ['zoomControl'],
                 });
-                updateMarkers();
+                updateMarkers(true); // birinchi yuklashda order'ga zoom
             });
         } else {
-            updateMarkers();
+            updateMarkers(true); // init'dan keyin ham tanlangan order'ga zoom
         }
     }, [ymapsLoaded, updateMarkers]);
+
+    // Order tanlanganda (selectedIds o'zgarganda) xaritani shu order'ga zoom qilish.
+    // Polling (orders yangilanishi) bu effect'ni ishga tushirmaydi — faqat
+    // foydalanuvchi boshqa order tanlaganda zoom qilinadi.
+    const ordersRef = useRef(orders);
+    ordersRef.current = orders;
+    const selectedIdsKey = useMemo(() => Array.from(selectedIds).sort().join(','), [selectedIds]);
+    useEffect(() => {
+        if (mapRef.current && selectedIdsKey) {
+            const hasOrders = ordersRef.current.some(o => selectedIds.has(o.id));
+            if (hasOrders) updateMarkers(true);
+        }
+    }, [selectedIdsKey, ymapsLoaded, updateMarkers]);
 
     // ── Render: map div DOIM render qilinadi, panel holatga qarab ──
     return (
