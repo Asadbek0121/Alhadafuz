@@ -964,9 +964,10 @@
     },
     "stats": {
       "experience": "Years Experience",
-      "customers": "Happy Customers",
-      "products": "Product Types",
-      "support": "Support"
+      "customers": "Users",
+      "products": "Products",
+      "support": "24/7 Support",
+      "categories": "Categories"
     },
     "values_title": "Our Values",
     "values_desc": "The foundation of our business is honesty and loyalty to our customers",
@@ -990,14 +991,14 @@
     },
     "history_tag": "Our Path",
     "history_title": "History of Development",
-    "history_desc": "From a small idea to becoming the largest marketplace in Surkhandarya.",
+    "history_desc": "HADAF Market — an online shopping platform started in 2025 and fully launched in 2026.",
     "history_steps": {
-      "s1_year": "2024",
-      "s1_title": "Idea and Analysis",
-      "s1_desc": "Studying the Surkhandarya market and developing the project concept.",
-      "s2_year": "2025",
-      "s2_title": "Platform Creation",
-      "s2_desc": "Website and Mobile app were fully developed and tested.",
+      "s1_year": "2025",
+      "s1_title": "Platform Foundation",
+      "s1_desc": "First code was written and core systems of HADAF platform were developed.",
+      "s2_year": "2026",
+      "s2_title": "Platform Launch",
+      "s2_desc": "Full-featured e-commerce platform launched with delivery tracking, multi-language system and admin panel.",
       "s3_year": "2026",
       "s3_title": "Official Launch",
       "s3_desc": "Starting large-scale operations throughout the region."

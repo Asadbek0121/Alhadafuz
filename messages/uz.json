@@ -760,9 +760,10 @@
     },
     "stats": {
       "experience": "Yillik Tajriba",
-      "customers": "Mamnun Mijozlar",
-      "products": "Mahsulot Turlari",
-      "support": "Qo'llab-quvvatlash"
+      "customers": "Foydalanuvchilar",
+      "products": "Mahsulotlar",
+      "support": "Qo'llab-quvvatlash",
+      "categories": "Kategoriyalar"
     },
     "values_title": "Bizning Qadriyatlarimiz",
     "values_desc": "Biznesimizning asosi — halollik va mijozlarga sadoqat",
@@ -786,14 +787,14 @@
     },
     "history_tag": "Bizning yo'limiz",
     "history_title": "Rivojlanish Tarixi",
-    "history_desc": "Kichik g'oyadan boshlab, Surxondaryoning eng yirik marketpleysiga aylanishgacha bo'lgan davr.",
+    "history_desc": "HADAF Market — 2025-yilda boshlangan va 2026-yilda to'liq ishga tushgan onlayn savdo platformasi.",
     "history_steps": {
-      "s1_year": "2024",
-      "s1_title": "G'oya va Tahlil",
-      "s1_desc": "Surxondaryo bozorini o'rganish va loyiha konsepsiyasini ishlab chiqish.",
-      "s2_year": "2025",
-      "s2_title": "Platforma Yaratildi",
-      "s2_desc": "Veb-sayt va Mobil ilova to'liq ishlab chiqildi va test qilindi.",
+      "s1_year": "2025",
+      "s1_title": "Platforma asoslari yaratildi",
+      "s1_desc": "Dastlabki kod yozildi va HADAF platformasining asosiy tizimlari ishlab chiqildi.",
+      "s2_year": "2026",
+      "s2_title": "Platforma ishga tushdi",
+      "s2_desc": "To'liq funksional onlayn savdo platformasi, delivery tracking, ko'p tilli tizim va admin panel bilan ishga tushirildi.",
       "s3_year": "2026",
       "s3_title": "Rasmiy Ishga Tushish",
       "s3_desc": "Viloyat bo'ylab keng ko'lamli faoliyatni boshlash."
