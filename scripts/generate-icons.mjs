@@ -4,10 +4,14 @@
  * Run with: node scripts/generate-icons.mjs
  *
  * The source logo (1024x1024) is a stacked lockup: the "HADAF" wordmark on top
- * (x167-855, y239-638), an underline bar, and the "MARKET" tagline below. On a
- * 16-48px favicon the full lockup turns into an unreadable smear, so only the
- * wordmark itself is used — that is the brand mark. The lockup's bottom two
- * rows (bar + tagline) are excluded on purpose.
+ * (x167-855, y239-638), an underline bar, and the "MARKET" tagline below.
+ *
+ * FAVICON MARK: the full wordmark is 689x400 (aspect 1.72:1) — on a square
+ * 16-48px favicon it leaves the brand mark tiny (only ~55% of the canvas
+ * height). Instead we use the brand's "H" letter alone: the H is the blue
+ * first letter at x167-439, y239-638 (272x360 after trim). It is the most
+ * recognisable HADAF mark and reads clearly at 16px. It is centered on the
+ * square canvas filling ~88% of the height so it is large and crisp.
  *
  * sharp cannot write .ico, so the container is assembled by hand: an ICO is a
  * 6-byte header, one 16-byte directory entry per size, then the image payloads.
@@ -18,23 +22,39 @@ import { writeFile, rm } from 'node:fs/promises';
 
 const SOURCE = 'public/logo.png';
 
-// Measured content box of the HADAF wordmark inside the 1024x1024 source.
-// This excludes the underline bar and the "MARKET" tagline below it.
-const CONTENT = { left: 167, top: 239, width: 689, height: 400 };
+// Measured content box of the blue "H" (brand mark) inside the 1024x1024
+// source. This is the first letter of the HADAF wordmark, brand blue.
+// Precise bbox measured from pixels: x167-449, y279-775 (283x497).
+const CONTENT = { left: 167, top: 279, width: 283, height: 497 };
 
-// Wordmark fills 94% of the tile width; the rest is breathing room so it does
+// H mark fills 88% of the tile height; the rest is breathing room so it does
 // not touch the edges of the browser's favicon slot.
-const FILL = 0.94;
+const FILL = 0.88;
 
 const ICO_SIZES = [16, 32, 48];
 
 /**
- * Trimmed wordmark centered on a transparent square, at full resolution.
+ * Trimmed H mark centered on a transparent square, at full resolution.
  * Built once and reused, since it is the same for every output size.
  */
 async function squareSource() {
-    const side = Math.round(Math.max(CONTENT.width, CONTENT.height) / FILL);
-    const mark = await sharp(SOURCE).extract(CONTENT).toBuffer();
+    // First trim the H to its exact content box.
+    // Note: sharp has a bug where .extract().trim() in one pipeline fails
+    // with "extract_area: bad extract area", so we do it in two passes.
+    const extracted = await sharp(SOURCE).extract(CONTENT).toBuffer();
+    const mark = await sharp(extracted).trim().toBuffer();
+
+    const meta = await sharp(mark).metadata();
+    const w = meta.width, h = meta.height;
+    const maxDim = Math.max(w, h);
+    // Square side such that the mark's larger dimension fills `FILL` of it.
+    const side = Math.round(maxDim / FILL);
+    // Scale the mark so its larger dimension is `side * FILL`, keeping aspect.
+    const scaledSide = Math.round(side * FILL);
+    const scaled = await sharp(mark)
+        .resize(scaledSide, scaledSide, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
+        .png()
+        .toBuffer();
 
     return sharp({
         create: {
@@ -44,7 +64,7 @@ async function squareSource() {
             background: { r: 0, g: 0, b: 0, alpha: 0 },
         },
     })
-        .composite([{ input: mark, gravity: 'center' }])
+        .composite([{ input: scaled, gravity: 'center' }])
         .png()
         .toBuffer();
 }
@@ -179,7 +199,14 @@ const ogText = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.
   <rect x="0" y="${OG.height - 10}" width="${OG.width / 3}" height="10" fill="${BRAND_ORANGE}"/>
 </svg>`);
 
-const ogMark = await sharp(source).resize(232, 232).png().toBuffer();
+// OG mark: the full "HADAF" wordmark (x167-855, y239-638), not the square H
+// favicon mark — the full wordmark reads better at 232px in the share card.
+const OG_WORDMARK = { left: 167, top: 239, width: 689, height: 400 };
+const ogMark = await sharp(SOURCE)
+    .extract(OG_WORDMARK)
+    .resize(232, 116, { fit: 'fill', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+    .png()
+    .toBuffer();
 
 await sharp({
     create: {
