@@ -223,13 +223,17 @@ export default function DeliveryPage() {
         }
     }, [selectedList]);
 
-    // Init map
+    // Init map — div DOM'da mavjud bo'lgandagina. Yandex script erta yuklansa
+    // (loading/empty holatda div hali render bo'lmagan) null.offsetWidth xatosi
+    // berardi. Endi div doim render qilinadi (quyida) — shuning uchun xavfsiz.
     useEffect(() => {
         const ymaps = (window as any).ymaps;
         if (!ymaps || !ymapsLoaded) return;
         if (!mapRef.current) {
             ymaps.ready(() => {
-                mapRef.current = new ymaps.Map('delivery-dashboard-map', {
+                const el = document.getElementById('delivery-dashboard-map');
+                if (!el || !el.offsetWidth) return; // hali mavjud emas — keyingi effect'da
+                mapRef.current = new ymaps.Map(el, {
                     center: TERMEZ_CENTER, zoom: 12,
                     controls: ['zoomControl'],
                 });
@@ -240,34 +244,12 @@ export default function DeliveryPage() {
         }
     }, [ymapsLoaded, updateMarkers]);
 
-    // ── Render ──
-    if (loading) {
-        return (
-            <div className="container min-h-[70vh] flex flex-col items-center justify-center gap-4">
-                <Loader2 size={32} className="animate-spin text-blue-600" />
-                <p className="text-sm font-bold text-slate-500">Yetkazib berishlar yuklanmoqda...</p>
-            </div>
-        );
-    }
-
-    if (orders.length === 0 && !loading) {
-        return (
-            <div className="container min-h-[70vh] flex flex-col items-center justify-center gap-4 text-center px-4">
-                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
-                    <PackageSearch size={36} className="text-blue-500" />
-                </div>
-                <h1 className="text-xl font-black text-slate-900">Faol yetkazib berishlar yo'q</h1>
-                <p className="text-sm text-slate-500 max-w-sm">Buyurtma berganingizda kuryerni shu yerda kuzatishingiz mumkin.</p>
-                <button onClick={() => router.push('/')} className="mt-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">Xaridni boshlash</button>
-            </div>
-        );
-    }
-
+    // ── Render: map div DOIM render qilinadi, panel holatga qarab ──
     return (
         <div className="relative flex flex-col lg:flex-row min-h-screen bg-slate-50">
             <Script src={YANDEX_MAPS_URL(YANDEX_MAPS_KEY)} onLoad={() => setYmapsLoaded(true)} />
 
-            {/* MAP */}
+            {/* MAP — doim render, loading/empty holatda ham Termizni ko'rsatadi */}
             <div className="relative flex-1 min-h-[50vh] lg:min-h-screen lg:w-[60%] order-2 lg:order-1">
                 <div id="delivery-dashboard-map" className="absolute inset-0 z-0" />
                 {!ymapsLoaded && (
@@ -317,10 +299,27 @@ export default function DeliveryPage() {
                             <AlertCircle size={14} /> {error}
                         </div>
                     )}
-                    {orders.length === 0 && !error && (
-                        <div className="text-center py-10 text-slate-400 text-sm font-medium">Bu filtrda buyurtma yo'q</div>
+                    {loading && (
+                        <div className="flex flex-col items-center justify-center py-12 gap-3 text-slate-400">
+                            <Loader2 size={24} className="animate-spin text-blue-500" />
+                            <p className="text-sm font-medium">Yetkazib berishlar yuklanmoqda...</p>
+                        </div>
                     )}
-                    {orders.map((order, idx) => {
+                    {!loading && orders.length === 0 && (
+                        <div className="text-center py-12 space-y-3">
+                            <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center mx-auto">
+                                <PackageSearch size={24} className="text-blue-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-black text-slate-800">Faol yetkazib berishlar yo'q</p>
+                                <p className="text-xs text-slate-400 mt-0.5">Buyurtma berganingizda kuryerni shu yerda kuzatasiz.</p>
+                            </div>
+                            <button onClick={() => router.push('/')} className="mt-1 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700">
+                                Xaridni boshlash
+                            </button>
+                        </div>
+                    )}
+                    {!loading && orders.map((order, idx) => {
                         const isSel = selectedIds.has(order.id);
                         return (
                             <div key={order.id}
