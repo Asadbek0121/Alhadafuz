@@ -51,6 +51,17 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
             data.categories = { set: parsed.data.categoryIds.map((catId) => ({ id: catId })) };
         }
 
+        // HOME_TOP carousel mahsulotlari: `undefined` = tegmang, `[]` = hammasini o'chir.
+        if (parsed.data.productIds !== undefined) {
+            data.bannerProducts = {
+                deleteMany: {},
+                create: parsed.data.productIds.map((productId, index) => ({
+                    productId,
+                    order: index
+                }))
+            };
+        }
+
         await (prisma as any).banner.update({ where: { id }, data });
 
         revalidatePath('/');

@@ -112,9 +112,18 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     const nextSlide = () => setCurrentIndex((prev) => (prev + 1) % mainBanners.length);
     const prevSlide = () => setCurrentIndex((prev) => (prev - 1 + mainBanners.length) % mainBanners.length);
 
-    const mainBanners = banners.filter(b => b.position === 'HOME_TOP' && b.isActive !== false);
+    const mainBanners = banners.filter(b => b.position === 'HOME_TOP' && b.isActive !== false && !(b.products && b.products.length > 0));
     const sideBanner = banners.find(b => b.position === 'HOME_SIDE' && b.isActive !== false);
-    const isFallbackMode = mainBanners.length === 0 && fallbackProducts.length > 0;
+    // HOME_TOP "Bugungi takliflar" carouseli: mahsulotlari bor banner slider
+    // o'rniga carousel sifatida chiqadi. Sayt dizayni o'zgarmaydi — faqat
+    // mahsulotlar manbai banner'dan keladi (admin boshqaradi).
+    const carouselBanner = banners.find(b => b.position === 'HOME_TOP' && b.isActive !== false && b.products && b.products.length > 0);
+    const carouselProducts = carouselBanner?.products && carouselBanner.products.length > 0
+        ? carouselBanner.products
+        : fallbackProducts;
+    const isFallbackMode = carouselBanner
+        ? carouselProducts.length > 0
+        : mainBanners.length === 0 && fallbackProducts.length > 0;
 
     const hasCountdown = countdownEnd !== null;
     const isExpired = hasCountdown && timeLeft <= 0;
@@ -163,11 +172,11 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                         /* Empty slider fallback: products carousel when no HOME_TOP banners exist */
                         <div className={styles.fallbackCarousel}>
                             <div className={styles.fallbackHeader}>
-                                <h3 className={styles.fallbackTitle}>{t('ommabop')}</h3>
+                                <h3 className={styles.fallbackTitle}>{carouselBanner?.title || t('ommabop')}</h3>
                                 <span className={styles.fallbackHint}>suring →</span>
                             </div>
-                            <div className={`${styles.fallbackTrack} ${fallbackProducts.length <= 2 ? styles.fallbackTrackCentered : ''}`}>
-                                {fallbackProducts.slice(0, 12).map((p) => (
+                            <div className={`${styles.fallbackTrack} ${carouselProducts.length <= 2 ? styles.fallbackTrackCentered : ''}`}>
+                                {carouselProducts.slice(0, 12).map((p: any) => (
                                     <Link key={p.id} href={`/product/${p.id}`} className={styles.fallbackCard}>
                                         <div className={styles.fallbackImageWrap}>
                                             <Image

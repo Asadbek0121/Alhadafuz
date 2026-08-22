@@ -24,7 +24,15 @@ export async function GET() {
                 // product/targetCategory: bosilganda qayerga o'tadi — tahrirlash
                 // formasida nomini ko'rsatish uchun kerak
                 product: { select: { id: true, title: true, image: true, price: true } },
-                targetCategory: { select: { id: true, name: true, slug: true, image: true } }
+                targetCategory: { select: { id: true, name: true, slug: true, image: true } },
+                // HOME_TOP carousel mahsulotlari (M-N, tartib saqlanadi)
+                bannerProducts: {
+                    orderBy: { order: 'asc' },
+                    select: {
+                        order: true,
+                        product: { select: { id: true, title: true, image: true, price: true, oldPrice: true } }
+                    }
+                }
             }
         });
         return NextResponse.json(banners);
@@ -59,6 +67,12 @@ export async function POST(req: Request) {
                 ...buildBannerData(parsed.data),
                 categories: {
                     connect: (parsed.data.categoryIds || []).map((id) => ({ id }))
+                },
+                bannerProducts: {
+                    create: (parsed.data.productIds || []).map((productId, index) => ({
+                        productId,
+                        order: index
+                    }))
                 }
             }
         });

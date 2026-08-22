@@ -42,7 +42,7 @@ const optionalDate = z.preprocess(
 
 export const bannerSchema = z.object({
     title: z.string().trim().min(2, 'Sarlavha kamida 2 harf bo\'lishi kerak'),
-    image: z.string().trim().min(1, 'Banner rasmi majburiy'),
+    image: optionalString,
     position: z.enum(BANNER_POSITIONS, { message: 'Noto\'g\'ri joylashuv' }),
     description: optionalString,
     link: optionalString,
@@ -61,7 +61,13 @@ export const bannerSchema = z.object({
      * farqqa tayanadi — ilgari forma bu maydonni umuman yubormagani uchun
      * har bir tahrirlashda barcha bog'lanishlar o'chib ketardi.
      */
-    categoryIds: z.array(z.string()).optional()
+    categoryIds: z.array(z.string()).optional(),
+    /**
+     * "Bugungi takliflar" (HOME_TOP) carouseli uchun mahsulotlar (M-N,
+     * tartib saqlanadi). `undefined` = "tegmang", `[]` = "hammasini uzing" —
+     * `categoryIds` bilan bir xil mantiq.
+     */
+    productIds: z.array(z.string()).optional()
 }).refine(
     (data) => !data.startDate || !data.endDate || data.endDate > data.startDate,
     { message: 'Tugash vaqti boshlanish vaqtidan keyin bo\'lishi kerak', path: ['endDate'] }
@@ -81,7 +87,7 @@ export function buildBannerData(data: BannerInput) {
     return {
         title: data.title,
         description: data.description ?? null,
-        image: data.image,
+        image: data.image ?? null,
         link: data.link ?? null,
         position: data.position,
         isActive: data.isActive,

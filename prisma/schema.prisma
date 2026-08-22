@@ -365,6 +365,7 @@ model Product {
   categories    Category[]     @relation("ProductToCategory")
   attributeValues ProductAttributeValue[]
   variants      ProductVariant[]
+  bannerProducts BannerProduct[]
 
   @@index([title])
   @@index([category])
@@ -507,7 +508,7 @@ model Banner {
   id               String         @id @default(cuid())
   title            String
   description      String?
-  image            String
+  image            String?
   link             String?
   position         BannerPosition @default(HOME_TOP)
   isActive         Boolean        @default(true)
@@ -528,6 +529,29 @@ model Banner {
   targetCategory   Category?      @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
   categories       Category[]     @relation("BannerToCategory")
   events           BannerEvent[]
+  bannerProducts   BannerProduct[]
+
+  @@index([position])
+  @@index([isActive])
+}
+
+/// Banner va mahsulot orasidagi M-N bog'lanish (order saqlanadi).
+///
+/// "Bugungi takliflar" (HOME_TOP) ko'p mahsulotli carousel sifatida ishlaydi:
+/// bitta banner/campaign → ko'plab mahsulotlar. `order` mahsulotning
+/// carousel ichidagi tartibini belgilaydi (sayt aynan shu tartibda chiqaradi).
+model BannerProduct {
+  id        String   @id @default(cuid())
+  bannerId  String
+  productId String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  banner  Banner  @relation(fields: [bannerId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([bannerId, productId])
+  @@index([bannerId, order])
 }
 
 /// Banner ko'rish/bosishlarining VAQT BELGILI jurnali.
@@ -567,6 +591,7 @@ model BannerEvent {
 enum BannerEventType {
   IMPRESSION
   CLICK
+
 }
 
 model Review {

@@ -231,7 +231,26 @@ const BANNER_SITE_FIELDS = {
     discount: true,
     startDate: true,
     endDate: true,
-    productId: true
+    productId: true,
+    // HOME_TOP "Bugungi takliflar" carouseli uchun mahsulotlar (M-N, tartib bo'yicha)
+    bannerProducts: {
+        orderBy: { order: 'asc' },
+        select: {
+            product: {
+                select: {
+                    id: true,
+                    title: true,
+                    price: true,
+                    oldPrice: true,
+                    image: true,
+                    discount: true,
+                    discountType: true,
+                    isDeleted: true,
+                    status: true
+                }
+            }
+        }
+    }
 } as const;
 
 /**
@@ -246,11 +265,21 @@ const BANNER_SITE_FIELDS = {
 const getCachedActiveBanners = unstable_cache(
     async () => {
         try {
-            return await (prisma as any).banner.findMany({
+            const banners = await (prisma as any).banner.findMany({
                 where: { isActive: true },
                 orderBy: { order: 'asc' },
                 select: BANNER_SITE_FIELDS
             });
+
+            // HOME_TOP carousel uchun `bannerProducts` → tekis `products` array.
+            // O'chirilgan (isDeleted) yoki nashr qilinmagan mahsulotlar saytga
+            // chiqmaydi — aks holda carouselda o'lik card paydo bo'lardi.
+            return banners.map((b: any) => ({
+                ...b,
+                products: (b.bannerProducts || [])
+                    .map((bp: any) => bp.product)
+                    .filter((p: any) => p && !p.isDeleted && (p.status === 'published' || p.status === 'ACTIVE'))
+            }));
         } catch (err) {
             return [];
         }

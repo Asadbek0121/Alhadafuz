@@ -7,7 +7,7 @@ import {
     Loader2, Plus, Trash2, Edit2, UploadCloud,
     X, Image as ImageIcon, Search, CheckCircle2, XCircle, AlertTriangle,
     MousePointerClick, Eye, TrendingUp, BarChart3,
-    Folder, ClipboardPaste, Layers, Info
+    Folder, ClipboardPaste, Layers, Info, ArrowUp, ArrowDown, ShoppingCart
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
@@ -64,20 +64,23 @@ interface PositionMeta {
     needsProductLink: boolean;
     /** Frontendda kategoriyaga bog'lash (targetCategoryId) ishlatiladimi. */
     needsCategoryLink: boolean;
+    /** Shu joylashuv ko'p mahsulotli carousel sifatida ishlaydimi (HOME_TOP "Bugungi takliflar"). */
+    isCarousel: boolean;
 }
 
 const POSITIONS: PositionMeta[] = [
     {
         value: 'HOME_TOP',
-        label: 'Bosh Sahifa - Asosiy Slider (Chap qism)',
-        dimensions: '1200x450',
-        aspect: '1200 / 450',
-        surface: 'Bosh sahifadagi katta slider. Rasm, sarlavha, tavsif va "Batafsil" tugmasi ko\'rinadi. Bir nechta banner qo\'shsangiz avtomatik almashib turadi (tartibni "Tartib" belgilaydi).',
+        label: 'Bosh Sahifa - Bugungi Takliflar (Mahsulotlar Carouseli)',
+        dimensions: 'carousel',
+        aspect: 'auto',
+        surface: 'Bosh sahifadagi "Bugungi Takliflar" bo\'limi — ko\'p mahsulotli gorizontal carousel. Bu oddiy banner EMAS: quyida tanlagan mahsulotlar carousel ichida card sifatida chiqadi (rasm, nom, eski/yangi narx mahsulotdan avtomatik olinadi).',
         usesPricing: false,
         needsCategories: false,
-        needsDescription: true,
-        needsProductLink: true,
-        needsCategoryLink: true
+        needsDescription: false,
+        needsProductLink: false,
+        needsCategoryLink: false,
+        isCarousel: true
     },
     {
         value: 'HOME_SIDE',
@@ -89,7 +92,8 @@ const POSITIONS: PositionMeta[] = [
         needsCategories: false,
         needsDescription: false,
         needsProductLink: true,
-        needsCategoryLink: false
+        needsCategoryLink: false,
+        isCarousel: false
     },
     {
         value: 'CATEGORY_TOP',
@@ -101,7 +105,8 @@ const POSITIONS: PositionMeta[] = [
         needsCategories: true,
         needsDescription: true,
         needsProductLink: false,
-        needsCategoryLink: false
+        needsCategoryLink: false,
+        isCarousel: false
     }
 ];
 
@@ -175,6 +180,14 @@ export default function AdminBannersPage() {
     /** Banner qaysi kategoriya sahifalarida ko'rinadi (M-N `categories`). */
     const [categoryIds, setCategoryIds] = useState<string[]>([]);
     const [categoryPickerSearch, setCategoryPickerSearch] = useState('');
+
+    /** HOME_TOP "Bugungi takliflar" carousel mahsulotlari (tartib saqlanadi). */
+    const [carouselProductIds, setCarouselProductIds] = useState<string[]>([]);
+    const [carouselProductDetails, setCarouselProductDetails] = useState<Record<string, { id: string; title: string; price: number; image?: string }>>({});
+    const [carouselPickerOpen, setCarouselPickerOpen] = useState(false);
+    const [carouselPickerSearch, setCarouselPickerSearch] = useState('');
+    const [carouselPickerResults, setCarouselPickerResults] = useState<any[]>([]);
+    const [carouselPickerSelected, setCarouselPickerSelected] = useState<Record<string, boolean>>({});
 
     const positionMeta = useMemo(
         () => POSITIONS.find(p => p.value === position) ?? POSITIONS[0],
@@ -252,6 +265,28 @@ export default function AdminBannersPage() {
 
         return () => clearTimeout(timer);
     }, [productSearch]);
+
+    // Carousel mahsulot qidiruv — "Bugungi takliflar" uchun ko'p tanlash
+    useEffect(() => {
+        if (carouselPickerSearch.length < 2) {
+            setCarouselPickerResults([]);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/products?q=${encodeURIComponent(carouselPickerSearch)}&limit=20`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setCarouselPickerResults(Array.isArray(data) ? data : []);
+                }
+            } catch (err) {
+                console.error("Carousel search error:", err);
+            }
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [carouselPickerSearch]);
 
     // Kategoriyalar bir marta yuklanadi, qidiruv klient tomonda filtrlaydi —
     // ilgari har bir harf uchun butun kategoriya ro'yxati qaytadan olinardi.
@@ -382,8 +417,13 @@ export default function AdminBannersPage() {
 
     /** Saqlashdan oldingi klient tomon tekshiruvi — server ham xuddi shuni tekshiradi. */
     const validate = (): string | null => {
-        if (title.trim().length < 2) return "Sarlavha kamida 2 harf bo'lishi kerak";
-        if (!image) return "Banner rasmi majburiy — rasm yuklang yoki havola qo'ying";
+        if (positionMeta.isCarousel) {
+            if (!title.trim()) return "Carousel sarlavhasi kiritilishi kerak";
+            if (carouselProductIds.length === 0) return "Kamida bitta mahsulot tanlanishi kerak — aks holda carousel bo'sh bo'ladi";
+        } else {
+            if (title.trim().length < 2) return "Sarlavha kamida 2 harf bo'lishi kerak";
+        }
+        if (!positionMeta.isCarousel && !image) return "Banner rasmi majburiy — rasm yuklang yoki havola qo'ying";
         if (positionMeta.needsCategories && categoryIds.length === 0) {
             return "Kategoriya banneri uchun kamida bitta kategoriya tanlanishi kerak — aks holda saytda ko'rinmaydi";
         }
@@ -423,7 +463,8 @@ export default function AdminBannersPage() {
                         body: JSON.stringify({
                             title: title.trim(),
                             description: description.trim() || null,
-                            image,
+                            // Carouselda rasm mahsulotdan olinadi — banner rasmi shart emas
+                            image: image || null,
                             link: link.trim() || null,
                             position,
                             isActive,
@@ -435,7 +476,8 @@ export default function AdminBannersPage() {
                             endDate: endDate || null,
                             productId: linkApplies ? productId : null,
                             targetCategoryId: linkApplies ? targetCategoryId : null,
-                            categoryIds
+                            categoryIds,
+                            productIds: carouselProductIds
                         })
                     });
 
@@ -485,6 +527,14 @@ export default function AdminBannersPage() {
         setCategorySearch(banner.targetCategory?.name || '');
         setCategoryIds((banner.categories || []).map(c => c.id));
         setCategoryPickerSearch('');
+        // HOME_TOP carousel mahsulotlari — tartib bo'yicha
+        const carouselProducts = (banner as any).bannerProducts || [];
+        setCarouselProductIds(carouselProducts.map((bp: any) => bp.product.id));
+        const details: Record<string, { id: string; title: string; price: number; image?: string }> = {};
+        carouselProducts.forEach((bp: any) => {
+            if (bp.product) details[bp.product.id] = { id: bp.product.id, title: bp.product.title, price: bp.product.price, image: bp.product.image };
+        });
+        setCarouselProductDetails(details);
         setShowForm(true);
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
@@ -550,6 +600,9 @@ export default function AdminBannersPage() {
         setCategorySearch('');
         setCategoryIds([]);
         setCategoryPickerSearch('');
+        setCarouselProductIds([]);
+        setCarouselProductDetails({});
+        setCarouselPickerSelected({});
         setEditId(null);
     };
 
@@ -650,6 +703,97 @@ export default function AdminBannersPage() {
                                             </p>
                                         </div>
                                     </div>
+
+                                    {/*
+                                      HOME_TOP = "Bugungi Takliflar" — ko'p mahsulotli carousel.
+                                      Oddiy banner (rasm/sarlavha/tavsif) emas. Mahsulotlar
+                                      quyida tanlanadi; sayt carousel ichida card sifatida
+                                      chiqaradi. Rasmi, narxi, eski narxi mahsulotdan olinadi.
+                                    */}
+                                    {positionMeta.isCarousel && (
+                                        <div className="space-y-2">
+                                            <span className="text-sm font-bold text-gray-700 ml-1 flex items-center gap-2">
+                                                <ShoppingCart size={15} className="text-blue-600" />
+                                                Carousel mahsulotlari
+                                                <span className="text-red-500">*</span>
+                                            </span>
+
+                                            <div className="space-y-1.5">
+                                                {carouselProductIds.map((pid, index) => {
+                                                    const prod = carouselProductDetails[pid];
+                                                    return (
+                                                        <div key={pid} className="flex items-center gap-2 p-2 bg-gray-50 border border-gray-200 rounded-xl">
+                                                            <span className="w-5 text-center text-xs font-black text-gray-400">{index + 1}</span>
+                                                            {prod?.image && (
+                                                                <div className="w-9 h-9 rounded-lg bg-white border border-gray-100 overflow-hidden flex-none">
+                                                                    <img src={prod.image} alt="" className="w-full h-full object-cover" />
+                                                                </div>
+                                                            )}
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-bold text-gray-800 truncate">{prod?.title || 'Yuklanmoqda...'}</p>
+                                                                {typeof prod?.price === 'number' && (
+                                                                    <p className="text-xs text-gray-500">{prod.price.toLocaleString()} so'm</p>
+                                                                )}
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setCarouselProductIds(prev => {
+                                                                    const next = [...prev];
+                                                                    if (index > 0) { next[index] = prev[index - 1]; next[index - 1] = pid; }
+                                                                    return next;
+                                                                })}
+                                                                disabled={index === 0}
+                                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                title="Yuqoriga"
+                                                                aria-label="Yuqoriga"
+                                                            >
+                                                                <ArrowUp size={14} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setCarouselProductIds(prev => {
+                                                                    const next = [...prev];
+                                                                    if (index < prev.length - 1) { next[index] = prev[index + 1]; next[index + 1] = pid; }
+                                                                    return next;
+                                                                })}
+                                                                disabled={index === carouselProductIds.length - 1}
+                                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                                                title="Pastga"
+                                                                aria-label="Pastga"
+                                                            >
+                                                                <ArrowDown size={14} />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setCarouselProductIds(prev => prev.filter(x => x !== pid));
+                                                                    setCarouselProductDetails(prev => { const next = { ...prev }; delete next[pid]; return next; });
+                                                                }}
+                                                                className="w-7 h-7 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50"
+                                                                title="Olib tashlash"
+                                                                aria-label="Olib tashlash"
+                                                            >
+                                                                <X size={14} />
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {carouselProductIds.length === 0 && (
+                                                    <p className="text-xs text-gray-400 font-medium ml-1">
+                                                        Hozircha mahsulot yo'q — pastdagi tugma orqali qo'shing.
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => { setCarouselPickerOpen(true); setCarouselPickerSelected({}); setCarouselPickerSearch(''); }}
+                                                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 text-sm font-bold hover:bg-blue-50 transition-colors"
+                                            >
+                                                <Plus size={16} /> Mahsulot qo'shish
+                                            </button>
+                                        </div>
+                                    )}
 
                                     {positionMeta.needsDescription && (
                                         <div className="space-y-2">
@@ -1034,6 +1178,16 @@ export default function AdminBannersPage() {
                                         </p>
                                     </div>
 
+                                    {positionMeta.isCarousel ? (
+                                        <div className="flex gap-2 items-start p-3 bg-emerald-50/70 border border-emerald-100 rounded-xl">
+                                            <ShoppingCart size={14} className="text-emerald-600 mt-0.5 flex-none" />
+                                            <p className="text-[11px] leading-relaxed text-emerald-800 font-medium">
+                                                Bu bo\'lim <b>ko\'p mahsulotli carousel</b> — alohida banner rasmi
+                                                kerak emas. Har bir mahsulot o\'z rasmi, nomi, eski/yangi narxini
+                                                saytga olib kiradi (rasm/narx qo\'lda kiritilmaydi).
+                                            </p>
+                                        </div>
+                                    ) : (
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 ml-1">
                                             Banner Rasmi <span className="text-red-500">*</span>
@@ -1124,6 +1278,7 @@ export default function AdminBannersPage() {
                                             </div>
                                         </div>
                                     </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1152,6 +1307,114 @@ export default function AdminBannersPage() {
                                 )}
                             </div>
                         </form>
+
+                        {/*
+                          HOME_TOP carousel uchun mahsulot tanlash modal — bir nechta
+                          mahsulotni qidirib belgilash va bir martada qo'shish.
+                        */}
+                        {carouselPickerOpen && (
+                            <div
+                                className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4"
+                                onClick={() => setCarouselPickerOpen(false)}
+                            >
+                                <div
+                                    className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col"
+                                    onClick={(e) => e.stopPropagation()}
+                                >
+                                    <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                                        <h3 className="font-black text-gray-900 flex items-center gap-2">
+                                            <ShoppingCart size={18} className="text-blue-600" /> Mahsulot qo'shish
+                                        </h3>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCarouselPickerOpen(false)}
+                                            className="p-2 rounded-lg hover:bg-gray-100 text-gray-500"
+                                            aria-label="Yopish"
+                                        >
+                                            <X size={18} />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-4 border-b border-gray-100">
+                                        <div className="relative">
+                                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={14} />
+                                            <input
+                                                value={carouselPickerSearch}
+                                                onChange={e => setCarouselPickerSearch(e.target.value)}
+                                                className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-sm font-medium"
+                                                placeholder="Mahsulot nomini qidirish (kamida 2 harf)..."
+                                                autoFocus
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="flex-1 overflow-y-auto p-2 divide-y divide-gray-50">
+                                        {carouselPickerSearch.length < 2 ? (
+                                            <p className="p-4 text-xs text-gray-400 font-medium">Qidiruv uchun kamida 2 harf yozing</p>
+                                        ) : carouselPickerResults.length === 0 ? (
+                                            <p className="p-4 text-xs text-gray-400 font-medium">Mahsulot topilmadi</p>
+                                        ) : (
+                                            carouselPickerResults.map((p) => {
+                                                const already = carouselProductIds.includes(p.id);
+                                                const checked = !!carouselPickerSelected[p.id];
+                                                return (
+                                                    <label key={p.id} className={`flex items-center gap-2.5 p-2.5 cursor-pointer rounded-xl transition-colors ${already ? 'opacity-50' : 'hover:bg-gray-50'}`}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={checked || already}
+                                                            disabled={already}
+                                                            onChange={() => setCarouselPickerSelected(prev => ({ ...prev, [p.id]: !prev[p.id] }))}
+                                                            className="w-4 h-4 rounded accent-blue-600"
+                                                        />
+                                                        <div className="w-9 h-9 rounded-lg bg-gray-100 overflow-hidden flex-none">
+                                                            <img src={p.image || ''} alt="" className="w-full h-full object-cover" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm font-bold text-gray-800 truncate">{p.title}</p>
+                                                            <p className="text-xs text-gray-500">{Number(p.price || 0).toLocaleString()} so'm</p>
+                                                        </div>
+                                                        {already && <span className="text-[10px] font-bold text-gray-400 uppercase">Qo'shilgan</span>}
+                                                    </label>
+                                                );
+                                            })
+                                        )}
+                                    </div>
+
+                                    <div className="p-4 border-t border-gray-100 flex items-center justify-between gap-3">
+                                        <span className="text-xs font-bold text-gray-500">
+                                            {Object.keys(carouselPickerSelected).filter(id => carouselPickerSelected[id]).length} ta tanlandi
+                                        </span>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                onClick={() => setCarouselPickerOpen(false)}
+                                                className="h-9 px-4 rounded-xl font-bold border-gray-200 text-gray-500 hover:bg-gray-50"
+                                            >
+                                                Bekor qilish
+                                            </Button>
+                                            <Button
+                                                type="button"
+                                                onClick={() => {
+                                                    const selected = Object.keys(carouselPickerSelected).filter(id => carouselPickerSelected[id]);
+                                                    if (selected.length === 0) return;
+                                                    setCarouselProductIds(prev => [...prev, ...selected.filter(id => !prev.includes(id))]);
+                                                    const newDetails: Record<string, { id: string; title: string; price: number; image?: string }> = {};
+                                                    carouselPickerResults.forEach((p) => {
+                                                        if (selected.includes(p.id)) newDetails[p.id] = { id: p.id, title: p.title, price: Number(p.price || 0), image: p.image };
+                                                    });
+                                                    setCarouselProductDetails(prev => ({ ...prev, ...newDetails }));
+                                                    setCarouselPickerOpen(false);
+                                                }}
+                                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 h-9 rounded-xl font-bold"
+                                            >
+                                                Tanlanganlarni qo'shish ({Object.keys(carouselPickerSelected).filter(id => carouselPickerSelected[id]).length})
+                                            </Button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -1287,12 +1550,23 @@ export default function AdminBannersPage() {
                                             filteredBanners.map((banner) => (
                                                 <tr key={banner.id} className="hover:bg-gray-50/50 transition-colors group">
                                                     <td className="px-4 py-2.5">
-                                                        <div className="w-14 h-9 rounded-md bg-gray-100 overflow-hidden border border-gray-200">
-                                                            <img src={banner.image} alt="" className="w-full h-full object-cover" />
+                                                        <div className="w-14 h-9 rounded-md bg-gray-100 overflow-hidden border border-gray-200 flex items-center justify-center">
+                                                            {banner.image ? (
+                                                                <img src={banner.image} alt="" className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                <ShoppingCart size={16} className="text-gray-300" />
+                                                            )}
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-2.5">
                                                         <p className="font-bold text-gray-900 text-sm">{banner.title}</p>
+                                                        {/* HOME_TOP carousel mahsulotlar soni */}
+                                                        {(banner as any).bannerProducts?.length > 0 && (
+                                                            <p className="text-[11px] text-gray-500 font-medium mt-0.5 flex items-center gap-1">
+                                                                <ShoppingCart size={11} />
+                                                                {(banner as any).bannerProducts.length} ta mahsulot
+                                                            </p>
+                                                        )}
                                                         {/* Kategoriya banneri qaysi sahifalarda ko'rinishi */}
                                                         {banner.position === 'CATEGORY_TOP' && (
                                                             <p className="text-[11px] text-gray-500 font-medium mt-0.5 flex items-center gap-1">
