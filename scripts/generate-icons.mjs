@@ -24,8 +24,9 @@ const SOURCE = 'public/logo.png';
 
 // Measured content box of the blue "H" (brand mark) inside the 1024x1024
 // source. This is the first letter of the HADAF wordmark, brand blue.
-// Precise bbox measured from pixels: x167-449, y279-775 (283x497).
-const CONTENT = { left: 167, top: 279, width: 283, height: 497 };
+// Generous box — squareSource() trims transparent edges afterwards, so a wide
+// crop cannot clip the letter; it only guarantees the full H is captured.
+const CONTENT = { left: 160, top: 270, width: 340, height: 520 };
 
 // H mark fills 88% of the tile height; the rest is breathing room so it does
 // not touch the edges of the browser's favicon slot.
