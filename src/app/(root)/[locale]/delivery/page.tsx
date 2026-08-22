@@ -229,15 +229,44 @@ export default function DeliveryPage() {
             }
         });
 
-        // Fit bounds — checkZoomRange:false shart, aks holda Yandex zoom'ni
-        // viewport chegarasiga sig'dirib kichraytirib qo'yadi. Buni FAQAT
-        // order tanlanganda bajarish kerak (marker yangilanishida emas) —
-        // aks holda foydalanuvchining qo'lda qilgan zoomi bekor bo'ladi.
+        // Fit — koordinatalarni validate qilib, markazga setCenter + setZoom.
+        // `setBounds` Yandex'da 0.1 km kabi juda kichik masofada noto'g'ri
+        // ishlaydi (butun dunyoga zoom-out). Shuning uchun qo'lda zoom.
         if (bounds.length > 0 && shouldFit) {
-            mapRef.current.setBounds(bounds, {
-                checkZoomRange: false,
-                zoomMargin: 40,
-                preciseZoom: true,
+            // Valid koordinatalarni filtrlash: number, NaN emas, lat -90..90, lng -180..180
+            const valid = bounds.filter(([lat, lng]) =>
+                typeof lat === 'number' && typeof lng === 'number' &&
+                Number.isFinite(lat) && Number.isFinite(lng) &&
+                lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180
+            );
+            if (valid.length === 0) return;
+
+            // DEBUG (vaqtinchalik): browser konsolida koordinatalarni ko'rish
+            console.log('[DELIVERY-MAP] bounds:', JSON.stringify(bounds));
+            console.log('[DELIVERY-MAP] valid:', JSON.stringify(valid));
+
+            // Markaz = valid koordinatalarning o'rtachasi
+            const centerLat = valid.reduce((s, c) => s + c[0], 0) / valid.length;
+            const centerLng = valid.reduce((s, c) => s + c[1], 0) / valid.length;
+
+            // Masofaga qarab zoom: bir nuqta bo'lsa 16, ko'p bo'lsa bounds kengligi
+            let zoom = 16;
+            if (valid.length >= 2) {
+                const latSpan = Math.abs(valid[0][0] - valid[valid.length - 1][0]);
+                const lngSpan = Math.abs(valid[0][1] - valid[valid.length - 1][1]);
+                const span = Math.max(latSpan, lngSpan);
+                if (span > 2) zoom = 11;        // butun shahar
+                else if (span > 1) zoom = 12;
+                else if (span > 0.5) zoom = 13;
+                else if (span > 0.2) zoom = 14;
+                else if (span > 0.05) zoom = 15;
+                else zoom = 16;                  // 0.1 km kabi yaqin — 16
+            }
+
+            console.log('[DELIVERY-MAP] center:', centerLat, centerLng, 'zoom:', zoom);
+            mapRef.current.setCenter([centerLat, centerLng], zoom, {
+                duration: 400,
+                checkZoomRange: true,
             });
         }
     }, []);
