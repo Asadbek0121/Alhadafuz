@@ -61,8 +61,14 @@ export async function GET(req: Request) {
 
     try {
         const statusFilter = scope === 'all' ? ALL_DELIVERY_STATUSES : ACTIVE_STATUSES;
+        // Statuslar kod konstanta (xavfsiz — foydalanuvchi kiritmagan), shuning
+        // uchun ularni SQL'ga to'g'ridan-to'g'ri quote qilib yozamiz.
+        // `$queryRawUnsafe` ishlatiladi, chunki `${statusList.join(',')}` ni
+        // `$queryRaw` tagged-template'da bitta parametr sifatida bersa,
+        // Postgres `IN ('A','B')` ni bitta string deb tushunib, xato beradi.
+        const statusList = statusFilter.map(s => `'${s}'`).join(',');
 
-        const orders: any[] = await prisma.$queryRaw`
+        const orders: any[] = await prisma.$queryRawUnsafe(`
             SELECT o.*, u.name as "courierName", u.phone as "courierPhone",
                    cp."currentLat" as "courierLat", cp."currentLng" as "courierLng",
                    cp."vehicleType" as "courierVehicle", cp."lastLocationAt" as "courierLastLocation",
@@ -72,11 +78,11 @@ export async function GET(req: Request) {
             LEFT JOIN "User" u ON u.id = o."courierId"
             LEFT JOIN "CourierProfile" cp ON cp."userId" = o."courierId"
             LEFT JOIN "Store" s ON s.id = o."storeId"
-            WHERE o."userId" = ${session.user.id}
+            WHERE o."userId" = $1
               AND (LOWER(o."deliveryMethod") = 'courier')
-              AND o.status IN (${statusFilter.join(',')})
+              AND o.status IN (${statusList})
             ORDER BY o."createdAt" DESC
-        `;
+        `, session.user.id);
 
         const formatted = orders
             .filter((o: any) => statusFilter.includes(o.status))
