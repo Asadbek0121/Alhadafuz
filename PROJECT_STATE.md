@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Admin banner mahsulot qidiruv fix** (`92b786e`): `/api/products?q=...` `{ products: [...] }` obyekt qaytaradi, parametrsiz esa array. Admin form `Array.isArray(data)` deb tekshirib obyektni tashlab yuborardi → carousel "Mahsulot qo'shish" qidiruvi va "mahsulotga bog'lash" hech qachon natija ko'rsatmasdi. Endi `data?.products` ham o'qiladi.
 - **Profile Security parol o'zgartirish fix** (`3c1ac1d`): `/uz/profile/security` parol almashtirish argon2 hashlangan parol bor foydalanuvchida doim "Incorrect current password" qaytarardi (route faqat `bcrypt.compare` ishlatardi). Endi `src/auth.ts:137-140` bilan bir xil mantiq: `$argon2` prefiksiga qarab `argon2.verify` yoki `bcrypt.compare`. Verification: tsc 0, lint 0, sahifa 200.
 - **HOME_TOP "Bugungi takliflar" — ko'p mahsulotli carousel** (`c0ce935`):
   - Frontend tahlili: "Bugungi takliflar" = `Hero` fallback carousel (Hero.tsx:162-196), `fallbackProducts` (homepage products) bilan — faqat HOME_TOP banner bo'lmasa ko'rinadi. HOME_SIDE (promo card) bitta `productId` ishlatadi, HOME_TOP esa oddiy banner edi.
@@ -273,4 +274,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Profile security parol fix, HOME_TOP ko'p mahsulotli carousel, admin banner formasi, build SUCCESS)
+2026-08-22 (Admin banner mahsulot qidiruv fix, Profile security parol fix, HOME_TOP ko'p mahsulotli carousel, build SUCCESS)
