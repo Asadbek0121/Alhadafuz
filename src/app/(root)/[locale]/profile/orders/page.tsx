@@ -3,7 +3,6 @@
 
 import { useEffect, useState } from "react";
 import { Package, ChevronDown, ChevronUp, Search, Filter, ShoppingCart, ExternalLink, MapPin } from "lucide-react";
-import { useUserStore } from "@/store/useUserStore";
 import { useCartStore } from "@/store/useCartStore";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -42,6 +41,7 @@ interface Order {
 }
 
 import { useTranslations, useLocale } from "next-intl";
+import { useSession } from "next-auth/react";
 
 export default function OrderHistoryPage() {
     const t = useTranslations('Profile');
@@ -51,19 +51,21 @@ export default function OrderHistoryPage() {
     const [isLoading, setIsLoading] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
     const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
-    const { user, isAuthenticated } = useUserStore();
+    const { status } = useSession();
     const { addToCart } = useCartStore();
     const tChina = useTranslations('ChinaOrder');
 
     useEffect(() => {
         const fetchOrders = async () => {
-            if (!isAuthenticated || !user) {
+            // NextAuth session (cookie) authoritative — useUserStore localStorage'dagi
+            // eski qiymatga bog'liq emas. Session bo'lsa doim chaqiramiz.
+            if (status !== "authenticated") {
                 setIsLoading(false);
                 return;
             }
 
             try {
-                const res = await fetch(`/api/orders`);
+                const res = await fetch(`/api/orders`, { cache: 'no-store' });
                 const data = await res.json();
 
                 if (data.orders) {
@@ -79,7 +81,7 @@ export default function OrderHistoryPage() {
         fetchOrders();
         const interval = setInterval(fetchOrders, 10000); // 10 soniyada bir yangilash
         return () => clearInterval(interval);
-    }, [user, isAuthenticated]);
+    }, [status]);
 
     const handleReorder = (item: OrderItem) => {
         addToCart({

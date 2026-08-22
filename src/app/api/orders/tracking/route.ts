@@ -66,14 +66,14 @@ export async function GET(req: Request) {
             SELECT o.*, u.name as "courierName", u.phone as "courierPhone",
                    cp."currentLat" as "courierLat", cp."currentLng" as "courierLng",
                    cp."vehicleType" as "courierVehicle", cp."lastLocationAt" as "courierLastLocation",
-                   cp."courierLevel" as "courierLevel", cp.status as "courierStatus", cp.onDuty as "courierOnDuty",
+                   cp."courierLevel" as "courierLevel", cp.status as "courierStatus", cp."onDuty" as "courierOnDuty",
                    s.name as "storeName", s.address as "storeAddress", s.lat as "storeLat", s.lng as "storeLng"
             FROM "Order" o
             LEFT JOIN "User" u ON u.id = o."courierId"
             LEFT JOIN "CourierProfile" cp ON cp."userId" = o."courierId"
             LEFT JOIN "Store" s ON s.id = o."storeId"
             WHERE o."userId" = ${session.user.id}
-              AND o."deliveryMethod" = 'COURIER'
+              AND (LOWER(o."deliveryMethod") = 'courier')
               AND o.status IN (${statusFilter.join(',')})
             ORDER BY o."createdAt" DESC
         `;
