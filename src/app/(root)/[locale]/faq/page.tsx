@@ -52,7 +52,7 @@ export default function FAQPage() {
                         <div className="relative z-10">
                             <h3 className="text-2xl font-bold mb-4">{t('cta_title')}</h3>
                             <p className="text-gray-400 mb-8">{t('cta_desc')}</p>
-                            <a href="https://t.me/hadafsupport" target="_blank" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-blue-600/50">
+                            <a href="https://t.me/Hadaf_supportbot" target="_blank" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-4 rounded-xl font-bold transition-all transform hover:scale-105 shadow-lg shadow-blue-600/50">
                                 <MessageCircle size={20} />
                                 {t('cta_btn')}
                             </a>
