@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Static sahifalar (5) ixchamlashtirildi**: `about`, `terms`, `privacy`, `faq`, `returns` (storefront `src/app/(root)/[locale]/`) — hero/header (`py-16/20` → `py-8/10`, `text-4xl..8xl` → `text-2xl..5xl`, `mt-3 mb-6` → `mt-2 mb-4`), container (`max-w-4xl/5xl p-8..16` → `max-w-3xl p-5/6`, `-mt-12/10` → `-mt-6`), card (`rounded-3xl/[40px]` → `rounded-2xl`, `p-8..12` → `p-4..6`), FAQ item (`p-6` → `p-4`, `text-lg` → `text-base`, icon `20→16`), section spacing (`space-y-6..12` → `space-y-4..6`, `mb-8..20` → `mb-4..8`), text (`text-lg/xl` → `text-sm/base`), list (`py-3/4` → `py-2/1`, `gap-4` → `gap-2/3`), button (`px-8 py-4 rounded-xl` → `px-5 py-2.5 rounded-lg`), grid gap (`gap-6..12` → `gap-3/4`). Ranglar, gradient'lar, layout, `md:`/`lg:` breakpoint'lar saqlandi. Funksionallik saqlandi: FAQ `<details>` accordion (8), terms sidebar/nav button'lar (19) + print styles + `window.print()` + privacy link, returns check/x ro'yxatlar, motion/AnimatePresence. Verification: tsc 0, lint 0, build SUCCESS (101/101, Node 22), 15 route (5 sahifa × 3 til) HTTP 200.
 - **Admin panel UX — 8 sahifa kartalarini ixchamlashtirish**: users, products, coupons, banners, stores, payments, payments/logs, settings sahifalaridagi stat/header card (`p-8/10` → `p-4/5`, `rounded-[32..56px]` → `rounded-2xl/3xl`, `text-3xl/2xl` → `text-xl/lg`), ro'yxat item va avatarlar (`w-16` → `w-9`, icon `w-12/16` → `w-8/10`), table (`py-6 px-8` → `py-2.5 px-4`), modal (`p-10 rounded-[48px] max-w-2xl` → `p-5 rounded-2xl max-w-md`), button (`h-14/16` → `h-10/11`), input (`p-4` → `p-2.5`), grid gap (`gap-8/10` → `gap-3/4`) — ixchamlashtirildi. Funksionallik (fetch/CRUD/modal/map) buzilmadi; xarita (`stores` map `h-64` + full-screen modal, `banners` aspect-ratio preview) katta qoldi. Rang/font/layout/breakpoint'lar saqlandi. Verification: tsc 0, lint 0 (1 pre-existing warning), build SUCCESS, 8 route HTTP 200.
 - **Kuryer tracking dashboard — real-time buyurtma kuzatish**:
   - Yangi `/api/orders/tracking`: user'ning faol COURIER buyurtmalari (ASSIGNED/PROCESSING/PICKED_UP/DELIVERING) — kuryer joylashuvi (lat/lng, vehicle, lastLocationAt, courierLevel), do'kon (boshlang'ich nuqta), mijoz manzili, maskalangan kuryer telefon raqami, location age ("necha daqiqa oldin").
@@ -256,4 +257,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Admin panel UX — 8 sahifa kartalari compact qilindi, build SUCCESS)
+2026-08-22 (Static sahifalar 5 compact qilindi, build SUCCESS)
