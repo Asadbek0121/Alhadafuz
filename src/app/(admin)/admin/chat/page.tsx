@@ -56,6 +56,15 @@ const SOURCE_LABELS: Record<MessageSource, { icon: string; label: string }> = {
     WEB: { icon: '🌐', label: 'Ilova' }
 };
 
+/** Admin uchun tezkor javob shablonlari — bosilganda input'ga to'ldiriladi. */
+const REPLY_TEMPLATES: { label: string; text: string }[] = [
+    { label: '📦 Yetkazish', text: "Assalomu alaykum! Yetkazib berish bo'yicha: Termiz shahri ichida 1 kun, tumanlarga 2-3 kun. Batafsil /uz/delivery sahifasida." },
+    { label: '💳 To\'lov', text: "Assalomu alaykum! To'lov usullari: Click, Payme, bank karta (Uzcard/Humo), yetkazib berilganda naqd pul." },
+    { label: '↩️ Qaytarish', text: "Assalomu alaykum! Mahsulotni 10 kun ichida qaytarishingiz mumkin (ishlatilmagan, qadoqlari butun). Shartlar /uz/returns sahifasida." },
+    { label: '⏰ Muddat', text: "Assalomu alaykum! Buyurtmangiz ko'rib chiqilmoqda. Kuryer tayinlangach /uz/delivery sahifasida kuzatishingiz mumkin." },
+    { label: '🏪 Do\'kon', text: "Assalomu alaykum! Markaziy do'konimiz Termiz shahrida. Manzil va ish vaqti /uz/stores sahifasida." }
+];
+
 export default function AdminChatPage() {
     const { data: session } = useSession();
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -509,6 +518,28 @@ export default function AdminChatPage() {
 
                         {/* Input Area */}
                         <div style={{ padding: '20px', borderTop: '1px solid #e5eaef', background: '#fff' }}>
+
+                            {/* Tezkor javob shablonlari */}
+                            <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '10px', marginBottom: '10px', WebkitOverflowScrolling: 'touch' }}>
+                                {REPLY_TEMPLATES.map((tpl, i) => (
+                                    <button
+                                        key={i}
+                                        type="button"
+                                        onClick={() => setMessageInput(tpl.text)}
+                                        style={{
+                                            flexShrink: 0, padding: '7px 14px', borderRadius: '20px',
+                                            border: '1px solid #dbe4f0', background: '#f4f7fb', color: '#334155',
+                                            fontSize: '12px', fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap',
+                                            transition: 'all 0.15s'
+                                        }}
+                                        onMouseEnter={(e) => { e.currentTarget.style.background = '#e0eaf7'; e.currentTarget.style.borderColor = '#0085db'; }}
+                                        onMouseLeave={(e) => { e.currentTarget.style.background = '#f4f7fb'; e.currentTarget.style.borderColor = '#dbe4f0'; }}
+                                        title={tpl.text}
+                                    >
+                                        {tpl.label}
+                                    </button>
+                                ))}
+                            </div>
 
                             <form onSubmit={handleSendMessage} style={{ display: 'flex', gap: '15px' }}>
                                 <input
