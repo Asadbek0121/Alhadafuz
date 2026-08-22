@@ -617,13 +617,14 @@ export default function AuthModal({
                                                             type="checkbox"
                                                             id="terms"
                                                             checked={termsAccepted}
+                                                            disabled={isLoading}
                                                             onChange={(e) => {
                                                                 setTermsAccepted(e.target.checked);
                                                                 if (e.target.checked) setShowTermsWarning(false);
                                                             }}
-                                                            className="w-4 h-4 rounded border-slate-300 text-blue-600 mt-1 cursor-pointer"
+                                                            className="w-4 h-4 rounded border-slate-300 text-blue-600 mt-1 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
                                                         />
-                                                        <label htmlFor="terms" className={`text-[10px] font-medium leading-normal cursor-pointer ${showTermsWarning ? 'text-red-500' : 'text-slate-400'}`}>
+                                                        <label htmlFor="terms" className={`text-[10px] font-medium leading-normal cursor-pointer ${showTermsWarning ? 'text-red-500' : 'text-slate-400'} ${isLoading ? 'opacity-60 pointer-events-none' : ''}`}>
                                                             {t.rich('terms', {
                                                                 oferta: (chunks) => <button type="button" onClick={() => setDocViewer('terms')} className="text-blue-600 font-bold hover:underline inline">{chunks}</button>,
                                                                 siyosat: (chunks) => <button type="button" onClick={() => setDocViewer('privacy')} className="text-blue-600 font-bold hover:underline inline">{chunks}</button>,
@@ -636,8 +637,14 @@ export default function AuthModal({
                                                         className={styles.primaryBtn}
                                                         disabled={isLoading || (!termsAccepted && !isVerifying)}
                                                         style={{ marginTop: '4px' }}
+                                                        aria-busy={isLoading}
                                                     >
-                                                        {isLoading ? <Loader2 className="animate-spin" /> : (mode === 'login' ? t('get_code') : t('register_btn'))}
+                                                        {isLoading ? (
+                                                            <span className="inline-flex items-center gap-2.5">
+                                                                <Loader2 size={18} className="animate-spin" />
+                                                                {mode === 'login' ? t('sending') : t('sending')}
+                                                            </span>
+                                                        ) : (mode === 'login' ? t('get_code') : t('register_btn'))}
                                                     </button>
                                                 </>
                                             )}

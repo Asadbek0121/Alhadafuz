@@ -285,12 +285,15 @@
 }
 
 .primaryBtn:disabled {
-    background: #f1f5f9;
-    color: #94a3b8;
+    /* Checkbox belgilanmagan holat: xira blue — och-kulrang bo'sh blok emas.
+       Matn readable, spinner yo'q. Tugma ekanligi aniq ko'rinadi. */
+    background: #3b82f6;
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    color: rgba(255, 255, 255, 0.85);
     cursor: not-allowed;
     box-shadow: none;
     transform: none;
-    opacity: 0.7;
+    opacity: 0.5;
 }
 
 /* Mobile Responsive - Final Hard Polish */
