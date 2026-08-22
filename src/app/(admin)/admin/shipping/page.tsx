@@ -268,56 +268,56 @@ export default function AdminShippingPage() {
                                 initial={{ opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: i * 0.1 }}
-                                className="bg-white p-6 rounded-[32px] border border-gray-100 shadow-sm hover:shadow-md transition-all"
+                                className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all"
                             >
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="p-3 bg-gray-50 rounded-2xl">{card.icon}</div>
-                                    <span className="text-xs font-black text-gray-400 uppercase tracking-widest">{card.label}</span>
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="p-2 bg-gray-50 rounded-xl">{card.icon}</div>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{card.label}</span>
                                 </div>
-                                <div className="text-2xl font-black text-gray-900">{card.value}</div>
-                                <p className="text-[10px] text-gray-400 mt-1 font-bold">{card.sub}</p>
+                                <div className="text-xl font-black text-gray-900">{card.value}</div>
+                                <p className="text-[10px] text-gray-400 mt-0.5 font-bold">{card.sub}</p>
                             </motion.div>
                         ))}
                     </div>
 
                     {/* Active Dispatch View */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 bg-white rounded-[40px] border border-gray-100 p-8 shadow-sm">
-                            <div className="flex justify-between items-center mb-8">
-                                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Real-vaqtda Kuryerlar</h3>
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-base font-black text-gray-900 uppercase tracking-tight">Real-vaqtda Kuryerlar</h3>
                                 <div className="flex items-center gap-2">
                                     <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                                     <span className="text-[10px] font-black text-emerald-500 uppercase">Live</span>
                                 </div>
                             </div>
 
-                            <div className="space-y-4">
+                            <div className="space-y-2">
                                 {heatmap && heatmap.length > 0 ? heatmap.map((c, i) => (
-                                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl">
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold">K</div>
+                                    <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 font-bold text-xs">K</div>
                                             <div>
-                                                <div className="font-bold text-sm">Courier ID: {c.userId.slice(-6)}</div>
+                                                <div className="font-bold text-xs">Courier ID: {c.userId.slice(-6)}</div>
                                                 <div className="text-[10px] text-gray-400">📍 {c.currentLat?.toFixed(4)}, {c.currentLng?.toFixed(4)}</div>
                                             </div>
                                         </div>
                                         <Link href={`/admin/shipping/map?courierId=${c.userId}`} className="text-blue-600 font-bold text-xs hover:underline">Xaritada ko'rish</Link>
                                     </div>
                                 )) : (
-                                    <div className="text-center py-10 text-gray-400">Hozirda online kuryerlar yo'q</div>
+                                    <div className="text-center py-6 text-gray-400 text-sm">Hozirda online kuryerlar yo'q</div>
                                 )}
                             </div>
                         </div>
 
-                        <div className="bg-blue-600 rounded-[40px] p-8 text-white space-y-8 relative overflow-hidden">
-                            <Zap className="absolute -right-10 -top-10 text-white/10 w-40 h-40 rotate-12" />
-                            <h3 className="text-xl font-black uppercase tracking-tight relative z-10">Smart Dispatch</h3>
-                            <p className="text-blue-100 text-sm font-medium relative z-10">Tizim avtomatik ravishda eng yaqin va eng yaxshi kuryerni aniqlaydi.</p>
+                        <div className="bg-blue-600 rounded-2xl p-5 text-white space-y-4 relative overflow-hidden">
+                            <Zap className="absolute -right-8 -top-8 text-white/10 w-28 h-28 rotate-12" />
+                            <h3 className="text-base font-black uppercase tracking-tight relative z-10">Smart Dispatch</h3>
+                            <p className="text-blue-100 text-xs font-medium relative z-10">Tizim avtomatik ravishda eng yaqin va eng yaxshi kuryerni aniqlaydi.</p>
 
-                            <div className="space-y-4 relative z-10">
-                                <div className="p-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+                            <div className="space-y-3 relative z-10">
+                                <div className="p-3 bg-white/10 backdrop-blur-md rounded-xl border border-white/20">
                                     <div className="text-[10px] font-black uppercase tracking-widest text-blue-200 mb-1">Algoritm</div>
-                                    <div className="text-sm font-bold">Masofa (40%) + Reyting (25%) + Yuklama (20%)</div>
+                                    <div className="text-xs font-bold">Masofa (40%) + Reyting (25%) + Yuklama (20%)</div>
                                 </div>
                             </div>
 
@@ -326,7 +326,7 @@ export default function AdminShippingPage() {
                                     fetchDispatchSettings();
                                     setIsDispatchModalOpen(true);
                                 }}
-                                className="w-full bg-white text-blue-600 hover:bg-blue-50 py-6 rounded-2xl font-black uppercase tracking-widest text-xs relative z-10"
+                                className="w-full bg-white text-blue-600 hover:bg-blue-50 py-4 rounded-xl font-black uppercase tracking-widest text-xs relative z-10"
                             >
                                 Sozlamalar
                             </Button>
@@ -337,18 +337,18 @@ export default function AdminShippingPage() {
 
             {activeTab === 'couriers' && (
                 <div className="space-y-8">
-                    <div className="bg-white rounded-[32px] border border-gray-100 p-8 shadow-sm">
-                        <div className="flex justify-between items-start mb-6">
+                    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                        <div className="flex justify-between items-start mb-4">
                             <div className="space-y-1">
-                                <h3 className="text-xl font-black text-gray-900 uppercase tracking-tight">Kuryer Qo'shish</h3>
-                                <p className="text-gray-500 text-sm font-medium">Foydalanuvchini tizimga kuryer sifatida ulang</p>
+                                <h3 className="text-base font-black text-gray-900 uppercase tracking-tight">Kuryer Qo'shish</h3>
+                                <p className="text-gray-500 text-xs font-medium">Foydalanuvchini tizimga kuryer sifatida ulang</p>
                             </div>
 
-                            <div className="flex gap-3">
+                            <div className="flex gap-2">
                                 {courierApplications.length > 0 && (
                                     <button
                                         onClick={() => setShowApplicants(!showApplicants)}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${showApplicants ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'}`}
+                                        className={`flex items-center gap-2 px-3 py-2 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all ${showApplicants ? 'bg-blue-600 text-white shadow-lg shadow-blue-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-100 hover:bg-emerald-100'}`}
                                     >
                                         <Users size={14} />
                                         Arizalar ({courierApplications.length})
@@ -356,7 +356,7 @@ export default function AdminShippingPage() {
                                 )}
                                 <Link
                                     href="/admin/shipping/map"
-                                    className="h-14 px-8 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2 shadow-xl shadow-blue-100"
+                                    className="h-11 px-5 bg-blue-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-all active:scale-95 flex items-center gap-2 shadow-xl shadow-blue-100"
                                 >
                                     <Navigation size={14} />
                                     Live Map
@@ -427,22 +427,22 @@ export default function AdminShippingPage() {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-[32px] border border-gray-100 overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm">
                         <table className="w-full text-left">
                             <thead className="bg-gray-50/50">
                                 <tr>
-                                    <th className="py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest">Kuryer</th>
-                                    <th className="py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest">Holat</th>
-                                    <th className="py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest text-center">Balans</th>
-                                    <th className="py-6 px-8 text-xs font-black text-gray-400 uppercase tracking-widest text-right">Amallar</th>
+                                    <th className="py-3 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Kuryer</th>
+                                    <th className="py-3 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest">Holat</th>
+                                    <th className="py-3 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest text-center">Balans</th>
+                                    <th className="py-3 px-4 text-[11px] font-black text-gray-400 uppercase tracking-widest text-right">Amallar</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
                                 {couriers.map((courier) => (
                                     <tr key={courier.id} className="hover:bg-blue-50/30 transition-colors group">
-                                        <td className="py-5 px-8">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center text-blue-600 font-black shadow-sm ring-4 ring-white">
+                                        <td className="py-3 px-4">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center text-blue-600 font-black shadow-sm ring-4 ring-white">
                                                     {courier.name?.[0]?.toUpperCase() || 'K'}
                                                 </div>
                                                 <div>
@@ -461,9 +461,9 @@ export default function AdminShippingPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-5 px-8">
+                                        <td className="py-3 px-4">
                                             <div className="flex flex-col gap-1">
-                                                <span className={`inline-flex px-3 py-1 rounded-full text-[10px] font-black uppercase w-fit ${courier.courierProfile?.status === 'ONLINE' ? 'bg-emerald-50 text-emerald-500 ring-1 ring-emerald-100' : 'bg-gray-100 text-gray-400'}`}>
+                                                <span className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase w-fit ${courier.courierProfile?.status === 'ONLINE' ? 'bg-emerald-50 text-emerald-500 ring-1 ring-emerald-100' : 'bg-gray-100 text-gray-400'}`}>
                                                     {courier.courierProfile?.status || 'OFFLINE'}
                                                 </span>
                                                 <div className="flex items-center gap-2 ml-1">
@@ -478,7 +478,7 @@ export default function AdminShippingPage() {
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="py-5 px-8 text-center">
+                                        <td className="py-3 px-4 text-center">
                                             <div className="font-extrabold text-gray-900">{(courier.courierProfile?.balance || 0).toLocaleString()} <span className="text-[10px] text-gray-400">UZS</span></div>
                                             <button
                                                 disabled={(courier.courierProfile?.balance || 0) <= 0}
@@ -500,14 +500,14 @@ export default function AdminShippingPage() {
                                                 To'lash
                                             </button>
                                         </td>
-                                        <td className="py-5 px-8 text-right">
+                                        <td className="py-3 px-4 text-right">
                                             <div className="flex justify-end items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                                 <button
                                                     onClick={() => handleRemoveCourier(courier.id)}
-                                                    className="p-3 text-red-100 bg-red-500 rounded-xl transition-all shadow-lg shadow-red-100 active:scale-95"
+                                                    className="p-2 text-red-100 bg-red-500 rounded-lg transition-all shadow-lg shadow-red-100 active:scale-95"
                                                     title="O'chirish"
                                                 >
-                                                    <Trash2 size={16} />
+                                                    <Trash2 size={14} />
                                                 </button>
                                             </div>
                                         </td>
@@ -527,83 +527,83 @@ export default function AdminShippingPage() {
                         </Button>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+                    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         {zones.map((zone) => (
                             <motion.div
                                 key={zone.id}
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
-                                className="bg-white rounded-[48px] border border-gray-100 p-10 shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all relative overflow-hidden"
+                                className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-xl hover:translate-y-[-4px] transition-all relative overflow-hidden"
                             >
-                                <div className="flex justify-between items-start mb-8">
-                                    <div className={`w-16 h-16 rounded-[24px] flex items-center justify-center transition-colors ${zone.isActive ? 'bg-emerald-50 text-emerald-500' : 'bg-gray-100 text-gray-400'}`}>
-                                        <Truck size={32} />
+                                <div className="flex justify-between items-start mb-4">
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center transition-colors ${zone.isActive ? 'bg-emerald-50 text-emerald-500' : 'bg-gray-100 text-gray-400'}`}>
+                                        <Truck size={22} />
                                     </div>
-                                    <div className="flex gap-3">
+                                    <div className="flex gap-2">
                                         <button
                                             onClick={() => handleOpenModal(zone)}
-                                            className="w-12 h-12 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all transform active:scale-90 shadow-sm"
+                                            className="w-9 h-9 flex items-center justify-center bg-blue-50 text-blue-600 rounded-full hover:bg-blue-600 hover:text-white transition-all transform active:scale-90 shadow-sm"
                                         >
-                                            <Edit2 size={20} />
+                                            <Edit2 size={15} />
                                         </button>
                                         <button
                                             onClick={() => handleDeleteZone(zone.id)}
-                                            className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all transform active:scale-90 shadow-sm"
+                                            className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all transform active:scale-90 shadow-sm"
                                         >
-                                            <Trash2 size={20} />
+                                            <Trash2 size={15} />
                                         </button>
                                     </div>
                                 </div>
 
-                                <div className="space-y-2">
-                                    <h3 className="text-2xl font-black text-blue-600 uppercase tracking-tight leading-tight">
+                                <div className="space-y-1.5">
+                                    <h3 className="text-lg font-black text-blue-600 uppercase tracking-tight leading-tight">
                                         {(regions.find(r => r.id === zone.name)?.name || zone.name)} {zone.district && <span className="text-gray-300 font-medium">/ {zone.district}</span>}
                                     </h3>
                                     <div className="flex items-center gap-2">
-                                        <div className={`w-2.5 h-2.5 rounded-full ${zone.isActive ? 'bg-emerald-500' : 'bg-gray-300'} animate-pulse`} />
+                                        <div className={`w-2 h-2 rounded-full ${zone.isActive ? 'bg-emerald-500' : 'bg-gray-300'} animate-pulse`} />
                                         <span className={`text-[10px] font-black uppercase tracking-widest ${zone.isActive ? 'text-emerald-500' : 'text-gray-400'}`}>
                                             {zone.isActive ? 'Faol' : 'Nofaol'}
                                         </span>
                                     </div>
                                 </div>
 
-                                <div className="mt-8 p-7 bg-blue-50/50 rounded-[32px] flex justify-between items-center border border-blue-100/20">
+                                <div className="mt-4 p-4 bg-blue-50/50 rounded-xl flex justify-between items-center border border-blue-100/20">
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Narxi:</span>
-                                    <span className="text-2xl font-black text-gray-900">
-                                        {zone.price.toLocaleString()} <span className="text-sm font-bold text-gray-800 lowercase">so'm</span>
+                                    <span className="text-lg font-black text-gray-900">
+                                        {zone.price.toLocaleString()} <span className="text-xs font-bold text-gray-800 lowercase">so'm</span>
                                     </span>
                                 </div>
 
                                 {zone.deliveryTime && (
-                                    <div className="mt-3 flex items-center gap-2 text-blue-600 bg-blue-50/40 rounded-2xl px-4 py-2.5 border border-blue-100">
+                                    <div className="mt-2 flex items-center gap-2 text-blue-600 bg-blue-50/40 rounded-xl px-3 py-2 border border-blue-100">
                                         <Clock size={14} />
-                                        <span className="text-sm font-black tracking-tight">Muddati: {zone.deliveryTime}</span>
+                                        <span className="text-xs font-black tracking-tight">Muddati: {zone.deliveryTime}</span>
                                     </div>
                                 )}
 
-                                <div className="mt-6 space-y-4">
+                                <div className="mt-4 space-y-3">
                                     {zone.freeFrom > 0 && (
-                                        <div className="flex items-center gap-3 text-emerald-600">
-                                            <div className="w-6 h-6 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
-                                                <CheckCircle2 size={14} />
+                                        <div className="flex items-center gap-2.5 text-emerald-600">
+                                            <div className="w-5 h-5 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
+                                                <CheckCircle2 size={13} />
                                             </div>
-                                            <span className="text-sm font-bold tracking-tight">{zone.freeFrom.toLocaleString()} so'mdan yuqori xarid bepul</span>
+                                            <span className="text-xs font-bold tracking-tight">{zone.freeFrom.toLocaleString()} so'mdan yuqori xarid bepul</span>
                                         </div>
                                     )}
                                     {zone.freeFromQty > 0 && (
-                                        <div className="flex items-center gap-3 text-purple-500">
-                                            <div className="w-6 h-6 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
-                                                <CheckCircle2 size={14} />
+                                        <div className="flex items-center gap-2.5 text-purple-500">
+                                            <div className="w-5 h-5 rounded-full bg-purple-50 flex items-center justify-center shrink-0">
+                                                <CheckCircle2 size={13} />
                                             </div>
-                                            <span className="text-sm font-bold tracking-tight">{zone.freeFromQty} ta mahsulot bo'lsa bepul</span>
+                                            <span className="text-xs font-bold tracking-tight">{zone.freeFromQty} ta mahsulot bo'lsa bepul</span>
                                         </div>
                                     )}
                                     {zone.freeIfHasDiscount && (
-                                        <div className="flex items-center gap-3 text-orange-500">
-                                            <div className="w-6 h-6 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
-                                                <Zap size={14} />
+                                        <div className="flex items-center gap-2.5 text-orange-500">
+                                            <div className="w-5 h-5 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
+                                                <Zap size={13} />
                                             </div>
-                                            <span className="text-sm font-bold tracking-tight">Aksiya bo'lsa bepul</span>
+                                            <span className="text-xs font-bold tracking-tight">Aksiya bo'lsa bepul</span>
                                         </div>
                                     )}
                                 </div>

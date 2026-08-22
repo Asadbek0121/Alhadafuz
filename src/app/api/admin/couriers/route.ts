@@ -19,7 +19,7 @@ export async function GET() {
                 (SELECT COUNT(*) FROM "Order" o WHERE o."courierId" = u.id AND o.status = 'COMPLETED') as completed_count
             FROM "User" u
             LEFT JOIN "CourierProfile" cp ON u.id = cp."userId"
-            WHERE u.role = 'COURIER'
+            WHERE cp.id IS NOT NULL
             ORDER BY u."createdAt" DESC
         `);
 
