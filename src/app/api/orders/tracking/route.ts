@@ -4,14 +4,6 @@ import { auth } from "@/auth";
 
 export const dynamic = 'force-dynamic';
 
-/** Telefon raqamni maskalaydi: +998 76 *** ** 05 (oxirgi 2 raqam ko'rinadi). */
-function maskPhone(phone?: string | null): string | null {
-    if (!phone) return null;
-    const digits = phone.replace(/\D/g, '');
-    if (digits.length < 4) return null;
-    return `${phone.slice(0, -2)}**`;
-}
-
 /** Haversine masofa (km) — ikki GPS koordinata orasidagi to'g'ri chiziq. */
 function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
     const R = 6371;
@@ -116,9 +108,11 @@ export async function GET(req: Request) {
                     shippingAddress: o.shippingAddress,
                     shippingCity: o.shippingCity,
                     shippingDistrict: o.shippingDistrict,
-                    // Kuryer
+                    // Kuryer — mijoz O'Z buyurtmasini ko'radi, shuning uchun to'liq
+                    // telefon raqam qaytariladi (qo'ng'iroq qilishi uchun).
+                    // Boshqa mijozning buyurtmasini ko'ra olmaydi (userId filtr).
                     courierName: o.courierName,
-                    courierPhone: maskPhone(o.courierPhone),
+                    courierPhone: o.courierPhone || null,
                     courierLat: o.courierLat,
                     courierLng: o.courierLng,
                     courierVehicle: o.courierVehicle,
