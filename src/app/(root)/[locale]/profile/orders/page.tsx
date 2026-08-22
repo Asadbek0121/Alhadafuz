@@ -173,7 +173,7 @@ export default function OrderHistoryPage() {
                                         )}
                                         {['PICKED_UP', 'DELIVERING', 'ASSIGNED', 'PROCESSING'].includes(order.status) && (
                                             <Link
-                                                href={`/tracking?order=${order.id}`}
+                                                href={`/delivery?order=${order.id}`}
                                                 className="inline-flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white font-black h-7 md:h-9 px-2.5 md:px-3.5 rounded-lg text-[10px] md:text-xs transition-colors"
                                                 onClick={(e) => e.stopPropagation()}
                                             >

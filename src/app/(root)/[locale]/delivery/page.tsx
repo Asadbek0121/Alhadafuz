@@ -2,309 +2,423 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { YANDEX_MAPS_KEY } from "@/lib/maps";
-import React, { useEffect, useState, useRef } from 'react';
-import Script from 'next/script';
-import { toast } from 'sonner';
-import { MapPin, Navigation, Clock, CreditCard, ChevronRight, Store } from 'lucide-react';
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Script from "next/script";
+import { useTranslations } from "next-intl";
+import {
+    Truck, MapPin, Phone, User, Store, Clock, ChevronRight, Navigation,
+    PackageSearch, RefreshCw, CheckCircle2, AlertCircle, Loader2,
+    Circle, CircleCheckBig, Filter, X, ChevronDown, ChevronUp,
+    Timer, Route, Bike, Car, Footprints, ShieldCheck
+} from "lucide-react";
 
-const YANDEX_MAPS_URL = `https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=${YANDEX_MAPS_KEY}&coordorder=latlong&load=package.full`;
+const YANDEX_MAPS_URL = (key: string) =>
+    `https://api-maps.yandex.ru/2.1/?lang=uz_UZ&apikey=${key}&coordorder=latlong&load=package.full`;
+const TERMEZ_CENTER: [number, number] = [37.2272, 67.2752];
+
+// === Types ===
+interface TrackOrder {
+    id: string; status: string; total: number; createdAt: string; updatedAt: string;
+    orderLat: number | null; orderLng: number | null;
+    shippingAddress?: string | null; shippingCity?: string | null; shippingDistrict?: string | null;
+    courierName?: string | null; courierPhone?: string | null;
+    courierLat?: number | null; courierLng?: number | null;
+    courierVehicle?: string | null; courierLevel?: string | null;
+    courierState?: string; courierLastLocation?: string | null;
+    locationAgeSec?: number | null; etaMinutes?: number | null; distanceKm?: number | null;
+    departedAt?: number | null;
+    store?: { name: string; address: string; lat: number; lng: number } | null;
+}
+
+const ORDER_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#7c3aed', '#0891b2', '#db2777', '#65a30d'];
+const STATUS_LABELS: Record<string, string> = {
+    CREATED: "Kuryer qidirilmoqda", ASSIGNED: "Kuryer biriktirildi",
+    PROCESSING: "Tayyorlanmoqda", PICKED_UP: "Kuryer yo'lga chiqdi",
+    DELIVERING: "Yetkazilmoqda", DELIVERED: "Yetkazib berildi",
+    COMPLETED: "Yakunlandi", CANCELLED: "Bekor qilindi",
+};
+const STATUS_ORDER = ['CREATED', 'ASSIGNED', 'PROCESSING', 'PICKED_UP', 'DELIVERING', 'DELIVERED', 'COMPLETED'];
+const FILTER_OPTIONS = [
+    { key: 'active', label: 'Faol' },
+    { key: 'delivering', label: 'Yo\'lda' },
+    { key: 'searching', label: 'Kuryer qidirilmoqda' },
+    { key: 'delivered', label: 'Yetkazib berildi' },
+    { key: 'all', label: 'Barchasi' },
+];
+
+function statusColor(s: string): string {
+    if (s === 'DELIVERED' || s === 'COMPLETED') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (s === 'DELIVERING') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (s === 'PICKED_UP') return 'bg-teal-100 text-teal-700 border-teal-200';
+    if (s === 'ASSIGNED') return 'bg-indigo-100 text-indigo-700 border-indigo-200';
+    if (s === 'PROCESSING') return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (s === 'CREATED') return 'bg-slate-100 text-slate-700 border-slate-200';
+    if (s === 'CANCELLED') return 'bg-red-100 text-red-700 border-red-200';
+    return 'bg-gray-100 text-gray-700 border-gray-200';
+}
+
+function vehicleIcon(v?: string | null) {
+    const vv = (v || '').toLowerCase();
+    if (vv.includes('moto')) return <Truck size={16} />;
+    if (vv.includes('velo') || vv.includes('bis')) return <Bike size={16} />;
+    if (vv.includes('mash') || vv.includes('avto')) return <Car size={16} />;
+    return <Footprints size={16} />;
+}
+
+function timeAgo(ms: number | null | undefined): string {
+    if (ms == null) return '';
+    const sec = Math.max(0, Math.round((Date.now() - ms) / 1000));
+    if (sec < 60) return `${sec}s`;
+    const min = Math.round(sec / 60);
+    if (min < 60) return `${min}min`;
+    return `${Math.round(min / 60)}h`;
+}
 
 export default function DeliveryPage() {
-    const [stores, setStores] = useState<any[]>([]);
-    const [selectedStore, setSelectedStore] = useState<any>(null);
-    const [customerCoords, setCustomerCoords] = useState<number[] | null>(null);
-    const [routeInfo, setRouteInfo] = useState<any>(null);
-    const [isOrdering, setIsOrdering] = useState(false);
-    const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+    const t = useTranslations('Profile');
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const [orders, setOrders] = useState<TrackOrder[]>([]);
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [filter, setFilter] = useState('active');
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+    const [ymapsLoaded, setYmapsLoaded] = useState(false);
+    const [showMobilePanel, setShowMobilePanel] = useState(true);
 
     const mapRef = useRef<any>(null);
+    const markersRef = useRef<Map<string, any>>(new Map());
     const multiRouteRef = useRef<any>(null);
-    const customerMarkerRef = useRef<any>(null);
+    const animFrameRef = useRef<number | null>(null);
 
+    // Yandex Maps script loaded already
     useEffect(() => {
-        const fetchStores = async () => {
-            try {
-                const res = await fetch('/api/stores');
-                const data = await res.json();
-                setStores(data);
-                if (data.length > 0) setSelectedStore(data[0]);
-            } catch (e) {
-                console.error("Store fetch error", e);
-                toast.error("Do'konlarni yuklashda xatolik");
-            }
+        const check = () => {
+            if ((window as any).ymaps) { setYmapsLoaded(true); return; }
+            setTimeout(check, 500);
         };
-        fetchStores();
+        if ((window as any).ymaps) setYmapsLoaded(true);
+        else check();
     }, []);
 
-    const initMap = () => {
-        const ymaps = (window as any).ymaps;
-        if (!ymaps) return;
-
-        ymaps.ready(() => {
-            if (mapRef.current) return;
-
-            mapRef.current = new ymaps.Map('delivery-map', {
-                center: [37.2272, 67.2752], // Default Termez
-                zoom: 13,
-                controls: ['zoomControl', 'searchControl', 'geolocationControl']
-            });
-
-            // Stores
-            stores.forEach(store => {
-                const placemark = new ymaps.Placemark([store.lat, store.lng], {
-                    balloonContent: `<strong>${store.name}</strong><br>${store.address}`
-                }, { preset: 'islands#blueHomeIcon' });
-                mapRef.current.geoObjects.add(placemark);
-            });
-
-            // Click event
-            mapRef.current.events.add('click', (e: any) => {
-                const coords = e.get('coords');
-                setCustomerCoords(coords);
-                updateCustomerMarker(coords);
-            });
-
-            // Auto-detect location
-            locateMe();
-        });
-    };
-
-    const locateMe = () => {
-        if (!navigator.geolocation) {
-            toast.error("Geolokatsiya qo'llab-quvvatlanmaydi");
-            return;
-        }
-        setIsLoadingLocation(true);
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                const { latitude, longitude } = pos.coords;
-                const coords = [latitude, longitude];
-
-                if (mapRef.current) {
-                    mapRef.current.setCenter(coords, 16, { duration: 1000 });
-                    setCustomerCoords(coords);
-                    updateCustomerMarker(coords);
-                }
-                setIsLoadingLocation(false);
-                toast.success("Joylashuvingiz aniqlandi");
-            },
-            (err) => {
-                console.warn("Geolocation error", err);
-                setIsLoadingLocation(false);
-                // toast.error("Joylashuvni aniqlab bo'lmadi. Xaritadan belgilang.");
-            },
-            { enableHighAccuracy: true, timeout: 10000 }
-        );
-    };
-
-    const updateCustomerMarker = (coords: number[]) => {
-        const ymaps = (window as any).ymaps;
-        if (!mapRef.current) return;
-
-        if (customerMarkerRef.current) {
-            mapRef.current.geoObjects.remove(customerMarkerRef.current);
-        }
-
-        customerMarkerRef.current = new ymaps.Placemark(coords, {
-            hintContent: 'Yetkazib berish nuqtasi'
-        }, {
-            preset: 'islands#redDotIcon',
-            draggable: true
-        });
-
-        customerMarkerRef.current.events.add('dragend', () => {
-            const newCoords = customerMarkerRef.current.geometry.getCoordinates();
-            setCustomerCoords(newCoords);
-        });
-
-        mapRef.current.geoObjects.add(customerMarkerRef.current);
-    };
-
+    // Polling orders
     useEffect(() => {
-        if (customerCoords && selectedStore) {
-            calculateRoute();
-        }
-    }, [customerCoords, selectedStore]);
+        let cancelled = false;
+        let interval: ReturnType<typeof setInterval> | null = null;
 
-    const calculateRoute = () => {
+        const fetchOrders = async () => {
+            try {
+                const res = await fetch(`/api/orders/tracking?scope=${filter === 'delivered' || filter === 'all' ? 'all' : 'active'}`, { cache: 'no-store' });
+                if (res.status === 401) { router.push('/?auth=login&callbackUrl=/delivery'); return; }
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                if (cancelled) return;
+                let list = data.orders || [];
+                // Client-side filter
+                if (filter === 'delivering') list = list.filter((o: TrackOrder) => o.status === 'PICKED_UP' || o.status === 'DELIVERING');
+                if (filter === 'searching') list = list.filter((o: TrackOrder) => o.status === 'CREATED' || o.status === 'ASSIGNED');
+                if (filter === 'delivered') list = list.filter((o: TrackOrder) => o.status === 'DELIVERED' || o.status === 'COMPLETED');
+                if (filter === 'active') list = list.filter((o: TrackOrder) => !['DELIVERED', 'COMPLETED', 'CANCELLED'].includes(o.status));
+                setOrders(list);
+                setError(null);
+                // Auto-select: URL'da ?order= bo'lsa shu, aks holda birinchi
+                if (list.length > 0) {
+                    const urlOrderId = searchParams.get('order');
+                    if (urlOrderId && list.some((o: TrackOrder) => o.id === urlOrderId)) {
+                        setSelectedIds(new Set([urlOrderId]));
+                    } else if (selectedIds.size === 0) {
+                        setSelectedIds(new Set([list[0].id]));
+                    }
+                }
+            } catch (e) {
+                if (cancelled) return;
+                setError("Ma'lumot yuklanmadi");
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        fetchOrders();
+        interval = setInterval(fetchOrders, 8000);
+        return () => { cancelled = true; if (interval) clearInterval(interval); };
+    }, [router, filter, searchParams]);
+
+    const toggleOrder = (id: string) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            if (next.has(id)) next.delete(id);
+            else next.add(id);
+            return next.size > 0 ? next : new Set([id]);
+        });
+    };
+
+    const selectedList = useMemo(() => orders.filter(o => selectedIds.has(o.id)), [orders, selectedIds]);
+
+    // ── Map markers ──
+    const updateMarkers = useCallback(() => {
         const ymaps = (window as any).ymaps;
         if (!ymaps || !mapRef.current) return;
 
-        if (multiRouteRef.current) mapRef.current.geoObjects.remove(multiRouteRef.current);
+        // Clear old markers & routes
+        markersRef.current.forEach(m => mapRef.current.geoObjects.remove(m));
+        markersRef.current = new Map();
+        if (multiRouteRef.current) { mapRef.current.geoObjects.remove(multiRouteRef.current); multiRouteRef.current = null; }
 
-        multiRouteRef.current = new ymaps.multiRouter.MultiRoute({
-            referencePoints: [
-                [selectedStore.lat, selectedStore.lng],
-                customerCoords
-            ],
-            params: { routingMode: 'auto' }
-        }, {
-            boundsAutoApply: true,
-            routeActiveStrokeWidth: 6,
-            routeActiveStrokeColor: "#2563eb"
-        });
+        if (selectedList.length === 0) return;
 
-        multiRouteRef.current.model.events.add('requestsuccess', () => {
-            const activeRoute = multiRouteRef.current.getActiveRoute();
-            if (activeRoute) {
-                const dist = (activeRoute.properties.get('distance').value / 1000).toFixed(1);
-                const time = Math.round(activeRoute.properties.get('duration').value / 60);
-                const price = Math.max(10000, Math.round(parseFloat(dist) * 2000));
+        // Show selected orders on map
+        const bounds: number[][] = [];
 
-                setRouteInfo({ distance: dist, duration: time, price });
+        selectedList.forEach((order, idx) => {
+            const color = ORDER_COLORS[idx % ORDER_COLORS.length];
+            const hasStore = order.store?.lat != null;
+            const hasCourier = order.courierLat != null && order.courierState === 'ONLINE';
+            const hasDest = order.orderLat != null;
+
+            // Store
+            if (hasStore && order.store) {
+                const m = new ymaps.Placemark([order.store.lat, order.store.lng],
+                    { balloonContent: order.store.name },
+                    { preset: 'islands#blueHomeIcon', iconColor: color });
+                mapRef.current.geoObjects.add(m);
+                markersRef.current.set(`store-${order.id}`, m);
+                bounds.push([order.store.lat, order.store.lng]);
+            }
+
+            // Courier
+            if (hasCourier) {
+                const m = new ymaps.Placemark([order.courierLat!, order.courierLng!],
+                    { hintContent: order.courierName || 'Kuryer' },
+                    { preset: 'islands#redTransportIcon', iconColor: color });
+                mapRef.current.geoObjects.add(m);
+                markersRef.current.set(`courier-${order.id}`, m);
+                bounds.push([order.courierLat!, order.courierLng!]);
+            }
+
+            // Destination
+            if (hasDest) {
+                const m = new ymaps.Placemark([order.orderLat!, order.orderLng!],
+                    { hintContent: 'Manzil' },
+                    { preset: 'islands#greenDotIcon', iconColor: color });
+                mapRef.current.geoObjects.add(m);
+                markersRef.current.set(`dest-${order.id}`, m);
+                bounds.push([order.orderLat!, order.orderLng!]);
+            }
+
+            // Route for single selected order
+            if (selectedList.length === 1 && hasStore && order.store && hasDest) {
+                const refs: any[] = [[order.store.lat, order.store.lng]];
+                if (hasCourier) refs.push([order.courierLat!, order.courierLng!]);
+                refs.push([order.orderLat!, order.orderLng!]);
+                multiRouteRef.current = new ymaps.multiRouter.MultiRoute({
+                    referencePoints: refs, params: { routingMode: 'auto' }
+                }, { routeActiveStrokeWidth: 5, routeActiveStrokeColor: color });
+                mapRef.current.geoObjects.add(multiRouteRef.current);
             }
         });
 
-        mapRef.current.geoObjects.add(multiRouteRef.current);
-    };
-
-    const handleOrder = async () => {
-        if (!customerCoords || !selectedStore || !routeInfo) return;
-        setIsOrdering(true);
-
-        try {
-            const res = await fetch('/api/delivery/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    storeId: selectedStore.id,
-                    customerLat: customerCoords[0],
-                    customerLng: customerCoords[1],
-                    total: routeInfo.price
-                })
-            });
-
-            if (res.ok) {
-                toast.success("Buyurtma qabul qilindi!");
-                setCustomerCoords(null);
-                setRouteInfo(null);
-                if (customerMarkerRef.current) mapRef.current.geoObjects.remove(customerMarkerRef.current);
-                if (multiRouteRef.current) mapRef.current.geoObjects.remove(multiRouteRef.current);
-            } else {
-                toast.error("Xatolik yuz berdi");
-            }
-        } catch (e) {
-            toast.error("Bog'lanishda xatolik");
-        } finally {
-            setIsOrdering(false);
+        // Fit bounds
+        if (bounds.length > 0) {
+            mapRef.current.setBounds(bounds, { checkZoomRange: true, zoomMargin: 50 });
         }
-    };
+    }, [selectedList]);
+
+    // Init map
+    useEffect(() => {
+        const ymaps = (window as any).ymaps;
+        if (!ymaps || !ymapsLoaded) return;
+        if (!mapRef.current) {
+            ymaps.ready(() => {
+                mapRef.current = new ymaps.Map('delivery-dashboard-map', {
+                    center: TERMEZ_CENTER, zoom: 12,
+                    controls: ['zoomControl'],
+                });
+                updateMarkers();
+            });
+        } else {
+            updateMarkers();
+        }
+    }, [ymapsLoaded, updateMarkers]);
+
+    // ── Render ──
+    if (loading) {
+        return (
+            <div className="container min-h-[70vh] flex flex-col items-center justify-center gap-4">
+                <Loader2 size={32} className="animate-spin text-blue-600" />
+                <p className="text-sm font-bold text-slate-500">Yetkazib berishlar yuklanmoqda...</p>
+            </div>
+        );
+    }
+
+    if (orders.length === 0 && !loading) {
+        return (
+            <div className="container min-h-[70vh] flex flex-col items-center justify-center gap-4 text-center px-4">
+                <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center">
+                    <PackageSearch size={36} className="text-blue-500" />
+                </div>
+                <h1 className="text-xl font-black text-slate-900">Faol yetkazib berishlar yo'q</h1>
+                <p className="text-sm text-slate-500 max-w-sm">Buyurtma berganingizda kuryerni shu yerda kuzatishingiz mumkin.</p>
+                <button onClick={() => router.push('/')} className="mt-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700">Xaridni boshlash</button>
+            </div>
+        );
+    }
 
     return (
-        <div className="flex flex-col lg:flex-row min-h-screen bg-slate-50 pt-[70px]">
-            <Script src={YANDEX_MAPS_URL} onLoad={initMap} />
+        <div className="relative flex flex-col lg:flex-row min-h-screen bg-slate-50">
+            <Script src={YANDEX_MAPS_URL(YANDEX_MAPS_KEY)} onLoad={() => setYmapsLoaded(true)} />
 
-            <div className="relative flex-1 min-h-[400px] lg:h-auto order-2 lg:order-1">
-                <div id="delivery-map" className="absolute inset-0 z-0" />
+            {/* MAP */}
+            <div className="relative flex-1 min-h-[50vh] lg:min-h-screen lg:w-[60%] order-2 lg:order-1">
+                <div id="delivery-dashboard-map" className="absolute inset-0 z-0" />
+                {!ymapsLoaded && (
+                    <div className="absolute inset-0 z-10 bg-slate-100 flex items-center justify-center">
+                        <Loader2 size={28} className="animate-spin text-blue-600" />
+                    </div>
+                )}
+                {/* Mobile toggle panel button */}
                 <button
-                    onClick={locateMe}
-                    disabled={isLoadingLocation}
-                    className="absolute bottom-6 right-6 z-10 w-14 h-14 bg-white rounded-full shadow-xl flex items-center justify-center text-blue-600 hover:bg-blue-50 transition-all active:scale-95 disabled:opacity-70"
+                    onClick={() => setShowMobilePanel(v => !v)}
+                    className="lg:hidden absolute top-4 left-4 z-10 bg-white rounded-xl shadow-lg px-4 py-2.5 flex items-center gap-2 font-bold text-sm"
                 >
-                    {isLoadingLocation ? (
-                        <div className="w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                        <Navigation size={24} fill="currentColor" />
-                    )}
+                    {showMobilePanel ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
+                    {selectedIds.size} ta buyurtma
                 </button>
             </div>
 
-            <div className="w-full lg:w-[450px] bg-white p-6 lg:p-10 shadow-2xl z-10 overflow-y-auto border-l border-slate-100 order-1 lg:order-2">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-black text-slate-900 tracking-tighter mb-2">Tezkor Yetkazish</h1>
-                    <p className="text-slate-500 font-medium">Bitta marta bosish bilan buyurtma bering</p>
-                </div>
-
-                <div className="space-y-6">
-                    {/* Store Selection */}
-                    <div className="p-6 bg-slate-50 rounded-[24px] border border-slate-100 hover:border-blue-100 transition-all">
-                        <div className="flex items-center gap-3 mb-4 text-blue-600">
-                            <Store size={18} strokeWidth={2.5} />
-                            <span className="text-[11px] font-black uppercase tracking-widest">Do'konni tanlang</span>
+            {/* PANEL */}
+            <div className={`w-full lg:w-[40%] lg:max-w-[460px] bg-white shadow-2xl z-10 flex flex-col order-1 lg:order-2
+                ${showMobilePanel ? 'max-h-[55vh] lg:max-h-screen' : 'max-h-0 lg:max-h-screen'} overflow-hidden transition-all duration-300`}>
+                
+                {/* Header + Filters */}
+                <div className="shrink-0 border-b border-slate-100">
+                    <div className="px-4 sm:px-5 pt-4 pb-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <h1 className="text-lg font-black text-slate-900">Mening yetkazib berishlarim</h1>
+                            <span className="text-[11px] font-bold text-slate-400">{orders.length} ta</span>
                         </div>
-                        <select
-                            className="w-full bg-white border border-slate-200 p-4 rounded-2xl font-bold text-slate-800 outline-none focus:ring-4 focus:ring-blue-500/10"
-                            onChange={(e) => setSelectedStore(stores.find(s => s.id === e.target.value))}
-                            value={selectedStore?.id || ''}
-                        >
-                            {stores.map(s => (
-                                <option key={s.id} value={s.id}>{s.name}</option>
+                        <div className="flex gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                            {FILTER_OPTIONS.map(f => (
+                                <button key={f.key}
+                                    onClick={() => { setFilter(f.key); setSelectedIds(new Set()); }}
+                                    className={`shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold transition-colors whitespace-nowrap ${
+                                        filter === f.key ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                                    }`}>
+                                    {f.label}
+                                </button>
                             ))}
-                        </select>
-                    </div>
-
-                    {/* Address Selection */}
-                    <div className="p-6 bg-slate-50 rounded-[24px] border border-slate-100">
-                        <div className="flex items-center gap-3 mb-4 text-blue-600">
-                            <MapPin size={18} strokeWidth={2.5} />
-                            <span className="text-[11px] font-black uppercase tracking-widest">Manzil</span>
                         </div>
-                        <p className="font-bold text-slate-700">
-                            {customerCoords ? "Manzil tanlandi ✅" : "Xaritada kerakli nuqtani bosing"}
-                        </p>
-                        {customerCoords && (
-                            <p className="text-[10px] text-slate-400 mt-1 font-mono">
-                                {customerCoords[0].toFixed(5)}, {customerCoords[1].toFixed(5)}
-                            </p>
-                        )}
-                        {!customerCoords && (
-                            <button onClick={locateMe} className="mt-3 text-[11px] font-black text-blue-600 uppercase tracking-widest hover:underline flex items-center gap-1">
-                                <Navigation size={12} /> Mening joylashuvim
-                            </button>
-                        )}
                     </div>
+                </div>
 
-                    {/* Route Info Card */}
-                    {routeInfo && (
-                        <div className="p-6 bg-blue-600 rounded-[32px] text-white shadow-xl shadow-blue-500/20 transform animate-in fade-in slide-in-from-bottom-4">
-                            <div className="grid grid-cols-2 gap-4 mb-6">
-                                <div className="space-y-1">
-                                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest flex items-center gap-1">
-                                        <Navigation size={10} /> Masofa
-                                    </span>
-                                    <div className="text-xl font-black">{routeInfo.distance} km</div>
-                                </div>
-                                <div className="space-y-1 text-right">
-                                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest flex items-center justify-end gap-1">
-                                        <Clock size={10} /> Vaqt
-                                    </span>
-                                    <div className="text-xl font-black">~{routeInfo.duration} min</div>
+                {/* Order List */}
+                <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-5 py-3 space-y-2.5">
+                    {error && (
+                        <div className="flex items-center gap-2 p-3 bg-amber-50 rounded-xl text-amber-700 text-xs font-semibold border border-amber-200">
+                            <AlertCircle size={14} /> {error}
+                        </div>
+                    )}
+                    {orders.length === 0 && !error && (
+                        <div className="text-center py-10 text-slate-400 text-sm font-medium">Bu filtrda buyurtma yo'q</div>
+                    )}
+                    {orders.map((order, idx) => {
+                        const isSel = selectedIds.has(order.id);
+                        return (
+                            <div key={order.id}
+                                className={`rounded-2xl border-2 transition-all cursor-pointer ${
+                                    isSel ? 'border-blue-500 bg-blue-50/30 shadow-sm' : 'border-slate-100 hover:border-slate-200 bg-white'
+                                }`}
+                                onClick={() => {
+                                    setSelectedIds(new Set([order.id]));
+                                    setShowMobilePanel(false);
+                                }}
+                            >
+                                {/* Checkbox + Title row */}
+                                <div className="p-3.5 pb-2.5">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="flex items-center gap-2.5 min-w-0"
+                                            onClick={(e) => { e.stopPropagation(); toggleOrder(order.id); }}>
+                                            <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                                isSel ? 'bg-blue-600 border-blue-600' : 'border-slate-300'
+                                            }`}>
+                                                {isSel && <CheckCircle2 size={14} className="text-white" />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="font-black text-sm text-slate-900">#{order.id.slice(-6).toUpperCase()}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">
+                                                    {new Date(order.createdAt).toLocaleDateString('uz-UZ', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full border ${statusColor(order.status)}`}>
+                                            {STATUS_LABELS[order.status] || order.status}
+                                        </span>
+                                    </div>
+
+                                    {/* ETA + Distance row */}
+                                    {(order.etaMinutes != null || order.courierName) && (
+                                        <div className="mt-2.5 flex items-center gap-3 text-xs text-slate-600">
+                                            {order.courierName && (
+                                                <span className="flex items-center gap-1 font-semibold">
+                                                    <Truck size={13} className="text-blue-500" /> {order.courierName}
+                                                </span>
+                                            )}
+                                            {order.etaMinutes != null && (
+                                                <span className="flex items-center gap-1">
+                                                    <Timer size={13} className="text-amber-500" /> ~{order.etaMinutes} min
+                                                </span>
+                                            )}
+                                            {order.distanceKm != null && (
+                                                <span className="text-slate-400">{order.distanceKm} km</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
                             </div>
-                            <div className="pt-4 border-t border-white/20 flex justify-between items-end">
+                        );
+                    })}
+                    {orders.length > 0 && <div className="h-4" />}
+                </div>
+
+                {/* Selected order detail (bottom panel) */}
+                {selectedList.length === 1 && selectedList[0].courierName && (
+                    <div className="shrink-0 border-t border-slate-100 bg-slate-50 p-4 sm:p-5 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
+                                    <User size={18} />
+                                </div>
                                 <div>
-                                    <span className="text-[10px] font-black opacity-60 uppercase tracking-widest">Jami hisob</span>
-                                    <div className="text-3xl font-black">{routeInfo.price.toLocaleString()} <small className="text-sm">so'm</small></div>
-                                </div>
-                                <div className="bg-white/20 p-2 rounded-xl">
-                                    <CreditCard size={20} />
+                                    <p className="font-bold text-sm text-slate-900">{selectedList[0].courierName}</p>
+                                    <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                                        {vehicleIcon(selectedList[0].courierVehicle)}
+                                        {selectedList[0].courierVehicle || 'Kuryer'} · {selectedList[0].courierLevel || 'BRONZE'}
+                                    </p>
                                 </div>
                             </div>
+                            {selectedList[0].courierPhone && (
+                                <a href={`tel:${selectedList[0].courierPhone?.replace(/\s/g, '')}`}
+                                    className="p-2.5 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors"
+                                    title="Qo'ng'iroq qilish">
+                                    <Phone size={18} />
+                                </a>
+                            )}
                         </div>
-                    )}
-
-                    <button
-                        onClick={handleOrder}
-                        disabled={!routeInfo || isOrdering}
-                        className="group w-full py-5 bg-slate-900 hover:bg-black text-white rounded-[24px] font-black text-lg transition-all active:scale-95 disabled:opacity-20 disabled:pointer-events-none flex items-center justify-center gap-3 shadow-2xl shadow-slate-900/20"
-                    >
-                        {isOrdering ? "JO'NATILMOQDA..." : "TASDIQLASH"}
-                        {!isOrdering && <ChevronRight className="group-hover:translate-x-1 transition-transform" />}
-                    </button>
-
-                    {routeInfo && (
-                        <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest mt-2">
-                            To'lov kuryerga naqd yoki karta orqali
-                        </p>
-                    )}
-                </div>
-
-                <div className="mt-8 p-4 bg-amber-50 rounded-2xl border border-amber-100 flex gap-3">
-                    <div className="text-amber-500 font-bold mt-0.5">ⓘ</div>
-                    <p className="text-xs text-amber-800 font-semibold leading-relaxed">
-                        Manzilni aniqroq tanlash uchun xaritadagi markerni surishingiz mumkin.
-                    </p>
-                </div>
+                        <div className="grid grid-cols-3 gap-2">
+                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 text-center">
+                                <p className="text-[9px] font-black text-slate-400 uppercase">ETA</p>
+                                <p className="font-black text-sm text-slate-900">{selectedList[0].etaMinutes != null ? `~${selectedList[0].etaMinutes} min` : '—'}</p>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 text-center">
+                                <p className="text-[9px] font-black text-slate-400 uppercase">Masofa</p>
+                                <p className="font-black text-sm text-slate-900">{selectedList[0].distanceKm != null ? `${selectedList[0].distanceKm} km` : '—'}</p>
+                            </div>
+                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 text-center">
+                                <p className="text-[9px] font-black text-slate-400 uppercase">Yo'lda</p>
+                                <p className="font-black text-sm text-slate-900">{selectedList[0].departedAt ? timeAgo(selectedList[0].departedAt) : '—'}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
