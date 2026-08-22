@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Google Search favicon fix** (`584d5f0`): favicon.ico 16/32x32 edi — Google Search 48px+ talab qiladi, shuning uchun generic globe ko'rsatardi. `src/app/icon.png` (512x512) qo'shildi + locale layout `icons` metadata (`icon-512.png` PNG 512). Tekshirildi: `/icon.png` 200, `/icon-512.png` 200, `/favicon.ico` 200, title/description 3 locale'da to'g'ri, canonical `www.alhadaf.uz/uz`, hreflang 3+ x-default, robots favicon bloklamaydi. tsc 0.
 - **Announcement o'ng chet + fade fix** (`891371a`): top bar `.container`'dan chiqarildi (container `max-width`+`px-6` announcementni o'ng chetga yetkazmasdi). Location `pl` dinamik `max(24px,(100vw-1400px)/2+24px)` bilan container content edge'da; announcement `flex-1 min-w-0` viewport o'ng chetigacha. Fade 40→80px yumshoq. Track `flex`+`nowrap`+`width:max-content`. Verification: tsc 0.
 - **Admin-boshqariladigan announcement marquee** (`8efa5e5`):
   - Yangi `Announcement` Prisma modeli (text, backgroundColor, textColor, icon, isActive, order, startAt, endAt) + `20260822113834_add_announcement` migratsiya.
