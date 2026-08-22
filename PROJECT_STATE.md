@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Announcement o'ng chet + fade fix** (`891371a`): top bar `.container`'dan chiqarildi (container `max-width`+`px-6` announcementni o'ng chetga yetkazmasdi). Location `pl` dinamik `max(24px,(100vw-1400px)/2+24px)` bilan container content edge'da; announcement `flex-1 min-w-0` viewport o'ng chetigacha. Fade 40→80px yumshoq. Track `flex`+`nowrap`+`width:max-content`. Verification: tsc 0.
 - **Admin-boshqariladigan announcement marquee** (`8efa5e5`):
   - Yangi `Announcement` Prisma modeli (text, backgroundColor, textColor, icon, isActive, order, startAt, endAt) + `20260822113834_add_announcement` migratsiya.
   - Admin `/admin/settings` → "Header Xabari" (`AnnouncementSettings.tsx`): CRUD, faol/nofaol toggle, 6 rang preset, icon, tartib (↑↓), o'chirish. `/api/admin/announcements` + `[id]`.
