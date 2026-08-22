@@ -6,14 +6,15 @@ import { useUserStore } from '@/store/useUserStore';
 import { X, Loader2, Phone } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { toast } from 'sonner';
-import { Link, useRouter } from '@/navigation';
+import { useRouter } from '@/navigation';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { PhoneInput } from '@/components/ui/phone-input';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import Lottie from 'lottie-react';
 import successAnimation from '@/components/success-animation.json';
 import lockAnimation from './lock-animation.json';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import DocumentViewer from './DocumentViewer';
 import styles from './AuthModal.module.css';
 
 // Faqat shu sayt ichidagi manzillarga yo'naltirish — open-redirect himoyasi
@@ -75,16 +76,6 @@ export default function AuthModal({
     }, [initialSuccess]);
 
 
-    // Escape bilan yopish
-    useEffect(() => {
-        if (!isModalOpen) return;
-        const onKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') closeAuthModal();
-        };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-    }, [isModalOpen, closeAuthModal]);
-
     // Form states
     const [name, setName] = useState('');
     const [surname, setSurname] = useState('');
@@ -96,6 +87,21 @@ export default function AuthModal({
     const [isSuccess, setIsSuccess] = useState(initialSuccess);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [showTermsWarning, setShowTermsWarning] = useState(false);
+    /** Hujjat viewer: 'terms' (Ommaviy oferta) yoki 'privacy' (Maxfiylik siyosati). */
+    const [docViewer, setDocViewer] = useState<'terms' | 'privacy' | null>(null);
+
+    // Escape bilan yopish: hujjat viewer ochiq bo'lsa avval uni, aks holda modalni
+    useEffect(() => {
+        if (!isModalOpen) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === 'Escape') {
+                if (docViewer) setDocViewer(null);
+                else closeAuthModal();
+            }
+        };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [isModalOpen, closeAuthModal, docViewer]);
 
     useEffect(() => {
         if (!isVerifying || timeLeft <= 0) return;
@@ -564,8 +570,8 @@ export default function AuthModal({
                                                         />
                                                         <label htmlFor="terms" className={`text-[10px] font-medium leading-normal cursor-pointer ${showTermsWarning ? 'text-red-500' : 'text-slate-400'}`}>
                                                             {t.rich('terms', {
-                                                                oferta: (chunks) => <Link href="/terms" className="text-blue-600 font-bold hover:underline">{chunks}</Link>,
-                                                                siyosat: (chunks) => <Link href="/privacy" className="text-blue-600 font-bold hover:underline">{chunks}</Link>,
+                                                                oferta: (chunks) => <button type="button" onClick={() => setDocViewer('terms')} className="text-blue-600 font-bold hover:underline inline">{chunks}</button>,
+                                                                siyosat: (chunks) => <button type="button" onClick={() => setDocViewer('privacy')} className="text-blue-600 font-bold hover:underline inline">{chunks}</button>,
                                                             })}
                                                         </label>
                                                     </div>
@@ -621,6 +627,16 @@ export default function AuthModal({
                             </AnimatePresence>
                         </div>
                     </motion.div>
+
+                    {/* Hujjat viewer — login modal ustida, yuqori z-index.
+                        Login modal mount bo'lib qoladi, shuning uchun phone/checkbox
+                        state saqlanadi; orqaga qaytganda aynan shu holatga qaytiladi. */}
+                    {docViewer && (
+                        <DocumentViewer
+                            type={docViewer}
+                            onClose={() => setDocViewer(null)}
+                        />
+                    )}
                 </>
             )}
         </AnimatePresence>
