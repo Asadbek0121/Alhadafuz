@@ -1,73 +1,56 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { Wrench, MessageCircle, Rocket } from "lucide-react";
 import { useChatStore } from "@/store/useChatStore";
 
-const ANNOUNCEMENTS = [
-    { icon: Wrench, text: "Sayt hozir test rejimida ishlamoqda." },
-    { icon: MessageCircle, text: "Kamchilik yoki xatolik topsangiz, Yordam xizmatiga xabar qoldiring.", cta: true },
-    { icon: Rocket, text: "Fikr va takliflaringiz Hadaf Market'ni yaxshilashga yordam beradi." },
-];
+const TEXT_BEFORE = "🛠️ Sayt hozir test rejimida ishlamoqda. Kamchilik yoki xatolik topsangiz, ";
+const TEXT_AFTER = " xabar qoldiring. Fikr va takliflaringiz Hadaf Market'ni yaxshilashga yordam beradi.";
 
 /**
- * Sayt test rejimda ekanini ko'rsatuvchi kichik announcement bar.
+ * Sayt test rejimda ekanini ko'rsatuvchi announcement — uzluksiz marquee.
  *
- * Xabarlar har 3.5 soniyada silliq almashadi. "Yordam xizmatiga" matni
- * bosilganda mavjud SupportChat ochiladi (yangi support tizimi yaratilmaydi).
- * Bar balandligi ixcham (36px) — header umumiy tuzilishi o'zgarmaydi.
+ * Sariq background, faqat icon + matn. Dots/slide/popup YO'Q. Matn doimiy
+ * gorizontal harakatlanadi. "Yordam xizmatiga" bosilganda mavjud SupportChat
+ * ochiladi (yangi support tizimi yaratilmaydi). Bar balandligi ixcham (34px).
  */
 export default function AnnouncementBar() {
     const { openMenu } = useChatStore();
-    const [index, setIndex] = useState(0);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-    useEffect(() => {
-        timerRef.current = setInterval(() => {
-            setIndex(prev => (prev + 1) % ANNOUNCEMENTS.length);
-        }, 3500);
-        return () => { if (timerRef.current) clearInterval(timerRef.current); };
-    }, []);
-
-    const item = ANNOUNCEMENTS[index];
-    const Icon = item.icon;
+    // Marquee matni ikki nusxa takrorlanadi — translateX -50% cheksiz
+    // aylanishida uzilishsiz halqa hosil bo'ladi.
+    const renderRow = (ariaHidden = false) => (
+        <span
+            aria-hidden={ariaHidden || undefined}
+            className="inline-flex items-center gap-1.5 whitespace-nowrap pr-10"
+        >
+            <span className="text-[12px] font-semibold leading-none">
+                {TEXT_BEFORE}
+                <button
+                    type="button"
+                    onClick={openMenu}
+                    className="font-black underline underline-offset-2 decoration-black/30 hover:decoration-black transition-colors cursor-pointer"
+                >
+                    Yordam xizmatiga
+                </button>
+                {TEXT_AFTER}
+            </span>
+        </span>
+    );
 
     return (
-        <div className="w-full bg-gradient-to-r from-blue-700 via-blue-600 to-indigo-700 text-white h-[36px] overflow-hidden">
-            <div className="container h-full flex items-center justify-center relative">
-                {/* Xabarlar silliq almashadi — balandlik o'zgarmaydi */}
-                <div className="relative w-full h-full flex items-center justify-center">
-                    <div
-                        key={index}
-                        className="flex items-center gap-2 px-4 animate-announce-in"
-                        style={{ animation: 'announceIn 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }}
-                    >
-                        <Icon size={14} className="shrink-0 opacity-90" />
-                        <p className="text-[12px] font-semibold leading-none truncate max-w-[92vw] md:max-w-none flex items-center gap-1">
-                            {item.cta ? (
-                                <>
-                                    {"Kamchilik yoki xatolik topsangiz, "}
-                                    <button
-                                        type="button"
-                                        onClick={openMenu}
-                                        className="font-black underline underline-offset-2 decoration-white/60 hover:decoration-white transition-colors shrink-0 cursor-pointer"
-                                    >
-                                        Yordam xizmatiga
-                                    </button>
-                                    {" xabar qoldiring."}
-                                </>
-                            ) : (
-                                item.text
-                            )}
-                        </p>
-                    </div>
-                </div>
+        <div className="w-full h-[34px] overflow-hidden bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 text-amber-950 flex items-center border-y border-amber-200">
+            <div className="relative flex w-full marquee-track">
+                <div className="flex shrink-0 items-center">{renderRow()}</div>
+                <div className="flex shrink-0 items-center">{renderRow(true)}</div>
             </div>
-
             <style>{`
-                @keyframes announceIn {
-                    0% { opacity: 0; transform: translateY(8px); }
-                    100% { opacity: 1; transform: translateY(0); }
+                .marquee-track {
+                    animation: hadaf-marquee 28s linear infinite;
+                    will-change: transform;
+                }
+                .marquee-track:hover { animation-play-state: paused; }
+                @keyframes hadaf-marquee {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-50%); }
                 }
             `}</style>
         </div>

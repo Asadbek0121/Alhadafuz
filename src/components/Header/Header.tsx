@@ -401,33 +401,34 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
 
     return (
         <>
-            {/* Test rejim announcement — header'dan yuqorida, barcha ekranlarda */}
-            <AnnouncementBar />
+            {/* Test rejim announcement — mobil/planshetda alohida row,
+                desktopda quyidagi top bar ichida location'dan keyin */}
+            <div className="xl:hidden">
+                <AnnouncementBar />
+            </div>
 
             <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-slate-100 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] transition-all duration-300">
-                {/* Desktop Top Bar (Location) */}
+                {/* Desktop Top Bar: location (fixed) + announcement (marquee) */}
 
-
-
-                <div className="hidden xl:block w-full bg-slate-50 border-b border-slate-200 py-2 z-[51]">
-                    <div className="container flex items-center justify-between">
+                <div className="hidden xl:block w-full bg-slate-50 border-b border-slate-200 py-0 z-[51]">
+                    <div className="container flex items-center">
                         <div
-                            className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity"
+                            className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity w-[300px] flex-none h-[34px]"
                             onClick={openMap}
                         >
                             <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm shrink-0 group-hover:border-blue-300 transition-colors">
                                 {isLocationLoading ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
                             </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-black text-slate-800 truncate max-w-[200px] sm:max-w-[300px] md:max-w-[400px] leading-none border-b border-slate-300 border-dashed pb-0.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                                <span className="text-xs font-black text-slate-800 truncate leading-none border-b border-slate-300 border-dashed pb-0.5">
                                     {isClient && (city || district) ? [city, district].filter(Boolean).join(', ') : (isClient && address ? address : (t('joylashuvni_aniqlash') || "Joylashuvni aniqlash"))}
                                 </span>
                             </div>
                         </div>
 
-                        {/* Optional Right Side Content for Top Bar */}
-                        <div className="flex items-center gap-4">
-                            {/* Add top bar links here if needed */}
+                        {/* Announcement marquee — location'dan keyingi available space */}
+                        <div className="flex-1 min-w-0">
+                            <AnnouncementBar />
                         </div>
                     </div>
                 </div>
