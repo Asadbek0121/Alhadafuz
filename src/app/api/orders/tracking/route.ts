@@ -61,10 +61,11 @@ export async function GET(req: Request) {
         const statusList = statusFilter.map(s => `'${s}'`).join(',');
 
         const orders: any[] = await prisma.$queryRawUnsafe(`
-            SELECT o.*, u.name as "courierName", u.phone as "courierPhone",
+            SELECT o.*, u.name as "courierName", u.phone as "courierPhone", u.image as "courierImage",
                    cp."currentLat" as "courierLat", cp."currentLng" as "courierLng",
                    cp."vehicleType" as "courierVehicle", cp."lastLocationAt" as "courierLastLocation",
                    cp."courierLevel" as "courierLevel", cp.status as "courierStatus", cp."onDuty" as "courierOnDuty",
+                   cp."lastOnlineAt" as "courierLastOnline",
                    s.name as "storeName", s.address as "storeAddress", s.lat as "storeLat", s.lng as "storeLng"
             FROM "Order" o
             LEFT JOIN "User" u ON u.id = o."courierId"
@@ -113,17 +114,27 @@ export async function GET(req: Request) {
                     // Boshqa mijozning buyurtmasini ko'ra olmaydi (userId filtr).
                     courierName: o.courierName,
                     courierPhone: o.courierPhone || null,
+                    courierImage: o.courierImage || null,
                     courierLat: o.courierLat,
                     courierLng: o.courierLng,
                     courierVehicle: o.courierVehicle,
                     courierLevel: o.courierLevel,
                     courierState,
+                    courierLastOnline: o.courierLastOnline || null,
                     courierLastLocation: o.courierLastLocation,
                     locationAgeSec: lastLoc ? Math.max(0, Math.round((now - lastLoc) / 1000)) : null,
                     // ETA + masofa
                     etaMinutes: etaMin,
                     distanceKm: distKm != null ? Math.round(distKm * 10) / 10 : null,
-                    // "Yo'lga chiqqaniga" — PICKED_UP/DELIVERING'dan beri
+                    // Timeline timestamps (real):
+                    // acceptedAt = buyurtma qabul qilindi
+                    // assignedAt = kuryer biriktirildi (DispatchLog yo'q, updatedAt approksimatsiya)
+                    // pickedUpAt = kuryer buyurtmani oldi (PICKED_UP/DELIVERING bo'lsa)
+                    acceptedAt: o.createdAt ? new Date(o.createdAt).getTime() : null,
+                    assignedAt: o.courierId && o.updatedAt ? new Date(o.updatedAt).getTime() : null,
+                    pickedUpAt: (o.status === 'PICKED_UP' || o.status === 'DELIVERING') && o.updatedAt
+                        ? new Date(o.updatedAt).getTime()
+                        : null,
                     departedAt: (o.status === 'PICKED_UP' || o.status === 'DELIVERING') && o.updatedAt
                         ? new Date(o.updatedAt).getTime()
                         : null,

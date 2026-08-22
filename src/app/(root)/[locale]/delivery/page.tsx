@@ -22,12 +22,12 @@ interface TrackOrder {
     id: string; status: string; total: number; createdAt: string; updatedAt: string;
     orderLat: number | null; orderLng: number | null;
     shippingAddress?: string | null; shippingCity?: string | null; shippingDistrict?: string | null;
-    courierName?: string | null; courierPhone?: string | null;
+    courierName?: string | null; courierPhone?: string | null; courierImage?: string | null;
     courierLat?: number | null; courierLng?: number | null;
     courierVehicle?: string | null; courierLevel?: string | null;
     courierState?: string; courierLastLocation?: string | null;
     locationAgeSec?: number | null; etaMinutes?: number | null; distanceKm?: number | null;
-    departedAt?: number | null;
+    departedAt?: number | null; acceptedAt?: number | null; assignedAt?: number | null; pickedUpAt?: number | null;
     store?: { name: string; address: string; lat: number; lng: number } | null;
 }
 
@@ -115,6 +115,8 @@ export default function DeliveryPage() {
                 const data = await res.json();
                 if (cancelled) return;
                 let list = data.orders || [];
+                // DEBUG (vaqtinchalik): API javobini ko'rish
+                console.log('[DELIVERY-DEBUG] API orders:', JSON.stringify(list.map((o: any) => ({ id: o.id, status: o.status, courierName: o.courierName, courierPhone: o.courierPhone, vehicle: o.courierVehicle, eta: o.etaMinutes, dist: o.distanceKm }))));
                 // Client-side filter
                 if (filter === 'delivering') list = list.filter((o: TrackOrder) => o.status === 'PICKED_UP' || o.status === 'DELIVERING');
                 if (filter === 'searching') list = list.filter((o: TrackOrder) => o.status === 'CREATED' || o.status === 'ASSIGNED');
@@ -153,6 +155,12 @@ export default function DeliveryPage() {
     };
 
     const selectedList = useMemo(() => orders.filter(o => selectedIds.has(o.id)), [orders, selectedIds]);
+    // DEBUG: tanlangan orderlarni ko'rish
+    useEffect(() => {
+        if (!loading) {
+            console.log('[DELIVERY-DEBUG] selectedIds:', Array.from(selectedIds), '| selectedList:', selectedList.map(o => o.id));
+        }
+    }, [selectedIds, selectedList, loading]);
     // updateMarkers stable bo'lishi uchun (deps: []) — polling'da qayta
     // yaratilmasin va init effect faqat bir marta ishlasin.
     const selectedListRef = useRef(selectedList);
@@ -439,43 +447,113 @@ export default function DeliveryPage() {
                     {orders.length > 0 && <div className="h-4" />}
                 </div>
 
-                {/* Selected order detail (bottom panel) */}
+                {/* Selected order detail — professional tracking panel */}
                 {selectedList.length === 1 && selectedList[0].courierName && (
-                    <div className="shrink-0 border-t border-slate-100 bg-slate-50 p-4 sm:p-5 space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white">
-                                    <User size={18} />
+                    <div className="shrink-0 border-t border-slate-200 bg-white shadow-inner">
+                        {/* Courier info */}
+                        <div className="p-4 sm:p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-11 h-11 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-lg shrink-0 overflow-hidden">
+                                        {selectedList[0].courierImage ? (
+                                            <img src={selectedList[0].courierImage} alt="" className="w-full h-full object-cover" />
+                                        ) : (
+                                            selectedList[0].courierName?.[0]?.toUpperCase() || 'K'
+                                        )}
+                                    </div>
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <p className="font-bold text-sm text-slate-900">{selectedList[0].courierName}</p>
+                                            <span className={`w-2 h-2 rounded-full ${selectedList[0].courierState === 'ONLINE' ? 'bg-emerald-500 animate-pulse' : 'bg-slate-300'}`} />
+                                        </div>
+                                        <p className="text-[11px] text-slate-500 flex items-center gap-1">
+                                            {vehicleIcon(selectedList[0].courierVehicle)}
+                                            {selectedList[0].courierVehicle || 'Kuryer'} · {selectedList[0].courierLevel || 'BRONZE'}
+                                        </p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-bold text-sm text-slate-900">{selectedList[0].courierName}</p>
-                                    <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                                        {vehicleIcon(selectedList[0].courierVehicle)}
-                                        {selectedList[0].courierVehicle || 'Kuryer'} · {selectedList[0].courierLevel || 'BRONZE'}
+                                {selectedList[0].courierPhone && (
+                                    <a
+                                        href={`tel:${selectedList[0].courierPhone.replace(/\s/g, '')}`}
+                                        className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 text-white rounded-xl font-bold text-xs hover:bg-blue-700 transition-colors shadow-sm"
+                                        title="Qo'ng'iroq qilish"
+                                    >
+                                        <Phone size={14} />
+                                        <span className="hidden sm:inline">Qo'ng'iroq</span>
+                                    </a>
+                                )}
+                            </div>
+
+                            {/* Transport info */}
+                            {selectedList[0].courierVehicle && (
+                                <div className="flex items-center gap-2 text-xs text-slate-600 bg-slate-50 rounded-xl px-3.5 py-2.5 mb-3 border border-slate-100">
+                                    {vehicleIcon(selectedList[0].courierVehicle)}
+                                    <span className="font-semibold">{selectedList[0].courierVehicle}</span>
+                                    <span className="text-slate-300">·</span>
+                                    <span className="text-slate-400">Transport ma'lumoti mavjud emas</span>
+                                </div>
+                            )}
+
+                            {/* ETA + Distance + OnRoad */}
+                            <div className="grid grid-cols-3 gap-2 mb-3">
+                                <div className="p-2.5 bg-blue-50 rounded-xl border border-blue-100 text-center">
+                                    <p className="text-[9px] font-black text-blue-500 uppercase">ETA</p>
+                                    <p className="font-black text-sm text-slate-900">
+                                        {selectedList[0].etaMinutes != null
+                                            ? `~${selectedList[0].etaMinutes} min`
+                                            : selectedList[0].status === 'CREATED'
+                                                ? '—'
+                                                : 'Aniqlanmoqda'}
+                                    </p>
+                                </div>
+                                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase">Masofa</p>
+                                    <p className="font-black text-sm text-slate-900">
+                                        {selectedList[0].distanceKm != null
+                                            ? `${selectedList[0].distanceKm} km`
+                                            : '—'}
+                                    </p>
+                                </div>
+                                <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100 text-center">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase">Yo'lda</p>
+                                    <p className="font-black text-sm text-slate-900">
+                                        {selectedList[0].departedAt
+                                            ? timeAgo(selectedList[0].departedAt)
+                                            : selectedList[0].status === 'CREATED'
+                                                ? 'Hali yo\'q'
+                                                : '—'}
                                     </p>
                                 </div>
                             </div>
-                            {selectedList[0].courierPhone && (
-                                <a href={`tel:${selectedList[0].courierPhone?.replace(/\s/g, '')}`}
-                                    className="p-2.5 bg-blue-100 text-blue-600 rounded-xl hover:bg-blue-200 transition-colors"
-                                    title="Qo'ng'iroq qilish">
-                                    <Phone size={18} />
-                                </a>
-                            )}
-                        </div>
-                        <div className="grid grid-cols-3 gap-2">
-                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase">ETA</p>
-                                <p className="font-black text-sm text-slate-900">{selectedList[0].etaMinutes != null ? `~${selectedList[0].etaMinutes} min` : '—'}</p>
-                            </div>
-                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase">Masofa</p>
-                                <p className="font-black text-sm text-slate-900">{selectedList[0].distanceKm != null ? `${selectedList[0].distanceKm} km` : '—'}</p>
-                            </div>
-                            <div className="p-2.5 bg-white rounded-xl border border-slate-100 text-center">
-                                <p className="text-[9px] font-black text-slate-400 uppercase">Yo'lda</p>
-                                <p className="font-black text-sm text-slate-900">{selectedList[0].departedAt ? timeAgo(selectedList[0].departedAt) : '—'}</p>
-                            </div>
+
+                            {/* Timeline */}
+                            <details className="group">
+                                <summary className="flex items-center gap-1.5 text-[11px] font-semibold text-blue-600 cursor-pointer hover:text-blue-700 select-none">
+                                    <ChevronRight size={14} className="group-open:rotate-90 transition-transform" />
+                                    Buyurtma holati
+                                </summary>
+                                <div className="mt-3 space-y-2.5">
+                                    {[
+                                        { label: 'Buyurtma qabul qilindi', time: selectedList[0].acceptedAt, done: true },
+                                        { label: 'Kuryer biriktirildi', time: selectedList[0].assignedAt, done: selectedList[0].assignedAt != null },
+                                        { label: 'Kuryer buyurtmani oldi', time: selectedList[0].pickedUpAt, done: selectedList[0].pickedUpAt != null },
+                                        { label: 'Yo\'lga chiqdi', time: selectedList[0].departedAt, done: selectedList[0].departedAt != null },
+                                        { label: selectedList[0].status === 'DELIVERING' ? 'Yetkazilmoqda' : 'Yetkazib berildi', time: selectedList[0].status === 'DELIVERING' ? null : selectedList[0].updatedAt, done: selectedList[0].status !== 'DELIVERING' },
+                                    ].map((step, i) => (
+                                        <div key={i} className="flex items-start gap-2.5">
+                                            <div className={`mt-1 w-2.5 h-2.5 rounded-full shrink-0 ${step.done ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                                            <div className="flex-1 min-w-0">
+                                                <p className={`text-xs font-semibold ${step.done ? 'text-slate-800' : 'text-slate-400'}`}>{step.label}</p>
+                                                {step.time && (
+                                                    <p className="text-[10px] text-slate-400 font-medium">
+                                                        {new Date(step.time).toLocaleTimeString('uz-UZ', { hour: '2-digit', minute: '2-digit' })}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </details>
                         </div>
                     </div>
                 )}

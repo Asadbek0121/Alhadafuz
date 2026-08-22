@@ -245,82 +245,82 @@ export default function LiveMap() {
             />
 
             {/* Premium Sidebar */}
-            <div className="w-full xl:w-[320px] flex flex-col gap-6 h-full shrink-0">
+            <div className="w-full xl:w-[300px] flex flex-col gap-4 h-full shrink-0">
                 {/* Stats Summary Card */}
-                <div className="bg-slate-900 rounded-[32px] p-6 shadow-2xl relative overflow-hidden shrink-0">
-                    <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/20 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+                <div className="bg-slate-900 rounded-2xl p-4 shadow-xl relative overflow-hidden shrink-0">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/20 rounded-full -mr-16 -mt-16 blur-3xl"></div>
                     <div className="relative z-10">
-                        <div className="flex items-center justify-between mb-6">
-                            <div className="p-2.5 bg-white/10 backdrop-blur-md rounded-2xl">
-                                <Activity size={20} className="text-blue-400" />
+                        <div className="flex items-center justify-between mb-3">
+                            <div className="p-2 bg-white/10 backdrop-blur-md rounded-xl">
+                                <Activity size={16} className="text-blue-400" />
                             </div>
-                            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 backdrop-blur-md rounded-full border border-emerald-500/20">
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 backdrop-blur-md rounded-full border border-emerald-500/20">
                                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>
-                                <span className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Live Monitoring</span>
+                                <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Live</span>
                             </div>
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-8">
                             <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Onlayn Kuryerlar</p>
-                                <h4 className="text-3xl font-black text-white">{data.couriers.length}</h4>
+                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Onlayn Kuryerlar</p>
+                                <h4 className="text-2xl font-black text-white">{data.couriers.length}</h4>
                             </div>
                             <div>
-                                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-1">Faol Buyurtmalar</p>
-                                <h4 className="text-3xl font-black text-white">{data.orders.length}</h4>
+                                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">Faol Buyurtmalar</p>
+                                <h4 className="text-2xl font-black text-white">{data.orders.length}</h4>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 {/* Filter & Search */}
-                <div className="bg-white rounded-[40px] border border-slate-100 shadow-xl overflow-hidden flex-1 flex flex-col min-h-0">
-                    <div className="p-8 border-b border-slate-50 bg-slate-50/30 shrink-0">
-                        <div className="relative group">
-                            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-hover:text-blue-500 transition-colors" size={20} />
+                <div className="bg-white rounded-2xl border border-slate-100 shadow-md overflow-hidden flex-1 flex flex-col min-h-0">
+                    <div className="p-3.5 border-b border-slate-50 bg-slate-50/30 shrink-0">
+                        <div className="relative">
+                            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
                             <input
                                 type="text"
-                                placeholder="Kuryer ismini kiriting..."
+                                placeholder="Kuryer izlash..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-14 pr-6 py-5 bg-white rounded-3xl border border-slate-100 outline-none focus:ring-4 focus:ring-blue-50 focus:border-blue-200 font-extrabold text-sm transition-all shadow-sm"
+                                className="w-full pl-10 pr-4 py-2.5 bg-white rounded-xl border border-slate-100 outline-none focus:ring-2 focus:ring-blue-50 focus:border-blue-200 font-bold text-sm transition-all shadow-sm"
                             />
                         </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto divide-y divide-slate-50 custom-scrollbar">
                         {filteredCouriers.length === 0 ? (
-                            <div className="p-20 text-center">
-                                <div className="w-20 h-20 bg-slate-50 rounded-[28px] flex items-center justify-center mx-auto mb-6 transform rotate-3">
-                                    <User size={40} className="text-slate-200" />
+                            <div className="p-12 text-center">
+                                <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                                    <User size={28} className="text-slate-200" />
                                 </div>
-                                <h5 className="text-sm font-black text-slate-900 mb-2 uppercase tracking-tight">Kuryerlar Topilmadi</h5>
-                                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Bot orqali lokatsiya yuborishganiga<br />ishonch hosil qiling.</p>
+                                <h5 className="text-xs font-black text-slate-900 mb-1 uppercase">Kuryerlar Topilmadi</h5>
+                                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Bot orqali lokatsiya yuborishganiga ishonch hosil qiling.</p>
                             </div>
                         ) : (
                             filteredCouriers.map(c => (
                                 <button
                                     key={c.id}
                                     onClick={() => focusCourier(c)}
-                                    className={`w-full p-6 text-left hover:bg-slate-50/80 transition-all flex items-center gap-5 group relative ${selectedCourierId === c.id ? 'bg-blue-50/50 after:absolute after:left-0 after:top-6 after:bottom-6 after:w-1.5 after:bg-blue-600 after:rounded-r-full' : ''}`}
+                                    className={`w-full p-3 text-left hover:bg-slate-50/80 transition-all flex items-center gap-3 relative ${selectedCourierId === c.id ? 'bg-blue-50/50 after:absolute after:left-0 after:top-3 after:bottom-3 after:w-1 after:bg-blue-600 after:rounded-r-full' : ''}`}
                                     aria-label={`${c.name} kuryerini tanlash`}
                                 >
-                                    <div className={`w-16 h-16 rounded-[22px] flex items-center justify-center text-3xl shadow-2xl shadow-slate-200 transform group-hover:scale-105 transition-all duration-500 ${selectedCourierId === c.id ? 'bg-blue-600 text-white rotate-3' : 'bg-white border-2 border-slate-50 text-blue-600'}`}>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl shadow-md shrink-0 ${selectedCourierId === c.id ? 'bg-blue-600 text-white' : 'bg-white border-2 border-slate-50'}`}>
                                         {c.vehicleType === 'CAR' ? '🚗' : '🛵'}
                                     </div>
-                                    <div className="flex-1">
-                                        <div className="flex justify-between items-start mb-1.5">
-                                            <div className="font-black text-slate-800 text-base tracking-tight">{c.name}</div>
-                                            <div className="flex items-center gap-1.5 bg-amber-50 px-2 py-1 rounded-lg">
-                                                <Star size={10} className="text-amber-500 fill-amber-500" />
-                                                <span className="text-[10px] font-black text-amber-600 tracking-tighter">5.0</span>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex justify-between items-center gap-1">
+                                            <div className="font-black text-slate-800 text-sm truncate">{c.name}</div>
+                                            <div className="flex items-center gap-0.5 bg-amber-50 px-1.5 py-0.5 rounded-md shrink-0">
+                                                <Star size={9} className="text-amber-500 fill-amber-500" />
+                                                <span className="text-[9px] font-black text-amber-600">5.0</span>
                                             </div>
                                         </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                                                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{c.status}</span>
+                                        <div className="flex items-center justify-between mt-0.5">
+                                            <div className="flex items-center gap-1.5">
+                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></div>
+                                                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">{c.status}</span>
                                             </div>
-                                            <span className="text-[9px] font-black px-2.5 py-1 rounded-full bg-slate-100 text-slate-500 uppercase tracking-widest">
+                                            <span className="text-[8px] font-black px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 uppercase tracking-widest shrink-0">
                                                 {c.vehicleType}
                                             </span>
                                         </div>
@@ -334,21 +334,21 @@ export default function LiveMap() {
 
             {/* Map Area */}
             <div className="flex-1 min-h-[500px] h-full relative">
-                <div className="bg-white p-4 rounded-[56px] border border-slate-100 shadow-[0_48px_100px_-20px_rgba(0,0,0,0.12)] h-full overflow-hidden group">
-                    <div id="live-map-container" className="w-full h-full rounded-[42px] z-0 overflow-hidden shadow-inner bg-slate-50"></div>
+                <div className="bg-white p-2 rounded-3xl border border-slate-100 shadow-lg h-full overflow-hidden group">
+                    <div id="live-map-container" className="w-full h-full rounded-2xl z-0 overflow-hidden shadow-inner bg-slate-50"></div>
 
                     {/* Loading Overlay */}
                     {loading && (
-                        <div className="absolute inset-0 bg-white/60 backdrop-blur-3xl z-30 flex items-center justify-center rounded-[56px] m-4">
-                            <div className="flex flex-col items-center gap-10">
+                        <div className="absolute inset-0 bg-white/60 backdrop-blur-3xl z-30 flex items-center justify-center rounded-3xl m-2">
+                            <div className="flex flex-col items-center gap-6">
                                 <div className="relative">
-                                    <div className="w-24 h-24 border-[10px] border-blue-50 rounded-full"></div>
-                                    <div className="w-24 h-24 border-[10px] border-blue-600 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
-                                    <Globe className="absolute inset-0 m-auto text-blue-600 animate-pulse" size={32} />
+                                    <div className="w-16 h-16 border-[8px] border-blue-50 rounded-full"></div>
+                                    <div className="w-16 h-16 border-[8px] border-blue-600 border-t-transparent rounded-full animate-spin absolute inset-0"></div>
+                                    <Globe className="absolute inset-0 m-auto text-blue-600 animate-pulse" size={22} />
                                 </div>
                                 <div className="text-center">
-                                    <h5 className="font-black text-slate-900 uppercase tracking-[0.4em] text-xs mb-2">Satellite Sync</h5>
-                                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Kuryerlar bilan aloqa o'rnatilmoqda...</p>
+                                    <h5 className="font-black text-slate-900 uppercase tracking-[0.4em] text-[10px] mb-1">Satellite Sync</h5>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kuryerlar bilan aloqa o'rnatilmoqda...</p>
                                 </div>
                             </div>
                         </div>
@@ -356,14 +356,14 @@ export default function LiveMap() {
 
                     {/* Floating Map Controls */}
                     {!loading && (
-                        <div className="absolute top-32 right-8 z-[20] flex flex-col gap-3">
+                        <div className="absolute top-20 right-4 z-[20] flex flex-col gap-2">
                             <button
                                 onClick={() => mapRef.current?.setCenter([41.311081, 69.240562], 12)}
-                                className="w-12 h-12 bg-white rounded-2xl shadow-2xl shadow-blue-200/20 flex items-center justify-center text-slate-900 hover:bg-slate-900 hover:text-white transition-all transform hover:scale-105 active:scale-95 border border-slate-50 group/btn"
+                                className="w-9 h-9 bg-white rounded-xl shadow-md flex items-center justify-center text-slate-900 hover:bg-slate-900 hover:text-white transition-all border border-slate-50"
                                 title="Markazlash"
                                 aria-label="Markazlash"
                             >
-                                <Target size={20} />
+                                <Target size={16} />
                             </button>
 
                             <button
@@ -371,46 +371,46 @@ export default function LiveMap() {
                                     const currentType = mapRef.current.getType();
                                     mapRef.current.setType(currentType === 'yandex#map' ? 'yandex#satellite' : 'yandex#map');
                                 }}
-                                className="w-12 h-12 bg-white rounded-2xl shadow-2xl shadow-blue-200/20 flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border border-slate-50 group/btn"
+                                className="w-9 h-9 bg-white rounded-xl shadow-md flex items-center justify-center text-slate-400 hover:bg-blue-600 hover:text-white transition-all border border-slate-50"
                                 title="Xarita turini o'zgartirish"
                                 aria-label="Xarita turini o'zgartirish"
                             >
-                                <Layers size={20} />
+                                <Layers size={16} />
                             </button>
                         </div>
                     )}
 
                     {/* Legend Overlay Card */}
-                    <div className="absolute bottom-10 left-10 z-[20] hidden 2xl:block">
-                        <div className="bg-slate-900/90 backdrop-blur-2xl p-8 rounded-[40px] border border-white/10 shadow-3xl min-w-[280px]">
-                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-8">Transport Indikatorlari</h4>
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center text-xl shadow-xl shadow-blue-600/20 transform -rotate-3">🚗</div>
+                    <div className="absolute bottom-4 left-4 z-[20] hidden 2xl:block">
+                        <div className="bg-slate-900/90 backdrop-blur-2xl p-4 rounded-2xl border border-white/10 shadow-xl min-w-[220px]">
+                            <h4 className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Transport Indikatorlari</h4>
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center text-base shadow-xl shadow-blue-600/20">🚗</div>
                                     <div>
-                                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Avtomobil</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Katta sig'im</p>
+                                        <p className="text-[11px] font-black text-white uppercase tracking-wider">Avtomobil</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Katta sig'im</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-xl shadow-xl shadow-indigo-600/20 transform rotate-3">🛵</div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-indigo-600 rounded-xl flex items-center justify-center text-base shadow-xl shadow-indigo-600/20">🛵</div>
                                     <div>
-                                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Skuter / Moto</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Tezkor Ekspress</p>
+                                        <p className="text-[11px] font-black text-white uppercase tracking-wider">Skuter / Moto</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Tezkor Ekspress</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-emerald-600 rounded-2xl flex items-center justify-center text-xl shadow-xl shadow-emerald-600/20 transform -rotate-3">🚴</div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-emerald-600 rounded-xl flex items-center justify-center text-base shadow-xl shadow-emerald-600/20">🚴</div>
                                     <div>
-                                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Velosiped</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Ekologik</p>
+                                        <p className="text-[11px] font-black text-white uppercase tracking-wider">Velosiped</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Ekologik</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-5">
-                                    <div className="w-12 h-12 bg-slate-700 rounded-2xl flex items-center justify-center text-xl shadow-xl shadow-slate-700/20 transform rotate-3">🚶</div>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 bg-slate-700 rounded-xl flex items-center justify-center text-base shadow-xl shadow-slate-700/20">🚶</div>
                                     <div>
-                                        <p className="text-xs font-black text-white uppercase tracking-wider mb-0.5">Piyoda</p>
-                                        <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">Yaqin masofa</p>
+                                        <p className="text-[11px] font-black text-white uppercase tracking-wider">Piyoda</p>
+                                        <p className="text-[8px] font-bold text-slate-500 uppercase tracking-widest">Yaqin masofa</p>
                                     </div>
                                 </div>
                             </div>
