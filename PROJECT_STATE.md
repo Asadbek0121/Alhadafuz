@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **"Kodni olish" tugmasi 3-state UX** (`929cf99`): disabled holat och-kulrang bo'sh blok (`background:#f1f5f9`) edi — endi xira blue button (opacity 0.5), matn readable, spinner yo'q. Loading faqat API request paytida: spinner + "Yuborilmoqda..." (`Auth.sending`). Checkbox checked bo'lganda darhol active blue, uncheck da disabled. Checkbox loading paytida lock (disabled + opacity). Button o'lchami uchala state'da bir xil. Dizayn/ranglar o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
 - **SMS OTP auto-verify** (`30f737f`): "Tasdiqlash" tugmasi olib tashlandi — 6-raqam kiritilishi bilan avtomatik verify. Input: `inputMode=numeric`, `autoComplete=one-time-code`, maxLength=6, faqat raqam, paste qo'llab-quvvatlanadi, verify paytida disabled. Loading "Tekshirilmoqda...", success "✅ Tasdiqlandi", inline xato input ostida (role=alert). Telefon bloki compact: icon + bir qatorda raqam (truncate) + "Raqamni o'zgartirish" o'ngda. Timer/resend/Telegram saqlandi. i18n `verified` 3 tilda. Dizayn o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
 - **Login document viewer modal** (`876328d`): "Ommaviy oferta" / "Maxfiylik siyosati" linklari endi login modal USTIDA alohida yuqori z-index (`z-10050`) viewer modal ochadi (ilgari `<Link href>` bilan sahifa orqa fonda ochilardi). Yangi `DocumentViewer.tsx`: white panel, sarlavha, `← Ortga`/`Yopish`, faqat hujjat qatlami scroll, body scroll blok, login modal mount bo'lib qoladi (phone/checkbox state saqlanadi), Escape avval viewer'ni yopadi. Matn Terms/Privacy i18n messages'dan to'liq o'qiladigan formatda. Yangi `/offer` → `/terms` redirect. Checkbox mantiqi (tugma disabled, Google tekshiruvi) saqlanib qoldi. Verification: tsc 0, lint 0, build SUCCESS.
 - **Tracking birlashtirish** (`0e73f5e`): `/uz/track/[id]` eski single-order sahifa → server-side redirect `/delivery?order=ID`. Endi barcha tracking `/uz/delivery` multi-order dashboard orqali (bitta buyurtma `?order=` bilan tanlanadi, zoom qilinadi). Admin orders'dagi `/track/ID` linklari ishlayveradi. `/api/orders/[id]/track` endi ishlatilmaydi.
@@ -277,4 +278,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (SMS OTP auto-verify + telefon card, login document viewer, build SUCCESS)
+2026-08-22 (Login button 3-state UX, SMS OTP auto-verify, build SUCCESS)
