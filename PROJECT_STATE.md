@@ -55,6 +55,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 
 ## Completed Recently
+- **Tracking birlashtirish** (`0e73f5e`): `/uz/track/[id]` eski single-order sahifa → server-side redirect `/delivery?order=ID`. Endi barcha tracking `/uz/delivery` multi-order dashboard orqali (bitta buyurtma `?order=` bilan tanlanadi, zoom qilinadi). Admin orders'dagi `/track/ID` linklari ishlayveradi. `/api/orders/[id]/track` endi ishlatilmaydi.
 - **Admin banner mahsulot qidiruv fix** (`92b786e`): `/api/products?q=...` `{ products: [...] }` obyekt qaytaradi, parametrsiz esa array. Admin form `Array.isArray(data)` deb tekshirib obyektni tashlab yuborardi → carousel "Mahsulot qo'shish" qidiruvi va "mahsulotga bog'lash" hech qachon natija ko'rsatmasdi. Endi `data?.products` ham o'qiladi.
 - **Profile Security parol o'zgartirish fix** (`3c1ac1d`): `/uz/profile/security` parol almashtirish argon2 hashlangan parol bor foydalanuvchida doim "Incorrect current password" qaytarardi (route faqat `bcrypt.compare` ishlatardi). Endi `src/auth.ts:137-140` bilan bir xil mantiq: `$argon2` prefiksiga qarab `argon2.verify` yoki `bcrypt.compare`. Verification: tsc 0, lint 0, sahifa 200.
 - **HOME_TOP "Bugungi takliflar" — ko'p mahsulotli carousel** (`c0ce935`):
@@ -274,4 +275,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Admin banner mahsulot qidiruv fix, Profile security parol fix, HOME_TOP ko'p mahsulotli carousel, build SUCCESS)
+2026-08-22 (Tracking /uz/track→delivery birlashtirildi, admin banner qidiruv fix, build SUCCESS)
