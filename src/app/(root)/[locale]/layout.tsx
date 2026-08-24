@@ -74,6 +74,7 @@ export default async function LocaleLayout({
     getCachedRootCategories(),
     prisma.storeSettings.findUnique({ where: { id: 'default' } }),
   ]);
+  const tMeta = await getTranslations({ locale, namespace: 'Meta' });
 
   const footerSettings = storeSettings
     ? {
@@ -96,6 +97,7 @@ export default async function LocaleLayout({
     '@type': 'Organization',
     name: SITE_NAME,
     url: SITE_URL,
+    description: tMeta('home.description'),
     logo: `${SITE_URL}/logo.png`,
   };
 
