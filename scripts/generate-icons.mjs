@@ -203,12 +203,16 @@ const ogText = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${OG.
   <rect x="0" y="${OG.height - 10}" width="${OG.width / 3}" height="10" fill="${BRAND_ORANGE}"/>
 </svg>`);
 
-// OG mark: the full "HADAF" wordmark (x167-855, y239-638), not the square H
-// favicon mark — the full wordmark reads better at 232px in the share card.
-const OG_WORDMARK = { left: 167, top: 239, width: 689, height: 400 };
+// OG mark: the full "HADAF" wordmark (x76-1183, y228-1064), same as favicon.
+// Ilgari OG_WORDMARK {left:167, top:239, width:689, height:400} edi — bu
+// wordmarkning faqat o'rta qismini olib, chapda 91px, o'ngda 327px kesardi.
+// Endi to'liq wordmark (1108x837) ishlatiladi, contain bilan aspekt saqlanadi.
+const OG_WORDMARK = { left: 76, top: 228, width: 1108, height: 837 };
+const OG_MARK_HEIGHT = 175;
+const OG_MARK_WIDTH = Math.round(OG_MARK_HEIGHT * (1108 / 837)); // 232px
 const ogMark = await sharp(SOURCE)
     .extract(OG_WORDMARK)
-    .resize(232, 116, { fit: 'fill', background: { r: 255, g: 255, b: 255, alpha: 0 } })
+    .resize(OG_MARK_WIDTH, OG_MARK_HEIGHT, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 0 } })
     .png()
     .toBuffer();
 
@@ -221,7 +225,7 @@ await sharp({
     },
 })
     .composite([
-        { input: ogMark, top: 118, left: Math.round((OG.width - 232) / 2) },
+        { input: ogMark, top: 118, left: Math.round((OG.width - OG_MARK_WIDTH) / 2) },
         { input: ogText, top: 0, left: 0 },
     ])
     .png({ compressionLevel: 9 })
