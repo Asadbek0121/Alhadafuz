@@ -58,6 +58,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **CHINA_ORDER test mahsulot seed** (`981f5d5`): `scripts/seed-china-product.ts` — LED chiroq (CHINA_ORDER) "Xitoy tovarlari" root kategoriyasida. Order creation test: OrderItem'da `fulfillmentType: CHINA_ORDER` saqlanadi (backend qoidasi: china product variant LOCAL bo'la olmaydi). Product page 200. tsc 0, lint 0.
 - **BannerEvent analitika** (`db99dce`): impression/click route'lari endi `BannerEvent` record yozadi (sessionId — `bsid` cookie yoki IP+UA hash, shaxs aniqlamaydi); yangi `/api/admin/banners/analytics?days=7|30|90` — banner bo'yicha impression/click/CTR/yagona tashrifchi; admin banners page'da analitika panel (davr filter + stats table + loading state). Verification: impression/click 200, analytics 200 (3 impression/3 unique/1 click/CTR 33%), tsc 0, lint 0.
 - **Public shipping endpoint** (`9e60f6d`): `/api/shipping` GET public — faqat `isActive=true` zonalar; checkout endi public endpoint'dan o'qiydi (ilgari `/api/admin/shipping`). Admin GET saqlanadi (barcha zonalar). Verification: 27 zona active-only, admin 27; tsc 0, lint 0.
 - **Product slug route** (`e2971c8`): `/api/products/[id]` slug+id qabul qiladi (findFirst OR); product page legacy id URL → permanent redirect (308) `/product/[slug]`, mavjud bo'lmagan → 404; `scripts/backfill-product-slugs.mjs` — 7 productga slug yozildi; ProductCard `slug` prop; homepage/category/search/favorites/related/Header search/Hero fallback linklari slug-based; canonical + JSON-LD + breadcrumb slug. Verification: slug 200, id 308 redirect, not found 404; tsc 0, lint 0.
@@ -217,7 +218,6 @@ Avvalgi sessiyalardan:
 ## Next Tasks
 
 - **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup (Neon vars backup sifatida saqlanadi).
-- **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash.
 - 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID placeholder) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
 
 ## Known Issues
