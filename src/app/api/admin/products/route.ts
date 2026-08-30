@@ -5,6 +5,7 @@ import { auth } from '@/auth';
 import { revalidatePath, revalidateTag } from 'next/cache';
 
 import { z } from 'zod';
+import { slugify } from '@/lib/slug';
 
 export const dynamic = 'force-dynamic';
 
@@ -38,6 +39,7 @@ const productSchema = z.object({
     showLowStock: z.boolean().optional().default(false),
     allowInstallment: z.boolean().optional().default(false),
     fulfillmentType: z.enum(["LOCAL", "CHINA_ORDER"]).optional().default("LOCAL"),
+    slug: z.string().optional(),
 });
 
 // Atomic save — to'liq mahsulot + atributlar + variantlar bir transactionda
@@ -85,6 +87,19 @@ export async function POST(req: Request) {
 
         const data = result.data;
 
+        // Slug: berilmagan bo'lsa title'dan avtomatik generatsiya (unique).
+        // Duplicate title'da ham yagona slug bo'lishi uchun sufix qo'shiladi.
+        let slug = data.slug?.trim() || slugify(data.title);
+        try {
+            const existingSlug = await (prisma as any).product.findUnique({ where: { slug }, select: { id: true } });
+            if (existingSlug) {
+                const base = slug;
+                let i = 1;
+                while (await (prisma as any).product.findUnique({ where: { slug: `${base}-${i}` }, select: { id: true } })) i++;
+                slug = `${base}-${i}`;
+            }
+        } catch { /* slug unique check optional */ }
+
         // Inject metadata into attributes since we can't update schema
         let attrsObj = data.attributes || {};
         if (typeof attrsObj === 'string') {
@@ -115,6 +130,7 @@ export async function POST(req: Request) {
         // Initialize data for creation
         const createData: any = {
             title: data.title,
+            slug,
             price: data.price,
             description: data.description,
             image: data.image,

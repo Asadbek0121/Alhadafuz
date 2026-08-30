@@ -332,6 +332,8 @@ model Product {
   id            String         @id @default(cuid())
   vendorId      String?
   title         String
+  /// SEO URL slug — title'dan avtomatik generatsiya qilinadi (unique, nullable)
+  slug          String?
   description   String
   price         Float
   oldPrice      Float?
@@ -377,6 +379,7 @@ model Product {
   bannerProducts BannerProduct[]
 
   @@index([title])
+  @@index([slug])
   @@index([category])
   @@index([price])
   @@index([createdAt])
