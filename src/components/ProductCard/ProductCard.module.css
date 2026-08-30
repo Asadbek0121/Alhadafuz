@@ -46,6 +46,10 @@
     background: linear-gradient(135deg, #f80759, #bc4e9c);
 }
 
+.newTheme {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
 /* Chegirma belgisi — stikerlar ustunining birinchi elementi.
    Ilgari bu alohida `position: absolute` qora lenta (clip-path bilan) edi va
    qolgan stikerlarni qo'lda yozilgan `top: 58px` bilan pastga surardi: lenta

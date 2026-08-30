@@ -68,12 +68,20 @@ export default async function LocaleLayout({
   params: Promise<{ locale: string }>;
 }) {
   const { locale } = await params;
-  const [messages, session, rootCategories, storeSettings] = await Promise.all([
+  // getCachedRootCategories transient DB xatosida throw qilishi mumkin (kesh
+  // bo'sh saqlanmasligi uchun). Butun layout (va sayt) 500 bermasligi uchun
+  // unga alohida ishlov beriladi.
+  const [messages, session, storeSettings] = await Promise.all([
     getMessages(),
     auth(),
-    getCachedRootCategories(),
     prisma.storeSettings.findUnique({ where: { id: 'default' } }),
   ]);
+  let rootCategories: any[] = [];
+  try {
+    rootCategories = await getCachedRootCategories();
+  } catch {
+    rootCategories = [];
+  }
   const tMeta = await getTranslations({ locale, namespace: 'Meta' });
 
   const footerSettings = storeSettings

@@ -40,22 +40,19 @@ export function mapProductMarketing(p: any) {
 
 export const getCachedProducts = unstable_cache(
     async () => {
-        let results = [];
-        try {
-            results = await (prisma as any).product.findMany({
-                where: {
-                    isDeleted: false,
-                    OR: [
-                        { status: 'published' },
-                        { status: 'ACTIVE' }
-                    ]
-                },
-                orderBy: { createdAt: 'desc' }
-            });
-        } catch (e) {
-            console.error("Failed to fetch products:", e);
-            return [];
-        }
+        // DIQQAT: xatoda [] qaytarmang — Next.js uni 3600s keshga saqlaydi va
+        // homepage "bo'sh" bo'lib qoladi (Known Issue #4). Rethrow qiling:
+        // unstable_cache xatoni keshlamaydi, keyingi so'rovda qayta urinadi.
+        const results = await (prisma as any).product.findMany({
+            where: {
+                isDeleted: false,
+                OR: [
+                    { status: 'published' },
+                    { status: 'ACTIVE' }
+                ]
+            },
+            orderBy: { createdAt: 'desc' }
+        });
 
         return Array.isArray(results) ? results.map((p: any) => mapProductMarketing(p)) : [];
     },
@@ -74,23 +71,18 @@ export const getCachedProducts = unstable_cache(
  */
 export const getCachedHomepageProducts = unstable_cache(
     async (take: number = 24) => {
-        let results = [];
-        try {
-            results = await (prisma as any).product.findMany({
-                where: {
-                    isDeleted: false,
-                    OR: [
-                        { status: 'published' },
-                        { status: 'ACTIVE' }
-                    ]
-                },
-                orderBy: { createdAt: 'desc' },
-                take
-            });
-        } catch (e) {
-            console.error("Failed to fetch homepage products:", e);
-            return [];
-        }
+        // Xatoda [] qaytarmang — keshga bo'sh natija saqlanib qoladi (Known Issue #4).
+        const results = await (prisma as any).product.findMany({
+            where: {
+                isDeleted: false,
+                OR: [
+                    { status: 'published' },
+                    { status: 'ACTIVE' }
+                ]
+            },
+            orderBy: { createdAt: 'desc' },
+            take
+        });
 
         return Array.isArray(results) ? results.map((p: any) => mapProductMarketing(p)) : [];
     },
@@ -108,37 +100,32 @@ export const getCachedHomepageProducts = unstable_cache(
  */
 export const getCachedFlashDeals = unstable_cache(
     async (take: number = 8) => {
-        let results = [];
-        try {
-            const candidates = await (prisma as any).product.findMany({
-                where: {
-                    isDeleted: false,
-                    AND: [
-                        {
-                            OR: [
-                                { status: 'published' },
-                                { status: 'ACTIVE' }
-                            ]
-                        },
-                        {
-                            OR: [
-                                { discount: { gt: 0 } },
-                                { oldPrice: { not: null } }
-                            ]
-                        }
-                    ]
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 30
-            });
+        // Xatoda [] qaytarmang — keshga bo'sh natija saqlanib qoladi (Known Issue #4).
+        const candidates = await (prisma as any).product.findMany({
+            where: {
+                isDeleted: false,
+                AND: [
+                    {
+                        OR: [
+                            { status: 'published' },
+                            { status: 'ACTIVE' }
+                        ]
+                    },
+                    {
+                        OR: [
+                            { discount: { gt: 0 } },
+                            { oldPrice: { not: null } }
+                        ]
+                    }
+                ]
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 30
+        });
 
-            results = (Array.isArray(candidates) ? candidates : [])
-                .filter((p: any) => (p.discount && p.discount > 0) || (p.oldPrice && p.oldPrice > p.price))
-                .slice(0, take);
-        } catch (e) {
-            console.error("Failed to fetch flash deals:", e);
-            return [];
-        }
+        const results = (Array.isArray(candidates) ? candidates : [])
+            .filter((p: any) => (p.discount && p.discount > 0) || (p.oldPrice && p.oldPrice > p.price))
+            .slice(0, take);
 
         return Array.isArray(results) ? results.map((p: any) => mapProductMarketing(p)) : [];
     },
@@ -154,22 +141,17 @@ export const getCachedFlashDeals = unstable_cache(
  */
 export const getCachedRootCategories = unstable_cache(
     async () => {
-        let results = [];
-        try {
-            results = await (prisma as any).category.findMany({
-                where: { isActive: true, parentId: null },
-                orderBy: { order: 'asc' },
-                select: {
-                    id: true,
-                    name: true,
-                    slug: true,
-                    image: true,
-                }
-            });
-        } catch (e) {
-            console.error("Failed to fetch root categories:", e);
-            return [];
-        }
+        // Xatoda [] qaytarmang — keshga bo'sh natija saqlanib qoladi (Known Issue #4).
+        const results = await (prisma as any).category.findMany({
+            where: { isActive: true, parentId: null },
+            orderBy: { order: 'asc' },
+            select: {
+                id: true,
+                name: true,
+                slug: true,
+                image: true,
+            }
+        });
 
         return Array.isArray(results) ? results : [];
     },
@@ -183,26 +165,23 @@ export const getCachedRootCategories = unstable_cache(
  */
 export const getCachedCategoryTree = unstable_cache(
     async () => {
+        // Xatoda [] qaytarmang — keshga bo'sh natija saqlanib qoladi (Known Issue #4).
         const flat: { id: string; name: string; slug: string; depth: number; parentId: string | null }[] = [];
-        try {
-            const roots = await (prisma as any).category.findMany({
-                where: { isActive: true, parentId: null },
-                orderBy: { order: 'asc' },
+        const roots = await (prisma as any).category.findMany({
+            where: { isActive: true, parentId: null },
+            orderBy: { order: 'asc' },
+            select: { id: true, name: true, slug: true, parentId: true },
+        });
+        for (const root of roots) {
+            flat.push({ ...root, depth: 0 });
+            const children = await (prisma as any).category.findMany({
+                where: { parentId: root.id, isActive: true },
+                orderBy: { name: 'asc' },
                 select: { id: true, name: true, slug: true, parentId: true },
             });
-            for (const root of roots) {
-                flat.push({ ...root, depth: 0 });
-                const children = await (prisma as any).category.findMany({
-                    where: { parentId: root.id, isActive: true },
-                    orderBy: { name: 'asc' },
-                    select: { id: true, name: true, slug: true, parentId: true },
-                });
-                for (const child of children) {
-                    flat.push({ ...child, depth: 1 });
-                }
+            for (const child of children) {
+                flat.push({ ...child, depth: 1 });
             }
-        } catch (e) {
-            console.error("Failed to fetch category tree:", e);
         }
         return flat;
     },
@@ -264,25 +243,22 @@ const BANNER_SITE_FIELDS = {
  */
 const getCachedActiveBanners = unstable_cache(
     async () => {
-        try {
-            const banners = await (prisma as any).banner.findMany({
-                where: { isActive: true },
-                orderBy: { order: 'asc' },
-                select: BANNER_SITE_FIELDS
-            });
+        // Xatoda [] qaytarmang — keshga bo'sh natija saqlanib qoladi (Known Issue #4).
+        const banners = await (prisma as any).banner.findMany({
+            where: { isActive: true },
+            orderBy: { order: 'asc' },
+            select: BANNER_SITE_FIELDS
+        });
 
-            // HOME_TOP carousel uchun `bannerProducts` → tekis `products` array.
-            // O'chirilgan (isDeleted) yoki nashr qilinmagan mahsulotlar saytga
-            // chiqmaydi — aks holda carouselda o'lik card paydo bo'lardi.
-            return banners.map((b: any) => ({
-                ...b,
-                products: (b.bannerProducts || [])
-                    .map((bp: any) => bp.product)
-                    .filter((p: any) => p && !p.isDeleted && (p.status === 'published' || p.status === 'ACTIVE'))
-            }));
-        } catch (err) {
-            return [];
-        }
+        // HOME_TOP carousel uchun `bannerProducts` → tekis `products` array.
+        // O'chirilgan (isDeleted) yoki nashr qilinmagan mahsulotlar saytga
+        // chiqmaydi — aks holda carouselda o'lik card paydo bo'lardi.
+        return banners.map((b: any) => ({
+            ...b,
+            products: (b.bannerProducts || [])
+                .map((bp: any) => bp.product)
+                .filter((p: any) => p && !p.isDeleted && (p.status === 'published' || p.status === 'ACTIVE'))
+        }));
     },
     ['banners-site'],
     { revalidate: 3600, tags: ['banners'] }

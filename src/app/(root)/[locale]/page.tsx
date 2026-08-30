@@ -24,12 +24,16 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
 
   // Parallel server-side fetch — barcha cached, 3600s revalidation.
   // Yangi cached funksiyalar qo'shilgan: kategoriyalar va chegirmali mahsulotlar.
-  const [products, banners, categories, flashDeals] = await Promise.all([
+  // `allSettled`: bitta cached funksiya transient DB xatosi tufayli throw qilsa
+  // (endi keshga [] saqlanmaydi), qolgan bo'limlar ishlashda davom etadi va
+  // homepage 500 bermaydi. Xato bo'lgan bo'lim shu so'rovda bo'sh ko'rinadi,
+  // keyingi so'rovda qayta uriniladi.
+  const [products, banners, categories, flashDeals] = await Promise.allSettled([
     getCachedHomepageProducts(24),
     getCachedBanners(),
     getCachedRootCategories(),
     getCachedFlashDeals(8),
-  ]);
+  ]).then(results => results.map(r => (r.status === 'fulfilled' ? r.value : [])));
 
   // "Nega HADAF?" ishonch bloki uchun real xizmat ma'lumotlari
   const trustItems = [

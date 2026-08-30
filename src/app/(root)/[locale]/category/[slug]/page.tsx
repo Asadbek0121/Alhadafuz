@@ -150,8 +150,14 @@ export default async function CategoryPage({
         link: banner.link ?? undefined
     }));
 
-    // Root kategoriyalar — mobil'da drill-down browser uchun
-    const rootCategories = await getCachedRootCategories();
+    // Root kategoriyalar — mobil'da drill-down browser uchun.
+    // Transient DB xatosida (kesh bo'sh saqlanmaydi) sahifa buzilmasin.
+    let rootCategories: any[] = [];
+    try {
+        rootCategories = await getCachedRootCategories();
+    } catch {
+        rootCategories = [];
+    }
 
     return (
         <>

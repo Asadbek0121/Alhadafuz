@@ -40,7 +40,7 @@ interface ProductProps {
 export default function ProductCard(props: ProductProps) {
     const {
         id, title, price, oldPrice, image, discount, discountType,
-        freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false,
+        isNew, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false,
         rating = 0, reviewCount, fulfillmentType
     } = props;
     const { addToCart } = useCartStore(); // Updated hook
@@ -57,7 +57,7 @@ export default function ProductCard(props: ProductProps) {
     // tanlangan, ammo eski narxi to'ldirilgan mahsulot ham chegirmali bo'lib
     // chiqardi. Mantiq `src/lib/product-discount.ts` da, mahsulot sahifasi ham
     // shu funksiyalarni ishlatadi.
-    const showDiscount = hasRealDiscount({ discount });
+    const showDiscount = hasRealDiscount({ discount }) || (typeof oldPrice === 'number' && oldPrice > price);
     const discountPercentage = discountPercent({ price, oldPrice, discount });
 
     const isLowStock = showLowStock && typeof stock !== 'undefined' && stock > 0 && stock < 10;
@@ -116,6 +116,13 @@ export default function ProductCard(props: ProductProps) {
             </div>
         );
     } else {
+        if (isNew) {
+            badges.push(
+                <div key="new" className={`${styles.promoSticker} ${styles.newTheme}`}>
+                    {tMarketing('isNew')}
+                </div>
+            );
+        }
         if (isCampaignSticker) {
             badges.push(
                 <div key="disc" className={`${styles.promoSticker} ${discountType === 'HOT' ? styles.hotTheme : styles.promoTheme}`}>
@@ -220,12 +227,15 @@ export default function ProductCard(props: ProductProps) {
                 </Link>
 
                 {rating > 0 && (
-                    <div className="flex items-center gap-0.5 mb-2">
-                        {[1, 2, 3, 4, 5].map(i => (
-                            <Star key={i} size={10} className={`${i <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
-                        ))}
+                    <div className="flex items-center gap-1 mb-2">
+                        <div className="flex items-center gap-0.5">
+                            {[1, 2, 3, 4, 5].map(i => (
+                                <Star key={i} size={10} className={`${i <= rating ? "fill-amber-400 text-amber-400" : "text-slate-200"}`} />
+                            ))}
+                        </div>
+                        <span className="text-[10px] font-bold text-slate-500 ml-0.5">{Number(rating).toFixed(1)}</span>
                         {typeof reviewCount === 'number' && reviewCount > 0 && (
-                            <span className="text-[10px] text-slate-400 ml-1">({reviewCount})</span>
+                            <span className="text-[10px] text-slate-400">({reviewCount})</span>
                         )}
                     </div>
                 )}

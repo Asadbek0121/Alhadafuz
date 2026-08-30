@@ -21,7 +21,7 @@ export default async function RootLayout({
     return (
         <html lang={locale} suppressHydrationWarning>
             <body className={inter.className} suppressHydrationWarning>
-                <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
+                <Script src="https://telegram.org/js/telegram-web-app.js" strategy="afterInteractive" />
                 {children}
             </body>
         </html>

@@ -74,6 +74,11 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: __dirname,
   },
+  // Native modullarni server-side bundle'dan chiqarish — argon2 (parol hash)
+  // va sharp (icon/og-image generatsiya) build vaqtida tizim kutubxonalariga
+  // bog'liq. Turbopack bilan `serverExternalPackages` ularni to'g'ri tashqarida
+  // saqlaydi (build osilib qolishining oldini oladi).
+  serverExternalPackages: ["argon2", "sharp", "bcryptjs"],
   async headers() {
     return [
       {

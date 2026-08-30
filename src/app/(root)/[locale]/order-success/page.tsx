@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/useCartStore';
+import { ClickButton } from '@/components/payment/ClickButton';
 
 export default function OrderSuccessPage() {
     const searchParams = useSearchParams();
@@ -20,6 +21,8 @@ export default function OrderSuccessPage() {
     const [orderError, setOrderError] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [isUploaded, setIsUploaded] = useState(false);
+    // CLICK to'lov config (service_id/merchant_id) — PaymentMethod.config'dan
+    const [clickConfig, setClickConfig] = useState<{ service_id: string; merchant_id: string } | null>(null);
 
     useEffect(() => {
         // orderId bo'lmasa loading holatini darhol yakunlaymiz — cheksiz spinner bo'lmasin.
@@ -48,6 +51,25 @@ export default function OrderSuccessPage() {
                     if (settingsRes.ok) {
                         const settingsData = await settingsRes.json();
                         setSettings(settingsData);
+                    }
+
+                    // CLICK to'lov usuli tanlangan bo'lsa, config'ni (service_id,
+                    // merchant_id) PaymentMethod jadvalidan olamiz.
+                    if ((orderData.paymentMethod || '').toUpperCase() === 'CLICK') {
+                        const methodsRes = await fetch('/api/payment-methods');
+                        if (methodsRes.ok) {
+                            const methods = await methodsRes.json();
+                            const click = (Array.isArray(methods) ? methods : [])
+                                .find((m: any) => (m.provider || '').toUpperCase() === 'CLICK');
+                            if (click?.config) {
+                                try {
+                                    const cfg = JSON.parse(click.config);
+                                    if (cfg.service_id && cfg.merchant_id) {
+                                        setClickConfig({ service_id: cfg.service_id, merchant_id: cfg.merchant_id });
+                                    }
+                                } catch { /* invalid JSON — tugma ko'rsatilmaydi */ }
+                            }
+                        }
                     }
                 } else {
                     setOrderError(true);
@@ -134,6 +156,7 @@ export default function OrderSuccessPage() {
     }
 
     const isP2P = order?.paymentMethod === 'P2P';
+    const isCLICK = (order?.paymentMethod || '').toUpperCase() === 'CLICK';
 
     return (
         <div className="min-h-screen bg-[#fafafb] py-12 md:py-24 px-4 font-sans">
@@ -240,6 +263,35 @@ export default function OrderSuccessPage() {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* CLICK payment section */}
+                {isCLICK && clickConfig && (
+                    <div className="w-full bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden mb-12 animate-slide-up">
+                        <div className="p-8 md:p-12">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
+                                    <CreditCard size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">CLICK orqali to'lov</h3>
+                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">To'lovni amalga oshirish</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center gap-4">
+                                <p className="text-sm text-slate-500 font-medium text-center max-w-md">
+                                    Buyurtmangizni CLICK orqali to'lang. To'lov amalga oshirilgach, avtomatik tasdiqlanadi.
+                                </p>
+                                <ClickButton
+                                    amount={order.total}
+                                    transactionId={order.id}
+                                    serviceId={clickConfig.service_id}
+                                    merchantId={clickConfig.merchant_id}
+                                    className="w-full md:w-auto h-16 px-12 rounded-[20px] text-base shadow-2xl"
+                                />
                             </div>
                         </div>
                     </div>

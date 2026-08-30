@@ -65,3 +65,6 @@ scratch/
 
 # Bot logs
 scripts/logs/
+
+# Supabase CLI temp files
+supabase/.temp/

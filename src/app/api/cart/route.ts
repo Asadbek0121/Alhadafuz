@@ -17,7 +17,11 @@ export async function GET() {
             where: { userId },
             include: {
                 items: {
-                    include: { product: true },
+                    include: {
+                        product: true,
+                        // Variant ma'lumotini (SKU) ham olib berish
+                        variantRel: { select: { sku: true } },
+                    },
                 },
             },
         });
@@ -28,8 +32,12 @@ export async function GET() {
             price: item.product.price,
             image: item.product.image,
             quantity: item.quantity,
+            // Variant identity — variantli mahsulotlar alohida cart item hisoblanadi
+            variantId: item.variantId || undefined,
+            variant: item.variant || undefined,
+            sku: item.variantRel?.sku || undefined,
             // Product authoritative source; eski itemlarda null -> LOCAL
-            fulfillmentType: item.product.fulfillmentType || 'LOCAL',
+            fulfillmentType: item.fulfillmentType || item.product.fulfillmentType || 'LOCAL',
         })) || [];
 
         return NextResponse.json({ items: formattedItems });
@@ -43,6 +51,10 @@ const updateSchema = z.object({
     items: z.array(z.object({
         id: z.string(),
         quantity: z.number().min(1),
+        // Variant identity — variantli mahsulotlar alohida cart item
+        variantId: z.string().optional(),
+        variant: z.string().optional(),
+        fulfillmentType: z.string().optional(),
     }))
 });
 
@@ -77,7 +89,11 @@ export async function PUT(req: Request) {
                     data: items.map(item => ({
                         cartId: cart.id,
                         productId: item.id,
-                        quantity: item.quantity
+                        quantity: item.quantity,
+                        // Variant saqlash — sync bilan bir xil identifikatsiya
+                        variantId: item.variantId || null,
+                        variant: item.variant || null,
+                        fulfillmentType: item.fulfillmentType || null,
                     }))
                 });
             }
