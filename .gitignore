@@ -68,3 +68,4 @@ scripts/logs/
 
 # Supabase CLI temp files
 supabase/.temp/
+.env*
