@@ -56,47 +56,34 @@
 
 - Homepage: 35 JS chunk (dev), 281 next/image srcset ref, 26 `<img>`, 3 woff2 font (Montserrat 700/900 latin + Inter).
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
-
 ## Completed Recently
-- **SEO snippet tahlili + JSON-LD description** (`48dca21`): Google'da ko'rinayotgan "Bizning do'konlarimiz. Bog'lanish. Aloqa markazi +998 76 200 01 05..." eski snippet matni kodda VA DB'da yo'q — Google cache'dagi eski versiya. Hozirgi: Meta.home.description to'g'ri, Footer DB'dan yangi kontakt (+998 (33) 686-20-01, Alisher Navoiy), favicon 512x512. JSON-LD Organization/WebSite ga `description` (tMeta home.description, locale'ga mos) qo'shildi. Barcha icon URL 200, tsc 0.
-- **Google Search favicon fix** (`584d5f0`): favicon.ico 16/32x32 edi — Google Search 48px+ talab qiladi, shuning uchun generic globe ko'rsatardi. `src/app/icon.png` (512x512) qo'shildi + locale layout `icons` metadata (`icon-512.png` PNG 512). Tekshirildi: `/icon.png` 200, `/icon-512.png` 200, `/favicon.ico` 200, title/description 3 locale'da to'g'ri, canonical `www.alhadaf.uz/uz`, hreflang 3+ x-default, robots favicon bloklamaydi. tsc 0.
-- **Announcement o'ng chet + fade fix** (`891371a`): top bar `.container`'dan chiqarildi (container `max-width`+`px-6` announcementni o'ng chetga yetkazmasdi). Location `pl` dinamik `max(24px,(100vw-1400px)/2+24px)` bilan container content edge'da; announcement `flex-1 min-w-0` viewport o'ng chetigacha. Fade 40→80px yumshoq. Track `flex`+`nowrap`+`width:max-content`. Verification: tsc 0.
-- **Admin-boshqariladigan announcement marquee** (`8efa5e5`):
-  - Yangi `Announcement` Prisma modeli (text, backgroundColor, textColor, icon, isActive, order, startAt, endAt) + `20260822113834_add_announcement` migratsiya.
-  - Admin `/admin/settings` → "Header Xabari" (`AnnouncementSettings.tsx`): CRUD, faol/nofaol toggle, 6 rang preset, icon, tartib (↑↓), o'chirish. `/api/admin/announcements` + `[id]`.
-  - Public `/api/announcements` keshlangan (unstable_cache + `revalidateTag('announcements')`).
-  - `AnnouncementBar.tsx`: seamless infinite loop (matn 3x, translateX -33.33% linear infinite — jump/rewind yo'q), fade edges (40px gradient mask), dinamik duration (~30px/s), hover pause, reduced-motion sekinlashadi, faol xabar bo'lmasa announcement yashirin (location qoladi), "Yordam xizmatiga" → SupportChat.
-  - Boshlang'ich "test rejimi" announcement DB'ga yozildi.
-  - Verification: tsc 0, lint 0, build SUCCESS, /api/announcements 200.
-- **Announcement location bilan bir bar — marquee** (`883a81f`): desktop top bar ichida location fixed `w-[300px]` chapda (icon/typography/o'lcham o'zgarmadi, faqat fixed width), undan keyingi available space'da sariq marquee announcement uzluksiz harakatlanadi (`translateX -50%` cheksiz, hover pause). Dots/slide/popup yo'q. "Yordam xizmatiga" → SupportChat. Mobil/planshetda alohida compact row (`xl:hidden`). Header qolgan qismi o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
-- **Test rejimi announcement bar** (`345b9ad`): yuqorida 36px`li announcement — 3 xabar (🛠️ test rejim, 💬 Yordam xizmatiga xabar qoldiring, 🚀 fikr/takliflar) har 3.5s silliq almashadi. "Yordam xizmatiga" tugma → `useChatStore.openMenu` (mavjud SupportChat ochiladi). Header'dan yuqorida, barcha ekranlarda. Location bar (Surxondaryo viloyati, Termiz) saqlandi. Header dizayni o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
-- **Language switcher cycle** (`d4b383c`): dropdown/popup butunlay olib tashlandi. Tugma doim KEYINGI tilni ko'rsatadi (UZ→RU, RU→EN, EN→UZ) va bosilganda darhol o'tadi. Route + query parametrlar saqlanadi (`/uz/product/123?x` → `/ru/product/123?x`). next-intl `router.replace(pathname, {locale})` ishlatiladi, yangi lokalizatsiya mexanizmi yaratilmadi. Header dizayni o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
-- **"Kodni olish" tugmasi 3-state UX** (`929cf99`): disabled holat och-kulrang bo'sh blok (`background:#f1f5f9`) edi — endi xira blue button (opacity 0.5), matn readable, spinner yo'q. Loading faqat API request paytida: spinner + "Yuborilmoqda..." (`Auth.sending`). Checkbox checked bo'lganda darhol active blue, uncheck da disabled. Checkbox loading paytida lock (disabled + opacity). Button o'lchami uchala state'da bir xil. Dizayn/ranglar o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
-- **SMS OTP auto-verify** (`30f737f`): "Tasdiqlash" tugmasi olib tashlandi — 6-raqam kiritilishi bilan avtomatik verify. Input: `inputMode=numeric`, `autoComplete=one-time-code`, maxLength=6, faqat raqam, paste qo'llab-quvvatlanadi, verify paytida disabled. Loading "Tekshirilmoqda...", success "✅ Tasdiqlandi", inline xato input ostida (role=alert). Telefon bloki compact: icon + bir qatorda raqam (truncate) + "Raqamni o'zgartirish" o'ngda. Timer/resend/Telegram saqlandi. i18n `verified` 3 tilda. Dizayn o'zgarmadi. Verification: tsc 0, lint 0, build SUCCESS.
-- **Login document viewer modal** (`876328d`): "Ommaviy oferta" / "Maxfiylik siyosati" linklari endi login modal USTIDA alohida yuqori z-index (`z-10050`) viewer modal ochadi (ilgari `<Link href>` bilan sahifa orqa fonda ochilardi). Yangi `DocumentViewer.tsx`: white panel, sarlavha, `← Ortga`/`Yopish`, faqat hujjat qatlami scroll, body scroll blok, login modal mount bo'lib qoladi (phone/checkbox state saqlanadi), Escape avval viewer'ni yopadi. Matn Terms/Privacy i18n messages'dan to'liq o'qiladigan formatda. Yangi `/offer` → `/terms` redirect. Checkbox mantiqi (tugma disabled, Google tekshiruvi) saqlanib qoldi. Verification: tsc 0, lint 0, build SUCCESS.
-- **Tracking birlashtirish** (`0e73f5e`): `/uz/track/[id]` eski single-order sahifa → server-side redirect `/delivery?order=ID`. Endi barcha tracking `/uz/delivery` multi-order dashboard orqali (bitta buyurtma `?order=` bilan tanlanadi, zoom qilinadi). Admin orders'dagi `/track/ID` linklari ishlayveradi. `/api/orders/[id]/track` endi ishlatilmaydi.
-- **Admin banner mahsulot qidiruv fix** (`92b786e`): `/api/products?q=...` `{ products: [...] }` obyekt qaytaradi, parametrsiz esa array. Admin form `Array.isArray(data)` deb tekshirib obyektni tashlab yuborardi → carousel "Mahsulot qo'shish" qidiruvi va "mahsulotga bog'lash" hech qachon natija ko'rsatmasdi. Endi `data?.products` ham o'qiladi.
-- **Profile Security parol o'zgartirish fix** (`3c1ac1d`): `/uz/profile/security` parol almashtirish argon2 hashlangan parol bor foydalanuvchida doim "Incorrect current password" qaytarardi (route faqat `bcrypt.compare` ishlatardi). Endi `src/auth.ts:137-140` bilan bir xil mantiq: `$argon2` prefiksiga qarab `argon2.verify` yoki `bcrypt.compare`. Verification: tsc 0, lint 0, sahifa 200.
-- **HOME_TOP "Bugungi takliflar" — ko'p mahsulotli carousel** (`c0ce935`):
-  - Frontend tahlili: "Bugungi takliflar" = `Hero` fallback carousel (Hero.tsx:162-196), `fallbackProducts` (homepage products) bilan — faqat HOME_TOP banner bo'lmasa ko'rinadi. HOME_SIDE (promo card) bitta `productId` ishlatadi, HOME_TOP esa oddiy banner edi.
-  - Schema: `BannerProduct` M-N modeli (bannerId, productId, order, `@@unique([bannerId,productId])`) + `Banner.image` nullable. 2 migratsiya: `20260822094929_banner_product_carousel`, `20260822095208_banner_image_nullable`.
-  - Admin form: HOME_TOP position → "Bosh Sahifa - Bugungi Takliflar (Mahsulotlar Carouseli)". Oddiy banner fieldlari (rasm, tavsif, link, product/category bog'lash) yashirildi; o'rniga "Carousel mahsulotlari" bo'limi: `[+ Mahsulot qo'shish]` modal (qidiruv + ko'p tanlash + "Tanlanganlarni qo'shish"), tanlanganlar ro'yxati (↑↓ tartib, olib tashlash). Faqat title, faol/noFaol, tartib, boshlanish/tugash vaqti qoldi. HOME_SIDE/CATEGORY_TOP o'zgarmadi.
-  - API: POST `bannerProducts.create` (index=order), PATCH `bannerProducts.deleteMany+create` (productIds `undefined`=tegma, `[]`=hammasini o'chir). GET `include bannerProducts` (order bo'yicha).
-  - `lib/data.ts`: BANNER_SITE_FIELDS ga `bannerProducts` qo'shildi; `getCachedActiveBanners` → `products` array (isDeleted=false + status published/ACTIVE filter).
-  - Hero: mahsulotli HOME_TOP banner slider'dan ajratilib "Bugungi takliflar" fallback carousel'ida chiqariladi (sarlavha banner title, dizayn o'zgarmadi). Mahsulotlar card ma'lumotini o'zidan oladi — admin qayta kiritmaydi.
-  - Verification: tsc 0, lint 0, build SUCCESS, /api/banners 200.
-- **Admin banner formasi frontend tizimiga moslashtirildi** (dinamik position forma):
-  - Frontend tahlili (`Hero.tsx`, `CategoryContent.tsx`, `api/banners`, `lib/data.ts`, `lib/banner-schema.ts`): HOME_TOP (slider) faqat `title/description/image/link/order/start/endDate` ishlatadi; HOME_SIDE (promo card) `image/title/discount/price/oldPrice/endDate/productId/link`; CATEGORY_TOP (category carousel) `title/description/image/link` + M-N `categories`.
-  - `PositionMeta` ga yangi flaglar: `needsDescription` (HOME_SIDE da yashirin — frontend tavsifni ko'rsatmaydi), `needsProductLink`, `needsCategoryLink` (CATEGORY_TOP da ikkalasi yashirin — frontend o'qimaydi; link qo'lda kiritiladi).
-  - "Banner bosilganda qayerga o'tadi" bo'limi endi faqat frontend ishlatadigan joylashuvlarda ko'rinadi; grid `md:grid-cols-2` dinamik.
-  - Submit'da `productId`/`targetCategoryId` faqat `needsProductLink || needsCategoryLink` bo'lganda saqlanadi (CATEGORY_TOP da eski qiymat qolib ketmaydi).
-  - Saytga tegilgani yo'q (frontend 100% saqlangan). Verification: tsc 0, lint 0, build SUCCESS, `5288ab1`.
-- **Admin chat tezkor javob shablonlari**: `/admin/chat` input tepasida `REPLY_TEMPLATES` (Yetkazish, To'lov, Qaytarish, Muddat, Do'kon) — bosilganda `messageInput` ga to'ldiradi, admin yuborishdan oldin tahrirlay oladi. Faqat suhbat tanlanganda ko'rinadi. Verification: tsc 0, lint 0, `7513dd6`.
-- **Static sahifalar (5) ixchamlashtirildi**: `about`, `terms`, `privacy`, `faq`, `returns` (storefront `src/app/(root)/[locale]/`) — hero/header (`py-16/20` → `py-8/10`, `text-4xl..8xl` → `text-2xl..5xl`, `mt-3 mb-6` → `mt-2 mb-4`), container (`max-w-4xl/5xl p-8..16` → `max-w-3xl p-5/6`, `-mt-12/10` → `-mt-6`), card (`rounded-3xl/[40px]` → `rounded-2xl`, `p-8..12` → `p-4..6`), FAQ item (`p-6` → `p-4`, `text-lg` → `text-base`, icon `20→16`), section spacing (`space-y-6..12` → `space-y-4..6`, `mb-8..20` → `mb-4..8`), text (`text-lg/xl` → `text-sm/base`), list (`py-3/4` → `py-2/1`, `gap-4` → `gap-2/3`), button (`px-8 py-4 rounded-xl` → `px-5 py-2.5 rounded-lg`), grid gap (`gap-6..12` → `gap-3/4`). Ranglar, gradient'lar, layout, `md:`/`lg:` breakpoint'lar saqlandi. Funksionallik saqlandi: FAQ `<details>` accordion (8), terms sidebar/nav button'lar (19) + print styles + `window.print()` + privacy link, returns check/x ro'yxatlar, motion/AnimatePresence. Verification: tsc 0, lint 0, build SUCCESS (101/101, Node 22), 15 route (5 sahifa × 3 til) HTTP 200.
-- **Admin panel UX — 8 sahifa kartalarini ixchamlashtirish**: users, products, coupons, banners, stores, payments, payments/logs, settings sahifalaridagi stat/header card (`p-8/10` → `p-4/5`, `rounded-[32..56px]` → `rounded-2xl/3xl`, `text-3xl/2xl` → `text-xl/lg`), ro'yxat item va avatarlar (`w-16` → `w-9`, icon `w-12/16` → `w-8/10`), table (`py-6 px-8` → `py-2.5 px-4`), modal (`p-10 rounded-[48px] max-w-2xl` → `p-5 rounded-2xl max-w-md`), button (`h-14/16` → `h-10/11`), input (`p-4` → `p-2.5`), grid gap (`gap-8/10` → `gap-3/4`) — ixchamlashtirildi. Funksionallik (fetch/CRUD/modal/map) buzilmadi; xarita (`stores` map `h-64` + full-screen modal, `banners` aspect-ratio preview) katta qoldi. Rang/font/layout/breakpoint'lar saqlandi. Verification: tsc 0, lint 0 (1 pre-existing warning), build SUCCESS, 8 route HTTP 200.
-- **Kuryer tracking dashboard — real-time buyurtma kuzatish**:
-  - Yangi `/api/orders/tracking`: user'ning faol COURIER buyurtmalari (ASSIGNED/PROCESSING/PICKED_UP/DELIVERING) — kuryer joylashuvi (lat/lng, vehicle, lastLocationAt, courierLevel), do'kon (boshlang'ich nuqta), mijoz manzili, maskalangan kuryer telefon raqami, location age ("necha daqiqa oldin").
-  - Yangi `/uz/tracking` sahifa: Yandex xaritada do'kon → kuryer → manzil marshruti (MultiRoute), buyurtmalar ro'yxati, kuryer info card (ism/telefon/transport/daraja), 8s polling, `?order=ID` parametri orqali oldindan tanlash.
+
+- **Phase A–I master spec (variant diff preview bilan yakunlandi, `5fe5e9b`)**:
+  - A: Brand entity (model, API, CRUD UI, sidebar)
+  - B: Product slug (auto-slug, API, `@@unique`)
+  - C: DRAFT default status (schema, API, new product incomplete saytga chiqmaydi)
+  - D: allowedUnits field (MEASUREMENT attribute defs, variant-utils)
+  - E: Schema seed attribute definitions (8 defs: Kiyim/O'yinchoq/Bolalar/Xitoy)
+  - F: Dependency engine (visibleWhen/requiredWhen/dependsOn)
+  - G: Review panel (new product atomic save — category-first, step panel, buildPayload)
+  - H: Variant diff preview (`getVariantDiff`: added/removed/unchanged, `onVariantsChange` prop, diff preview UI badges)
+  - I: Disabled combinations in checkout (ProductContent toggleBtnDisabled)
+  - Verification: tsc 0, lint 0, Vercel production 200.
+- **Phase 1 stability** (`1f3615a`): `data.ts` 6 cached fns rethrow (xatoda `[]` keshlamaydi); homepage `Promise.allSettled`; layout/category try/catch; `/api/cart` variant-aware (GET variantId/variant/sku/fulfillmentType, PUT stores them); ClickButton config-driven; `seed-variant-product.ts` (4 variant: Bolalar futbolkasi); `engines` Node 22; `serverExternalPackages: [argon2, sharp, bcryptjs]`.
+- **ProductCard (Asaxiy insp.)**: `isNew` badge emerald, `showDiscount` real discount, rating stars + numeric `4.8` + count.
+- **Supabase migration yakunlandi**: Neon → Supabase (Tokyo, aws-0-ap-northeast-1.pooler.supabase.com, port 6543). pg_dump schema+data, import, 43 table, row counts match. Vercel project `alhadafuz` envs switched. All APIs 200.
+- **OG image logo fix** (`70be73b`): `generate-icons.mjs` wordmark crop `{76,228,1108,837}`, `fit:'contain'`, 232×175.
+- **Google SEO/favicon**: `icon.png` 512, per-locale icons, JSON-LD Organization description per-locale, full indexing audit.
+- **Announcement bar** (3 iteratsiya): admin-driven `Announcement` model, marquee seamless loop, location yonida bir bar.
+- **Language switcher cycle**: dropdown → UZ→RU→EN→UZ button, route+query saqlanadi.
+- **SMS OTP auto-verify + "Kodni olish" 3-state**: no confirm button, 6-digit auto submit, dim-blue disabled.
+- **Login document viewer**: `DocumentViewer.tsx` z-10050, login modal saqlanadi.
+- **Tracking unified**: `/uz/track/[id]` → `/delivery?order=ID`.
+- **Admin chat tezkor javob shablonlari**: 5 chip (Yetkazish/To'lov/Qaytarish/Muddat/Do'kon).
+- **Admin banner → frontend alignment**: PositionMeta flags, dinamik forma, HOME_TOP carousel (`BannerProduct` M-N).
+- **Static sahifalar (5) ixchamlashtirildi**: about, terms, privacy, faq, returns.
+- **Admin panel UX 8 sahifa ixchamlashtirildi**: users, products, coupons, banners, stores, payments, logs, settings.
+- **Kuryer tracking dashboard**: real-time Yandex xarita, MultiRoute, 8s polling.
   - Profile orders'da faol buyurtmalar uchun "Kuzatish" tugmasi → `/tracking?order=ID`.
   - i18n: `Profile.track_order` (uz: Kuzatish, ru: Отследить, en: Track).
   - Verification: tsc 0, lint 0, build SUCCESS. Test order (DELIVERING) API SQL'da kuryer lat/vehicle bilan qaytdi, keyin tozalandi.
@@ -221,37 +208,31 @@ Avvalgi sessiyalardan:
 
 ## In Progress
 
-- **`prisma/schema.prisma`** — `BannerEvent` modeli qo'shildi; `npx prisma generate` + migratsiya kerak (uncommitted). Build `prisma migrate deploy` ishlatadi (db push emas).
-- **Lint**: `.eslintcache` buzilganda `eslint` osilib qoladi — `rm -f .eslintcache` qilib qayta ishga tushirish yoki `node node_modules/eslint/bin/eslint.js` bilan.
+- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX.
 
 ## Next Tasks
 
-- **Variantli mahsulot yaratish + storefront testi**: forVariant=true definition (Rang/O'lcham) + variantli mahsulot yaratish va product page → cart → checkout → order flow'ni test qilish. Storefront variant support endi tayyor.
-- **`/api/cart` (GET/PUT) variant-aware qilish**: hozircha frontend chaqirmaydi, lekin kelajakda sync o'rniga ishlatilsa variant yo'qoladi.
+- **Storefront testi**: yangi variantli mahsulot yaratish + product page → cart → checkout → order flow'ni test qilish (variant support endi tayyor).
+- **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup (Neon vars backup sifatida saqlanadi).
 - 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID placeholder) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
-- 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
-- **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash — productlar `fulfillmentType` bilan ajratiladi, kategoriya alohida tushuncha.
-- **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup.
-- **Product slug migration** (katalog o'sganda): `Product.slug` + `@@unique` + `/product/[slug]` + 301 redirect. Hozircha `[id]` ishlatiladi.
-- **BannerEvent** migratsiyasini tugatish (generate + push + admin analitika).
-- `Checkout`'da `/api/admin/shipping` GET public endpoint — public shipping endpoint'ga ko'chirish.
+- **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash.
+- **Product slug route**: `Product.slug` + `@@unique` tayyor — `/product/[slug]` route + 301 redirect qilish (hozircha `[id]` ishlatiladi).
+- **BannerEvent analitika**: model tayyor + migratsiya qo'llangan — admin analitika UI kerak.
+- **Public shipping endpoint**: `/api/admin/shipping`'dagi GET ni public endpoint'ga ko'chirish.
 
 ## Known Issues
 
 1. **Node 25 + Turbopack hang**: `next dev` "Compiling instrumentation" da osilib qoladi. Yechim: Node 22 LTS (`nvm use 22`), `.next` ni o'chirib qayta ishga tushirish.
 2. **ESLint hang**: `.eslintcache` buzuq bo'lsa `eslint` 0% CPU'da osilib qoladi. Yechim: `rm -f .eslintcache` + direct `node node_modules/eslint/bin/eslint.js`.
 3. **tsc hang**: eski `tsconfig.tsbuildinfo` bilan `npx tsc --noEmit` osilib qolishi mumkin — eski tsbuildinfo'larni o'chirib `--incremental false` bilan ishga tushiring.
-4. **`.next` keshi buzilganda homepage bo'sh chiqadi (MUHIM!)**: `unstable_cache` (getCachedHomepageProducts, getCachedRootCategories, getCachedFlashDeals) transient Neon DB xatosi paytida `[]` qaytaradi va bu **keshlanadi** (3600s). Natijada homepage'da "Ommabop mahsulotlar" bo'limida "Topilmadi", kategoriyalar/chegirmalar bo'sh bo'ladi — lekin mahsulotlar DB'da bor (to'g'ridan-to'g'ri Prisma query 6 ta qaytaradi). **Yechim**: `rm -rf .next` (butun .next, faqat .next/cache emas) + dev server'ni qayta ishga tushirish. Kod darajasida fix: unstable_cache funksiyalari xatoda `[]` qaytarib keshlash o'rniga rethrow qilishi kerak (hali qilinmagan).
+4. **Supabase pooler transient timeout**: lokal mobil tarmoqda pooler ba'zan vaqtincha timeout berishi mumkin — qayta urinish yoki `psql` bilan yechiladi. Prisma faqat port 6543 (session mode) bilan ishlaydi; 5432 (transaction) "Can't reach" beradi.
 5. **Click payment** aktiv emas — env yo'q.
 6. **Rate limit (Upstash)** disabled — env yo'q.
 7. **`otp-store.ts`** in-memory — server restart'da email OTP yo'qoladi.
 8. **OTP console'da log** qilinadi (dev uchun qulay, prod'da olib tashlash kerak).
 9. **Order-success/track'da hardcoded o'zbek matnlari** — i18n qilish keyingi iteratsiyada.
-10. **Katalog juda kichik** (6 mahsulot, 1 root kategoriya) — filter/sort ishlaydi lekin kichik natija.
-11. **Neon PostgreSQL** transient connection "Closed" xatolari — prisma qayta ulanishga urinadi.
-12. **Category sahifasida `useMediaQuery`** — mobil/desktop switch'da bir kadr flash mumkin (SSR desktop render).
-13. **`/api/cart` (GET/PUT) variant-aware EMAS**: `/api/cart/sync` variant-aware qilindi, lekin `/api/cart` GET variantId/variant qaytarmaydi, PUT esa variant saqlamaydi. Frontend hozircha `/api/cart` ni chaqirmaydi — faqat localStorage cart ishlatiladi. Kelajakda `/api/cart` ham variant-aware qilish kerak.
-14. **Variantli mahsulotlar**: Phase C admin UI + Phase D attribute definitions UI tayyor. Qalambooks kategoriyasiga 7 ta definition insert qilingan (forVariant=false). Lekin hali forVariant=true definition yo'q (masalan Rang/O'lcham) va real variantli mahsulotlar yaratilmagan. Storefront variant support endi tayyor — test uchun variantli mahsulot yaratish kerak. Structured attribute saqlash cheklovi: category o'zgartirilsa va joriy defs'ga kirmaydigan structured qiymatlar saqlanganda `PUT .../attributes` (bulk deleteMany+createMany) ularni o'chiradi (legacy `Product.attributes` JSON saqlanadi).
+10. **Katalog juda kichik** (9 mahsulot, 1 root kategoriya) — filter/sort ishlaydi lekin kichik natija.
+11. **Structured attribute saqlash cheklovi**: category o'zgartirilsa va joriy defs'ga kirmaydigan structured qiymatlar saqlanganda `PUT .../attributes` (bulk deleteMany+createMany) ularni o'chiradi (legacy `Product.attributes` JSON saqlanadi).
 
 ## Important Decisions
 
@@ -277,12 +258,12 @@ Avvalgi sessiyalardan:
 
 ## Database Status
 
-- Provider: PostgreSQL (Neon, masofaviy) — `DATABASE_URL` `.env` da.
-- 33 model + 2 enum (`BannerPosition`, `BannerEventType`).
-- **Phase 4 migratsiya**: `CartItem.variant` va `OrderItem.variant` (String?, nullable) qo'shildi va `prisma db push` bilan DB'ga qo'llandi.
-- **Idempotency migratsiya**: `Order.idempotencyKey` (String?) + `@@unique([userId, idempotencyKey])` — xavfsiz SQL orqali qo'llandi (`--accept-data-loss` ishlatilmadi). Legacy orderlar (null key) saqlanadi.
-- `prisma/schema.prisma` da **uncommitted** o'zgarish (`BannerEvent` modeli) — DB'ga hali push qilinmagan bo'lishi mumkin.
-- Build script: `prisma db push --accept-data-loss && next build`.
+- Provider: **PostgreSQL (Supabase, Tokyo)** — Neon'dan ko'chirildi. `DATABASE_URL`/`DIRECT_URL` `.env` da (Supabase pooler port 6543 session mode; Neon URL'lar `# NEON BACKUP` comment'larida saqlanadi).
+- 41 model + 3 enum (`BannerPosition`, `BannerEventType`, `AttributeType`).
+- Barcha migratsiyalar Supabase'ga qo'llangan (`_prisma_migrations` tekshirildi): init_postgres → add_dependency_engine (12 ta, OK).
+- `npx prisma generate` ishlatiladi; `prisma migrate status/deploy` Supabase pooler'da "prepared statement" xatosi berishi mumkin — migratsiyalar `psql` + manual `_prisma_migrations` INSERT orqali qo'llanadi.
+- Build script: `node scripts/prepare-direct-url.mjs --skip-migrate && npx prisma generate && next build`.
+- `BannerEvent` modeli DB'da mavjud (Supabase import'dan beri) — analitika UI keyingi bosqichda.
 
 ## API Status
 
@@ -294,4 +275,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-22 (Admin-boshqariladigan announcement marquee — Announcement model, build SUCCESS)
+2026-08-30 (Master spec Phase A–I yakunlandi — variant diff preview `5fe5e9b`; Supabase migratsiya + Phase 1 stability + ProductCard `1f3615a`)
