@@ -38,6 +38,29 @@ const productSchema = z.object({
     fulfillmentType: z.enum(["LOCAL", "CHINA_ORDER"]).optional().default("LOCAL"),
 });
 
+// Atomic save — to'liq mahsulot + atributlar + variantlar bir transactionda
+const attributeValueSchema = z.object({
+    attributeDefId: z.string(),
+    value: z.any().nullable(),
+});
+
+const variantSchema = z.object({
+    options: z.record(z.string(), z.string()).optional(),
+    sku: z.string().nullable().optional(),
+    barcode: z.string().nullable().optional(),
+    price: z.coerce.number().optional(),
+    compareAtPrice: z.coerce.number().nullable().optional(),
+    stock: z.coerce.number().int().optional(),
+    weight: z.coerce.number().nullable().optional(),
+    isDefault: z.boolean().optional().default(false),
+    isActive: z.boolean().optional().default(true),
+    images: z.array(z.object({
+        url: z.string(),
+        order: z.coerce.number().int().default(0),
+        isPrimary: z.boolean().default(false),
+    })).optional().default([]),
+});
+
 export async function POST(req: Request) {
     const session = await auth();
     const userRole = (session?.user as any)?.role;
@@ -139,8 +162,85 @@ export async function POST(req: Request) {
             };
         }
 
-        const product = await prisma.product.create({
-            data: createData as any
+        // Atomic save: attributes + variants bir transaction'da. Agar bu maydonlar
+        // yuborilmasa (eski client) — faqat mahsulot yaratiladi (backward compatible).
+        // `structuredAttributes` — universal (category-schema) atributlar (array),
+        // `attributes` — legacy key/value (Record). Ikkisi alohida saqlanadi.
+        const rawAttributes = body.structuredAttributes !== undefined ? body.structuredAttributes : null;
+        const rawVariants = body.variants !== undefined ? body.variants : null;
+
+        const hasExtended = rawAttributes !== null || rawVariants !== null;
+        let attrsPayload: { attributeDefId: string; value: unknown }[] | null = null;
+        let variantsPayload: z.infer<typeof variantSchema>[] | null = null;
+
+        if (hasExtended) {
+            if (rawAttributes !== null) {
+                const attrsParsed = z.array(attributeValueSchema).safeParse(rawAttributes);
+                if (!attrsParsed.success) {
+                    return NextResponse.json({ error: 'Invalid attributes', details: attrsParsed.error.flatten() }, { status: 400 });
+                }
+                attrsPayload = attrsParsed.data;
+            }
+            if (rawVariants !== null) {
+                const varsParsed = z.array(variantSchema).safeParse(rawVariants);
+                if (!varsParsed.success) {
+                    return NextResponse.json({ error: 'Invalid variants', details: varsParsed.error.flatten() }, { status: 400 });
+                }
+                variantsPayload = varsParsed.data;
+            }
+        }
+
+        const product = await prisma.$transaction(async (tx) => {
+            const created = await tx.product.create({
+                data: createData as any
+            });
+
+            // Structured attribute values — bulk create (atomic)
+            if (attrsPayload && attrsPayload.length > 0) {
+                await tx.productAttributeValue.createMany({
+                    data: attrsPayload.map((a) => ({
+                        productId: created.id,
+                        attributeDefId: a.attributeDefId,
+                        value: a.value === null ? "null" : JSON.stringify(a.value),
+                    })),
+                    skipDuplicates: true,
+                });
+            }
+
+            // Variants — bulk create + images (atomic)
+            if (variantsPayload && variantsPayload.length > 0) {
+                for (const v of variantsPayload) {
+                    const variant = await tx.productVariant.create({
+                        data: {
+                            productId: created.id,
+                            variantKey: v.options ? JSON.stringify(Object.fromEntries(
+                                Object.entries(v.options).sort(([a], [b]) => a.localeCompare(b))
+                            )) : "",
+                            variantLabel: v.options ? Object.values(v.options).join(" / ") : "",
+                            sku: v.sku || null,
+                            barcode: v.barcode || null,
+                            price: v.price ?? 0,
+                            compareAtPrice: v.compareAtPrice ?? null,
+                            stock: v.stock ?? -1,
+                            weight: v.weight ?? null,
+                            isDefault: v.isDefault ?? false,
+                            isActive: v.isActive ?? true,
+                        },
+                    });
+                    if (v.images && v.images.length > 0) {
+                        await tx.variantImage.createMany({
+                            data: v.images.map((img, i) => ({
+                                variantId: variant.id,
+                                url: img.url,
+                                order: img.order ?? i,
+                                isPrimary: img.isPrimary ?? false,
+                            })),
+                        });
+                    }
+                }
+            }
+
+            return created;
         });
 
         revalidatePath('/admin/products');

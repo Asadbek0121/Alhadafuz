@@ -12,6 +12,8 @@ import VariantEditor from "./VariantEditor";
 export interface UniversalProductRef {
   validate(): string | null;
   saveAttributesAndVariants(productId: string): Promise<boolean>;
+  /** Atomic save uchun — attributes + variants payload'ni qaytaradi (create/update uchun). */
+  buildPayload(): { attributes: { attributeDefId: string; value: unknown }[] | null; variants: any[] | null };
 }
 
 interface UniversalProductSectionsProps {
@@ -444,8 +446,46 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
       () => ({
         validate,
         saveAttributesAndVariants,
+        buildPayload: () => {
+          const attrs = defs.length > 0 ? defs.map((d) => {
+            let v = valuesRef.current[d.id];
+            if (d.forVariant) {
+              const axis = axes.find((a) => a.defId === d.id);
+              const axisValues = axis && axis.values.length > 0 ? axis.values : parseOptions(d.options);
+              if (d.required && axisValues.length > 0) {
+                v = d.type === "MULTI_SELECT" ? axisValues : axisValues[0];
+              }
+            }
+            if (d.type === "MEASUREMENT" && v && typeof v === "object") {
+              const obj = v as { value?: unknown };
+              if (obj.value === undefined || obj.value === null || obj.value === "") v = null;
+            }
+            if (d.type === "NUMBER" && (v === "" || v === null)) v = null;
+            return {
+              attributeDefId: d.id,
+              value: v === undefined || v === null || v === "" ? null : v,
+            };
+          }) : null;
+
+          const buildVariantBody = (v: VariantRow) => ({
+            options: v.options,
+            sku: v.sku || null,
+            barcode: v.barcode || null,
+            price: v.price !== "" ? Number(v.price) : undefined,
+            compareAtPrice: v.compareAtPrice !== "" ? Number(v.compareAtPrice) : null,
+            stock: v.stock !== "" ? Number(v.stock) : undefined,
+            weight: v.weight !== "" ? Number(v.weight) : null,
+            isDefault: v.isDefault,
+            isActive: v.isActive,
+            images: v.images.map((img) => ({ url: img.url, order: img.order, isPrimary: img.isPrimary })),
+          });
+
+          const vars = variants.filter((v) => !deletedKeys.has(v.key)).map(buildVariantBody);
+
+          return { attributes: attrs, variants: vars.length > 0 ? vars : null };
+        },
       }),
-      [validate, saveAttributesAndVariants]
+      [validate, saveAttributesAndVariants, defs, axes, variants, deletedKeys]
     );
 
     if (loadingDefs && defs.length === 0) {

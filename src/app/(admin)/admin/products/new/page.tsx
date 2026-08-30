@@ -625,7 +625,9 @@ export default function AddProductPage() {
         const categoryIds = selectedCategories;
         const noDiscount = data.discountType === "no_discount";
 
-        const payload = {
+        // Tip: backend `attributes` har ikkala shaklni qabul qiladi — legacy
+        // `Record<key, value[]>` va universal `[{attributeDefId, value}]`.
+        const payload: Record<string, unknown> = {
             title: data.title.trim(),
             description: data.description.trim(),
             brand: data.brand?.trim() || undefined,
@@ -688,6 +690,15 @@ export default function AddProductPage() {
                     throw new Error(errorMessage);
                 }
             } else {
+                // Atomic save: attributes + variants bir xil POST'da transaction
+                // ichida saqlanadi (backend prisma.$transaction). Qisman saqlash
+                // bo'lmaydi — xato bo'lsa hammasi rollback qilinadi.
+                const universalPayload = universalRef.current?.buildPayload() ?? null;
+                if (universalPayload) {
+                    payload.attributes = universalPayload.attributes;
+                    payload.variants = universalPayload.variants;
+                }
+
                 const res = await fetch("/api/admin/products", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
@@ -718,14 +729,16 @@ export default function AddProductPage() {
                 if (!productId) throw new Error("Server mahsulot ID qaytarmadi");
             }
 
-            // Structured attributes + variants saqlash (yangi universal format)
-            if (!productId) throw new Error("Mahsulot ID aniqlanmadi");
-            const saved = await universalRef.current?.saveAttributesAndVariants(productId);
-            if (!saved) {
-                // Product saqlandi, lekin xususiyat/variantlar qisman yoki umuman
-                // saqlanmadi — sahifada qolamiz, qayta bosish PUT bo'ladi.
-                setCreatedId(productId);
-                throw new Error("Mahsulot saqlandi, lekin xususiyatlar/variantlar saqlanmadi. Iltimos, qayta urinib ko'ring.");
+            // Edit (PUT) holatida structured attributes + variants alohida
+            // saqlanadi (diff engine). Yangi yaratishda esa allaqachon
+            // transaction ichida saqlandi — qayta chaqirilmaydi.
+            if (createdId) {
+                if (!productId) throw new Error("Mahsulot ID aniqlanmadi");
+                const saved = await universalRef.current?.saveAttributesAndVariants(productId);
+                if (!saved) {
+                    setCreatedId(productId);
+                    throw new Error("Mahsulot saqlandi, lekin xususiyatlar/variantlar saqlanmadi. Iltimos, qayta urinib ko'ring.");
+                }
             }
 
             toast.success(createdId ? "Mahsulot muvaffaqiyatli yangilandi" : "Mahsulot muvaffaqiyatli yaratildi");
