@@ -192,7 +192,9 @@ export default function EditProductPage() {
                         // mahsulotni tahrirlashga ochishning o'zi avtomatik hisoblash
                         // effektini ishga solib, narxni `oldPrice - 20` ga
                         // aylantirib qo'yardi.
-                        discountType: guessDiscountKind(data.price, data.oldPrice, data.discount),
+                        discountType: data.discountMethod === "PERCENTAGE" ? "percentage"
+                            : data.discountMethod === "FIXED" ? "fixed_price"
+                            : guessDiscountKind(data.price, data.oldPrice, data.discount),
                         discountValue: data.discount || "",
                         discountCategory: data.discountType || "SALE",
                         brand: data.brand || "",
@@ -379,6 +381,9 @@ export default function EditProductPage() {
             oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
             discount: noDiscount || !data.discountValue ? null : Number(data.discountValue),
             discountType: noDiscount ? null : data.discountCategory,
+            discountMethod: noDiscount
+                ? null
+                : (data.discountType === "percentage" ? "PERCENTAGE" : data.discountType === "fixed_price" ? "FIXED" : "NONE"),
             images: imagesList,
             attributes: attrsObject,
             // Faqat birinchi ID — ilgari butun "id1,id2" qatori yuborilib, server

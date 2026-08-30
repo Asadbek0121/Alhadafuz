@@ -130,6 +130,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             categoryId,
             categoryIds, // New M-N support
             discountType,
+            discountMethod,
             isNew,
             freeDelivery,
             hasVideo,
@@ -153,6 +154,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             oldPrice: oldPrice !== undefined ? (oldPrice ? Number(oldPrice) : null) : undefined,
             discount: discount !== undefined ? (discount ? Number(discount) : null) : undefined,
             discountType: discountType !== undefined ? discountType : undefined,
+            discountMethod: discountMethod !== undefined ? (discountMethod || null) : undefined,
             stock: stock !== undefined ? Number(stock) : undefined,
             status,
             image,

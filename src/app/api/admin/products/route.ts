@@ -18,6 +18,7 @@ const productSchema = z.object({
     oldPrice: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().positive().optional()),
     discount: z.preprocess((val) => (val === "" || val === null ? undefined : val), z.coerce.number().nonnegative().optional()),
     discountType: z.string().nullable().optional(),
+    discountMethod: z.string().nullable().optional(),
 
     // Fiscal fields
     mxikCode: z.string().optional(),
@@ -120,6 +121,7 @@ export async function POST(req: Request) {
             oldPrice: data.oldPrice,
             discount: data.discount,
             discountType: data.discountType,
+            discountMethod: data.discountMethod || null,
             mxikCode: data.mxikCode,
             packageCode: data.packageCode,
             vatPercent: data.vatPercent,

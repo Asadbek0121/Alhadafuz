@@ -337,6 +337,12 @@ model Product {
   oldPrice      Float?
   discount      Float?
   discountType  String?
+  /// Chegirma hisoblash usuli: "NONE" | "PERCENTAGE" | "FIXED".
+  /// `discount` miqdori shu usulga bog'liq (foiz yoki so'm). Sayt hozircha
+  /// foizni oldPrice'dan hisoblaydi — bu field kelajakda FIXED ni ham
+  /// to'g'ri ko'rsatish uchun saqlanadi. `discountType` esa marketing
+  /// kategoriyasi (SALE/PROMO/HOT) — aralashtirilmaydi.
+  discountMethod String?
   image         String
   images        String?
   stock         Int            @default(0)

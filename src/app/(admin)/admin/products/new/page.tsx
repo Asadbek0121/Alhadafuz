@@ -638,6 +638,10 @@ export default function AddProductPage() {
             // mahsulot bazada aksiyaday belgilanib qolardi.
             discount: noDiscount ? null : (data.discountValue ?? null),
             discountType: noDiscount ? null : data.discountCategory,
+            // Hisoblash usuli alohida saqlanadi (spek: discountMethod ≠ discountCategory)
+            discountMethod: noDiscount
+                ? null
+                : (data.discountType === "percentage" ? "PERCENTAGE" : data.discountType === "fixed_price" ? "FIXED" : "NONE"),
             vatPercent: data.vatAmount || 0,
             mxikCode: data.mxikCode?.trim() || undefined,
             packageCode: data.packageCode?.trim() || undefined,
