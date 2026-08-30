@@ -92,6 +92,9 @@ export default function DefinitionForm({
     const [optionDraft, setOptionDraft] = useState("");
     const [unit, setUnit] = useState(initial?.unit ?? "");
     const [allowedUnits, setAllowedUnits] = useState(initial?.allowedUnits ?? "");
+    const [visibleWhen, setVisibleWhen] = useState(initial?.visibleWhen ?? "");
+    const [requiredWhen, setRequiredWhen] = useState(initial?.requiredWhen ?? "");
+    const [dependsOn, setDependsOn] = useState(initial?.dependsOn ?? "");
     const [minValue, setMinValue] = useState(initial?.minValue != null ? String(initial.minValue) : "");
     const [maxValue, setMaxValue] = useState(initial?.maxValue != null ? String(initial.maxValue) : "");
     const [error, setError] = useState<string | null>(null);
@@ -163,6 +166,9 @@ export default function DefinitionForm({
             options: showOptions ? options.trim() || null : null,
             unit: showUnit ? unit.trim() || null : null,
             allowedUnits: showUnit ? allowedUnits.trim() || null : null,
+            visibleWhen: visibleWhen.trim() || null,
+            requiredWhen: requiredWhen.trim() || null,
+            dependsOn: dependsOn.trim() || null,
             minValue: showMinMax ? parseNum(minValue) : null,
             maxValue: showMinMax ? parseNum(maxValue) : null,
         };
@@ -455,6 +461,30 @@ export default function DefinitionForm({
                     </span>
                 </label>
             </div>
+
+            {/* Dependency engine — ilg'or sozlamalar */}
+            <details className="mt-4 text-sm text-[#7c8fac]">
+                <summary className="cursor-pointer font-semibold text-[#0085db] hover:underline">
+                    Bog'liqlik va shartlar (ixtiyoriy)
+                </summary>
+                <div className="mt-3 space-y-3 border border-[#e5eaef] rounded-lg p-3">
+                    <div className="form-group">
+                        <label htmlFor="def-visible-when" className={labelClass}>visibleWhen — JSON</label>
+                        <input id="def-visible-when" value={visibleWhen} onChange={(e) => setVisibleWhen(e.target.value)} className={inputClass} placeholder='{"field":"material","value":"Paxta"}' disabled={submitting} />
+                        <p className="text-xs text-[#7c8fac] mt-1">Faqat shu qiymat tanlanganda ko'rinadi.</p>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="def-required-when" className={labelClass}>requiredWhen — JSON</label>
+                        <input id="def-required-when" value={requiredWhen} onChange={(e) => setRequiredWhen(e.target.value)} className={inputClass} placeholder='{"field":"material","value":"Paxta"}' disabled={submitting} />
+                        <p className="text-xs text-[#7c8fac] mt-1">Faqat shu qiymat tanlanganda majburiy bo'ladi.</p>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="def-depends-on" className={labelClass}>dependsOn — JSON</label>
+                        <input id="def-depends-on" value={dependsOn} onChange={(e) => setDependsOn(e.target.value)} className={inputClass} placeholder='["field1","field2"]' disabled={submitting} />
+                        <p className="text-xs text-[#7c8fac] mt-1">Bog'liq fieldlar ro'yxati (change listener).</p>
+                    </div>
+                </div>
+            </details>
 
             {error && (
                 <div className="flex items-start gap-2 bg-[#fdede8] border border-[#f7c8bb] text-[#a33a20] text-sm px-4 py-3 rounded-lg">

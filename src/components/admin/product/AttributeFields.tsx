@@ -8,6 +8,38 @@ const inputClass =
 const invalidClass = "border-[#fa896b] bg-[#fff8f6]";
 const errorClass = "text-xs text-[#fa896b] mt-1 block font-medium";
 
+/** JSON condition parse — xavfsiz: yaroqsiz JSON bo'lsa null. */
+function parseCondition(json: string | null): { field?: string; value?: string } | null {
+  if (!json) return null;
+  try {
+    const obj = JSON.parse(json);
+    if (obj && typeof obj === "object" && typeof obj.field === "string") {
+      return { field: obj.field, value: obj.value !== undefined ? String(obj.value) : undefined };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** Field qiymatini normalize qiladi (string yoki string[] → string). */
+function valueAsString(v: unknown): string {
+  if (v === null || v === undefined) return "";
+  if (Array.isArray(v)) return v.map(String).join(",");
+  if (typeof v === "object") return String((v as { value?: unknown })?.value ?? "");
+  return String(v);
+}
+
+/** visibleWhen/requiredWhen shartini bajarilganlikni tekshiradi. */
+export function evalCondition(json: string | null, values: Record<string, unknown>): boolean {
+  const cond = parseCondition(json);
+  if (!cond || !cond.field) return true;
+  const actual = valueAsString(values[cond.field]);
+  if (!cond.value) return actual !== "";
+  // MULTI_SELECT qiymatlari vergul bilan saqlanadi — ichida borligini tekshiramiz
+  return actual.split(",").map(s => s.trim()).includes(cond.value) || actual === cond.value;
+}
+
 function Label({ def }: { def: AttributeDef }) {
   return (
     <label className="block mb-1.5 text-sm font-medium text-[#2A3547]">
@@ -304,16 +336,23 @@ export default function AttributeFields({
 }: AttributeFieldsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-      {defs.map((def) => (
-        <AttributeField
-          key={def.id}
-          def={def}
-          value={values[def.id]}
-          error={errors[def.id]}
-          disabled={disabled}
-          onChange={(v) => onChange(def.id, v)}
-        />
-      ))}
+      {defs.map((def) => {
+        // visibleWhen sharti bajarilmasa field ko'rinmaydi (dependsOn bog'liqlik)
+        if (!evalCondition(def.visibleWhen, values)) return null;
+        // requiredWhen: faqat shart bajarilganda majburiy sifatida ko'rsatiladi
+        const effectiveRequired = def.required || (evalCondition(def.requiredWhen, values) && !!def.requiredWhen);
+        const defWithReq = effectiveRequired !== def.required ? { ...def, required: effectiveRequired } : def;
+        return (
+          <AttributeField
+            key={def.id}
+            def={defWithReq}
+            value={values[def.id]}
+            error={errors[def.id]}
+            disabled={disabled}
+            onChange={(v) => onChange(def.id, v)}
+          />
+        );
+      })}
       {defs.length === 0 && (
         <p className="text-sm text-[#9aa8bb] italic md:col-span-2 py-2">
           Bu kategoriya uchun xususiyatlar aniqlanmagan.

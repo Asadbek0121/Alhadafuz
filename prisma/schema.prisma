@@ -430,6 +430,12 @@ model CategoryAttributeDefinition {
   /// MEASUREMENT uchun ruxsat etilgan birliklar (JSON array): ["g","kg"]
   /// UI da unit select sifatida chiqadi; bo'sh bo'lsa yagona `unit` ishlatiladi.
   allowedUnits String?
+  /// JSON: {"field": "material", "value": "Paxta"} — faqat shu qiymatda ko'rinadi.
+  visibleWhen String?
+  /// JSON: {"field": "material", "value": "Paxta"} — shu qiymatda majburiy.
+  requiredWhen String?
+  /// JSON: ["field1", "field2"] — bog'liq fieldlar (resert/cleanup uchun).
+  dependsOn    String?
   minValue   Float?
   maxValue   Float?
   /// true bo'lsa — bu definition Variant o'qi (Rang/O'lcham kombinatsiyasi)

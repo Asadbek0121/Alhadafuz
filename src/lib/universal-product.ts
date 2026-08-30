@@ -23,6 +23,9 @@ export const attributeDefSchema = z.object({
   forVariant: z.boolean().default(false),
   order: z.coerce.number().int().min(0).default(0),
   isActive: z.boolean().default(true),
+  visibleWhen: z.string().nullable().optional(),
+  requiredWhen: z.string().nullable().optional(),
+  dependsOn: z.string().nullable().optional(),
 })
 
 // PATCH uchun — default'lar qo'llanmaydi (`.partial()` default'li schema'da
@@ -40,6 +43,9 @@ export const attributeDefPatchSchema = z.object({
   forVariant: z.boolean().optional(),
   order: z.coerce.number().int().min(0).optional(),
   isActive: z.boolean().optional(),
+  visibleWhen: z.string().nullable().optional(),
+  requiredWhen: z.string().nullable().optional(),
+  dependsOn: z.string().nullable().optional(),
 })
 
 export const variantBodySchema = z.object({

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import type { AttributeDef, AttributeExtraValue, ProductAttributeRow, VariantAxis, VariantRow } from "./types";
 import { parseVariantKey } from "./types";
 import { validateAttributeValue, parseOptions } from "@/lib/universal-product";
-import AttributeFields from "./AttributeFields";
+import AttributeFields, { evalCondition } from "./AttributeFields";
 import VariantEditor from "./VariantEditor";
 
 export interface UniversalProductRef {
@@ -222,6 +222,10 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
     const validate = useCallback((): string | null => {
       const errors: Record<string, string> = {};
       for (const def of attributeDefs) {
+        // visibleWhen sharti bajarilmasa field yashirin — majburiy ham emas
+        if (def.visibleWhen && !evalCondition(def.visibleWhen, valuesRef.current)) {
+          continue;
+        }
         let v = valuesRef.current[def.id];
         // MEASUREMENT object bo'sh value bilan to'ldirilgan bo'lsa — bo'sh deb hisoblaymiz
         if (def.type === "MEASUREMENT" && v && typeof v === "object") {
@@ -229,7 +233,9 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
           if (obj.value === undefined || obj.value === null || obj.value === "") v = "";
         }
         if (v === undefined || v === null || v === "") {
-          if (def.required) {
+          // requiredWhen: faqat shart bajarilganda majburiy
+          const required = def.required || (def.requiredWhen && evalCondition(def.requiredWhen, valuesRef.current));
+          if (required) {
             errors[def.id] = `${def.label} qiymati shart`;
           }
           continue;

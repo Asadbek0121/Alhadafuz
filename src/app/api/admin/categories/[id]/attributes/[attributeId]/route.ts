@@ -60,6 +60,9 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         if (data.options !== undefined) updateData.options = data.options ?? null;
         if (data.unit !== undefined) updateData.unit = data.unit ?? null;
         if (data.allowedUnits !== undefined) updateData.allowedUnits = data.allowedUnits ?? null;
+        if (data.visibleWhen !== undefined) updateData.visibleWhen = data.visibleWhen ?? null;
+        if (data.requiredWhen !== undefined) updateData.requiredWhen = data.requiredWhen ?? null;
+        if (data.dependsOn !== undefined) updateData.dependsOn = data.dependsOn ?? null;
         if (data.minValue !== undefined) updateData.minValue = data.minValue ?? null;
         if (data.maxValue !== undefined) updateData.maxValue = data.maxValue ?? null;
         if (data.forVariant !== undefined) updateData.forVariant = data.forVariant;
