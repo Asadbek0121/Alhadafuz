@@ -231,16 +231,29 @@ function AttributeField({ def, value, error, disabled, onChange }: AttributeFiel
             className={`${inputClass} ${error ? invalidClass : ""}`}
             placeholder="0"
           />
-          <input
-            type="text"
-            value={unit}
-            disabled={disabled}
-            onChange={(e) =>
-              onChange({ value: obj?.value ?? "", unit: e.target.value })
-            }
-            className={`${inputClass} max-w-[110px]`}
-            placeholder="birlik"
-          />
+          {def.allowedUnits ? (
+            <select
+              value={unit}
+              disabled={disabled}
+              onChange={(e) => onChange({ value: obj?.value ?? "", unit: e.target.value })}
+              className={`${inputClass} max-w-[130px]`}
+            >
+              {def.allowedUnits.split(",").map((u) => u.trim()).filter(Boolean).map((u) => (
+                <option key={u} value={u}>{u}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="text"
+              value={unit}
+              disabled={disabled}
+              onChange={(e) =>
+                onChange({ value: obj?.value ?? "", unit: e.target.value })
+              }
+              className={`${inputClass} max-w-[110px]`}
+              placeholder="birlik"
+            />
+          )}
         </div>
         {error && <span className={errorClass}>{error}</span>}
       </div>

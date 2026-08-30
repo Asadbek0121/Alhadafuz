@@ -78,6 +78,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 required: data.required,
                 options: data.options ?? null,
                 unit: data.unit ?? null,
+                allowedUnits: data.allowedUnits ?? null,
                 minValue: data.minValue ?? null,
                 maxValue: data.maxValue ?? null,
                 forVariant: data.forVariant,

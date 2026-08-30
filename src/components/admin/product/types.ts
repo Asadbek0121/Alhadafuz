@@ -6,6 +6,7 @@ export interface AttributeDef {
   required: boolean;
   options: string | null;
   unit: string | null;
+  allowedUnits: string | null;
   minValue: number | null;
   maxValue: number | null;
   forVariant: boolean;
@@ -27,11 +28,12 @@ export interface AttributeExtraValue {
   required: boolean;
   options: string | null;
   unit: string | null;
+  allowedUnits: string | null;
   minValue: number | null;
   maxValue: number | null;
   forVariant: boolean;
   order: number;
-  value: unknown;
+  value?: unknown;
 }
 
 export interface VariantImageItem {

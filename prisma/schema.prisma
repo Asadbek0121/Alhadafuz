@@ -427,6 +427,9 @@ model CategoryAttributeDefinition {
   options    String?
   /// MEASUREMENT/NUMBER uchun o'lchov birligi: "kg", "cm", "m²", "GB", "MP"
   unit       String?
+  /// MEASUREMENT uchun ruxsat etilgan birliklar (JSON array): ["g","kg"]
+  /// UI da unit select sifatida chiqadi; bo'sh bo'lsa yagona `unit` ishlatiladi.
+  allowedUnits String?
   minValue   Float?
   maxValue   Float?
   /// true bo'lsa — bu definition Variant o'qi (Rang/O'lcham kombinatsiyasi)

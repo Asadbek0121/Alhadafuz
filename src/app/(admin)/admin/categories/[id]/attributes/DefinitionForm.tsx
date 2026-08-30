@@ -91,6 +91,7 @@ export default function DefinitionForm({
     const [options, setOptions] = useState(initial?.options ?? "");
     const [optionDraft, setOptionDraft] = useState("");
     const [unit, setUnit] = useState(initial?.unit ?? "");
+    const [allowedUnits, setAllowedUnits] = useState(initial?.allowedUnits ?? "");
     const [minValue, setMinValue] = useState(initial?.minValue != null ? String(initial.minValue) : "");
     const [maxValue, setMaxValue] = useState(initial?.maxValue != null ? String(initial.maxValue) : "");
     const [error, setError] = useState<string | null>(null);
@@ -161,6 +162,7 @@ export default function DefinitionForm({
             order: Math.max(0, Number(order) || 0),
             options: showOptions ? options.trim() || null : null,
             unit: showUnit ? unit.trim() || null : null,
+            allowedUnits: showUnit ? allowedUnits.trim() || null : null,
             minValue: showMinMax ? parseNum(minValue) : null,
             maxValue: showMinMax ? parseNum(maxValue) : null,
         };
@@ -353,6 +355,27 @@ export default function DefinitionForm({
                         disabled={submitting}
                     />
                     <p className="text-xs text-[#7c8fac] mt-1">Masalan: kg, cm, m²</p>
+                </div>
+            )}
+
+            {showUnit && (
+                <div className="form-group">
+                    <label htmlFor="def-allowed-units" className={labelClass}>
+                        Ruxsat etilgan birliklar (ixtiyoriy)
+                    </label>
+                    <input
+                        id="def-allowed-units"
+                        type="text"
+                        value={allowedUnits}
+                        onChange={(e) => setAllowedUnits(e.target.value)}
+                        className={inputClass}
+                        placeholder="g, kg, t"
+                        disabled={submitting}
+                    />
+                    <p className="text-xs text-[#7c8fac] mt-1">
+                        Vergul bilan ajrating. To'ldirilsa, mahsulot formasida birlik select sifatida chiqadi
+                        (masalan: "g, kg, t"). Bo'sh bo'lsa, yuqoridagi yagona birlik ishlatiladi.
+                    </p>
                 </div>
             )}
 
