@@ -90,6 +90,7 @@ export default function EditProductPage() {
     const [categories, setCategories] = useState<any[]>([]);
     const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
     const [brandId, setBrandId] = useState("");
+    const [variantDiff, setVariantDiff] = useState<{ added: string[]; removed: string[]; unchanged: string[] } | null>(null);
     const [attributes, setAttributes] = useState<{ key: string; value: string }[]>([]);
     const [showBulkPaste, setShowBulkPaste] = useState(false);
     const [bulkText, setBulkText] = useState("");
@@ -530,7 +531,25 @@ export default function EditProductPage() {
                                 categoryId={watch('category')?.split(',').filter(Boolean)[0] || null}
                                 onCategoryWarning={setCategoryWarning}
                                 disabled={loading}
+                                onVariantsChange={() => {
+                                    // Diff preview — variantlar o'zgarganda yangilanadi
+                                    const diff = universalRef.current?.getVariantDiff();
+                                    if (diff) setVariantDiff(diff);
+                                }}
                             />
+
+                            {/* Variant diff preview — faqat edit rejimida, o'zgarish bo'lsa */}
+                            {variantDiff && (variantDiff.added.length > 0 || variantDiff.removed.length > 0) && (
+                                <div className="variant-diff-preview">
+                                    <h4 className="variant-diff-title">Variant o'zgarishlari</h4>
+                                    {variantDiff.added.length > 0 && (
+                                        <p className="variant-diff-line"><span className="badge badge-add">+</span> {variantDiff.added.length} ta qo'shiladi: {variantDiff.added.slice(0, 5).join(", ")}{variantDiff.added.length > 5 ? "..." : ""}</p>
+                                    )}
+                                    {variantDiff.removed.length > 0 && (
+                                        <p className="variant-diff-line"><span className="badge badge-remove">−</span> {variantDiff.removed.length} ta o'chiriladi: {variantDiff.removed.slice(0, 5).join(", ")}{variantDiff.removed.length > 5 ? "..." : ""}</p>
+                                    )}
+                                </div>
+                            )}
                         </>
                     </div>
 

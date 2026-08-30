@@ -14,6 +14,8 @@ export interface UniversalProductRef {
   saveAttributesAndVariants(productId: string): Promise<boolean>;
   /** Atomic save uchun — attributes + variants payload'ni qaytaradi (create/update uchun). */
   buildPayload(): { attributes: { attributeDefId: string; value: unknown }[] | null; variants: any[] | null };
+  /** Edit diff — server'dagi original variantlar va hozirgi (client) farqi. */
+  getVariantDiff(): { added: string[]; removed: string[]; unchanged: string[] };
 }
 
 interface UniversalProductSectionsProps {
@@ -21,10 +23,12 @@ interface UniversalProductSectionsProps {
   categoryId: string | null;
   onCategoryWarning?: (show: boolean) => void;
   disabled?: boolean;
+  /** Variantlar o'zgarganda parent'ga xabar — edit diff preview uchun. */
+  onVariantsChange?: () => void;
 }
 
 const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProductSectionsProps>(
-  function UniversalProductSections({ productId, categoryId, onCategoryWarning, disabled }, ref) {
+  function UniversalProductSections({ productId, categoryId, onCategoryWarning, disabled, onVariantsChange }, ref) {
     const [defs, setDefs] = useState<AttributeDef[]>([]);
     const [extraValues, setExtraValues] = useState<AttributeExtraValue[]>([]);
     const [values, setValues] = useState<Record<string, unknown>>({});
@@ -40,6 +44,8 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
     const prevProductId = useRef<string | null>(null);
     const valuesRef = useRef<Record<string, unknown>>({});
     const productsLoaded = useRef(false);
+    // Edit diff uchun server'dagi original variantlar (variantKey → label)
+    const serverVariantsRef = useRef<Record<string, string>>({});
 
     // Keep latest values in a ref so loadDefs stays stable and doesn't retrigger.
     useEffect(() => {
@@ -146,6 +152,13 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
           };
         });
         setVariants(rows);
+        // Diff uchun server original snapshot (variantKey → label)
+        const snapshot: Record<string, string> = {};
+        for (const v of list) {
+          const key = v.variantKey || "";
+          if (key) snapshot[key] = v.variantLabel || key;
+        }
+        serverVariantsRef.current = snapshot;
       } catch (e: any) {
         toast.error("Variantlar yuklanmadi: " + (e.message || "xato"));
       } finally {
@@ -490,6 +503,28 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
 
           return { attributes: attrs, variants: vars.length > 0 ? vars : null };
         },
+        getVariantDiff: () => {
+          const server = serverVariantsRef.current;
+          const added: string[] = [];
+          const removed: string[] = [];
+          const unchanged: string[] = [];
+
+          // Current variants (client) — qo'shilgan / o'zgarmagan / o'chirilgan
+          for (const v of variants) {
+            if (deletedKeys.has(v.key)) {
+              if (server[v.key]) removed.push(server[v.key]);
+              continue;
+            }
+            if (server[v.key]) unchanged.push(server[v.key]);
+            else added.push(v.label || v.key);
+          }
+          // Server'da bor, lekin client'da yo'q — o'chirilgan deb hisoblanadi
+          for (const [key, label] of Object.entries(server)) {
+            const stillExists = variants.some((v) => v.key === key && !deletedKeys.has(v.key));
+            if (!stillExists) removed.push(label);
+          }
+          return { added, removed, unchanged };
+        },
       }),
       [validate, saveAttributesAndVariants, defs, axes, variants, deletedKeys]
     );
@@ -580,10 +615,16 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
                 axes={axes}
                 onAxesChange={setAxes}
                 variants={variants}
-                onVariantsChange={setVariants}
+                onVariantsChange={(v) => {
+                  setVariants(v);
+                  onVariantsChange?.();
+                }}
                 variantDefs={variantDefs}
                 deletedKeys={deletedKeys}
-                onDeletedKeysChange={setDeletedKeys}
+                onDeletedKeysChange={(d) => {
+                  setDeletedKeys(d);
+                  onVariantsChange?.();
+                }}
                 disabled={disabled}
               />
             )
