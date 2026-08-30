@@ -58,6 +58,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **BASE_URL production fix** (`15a24a3`): product page server-side fetch Vercel'da `localhost:3000` ga borardi (NEXTAUTH_URL/APP_URL/NEXT_PUBLIC_APP_URL yo'q) → `notFound()` 404. Endi `headers()` orqali `x-forwarded-host/host/proto` autodetection; fallback env'lar. Verification: production slug 200, id 308 redirect, API 200.
 - **CHINA_ORDER test mahsulot seed** (`981f5d5`): `scripts/seed-china-product.ts` — LED chiroq (CHINA_ORDER) "Xitoy tovarlari" root kategoriyasida. Order creation test: OrderItem'da `fulfillmentType: CHINA_ORDER` saqlanadi (backend qoidasi: china product variant LOCAL bo'la olmaydi). Product page 200. tsc 0, lint 0.
 - **BannerEvent analitika** (`db99dce`): impression/click route'lari endi `BannerEvent` record yozadi (sessionId — `bsid` cookie yoki IP+UA hash, shaxs aniqlamaydi); yangi `/api/admin/banners/analytics?days=7|30|90` — banner bo'yicha impression/click/CTR/yagona tashrifchi; admin banners page'da analitika panel (davr filter + stats table + loading state). Verification: impression/click 200, analytics 200 (3 impression/3 unique/1 click/CTR 33%), tsc 0, lint 0.
 - **Public shipping endpoint** (`9e60f6d`): `/api/shipping` GET public — faqat `isActive=true` zonalar; checkout endi public endpoint'dan o'qiydi (ilgari `/api/admin/shipping`). Admin GET saqlanadi (barcha zonalar). Verification: 27 zona active-only, admin 27; tsc 0, lint 0.
@@ -275,4 +276,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-30 (BannerEvent analitika; Public shipping endpoint; Product slug route)
+2026-08-30 (BASE_URL production fix; CHINA_ORDER seed; BannerEvent analitika; Public shipping; Product slug route)
