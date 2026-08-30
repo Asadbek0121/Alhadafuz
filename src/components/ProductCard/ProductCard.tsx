@@ -16,6 +16,8 @@ import { isChinaItem } from '@/store/useCartStore';
 
 interface ProductProps {
     id: string; // Updated to string
+    /** SEO slug — `product/slug` link uchun. Bo'lmasa id ishlatiladi. */
+    slug?: string | null;
     title: string;
     price: number;
     oldPrice?: number;
@@ -39,7 +41,7 @@ interface ProductProps {
 
 export default function ProductCard(props: ProductProps) {
     const {
-        id, title, price, oldPrice, image, discount, discountType,
+        id, slug, title, price, oldPrice, image, discount, discountType,
         isNew, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment, stock, priority = false,
         rating = 0, reviewCount, fulfillmentType
     } = props;
@@ -149,7 +151,7 @@ export default function ProductCard(props: ProductProps) {
     return (
         <div className="group relative bg-white border border-slate-100 rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full">
             {/* Clickable area: badges + image */}
-            <Link href={`/product/${id}`} className="block relative">
+            <Link href={`/product/${slug || id}`} className="block relative">
                 {/* Yuqori-chap: chegirma belgisi + marketing stikerlari (bittа ustunda,
                     shuning uchun qo'lda yozilgan `top` offsetlari kerak emas) */}
                 {(discountPercentage > 0 || badges.length > 0) && (
@@ -220,7 +222,7 @@ export default function ProductCard(props: ProductProps) {
 
             {/* Content */}
             <div className="p-3 md:p-4 flex flex-col flex-1">
-                <Link href={`/product/${id}`} className="block">
+                <Link href={`/product/${slug || id}`} className="block">
                     <h3 className="text-xs md:text-sm font-medium text-slate-700 line-clamp-2 min-h-[2.5em] mb-1 leading-snug group-hover:text-blue-600 transition-colors" title={title}>
                         {title}
                     </h3>

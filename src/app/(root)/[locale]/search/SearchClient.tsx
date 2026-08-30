@@ -379,6 +379,7 @@ export default function SearchClient() {
                                 <ProductCard
                                     key={p.id}
                                     id={p.id}
+                                    slug={p.slug}
                                     title={p.title}
                                     price={p.price}
                                     oldPrice={p.oldPrice}

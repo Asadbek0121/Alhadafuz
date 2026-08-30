@@ -72,6 +72,7 @@ export default function FavoritesPage() {
                     <ProductCard
                         key={product.id}
                         id={product.id}
+                        slug={product.slug}
                         title={product.title}
                         price={product.price}
                         oldPrice={product.oldPrice}

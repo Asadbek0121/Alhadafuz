@@ -552,7 +552,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                             {searchResults.map((product, idx) => (
                                                 <Link
                                                     key={product.id}
-                                                    href={`/product/${product.id}`}
+                                                    href={`/product/${product.slug || product.id}`}
                                                     role="option"
                                                     id={`search-option-${idx}`}
                                                     aria-selected={activeIndex === idx}
@@ -783,7 +783,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                 {searchResults.map((product, idx) => (
                                     <Link
                                         key={product.id}
-                                        href={`/product/${product.id}`}
+                                        href={`/product/${product.slug || product.id}`}
                                         className={`flex items-center gap-4 px-4 py-3 rounded-2xl transition-all border-b border-slate-50 last:border-0 ${activeIndex === idx ? 'bg-blue-50' : 'hover:bg-slate-50 active:bg-slate-100/50'}`}
                                         onClick={() => handleSearchResultClick(product)}
                                     >

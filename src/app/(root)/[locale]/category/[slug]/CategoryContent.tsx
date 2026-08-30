@@ -569,7 +569,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                         {products.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                                 {products.map((p) => (
-                                    <ProductCard key={p.id} id={p.id} title={p.title} price={p.price}
+                                    <ProductCard key={p.id} id={p.id} slug={p.slug} title={p.title} price={p.price}
                                         oldPrice={p.oldPrice} image={p.image || '/placeholder.png'}
                                         discount={p.discount} discountType={p.discountType}
                                         isNew={p.isNew} freeDelivery={p.freeDelivery} hasVideo={p.hasVideo}
@@ -728,6 +728,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                 <ProductCard
                                     key={p.id}
                                     id={p.id}
+                                    slug={p.slug}
                                     title={p.title}
                                     price={p.price}
                                     oldPrice={p.oldPrice}

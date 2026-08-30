@@ -8,11 +8,12 @@ export async function GET(request: Request, props: { params: Promise<{ id: strin
     const params = await props.params;
     const id = params.id;
 
-    console.log(`[API] Fetching product id: ${id}`);
+    console.log(`[API] Fetching product id/slug: ${id}`);
 
     try {
-        const dbProduct = await (prisma as any).product.findUnique({
-            where: { id }
+        // ID yoki slug orqali qidirish — legacy id URL'lar va yangi slug URL'lar ikkalasi ishlaydi.
+        const dbProduct = await (prisma as any).product.findFirst({
+            where: { OR: [{ id }, { slug: id }] }
         });
 
         console.log(`[API] DB Result for ${id}:`, dbProduct ? "Found" : "Not Found");

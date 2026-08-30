@@ -177,7 +177,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                             </div>
                             <div className={`${styles.fallbackTrack} ${carouselProducts.length <= 2 ? styles.fallbackTrackCentered : ''}`}>
                                 {carouselProducts.slice(0, 12).map((p: any) => (
-                                    <Link key={p.id} href={`/product/${p.id}`} className={styles.fallbackCard}>
+                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className={styles.fallbackCard}>
                                         <div className={styles.fallbackImageWrap}>
                                             <Image
                                                 src={p.image || "https://placehold.co/400"}

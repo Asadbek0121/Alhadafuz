@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { metaDescription, translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
 import { SITE_NAME } from '@/lib/seo';
@@ -22,7 +23,8 @@ export async function generateMetadata(
 ): Promise<Metadata> {
     const { locale, id } = await params;
     const product = await fetchProduct(id);
-    const path = `/product/${id}`;
+    const slug = product?.slug || id;
+    const path = `/product/${slug}`;
 
     if (!product?.title) {
         return translatedPageMetadata('product', { locale, path, noindex: true });
@@ -65,6 +67,17 @@ export default async function ProductPage({
     // API chaqirilmaydi (double-fetch tuzatildi).
     const product = await fetchProduct(id);
 
+    // Mavjud bo'lmagan product → 404 (SEO uchun to'g'ri status)
+    if (!product?.title) {
+        notFound();
+    }
+
+    // Agar product slug'li bo'lsa va URL id bo'lsa → permanent redirect (308)
+    // Google 301 va 308'ni bir xil (permanent redirect) deb qabul qiladi.
+    if (product?.slug && product.slug !== id) {
+        permanentRedirect(`/${locale}/product/${product.slug}`);
+    }
+
     const tHeader = await getTranslations({ locale, namespace: 'Header' });
 
     // Product JSON-LD — faqat real ma'lumotlar asosida (fake rating yozilmaydi)
@@ -82,7 +95,7 @@ export default async function ProductPage({
             availability: (product.stock > 0 && !['inactive', 'draft'].includes(String(product.status || '').toLowerCase()))
                 ? 'https://schema.org/InStock'
                 : 'https://schema.org/OutOfStock',
-            url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz'}/product/${id}`,
+            url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz'}/product/${product.slug || id}`,
         };
         if (product.oldPrice && Number(product.oldPrice) > price) {
             offers.priceSpecification = {
@@ -123,7 +136,7 @@ export default async function ProductPage({
             ...(product.categorySlug && product.category
                 ? [{ name: product.category, path: `/category/${product.categorySlug}` }]
                 : []),
-            { name: product.title, path: `/product/${id}` },
+            { name: product.title, path: `/product/${product.slug || id}` },
         ];
         jsonLdBreadcrumb = breadcrumbJsonLd(breadcrumbItems, locale);
     }

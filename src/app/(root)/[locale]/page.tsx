@@ -72,6 +72,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
               <div key={p.id} className="w-52 shrink-0 md:w-auto">
                 <ProductCard
                   id={p.id}
+                  slug={p.slug}
                   title={p.title}
                   price={p.price}
                   oldPrice={p.oldPrice}
@@ -108,6 +109,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
                 <ProductCard
                   key={p.id}
                   id={p.id}
+                  slug={p.slug}
                   title={p.title}
                   price={p.price}
                   oldPrice={p.oldPrice}
