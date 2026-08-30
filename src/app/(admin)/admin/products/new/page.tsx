@@ -44,7 +44,7 @@ const productSchema = z.object({
     packageCode: z.string().optional(),
     // "scheduled" olib tashlandi: rejalashtirish uchun na sana maydoni,
     // na fon vazifasi bor edi — tanlangan mahsulot shunchaki yo'qolardi.
-    status: z.enum(["published", "draft", "inactive"]).default("published"),
+    status: z.enum(["published", "draft", "inactive"]).default("draft"),
     fulfillmentType: z.enum(["LOCAL", "CHINA_ORDER"]).default("LOCAL"),
     isNew: z.boolean().default(false),
     freeDelivery: z.boolean().default(false),
@@ -195,7 +195,7 @@ export default function AddProductPage() {
             title: "", description: "", price: 0, stock: 0, category: "", image: "", images: "",
             isNew: false, freeDelivery: false, hasVideo: false, hasGift: false,
             showLowStock: false, allowInstallment: false,
-            discountType: "no_discount", discountCategory: "SALE", status: "published",
+            discountType: "no_discount", discountCategory: "SALE", status: "draft",
             fulfillmentType: "LOCAL",
         },
     });

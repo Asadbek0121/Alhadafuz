@@ -31,7 +31,7 @@ const productSchema = z.object({
     attributes: z.any(),
     brand: z.string().optional(),
     brandId: z.string().nullable().optional(),
-    status: z.string().optional().default("published"),
+    status: z.string().optional().default("draft"),
     isNew: z.boolean().optional().default(true),
     freeDelivery: z.boolean().optional().default(false),
     hasVideo: z.boolean().optional().default(false),
