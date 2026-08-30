@@ -12,10 +12,11 @@
 
 ## Current Stage
 
-- Neon → Supabase PostgreSQL migration yakunlandi.
+- Neon → Supabase PostgreSQL migration **yakunlandi va production'da ishlamoqda**.
 - 43 jadval, 6 Prisma migration, barcha data ko'chirildi (9 product, 18 kategoriya).
-- Supabase (Tokyo, Postgres 17.6) — port 6543 (session mode, Prisma uchun).
-- Vercel env'lar supabase port 6543 ga o'rnatildi.
+- Supabase (Tokyo, Postgres 17.6) — **port 6543 (session mode, Prisma uchun)**. 5432 Prisma bilan ishlamaydi.
+- Vercel env'lar: DATABASE_URL/DIRECT_URL → Supabase 6543. Eski Neon URL'lari `.env`'da `# NEON BACKUP` comment'ida.
+- Build: `prepare-direct-url.mjs --skip-migrate` — schema Supabase'ga import qilingan, build'da migrate kerak emas (osilib qolardi).
 
 ## Current Focus
 
