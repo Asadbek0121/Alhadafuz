@@ -58,6 +58,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **Variantli buyurtma E2E testi**: "Bolalar futbolkasi — Premium paxta" (4 variant: Qora/Ko'k × S/M) — product page variant selector + `getAvailableOptions` disabled combos test (color=black → faqat M mavjud), OTP login → session → `/api/orders` POST variant bilan (variantId + variant JSON + sku) → OrderItem'da `variant`, `variantId`, `variantSnapshot` ("Ko'k / M"), `sku` to'liq saqlandi, fulfillmentType LOCAL. Test order tozalandi. Verification: dev server, HTTP 200, DB tekshiruvi.
 - **Phase A–I master spec (variant diff preview bilan yakunlandi, `5fe5e9b`)**:
   - A: Brand entity (model, API, CRUD UI, sidebar)
   - B: Product slug (auto-slug, API, `@@unique`)
@@ -203,21 +204,20 @@
 
 Avvalgi sessiyalardan:
 - `<Script>` telegram-web-app.js client komponentdan tashqariga ko'chirildi (konsol xatosi).
-- `BannerEvent` modeli qo'shildi (uncommitted, db push kutilmoqda).
+- `BannerEvent` modeli Supabase'da mavjud (migration `_prisma_migrations`'da emas, lekin table bor) — admin analitika UI keyingi bosqichda.
 - Admin panel auditi, Telegram xabarlari admin panelda, CLS optimizatsiyasi.
 
 ## In Progress
 
-- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX.
+- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi.
 
 ## Next Tasks
 
-- **Storefront testi**: yangi variantli mahsulot yaratish + product page → cart → checkout → order flow'ni test qilish (variant support endi tayyor).
 - **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup (Neon vars backup sifatida saqlanadi).
 - 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID placeholder) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
 - **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash.
 - **Product slug route**: `Product.slug` + `@@unique` tayyor — `/product/[slug]` route + 301 redirect qilish (hozircha `[id]` ishlatiladi).
-- **BannerEvent analitika**: model tayyor + migratsiya qo'llangan — admin analitika UI kerak.
+- **BannerEvent analitika**: model tayyor — admin analitika UI kerak.
 - **Public shipping endpoint**: `/api/admin/shipping`'dagi GET ni public endpoint'ga ko'chirish.
 
 ## Known Issues
@@ -275,4 +275,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-30 (Master spec Phase A–I yakunlandi — variant diff preview `5fe5e9b`; Supabase migratsiya + Phase 1 stability + ProductCard `1f3615a`)
+2026-08-30 (Variantli buyurtma E2E testi yakunlandi — product → cart → checkout → order flow variant to'liq ishlaydi)
