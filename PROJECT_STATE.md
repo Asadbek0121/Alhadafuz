@@ -58,6 +58,7 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **Product slug route** (`e2971c8`): `/api/products/[id]` slug+id qabul qiladi (findFirst OR); product page legacy id URL → permanent redirect (308) `/product/[slug]`, mavjud bo'lmagan → 404; `scripts/backfill-product-slugs.mjs` — 7 productga slug yozildi; ProductCard `slug` prop; homepage/category/search/favorites/related/Header search/Hero fallback linklari slug-based; canonical + JSON-LD + breadcrumb slug. Verification: slug 200, id 308 redirect, not found 404; tsc 0, lint 0.
 - **Variantli buyurtma E2E testi**: "Bolalar futbolkasi — Premium paxta" (4 variant: Qora/Ko'k × S/M) — product page variant selector + `getAvailableOptions` disabled combos test (color=black → faqat M mavjud), OTP login → session → `/api/orders` POST variant bilan (variantId + variant JSON + sku) → OrderItem'da `variant`, `variantId`, `variantSnapshot` ("Ko'k / M"), `sku` to'liq saqlandi, fulfillmentType LOCAL. Test order tozalandi. Verification: dev server, HTTP 200, DB tekshiruvi.
 - **Phase A–I master spec (variant diff preview bilan yakunlandi, `5fe5e9b`)**:
   - A: Brand entity (model, API, CRUD UI, sidebar)
@@ -216,7 +217,6 @@ Avvalgi sessiyalardan:
 - **Production readiness**: Click payment env (`CLICK_SERVICE_ID`, `CLICK_SECRET_KEY`), Upstash rate limit, `.env` cleanup (Neon vars backup sifatida saqlanadi).
 - 🇨🇳 **Cargo real hisoblash** (kelajak): Cargo modeli tayyor (PENDING/CALCULATED/PAID placeholder) — real kargo calculator, weight/partiya, admin kargo kirituvchi forma, user cargo payment oqimi alohida bosqich. Hozir ataylab placeholder.
 - **"🇨🇳 Xitoydan buyurtma" root kategoriya** yaratish (admin panel orqali) va unga CHINA_ORDER mahsulotlarini bog'lash.
-- **Product slug route**: `Product.slug` + `@@unique` tayyor — `/product/[slug]` route + 301 redirect qilish (hozircha `[id]` ishlatiladi).
 - **BannerEvent analitika**: model tayyor — admin analitika UI kerak.
 - **Public shipping endpoint**: `/api/admin/shipping`'dagi GET ni public endpoint'ga ko'chirish.
 
@@ -275,4 +275,4 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-08-30 (Variantli buyurtma E2E testi yakunlandi — product → cart → checkout → order flow variant to'liq ishlaydi)
+2026-08-30 (Product slug route — `/product/[slug]` + redirect, slug linklar; variantli buyurtma E2E testi)
