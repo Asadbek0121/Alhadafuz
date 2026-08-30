@@ -85,11 +85,19 @@ if (!current) {
 
 // DIRECT_URL process.env'da set qilingan — endi migrate deploy'ni SHU process
 // ichida ishga tushiramiz, child process env'ni meros qilib oladi.
-console.log('[prepare] Running prisma migrate deploy with true direct host...');
-try {
-    execSync('npx prisma migrate deploy', { stdio: 'inherit', env: process.env });
-    console.log('[prepare] prisma migrate deploy OK.');
-} catch (e) {
-    console.error('[prepare] prisma migrate deploy failed.');
-    process.exit(1);
+// `--skip-migrate`: schema Supabase'ga alohida (pg_dump) import qilingan bo'lsa
+// ishlatiladi. Build vaqtida migrate deploy Supabase Tokyo pooler'iga ulanishni
+// kutib osilib qolardi.
+const SKIP_MIGRATE = process.argv.includes('--skip-migrate');
+if (SKIP_MIGRATE) {
+    console.log('[prepare] --skip-migrate berilgan — prisma migrate deploy SKIP qilinadi.');
+} else {
+    console.log('[prepare] Running prisma migrate deploy with true direct host...');
+    try {
+        execSync('npx prisma migrate deploy', { stdio: 'inherit', env: process.env });
+        console.log('[prepare] prisma migrate deploy OK.');
+    } catch (e) {
+        console.error('[prepare] prisma migrate deploy failed.');
+        process.exit(1);
+    }
 }
