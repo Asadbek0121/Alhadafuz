@@ -12,8 +12,10 @@
 
 ## Current Stage
 
-- Faol rivojlanish. 229+ commit, ~110 API route fayl, 33 Prisma model.
-- UX/UI audit o'tkazildi; **Phase 1-10 yakunlandi** (Critical UX, Homepage, Search & Category, Product page, Cart & Checkout, Mobile UX, Performance, SEO, Accessibility, Polish).
+- Neon → Supabase PostgreSQL migration yakunlandi.
+- 43 jadval, 6 Prisma migration, barcha data ko'chirildi (9 product, 18 kategoriya).
+- Supabase (Tokyo, Postgres 17.6) — port 6543 (session mode, Prisma uchun).
+- Vercel env'lar supabase port 6543 ga o'rnatildi.
 
 ## Current Focus
 
