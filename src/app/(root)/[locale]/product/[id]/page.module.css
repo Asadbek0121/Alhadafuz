@@ -322,6 +322,13 @@
     box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.1), 0 2px 4px -1px rgba(37, 99, 235, 0.06);
 }
 
+.toggleBtnDisabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    text-decoration: line-through;
+    pointer-events: none;
+}
+
 /* Meta Info - Dotted Leader */
 .metaInfo {
     margin-top: 30px;

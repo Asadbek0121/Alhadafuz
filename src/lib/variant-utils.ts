@@ -58,9 +58,33 @@ export function variantStock(variant: any, productStock: number): number {
 
 export function variantImages(variant: any, productImages: string[]): string[] {
   if (variant && variant.images && variant.images.length > 0) {
-    return variant.images.map((img: any) => img.url || img);
+    return variant.images;
   }
   return productImages;
+}
+
+export function getAvailableOptions(
+  variants: any[],
+  axisKey: string,
+  selectedOptions: Record<string, string>,
+): Set<string> {
+  const available = new Set<string>();
+  for (const v of variants) {
+    const opts = parseVariantOptions(v);
+    // Bu variant tanlangan barcha boshqa o'qlarga mos keladimi?
+    let matches = true;
+    for (const [k, selectedVal] of Object.entries(selectedOptions)) {
+      if (k === axisKey) continue; // hozirgi o'qni tekshirmaymiz
+      if (opts[k]?.toLowerCase() !== selectedVal.toLowerCase()) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches && opts[axisKey]) {
+      available.add(opts[axisKey]);
+    }
+  }
+  return available;
 }
 
 export function variantFulfillment(variant: any, productFulfillment?: string): string | undefined {

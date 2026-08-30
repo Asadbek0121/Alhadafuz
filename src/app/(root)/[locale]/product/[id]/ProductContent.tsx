@@ -14,6 +14,7 @@ import { discountPercent, hasRealDiscount } from '@/lib/product-discount';
 import {
     buildVariantAxes,
     findVariantByOptions,
+    getAvailableOptions,
     parseVariantOptions,
     variantImages,
     variantPrice,
@@ -680,17 +681,27 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                                 <div key={axis.key} className={styles.specGroup}>
                                     <span className={styles.specGroupLabel}>{axis.key}</span>
                                     <div className={styles.toggleGroup}>
-                                        {axis.values.map(opt => (
-                                            <button
-                                                key={opt}
-                                                type="button"
-                                                onClick={() => handleOptionSelect(axis.key, opt)}
-                                                className={`${styles.toggleBtn} ${selectedOptions[axis.key] === opt ? styles.toggleBtnActive : ''}`}
-                                                aria-pressed={selectedOptions[axis.key] === opt}
-                                            >
-                                                {opt}
-                                            </button>
-                                        ))}
+                                        {(() => {
+                                            // Mavjud kombinatsiyalarni hisoblash
+                                            const available = getAvailableOptions(variants, axis.key, selectedOptions);
+                                            return axis.values.map(opt => {
+                                                const isAvailable = available.has(opt);
+                                                const isSelected = selectedOptions[axis.key] === opt;
+                                                return (
+                                                    <button
+                                                        key={opt}
+                                                        type="button"
+                                                        onClick={() => isAvailable && handleOptionSelect(axis.key, opt)}
+                                                        disabled={!isAvailable}
+                                                        className={`${styles.toggleBtn} ${isSelected ? styles.toggleBtnActive : ''} ${!isAvailable ? styles.toggleBtnDisabled : ''}`}
+                                                        aria-pressed={isSelected}
+                                                        aria-disabled={!isAvailable}
+                                                    >
+                                                        {opt}
+                                                    </button>
+                                                );
+                                            });
+                                        })()}
                                     </div>
                                 </div>
                             ))}
