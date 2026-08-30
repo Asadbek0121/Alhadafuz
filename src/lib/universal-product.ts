@@ -21,6 +21,7 @@ export const attributeDefSchema = z.object({
   maxValue: z.coerce.number().nullable().optional(),
   forVariant: z.boolean().default(false),
   order: z.coerce.number().int().min(0).default(0),
+  isActive: z.boolean().default(true),
 })
 
 // PATCH uchun — default'lar qo'llanmaydi (`.partial()` default'li schema'da
@@ -36,6 +37,7 @@ export const attributeDefPatchSchema = z.object({
   maxValue: z.coerce.number().nullable().optional(),
   forVariant: z.boolean().optional(),
   order: z.coerce.number().int().min(0).optional(),
+  isActive: z.boolean().optional(),
 })
 
 export const variantBodySchema = z.object({

@@ -82,6 +82,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 maxValue: data.maxValue ?? null,
                 forVariant: data.forVariant,
                 order: data.order,
+                isActive: data.isActive,
             },
         });
 

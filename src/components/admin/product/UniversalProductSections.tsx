@@ -212,8 +212,8 @@ const UniversalProductSections = forwardRef<UniversalProductRef, UniversalProduc
       });
     }, [defs, variants]);
 
-    const attributeDefs = useMemo(() => defs.filter((d) => !d.forVariant), [defs]);
-    const variantDefs = useMemo(() => defs.filter((d) => d.forVariant), [defs]);
+    const attributeDefs = useMemo(() => defs.filter((d) => !d.forVariant && d.isActive !== false), [defs]);
+    const variantDefs = useMemo(() => defs.filter((d) => d.forVariant && d.isActive !== false), [defs]);
 
     // ---- validation ----
 

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { Loader2, Plus, ChevronLeft, Trash2, Edit2, Settings2, Check, Boxes, Layers } from "lucide-react";
+import { Loader2, Plus, ChevronLeft, Trash2, Edit2, Settings2, Check, Boxes, Layers, ArrowUp, ArrowDown, Eye, EyeOff } from "lucide-react";
 import { parseOptions } from "@/lib/universal-product";
 import type { AttributeDef } from "@/components/admin/product/types";
 import DefinitionForm from "./DefinitionForm";
@@ -114,6 +114,55 @@ export default function CategoryAttributesPage() {
 
     const nextOrder = defs.length > 0 ? Math.max(...defs.map((d) => d.order)) + 1 : 0;
 
+    /** ↑↓ orqali tartibni almashtiradi (order qiymatlari swap qilinadi). */
+    const handleReorder = async (group: AttributeDef[], index: number, dir: -1 | 1) => {
+        const sorted = [...group].sort((a, b) => a.order - b.order);
+        const target = index + dir;
+        if (target < 0 || target >= sorted.length) return;
+        const a = sorted[index], b = sorted[target];
+        const orderA = a.order, orderB = b.order;
+        // Local optimistik yangilash
+        setDefs((prev) => prev.map((d) =>
+            d.id === a.id ? { ...d, order: orderB } : d.id === b.id ? { ...d, order: orderA } : d
+        ));
+        // Server'da ikkalasini almashtirish (2 PATCH)
+        const patch = async (def: AttributeDef, order: number) => {
+            const res = await fetch(`/api/admin/categories/${categoryId}/attributes/${def.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ order }),
+            });
+            return res.ok;
+        };
+        const results = await Promise.all([patch(a, orderB), patch(b, orderA)]);
+        if (!results.every(Boolean)) {
+            toast.error("Tartib saqlanmadi — qayta urinib ko'ring");
+            await loadDefs();
+        }
+    };
+
+    /** Faol/nofaol toggle — o'chirmasdan, faqat yashiradi (product qiymatlari saqlanadi). */
+    const handleToggleActive = async (def: AttributeDef) => {
+        const next = !(def.isActive !== false);
+        setDefs((prev) => prev.map((d) => (d.id === def.id ? { ...d, isActive: next } : d)));
+        try {
+            const res = await fetch(`/api/admin/categories/${categoryId}/attributes/${def.id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ isActive: next }),
+            });
+            if (res.ok) {
+                toast.success(next ? "Faollashtirildi" : "Nofaol qilindi (product qiymatlari saqlandi)");
+            } else {
+                toast.error("Holat saqlanmadi");
+                await loadDefs();
+            }
+        } catch {
+            toast.error("Tarmoq xatosi");
+            await loadDefs();
+        }
+    };
+
     const sortedDefs = [...defs].sort((a, b) => a.order - b.order);
     const properties = sortedDefs.filter((d) => !d.forVariant);
     const variants = sortedDefs.filter((d) => d.forVariant);
@@ -137,17 +186,23 @@ export default function CategoryAttributesPage() {
                 </div>
             ) : (
                 <ul className="divide-y divide-[#f0f2f5]">
-                    {items.map((def) => {
+                    {items.map((def, index) => {
                         const meta = definitionMeta(def);
                         const isEditingThis = editing?.id === def.id;
+                        const isInactive = def.isActive === false;
                         return (
-                            <li key={def.id} className={`px-5 py-4 flex items-start justify-between gap-4 transition-colors ${isEditingThis ? "bg-[#f4f9ff]" : "hover:bg-[#fafbfc]"}`}>
+                            <li key={def.id} className={`px-5 py-4 flex items-start justify-between gap-4 transition-colors ${isEditingThis ? "bg-[#f4f9ff]" : "hover:bg-[#fafbfc]"} ${isInactive ? "opacity-55" : ""}`}>
                                 <div className="min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                         <span className="font-bold text-[#2A3547] text-sm">{def.label}</span>
                                         {def.required && (
                                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#fdede8] text-[#a33a20] text-[11px] font-bold border border-[#f7c8bb]">
                                                 To'ldirish shart
+                                            </span>
+                                        )}
+                                        {isInactive && (
+                                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#eef1f5] text-[#7c8fac] text-[11px] font-bold border border-[#e5eaef]">
+                                                Nofaol
                                             </span>
                                         )}
                                     </div>
@@ -158,7 +213,37 @@ export default function CategoryAttributesPage() {
                                     </div>
                                     {meta && <p className="text-xs text-[#7c8fac] mt-1.5">{meta}</p>}
                                 </div>
-                                <div className="flex items-center gap-1.5 shrink-0">
+                                <div className="flex items-center gap-1 shrink-0">
+                                    {/* Tartib — ↑↓ */}
+                                    <div className="flex flex-col mr-1">
+                                        <button
+                                            onClick={() => handleReorder(items, index, -1)}
+                                            disabled={index === 0}
+                                            className="p-1 rounded text-[#7c8fac] hover:bg-[#f0f2f5] disabled:opacity-25 disabled:cursor-not-allowed"
+                                            title="Yuqoriga"
+                                            aria-label={`${def.label} yuqoriga`}
+                                        >
+                                            <ArrowUp size={14} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleReorder(items, index, 1)}
+                                            disabled={index === items.length - 1}
+                                            className="p-1 rounded text-[#7c8fac] hover:bg-[#f0f2f5] disabled:opacity-25 disabled:cursor-not-allowed"
+                                            title="Pastga"
+                                            aria-label={`${def.label} pastga`}
+                                        >
+                                            <ArrowDown size={14} />
+                                        </button>
+                                    </div>
+                                    {/* Faol/nofaol toggle */}
+                                    <button
+                                        onClick={() => handleToggleActive(def)}
+                                        className={`p-2 rounded-lg transition-colors ${isInactive ? "text-[#9aa8bb] hover:bg-[#f0f2f5]" : "text-[#00ceb6] hover:bg-[#e6fbf8]"}`}
+                                        title={isInactive ? "Faollashtirish" : "Nofaol qilish"}
+                                        aria-label={`${def.label} ${isInactive ? "faollashtirish" : "nofaol qilish"}`}
+                                    >
+                                        {isInactive ? <EyeOff size={16} /> : <Eye size={16} />}
+                                    </button>
                                     <button
                                         onClick={() => { setEditing(def); setCreateForVariant(null); }}
                                         className="p-2 rounded-lg text-[#0085db] hover:bg-[#ecf2ff] transition-colors"

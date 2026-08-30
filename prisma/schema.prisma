@@ -420,6 +420,9 @@ model CategoryAttributeDefinition {
   /// true bo'lsa — bu definition Variant o'qi (Rang/O'lcham kombinatsiyasi)
   forVariant Boolean       @default(false)
   order      Int           @default(0)
+  /// Faol emas qilinsa, yangi mahsulot formasida ko'rinmaydi (eskilar saqlanadi).
+  /// O'chirishdan farqli — bog'langan product qiymatlari yo'qotilmaydi.
+  isActive   Boolean       @default(true)
   createdAt  DateTime      @default(now())
   updatedAt  DateTime      @updatedAt
 

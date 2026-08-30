@@ -10,6 +10,8 @@ export interface AttributeDef {
   maxValue: number | null;
   forVariant: boolean;
   order: number;
+  /** Faol emas qilinsa yangi mahsulot formasida ko'rinmaydi (eskilar saqlanadi). */
+  isActive: boolean;
 }
 
 /** GET /api/admin/products/[id]/attributes javobidagi satr — def + qiymat. */

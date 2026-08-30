@@ -63,6 +63,7 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         if (data.maxValue !== undefined) updateData.maxValue = data.maxValue ?? null;
         if (data.forVariant !== undefined) updateData.forVariant = data.forVariant;
         if (data.order !== undefined) updateData.order = data.order;
+        if (data.isActive !== undefined) updateData.isActive = data.isActive;
 
         const updated = await (prisma as any).categoryAttributeDefinition.update({
             where: { id: attributeId },
