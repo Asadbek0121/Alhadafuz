@@ -144,6 +144,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             packageCode,
             vatPercent,
             brand,
+            brandId,
             vendorId // Admin can change vendor
         } = body;
 
@@ -162,6 +163,7 @@ export async function PUT(req: Request, props: { params: Promise<{ id: string }>
             packageCode,
             vatPercent: vatPercent !== undefined ? Number(vatPercent) : undefined,
             brand,
+            brandId: brandId !== undefined ? (brandId || null) : undefined,
             fulfillmentType: fulfillmentType !== undefined ? (fulfillmentType === 'CHINA_ORDER' ? 'CHINA_ORDER' : 'LOCAL') : undefined,
         };
 

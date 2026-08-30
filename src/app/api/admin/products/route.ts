@@ -29,6 +29,7 @@ const productSchema = z.object({
     images: z.array(z.string()).optional(),
     attributes: z.any(),
     brand: z.string().optional(),
+    brandId: z.string().nullable().optional(),
     status: z.string().optional().default("published"),
     isNew: z.boolean().optional().default(true),
     freeDelivery: z.boolean().optional().default(false),
@@ -128,6 +129,7 @@ export async function POST(req: Request) {
             images: data.images ? JSON.stringify(data.images) : null,
             attributes: JSON.stringify(attrsObj),
             brand: data.brand,
+            brandId: data.brandId || null,
             status: data.status,
             fulfillmentType: data.fulfillmentType || 'LOCAL',
         };

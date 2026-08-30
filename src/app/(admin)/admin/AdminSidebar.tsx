@@ -8,7 +8,7 @@ import styles from './AdminSidebar.module.css';
 const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 
 import Link from 'next/link';
-import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck, Star, Ticket } from 'lucide-react';
+import { Layers, Users, ShoppingBag, MessageCircle, FileStack, Palette, SlidersHorizontal, LayoutGrid, Lock, LogOut, FileText, Bell, MapPin, CreditCard, Truck, Star, Ticket, Tag } from 'lucide-react';
 import { signOut, useSession } from 'next-auth/react';
 
 const menuItems = [
@@ -21,6 +21,7 @@ const menuItems = [
     { name: "Buyurtmalar", icon: <FileStack size={20} />, path: "/admin/orders", roles: ["ADMIN", "VENDOR"] },
     { name: "Hisob-fakturalar", icon: <FileText size={20} />, path: "/admin/invoices", roles: ["ADMIN", "VENDOR"] },
     { name: "Kategoriyalar", icon: <LayoutGrid size={20} />, path: "/admin/categories", roles: ["ADMIN"] },
+    { name: "Brendlar", icon: <Tag size={20} />, path: "/admin/brands", roles: ["ADMIN"] },
     { name: "Bannerlar", icon: <Palette size={18} />, path: "/admin/banners", roles: ["ADMIN"] },
     { name: "Do'konlar", icon: <MapPin size={20} />, path: "/admin/stores", roles: ["ADMIN"] },
     { name: "Yetkazib berish", icon: <Truck size={20} />, path: "/admin/shipping", roles: ["ADMIN"] },

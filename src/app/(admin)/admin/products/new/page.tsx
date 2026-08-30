@@ -163,6 +163,9 @@ export default function AddProductPage() {
     const [uploading, setUploading] = useState(0);
     const [categories, setCategories] = useState<any[]>([]);
     const [catState, setCatState] = useState<"loading" | "ready" | "error">("loading");
+    // Brand entity ro'yxati — brandId select uchun
+    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
+    const [brandId, setBrandId] = useState("");
     const [catQuery, setCatQuery] = useState("");
     const [showNewCategory, setShowNewCategory] = useState(false);
     const [newCatName, setNewCatName] = useState("");
@@ -241,6 +244,14 @@ export default function AddProductPage() {
     }, []);
 
     useEffect(() => { void loadCategories(); }, [loadCategories]);
+
+    // Brendlar — brandId select uchun (bitta yuklash, kategoriya emas)
+    useEffect(() => {
+        fetch("/api/admin/brands")
+            .then(res => res.ok ? res.json() : [])
+            .then((data) => setBrands(Array.isArray(data) ? data : []))
+            .catch(() => setBrands([]));
+    }, []);
 
     const visibleCategories = useMemo(() => {
         const q = catQuery.trim().toLowerCase();
@@ -631,6 +642,7 @@ export default function AddProductPage() {
             title: data.title.trim(),
             description: data.description.trim(),
             brand: data.brand?.trim() || undefined,
+            brandId: brandId || null,
             price: data.price,
             stock: data.stock,
             oldPrice: data.oldPrice || null,
@@ -1387,7 +1399,27 @@ export default function AddProductPage() {
 
                         <div className="form-group">
                             <label className="label" htmlFor="p-brand">Brend</label>
-                            <input id="p-brand" {...register("brand")} className="input" placeholder="Brend nomi" />
+                            <div className="flex gap-2">
+                                <select
+                                    id="p-brand"
+                                    value={brandId}
+                                    onChange={(e) => { setBrandId(e.target.value); setValue("brand", ""); }}
+                                    className="input flex-1"
+                                >
+                                    <option value="">Brend tanlash...</option>
+                                    {brands.map((b) => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                    ))}
+                                    <option value="__new__">+ Yangi brend nomi yozish</option>
+                                </select>
+                                <input
+                                    {...register("brand")}
+                                    className="input flex-1"
+                                    placeholder="yoki brend nomini yozing"
+                                    onChange={(e) => { setBrandId(""); setValue("brand", e.target.value); }}
+                                />
+                            </div>
+                            <p className="helper-text">Mavjud brenddan tanlang yoki yangi nom yozing.</p>
                         </div>
                         <div className="form-group no-margin">
                             <label className="label" htmlFor="p-tags">Teglar</label>

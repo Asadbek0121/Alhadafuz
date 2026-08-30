@@ -88,6 +88,8 @@ export default function EditProductPage() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
     const [categories, setCategories] = useState<any[]>([]);
+    const [brands, setBrands] = useState<{ id: string; name: string }[]>([]);
+    const [brandId, setBrandId] = useState("");
     const [attributes, setAttributes] = useState<{ key: string; value: string }[]>([]);
     const [showBulkPaste, setShowBulkPaste] = useState(false);
     const [bulkText, setBulkText] = useState("");
@@ -153,6 +155,12 @@ export default function EditProductPage() {
             .then(res => res.json())
             .then(data => setCategories(data));
 
+        // Fetch Brands
+        fetch('/api/admin/brands')
+            .then(res => res.ok ? res.json() : [])
+            .then(data => setBrands(Array.isArray(data) ? data : []))
+            .catch(() => setBrands([]));
+
         // Fetch Product Data
         if (id) {
             fetch(`/api/admin/products/${id}`)
@@ -213,6 +221,7 @@ export default function EditProductPage() {
                         allowInstallment: !!data.allowInstallment,
                         fulfillmentType: data.fulfillmentType === "CHINA_ORDER" ? "CHINA_ORDER" : "LOCAL",
                     });
+                    setBrandId(data.brandId || "");
 
                     // Populate attributes
                     const attrsSource = data.attributes || data.specs;
@@ -379,6 +388,7 @@ export default function EditProductPage() {
             price: Number(data.price),
             stock: Number(data.stock),
             oldPrice: data.oldPrice ? Number(data.oldPrice) : null,
+            brandId: brandId || null,
             discount: noDiscount || !data.discountValue ? null : Number(data.discountValue),
             discountType: noDiscount ? null : data.discountCategory,
             discountMethod: noDiscount
@@ -686,7 +696,25 @@ export default function EditProductPage() {
                         </div>
                         <div className="form-group">
                             <label className="label">Brand</label>
-                            <input {...register("brand")} className="input" placeholder="Brand nomi" />
+                            <div style={{ display: 'flex', gap: 8 }}>
+                                <select
+                                    value={brandId}
+                                    onChange={(e) => { setBrandId(e.target.value); setValue("brand", ""); }}
+                                    className="input flex-1"
+                                >
+                                    <option value="">Brend tanlash...</option>
+                                    {brands.map((b) => (
+                                        <option key={b.id} value={b.id}>{b.name}</option>
+                                    ))}
+                                    <option value="__new__">+ Yangi brend nomi yozish</option>
+                                </select>
+                                <input
+                                    {...register("brand")}
+                                    className="input flex-1"
+                                    placeholder="yoki brend nomini yozing"
+                                    onChange={(e) => { setBrandId(""); setValue("brand", e.target.value); }}
+                                />
+                            </div>
                         </div>
                         <div className="form-group">
                             <label className="label">Teglar</label>

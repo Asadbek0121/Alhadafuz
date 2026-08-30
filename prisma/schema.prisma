@@ -361,11 +361,14 @@ model Product {
   packageCode   String?
   vatPercent    Int            @default(0)
   brand         String?
+  /// Brand entity FK — eski `brand` TEXT'dan mustaqil (backward compatible).
+  brandId       String?
   banners       Banner[]
   cartItems     CartItem[]
   orderItems    OrderItem[]
   categoryRel   Category?      @relation("ProductCategoryOld", fields: [categoryId], references: [id])
   vendor        User?          @relation("VendorProducts", fields: [vendorId], references: [id])
+  brandRel      Brand?         @relation(fields: [brandId], references: [id])
   reviews       Review[]
   wishlistItems WishlistItem[]
   categories    Category[]     @relation("ProductToCategory")
@@ -655,6 +658,24 @@ model Announcement {
 
   @@index([isActive])
   @@index([order])
+}
+
+/// Brend katalogi — keyinchalik Product.brand oʻrnini bosadi.
+/// Brand entity (ʼbrandʼ TEXT fieldidan farqli: brandId FK, logo, isActive, search).
+/// Migratsiya: eski `brand` TEXT saqlanadi (backward compatible), yangi `brandId` FK ga qoʻshiladi.
+model Brand {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  logo      String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@index([name])
+  @@index([isActive])
 }
 
 model ActivityLog {
