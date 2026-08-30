@@ -308,7 +308,7 @@ export default function CheckoutPage() {
 
         const fetchZones = async () => {
             try {
-                const res = await fetch('/api/admin/shipping');
+                const res = await fetch('/api/shipping');
                 if (res.ok) {
                     const data = await res.json();
                     setShippingZones(data.filter((z: any) => z.isActive));
