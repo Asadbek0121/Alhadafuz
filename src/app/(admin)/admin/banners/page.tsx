@@ -189,6 +189,11 @@ export default function AdminBannersPage() {
     const [carouselPickerResults, setCarouselPickerResults] = useState<any[]>([]);
     const [carouselPickerSelected, setCarouselPickerSelected] = useState<Record<string, boolean>>({});
 
+    // BannerEvent analytics
+    const [analyticsDays, setAnalyticsDays] = useState(30);
+    const [analyticsData, setAnalyticsData] = useState<any[] | null>(null);
+    const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
     const positionMeta = useMemo(
         () => POSITIONS.find(p => p.value === position) ?? POSITIONS[0],
         [position]
@@ -291,6 +296,20 @@ export default function AdminBannersPage() {
 
         return () => clearTimeout(timer);
     }, [carouselPickerSearch]);
+
+    // BannerEvent analytics — davr o'zgarganda yangilanadi
+    useEffect(() => {
+        let cancelled = false;
+        setAnalyticsLoading(true);
+        fetch(`/api/admin/banners/analytics?days=${analyticsDays}`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!cancelled) setAnalyticsData(data?.stats ?? null);
+            })
+            .catch(() => { if (!cancelled) setAnalyticsData(null); })
+            .finally(() => { if (!cancelled) setAnalyticsLoading(false); });
+        return () => { cancelled = true; };
+    }, [analyticsDays]);
 
     // Kategoriyalar bir marta yuklanadi, qidiruv klient tomonda filtrlaydi —
     // ilgari har bir harf uchun butun kategoriya ro'yxati qaytadan olinardi.
@@ -1490,6 +1509,79 @@ export default function AdminBannersPage() {
                                     )}
                                 </div>
                             </motion.div>
+                        </div>
+
+                        {/* BannerEvent Analytics panel */}
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm mb-4 overflow-hidden">
+                            <div className="p-4 border-b border-gray-50 flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                        <BarChart3 size={16} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-gray-900">Banner analitikasi</h3>
+                                        <p className="text-[11px] text-gray-500 font-medium">Impression / Click / CTR — BannerEvent asosida</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                    {[7, 30, 90].map(d => (
+                                        <button
+                                            key={d}
+                                            type="button"
+                                            onClick={() => setAnalyticsDays(d)}
+                                            className={`px-3 h-8 rounded-lg text-xs font-bold transition-colors ${analyticsDays === d ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        >
+                                            {d} kun
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="p-4">
+                                {analyticsLoading ? (
+                                    <div className="flex items-center justify-center py-8">
+                                        <Loader2 size={20} className="animate-spin text-indigo-600" />
+                                    </div>
+                                ) : !analyticsData || analyticsData.length === 0 ? (
+                                    <p className="text-center text-xs font-medium text-gray-400 py-6">
+                                        Hozircha ma'lumot yo'q — bannerlar ko'rilgach bu yerda impression/click stats ko'rinadi.
+                                    </p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="w-full text-sm">
+                                            <thead>
+                                                <tr className="text-left text-[10px] font-black uppercase tracking-wider text-gray-400 border-b border-gray-50">
+                                                    <th className="px-3 py-2">Banner</th>
+                                                    <th className="px-3 py-2 text-center">Joylashuv</th>
+                                                    <th className="px-3 py-2 text-center">Ko'rishlar</th>
+                                                    <th className="px-3 py-2 text-center">Yagona tashrifchi</th>
+                                                    <th className="px-3 py-2 text-center">Bosishlar</th>
+                                                    <th className="px-3 py-2 text-center">CTR</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {analyticsData.map((row) => (
+                                                    <tr key={row.bannerId} className="border-b border-gray-50 last:border-0 hover:bg-gray-50/50">
+                                                        <td className="px-3 py-2.5 font-bold text-gray-900 max-w-[220px] truncate">{row.title}</td>
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                                                                {POSITIONS.find(p => p.value === row.position)?.label || row.position || '—'}
+                                                            </span>
+                                                        </td>
+                                                        <td className="px-3 py-2.5 text-center font-bold text-purple-600">{row.impressions.toLocaleString()}</td>
+                                                        <td className="px-3 py-2.5 text-center font-semibold text-gray-600">{row.uniqueVisitors.toLocaleString()}</td>
+                                                        <td className="px-3 py-2.5 text-center font-bold text-blue-600">{row.clicks.toLocaleString()}</td>
+                                                        <td className="px-3 py-2.5 text-center">
+                                                            <span className={`font-black ${row.ctr >= 5 ? 'text-green-600' : row.ctr >= 2 ? 'text-yellow-600' : 'text-gray-400'}`}>
+                                                                {row.ctr}%
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden min-h-[400px]">
