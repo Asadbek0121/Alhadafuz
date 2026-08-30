@@ -776,6 +776,62 @@ export default function AddProductPage() {
                 </div>
             )}
 
+            {/* Category-first step: birinchi navbatda kategoriya tanlanadi,
+                so'ng shu kategoriya schema'si (xususiyatlar/variantlar) yuklanadi. */}
+            <div className="cat-first-panel">
+                <div className="cat-first-head">
+                    <div>
+                        <span className="cat-first-step">1-qadam</span>
+                        <h2 className="cat-first-title">Kategoriya tanlang</h2>
+                        <p className="cat-first-desc">
+                            Kategoriya tanlangandan keyin shu kategoriyaning xususiyatlari va variantlari shakli
+                            pastda avtomatik yuklanadi.
+                        </p>
+                    </div>
+                    <div className="cat-first-selected">
+                        {selectedCategories.length > 0 ? (
+                            <span className="cat-first-chip">{selectedCategories.map(categoryLabel).join(", ")}</span>
+                        ) : (
+                            <span className="cat-first-hint">Tanlanmagan</span>
+                        )}
+                    </div>
+                </div>
+                {categories.length > 0 && (
+                    <div className="cat-first-grid">
+                        {categories
+                            .filter((c: any) => !c.parentId)
+                            .map((cat: any) => {
+                                const active = selectedCategories.includes(cat.id);
+                                return (
+                                    <button
+                                        key={cat.id}
+                                        type="button"
+                                        onClick={() => {
+                                            // Faqat bitta asosiy kategoriya quick-select'da
+                                            if (!active) {
+                                                setValue("category", cat.id, { shouldValidate: isSubmitted, shouldDirty: true });
+                                            }
+                                        }}
+                                        className={`cat-first-card ${active ? "active" : ""}`}
+                                    >
+                                        {cat.image && (
+                                            <span className="cat-first-img">
+                                                <img src={cat.image} alt="" />
+                                            </span>
+                                        )}
+                                        <span className="cat-first-name">{cat.name}</span>
+                                        {active && <span className="cat-first-check">✓</span>}
+                                    </button>
+                                );
+                            })}
+                    </div>
+                )}
+                <p className="cat-first-note">
+                    <Link href="/admin/categories" className="warn-link">Kategoriya sxemasini boshqarish</Link> — xususiyatlar
+                    va variantlar turlarini shu yerdan sozlashingiz mumkin.
+                </p>
+            </div>
+
             <div className="grid-main">
                 {/* Chap ustun */}
                 <div className="col">
@@ -1716,6 +1772,34 @@ export default function AddProductPage() {
                     border-top: 1px solid #e5eaef; border-radius: 12px 12px 0 0;
                 }
                 .footer-hint { flex: 1; font-size: 12px; color: #7c8fac; font-weight: 500; }
+
+                /* Category-first panel — form tepasida */
+                .cat-first-panel {
+                    background: #f4f9ff; border: 1px solid #d3e6f7; border-radius: 12px;
+                    padding: 20px 24px; margin-bottom: 24px;
+                }
+                .cat-first-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+                .cat-first-step { font-size: 11px; font-weight: 800; color: #0085db; text-transform: uppercase; letter-spacing: .05em; }
+                .cat-first-title { font-size: 16px; font-weight: 700; color: #2A3547; margin: 4px 0 0; }
+                .cat-first-desc { font-size: 12px; color: #7c8fac; margin: 4px 0 0; line-height: 1.5; max-width: 500px; }
+                .cat-first-selected { flex-shrink: 0; margin-top: 4px; }
+                .cat-first-chip { font-size: 12px; font-weight: 700; color: #0085db; background: #e6f0fa; padding: 4px 10px; border-radius: 999px; }
+                .cat-first-hint { font-size: 12px; color: #9aa8bb; font-weight: 500; }
+                .cat-first-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+                .cat-first-card {
+                    display: inline-flex; align-items: center; gap: 8px;
+                    padding: 10px 16px; border: 1px solid #e5eaef; border-radius: 10px;
+                    background: #fff; cursor: pointer; transition: all 0.15s;
+                    font-size: 13px; font-weight: 600; color: #2A3547; font-family: inherit;
+                }
+                .cat-first-card:hover { border-color: #0085db; background: #f0f7ff; }
+                .cat-first-card.active { border-color: #0085db; background: #e6f0fa; color: #0085db; }
+                .cat-first-img { width: 24px; height: 24px; border-radius: 6px; overflow: hidden; flex-shrink: 0; }
+                .cat-first-img img { width: 100%; height: 100%; object-fit: cover; }
+                .cat-first-name { line-height: 1.3; }
+                .cat-first-check { margin-left: auto; color: #0085db; font-weight: 800; }
+                .cat-first-note { font-size: 11px; color: #9aa8bb; margin: 12px 0 0; }
+                .cat-first-note a { font-weight: 600; }
 
                 @media (max-width: 1100px) {
                     .grid-main { grid-template-columns: minmax(0, 1fr); }
