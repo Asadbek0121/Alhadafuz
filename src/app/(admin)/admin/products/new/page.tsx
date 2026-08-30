@@ -773,6 +773,20 @@ export default function AddProductPage() {
 
     const busy = loading || uploading > 0;
 
+    // Review panel uchun hisob-kitoblar
+    const formData = watch();
+    const noDiscount = watchDiscountType === "no_discount";
+    const universalPayloadForReview = universalRef.current?.buildPayload() ?? null;
+    const universalAttrCount = (universalPayloadForReview?.attributes || []).filter((a) => a.value !== null && a.value !== undefined && a.value !== "").length;
+    const variantCount = (universalPayloadForReview?.variants || []).length;
+
+    const reviewIssues: string[] = [];
+    if (!formData.title?.trim()) reviewIssues.push("Mahsulot nomi kiritilmagan");
+    if (selectedCategories.length === 0) reviewIssues.push("Kategoriya tanlanmagan");
+    if (!(Number(formData.price) > 0)) reviewIssues.push("Narx kiritilmagan");
+    if (!formData.image) reviewIssues.push("Asosiy rasm yuklanmagan");
+    if (discountActive && !(Number(formData.discountValue) > 0)) reviewIssues.push("Chegirma miqdori kiritilmagan");
+
     return (
         <form onSubmit={handleSubmit(onSubmit)} className="page">
             {/* Sarlavha */}
@@ -1536,6 +1550,70 @@ export default function AddProductPage() {
                 </div>
             </div>
 
+            {/* Review panel — saqlashdan oldin barcha ma'lumotlarni ko'rib chiqish */}
+            <div className="review-panel">
+                <div className="review-head">
+                    <div>
+                        <h3 className="review-title">Ko'rib chiqish</h3>
+                        <p className="review-sub">Saqlashdan oldin ma'lumotlarni tekshiring. Yashil — to'ldirilgan, qizil — yetishmayapti.</p>
+                    </div>
+                    <span className="review-badge">{reviewIssues.length === 0 ? "✓ Tayyor" : `${reviewIssues.length} ta muammo`}</span>
+                </div>
+                <div className="review-grid">
+                    <div className={`review-item ${formData.title?.trim() ? 'ok' : 'bad'}`}>
+                        <span className="review-k">Nomi</span>
+                        <span className="review-v">{formData.title?.trim() || "— kiritilmagan"}</span>
+                    </div>
+                    <div className={`review-item ${selectedCategories.length > 0 ? 'ok' : 'bad'}`}>
+                        <span className="review-k">Kategoriya</span>
+                        <span className="review-v">{selectedCategories.length > 0 ? selectedCategories.map(categoryLabel).join(", ") : "— tanlanmagan"}</span>
+                    </div>
+                    <div className={`review-item ${formData.price > 0 ? 'ok' : 'bad'}`}>
+                        <span className="review-k">Narx</span>
+                        <span className="review-v">{formData.price > 0 ? `${formData.price.toLocaleString()} so'm` : "— kiritilmagan"}</span>
+                    </div>
+                    <div className={`review-item ${formData.oldPrice && formData.oldPrice > formData.price ? 'ok' : 'info'}`}>
+                        <span className="review-k">Eski narx</span>
+                        <span className="review-v">{formData.oldPrice ? `${formData.oldPrice.toLocaleString()} so'm` : "yo'q"}</span>
+                    </div>
+                    <div className={`review-item ${formData.image ? 'ok' : 'bad'}`}>
+                        <span className="review-k">Asosiy rasm</span>
+                        <span className="review-v">{formData.image ? `✓ (${gallery.length + 1} ta rasm)` : "— yuklanmagan"}</span>
+                    </div>
+                    <div className={`review-item ${Number(formData.stock) >= 0 ? 'ok' : 'info'}`}>
+                        <span className="review-k">Ombor</span>
+                        <span className="review-v">{Number(formData.stock)} dona</span>
+                    </div>
+                    <div className={`review-item ${formData.status ? 'ok' : 'info'}`}>
+                        <span className="review-k">Holat</span>
+                        <span className="review-v">{formData.status === "published" ? "Nashr" : formData.status === "draft" ? "Qoralama" : "Faol emas"}</span>
+                    </div>
+                    <div className={`review-item ${brandId || formData.brand?.trim() ? 'ok' : 'info'}`}>
+                        <span className="review-k">Brend</span>
+                        <span className="review-v">{brandId ? (brands.find(b => b.id === brandId)?.name || brandId) : (formData.brand?.trim() || "yo'q")}</span>
+                    </div>
+                    <div className={`review-item ${!noDiscount ? 'ok' : 'info'}`}>
+                        <span className="review-k">Chegirma</span>
+                        <span className="review-v">{noDiscount ? "yo'q" : `${formData.discountValue}${formData.discountType === "percentage" ? "%" : " so'm"} (${formData.discountCategory})`}</span>
+                    </div>
+                    <div className={`review-item ${(brands.length && (universalAttrCount > 0 || variantCount > 0)) ? 'ok' : 'info'}`}>
+                        <span className="review-k">Xususiyatlar</span>
+                        <span className="review-v">{universalAttrCount > 0 ? `${universalAttrCount} ta` : "yo'q"}</span>
+                    </div>
+                    <div className={`review-item ${variantCount > 0 ? 'ok' : 'info'}`}>
+                        <span className="review-k">Variantlar</span>
+                        <span className="review-v">{variantCount > 0 ? `${variantCount} ta` : "yo'q"}</span>
+                    </div>
+                </div>
+                {reviewIssues.length > 0 && (
+                    <ul className="review-issues">
+                        {reviewIssues.map((issue, i) => (
+                            <li key={i}>❌ {issue}</li>
+                        ))}
+                    </ul>
+                )}
+            </div>
+
             {/* Pastki panel */}
             <div className="footer-actions">
                 <span className="footer-hint">
@@ -1808,6 +1886,31 @@ export default function AddProductPage() {
                     font-size: 14px; color: #5A6A85; font-weight: 500;
                 }
                 .checkbox-input { width: 18px; height: 18px; cursor: pointer; flex-shrink: 0; }
+
+                /* Review panel — saqlashdan oldin ko'rib chiqish */
+                .review-panel {
+                    background: #f8fafc; border: 1px solid #e5eaef; border-radius: 12px;
+                    padding: 20px; margin-bottom: 20px;
+                }
+                .review-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+                .review-title { font-size: 16px; font-weight: 700; color: #2A3547; margin: 0; }
+                .review-sub { font-size: 12px; color: #7c8fac; margin: 4px 0 0; }
+                .review-badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 999px; flex-shrink: 0; }
+                .review-badge:has(:only-child) { display: none; }
+                .review-badge:contains("✓") { background: #e6f7e6; color: #0d7c0d; }
+                .review-badge:contains("muammo") { background: #fdede8; color: #a33a20; }
+                .review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px; }
+                .review-item {
+                    display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
+                    border-radius: 8px; border: 1px solid #e5eaef; background: #fff;
+                }
+                .review-item.ok { border-color: #b7e4b7; background: #f2faf2; }
+                .review-item.bad { border-color: #f7c8bb; background: #fef7f5; }
+                .review-item.info { border-color: #d3e6f7; background: #f4f9ff; }
+                .review-k { font-size: 10px; font-weight: 600; color: #7c8fac; text-transform: uppercase; letter-spacing: .03em; }
+                .review-v { font-size: 13px; font-weight: 600; color: #2A3547; word-break: break-word; }
+                .review-issues { margin: 12px 0 0; padding: 0; list-style: none; font-size: 12px; color: #a33a20; }
+                .review-issues li { padding: 4px 0; }
 
                 /* Uzun formada saqlash tugmasi doim ko'rinib turadi. */
                 .footer-actions {
