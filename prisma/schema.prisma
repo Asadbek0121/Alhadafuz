@@ -60,6 +60,7 @@ model User {
   sessions             Session[]
   telegramLoginTokens  TelegramLoginToken[]
   wishlist             Wishlist?
+  Invoice              Invoice[]
 }
 
 model CourierProfile {
@@ -156,6 +157,7 @@ model Order {
   user              User          @relation("CustomerOrders", fields: [userId], references: [id])
   items             OrderItem[]
   cargos            Cargo[]
+  Invoice           Invoice[]
 
   @@unique([userId, idempotencyKey])
 }
@@ -280,30 +282,30 @@ model TelegramLoginToken {
 }
 
 model OrderItem {
-  id              String  @id @default(cuid())
-  orderId         String
-  productId       String
-  vendorId        String?
-  title           String
-  price           Float
-  quantity        Int
-  image           String
-  variant         String?
-  fulfillmentType String?
+  id                 String          @id @default(cuid())
+  orderId            String
+  productId          String
+  vendorId           String?
+  title              String
+  price              Float
+  quantity           Int
+  image              String
+  variant            String?
+  fulfillmentType    String?
   /// Structured variant reference (snapshot — ProductVariant keyin o'zgarsa ham
   /// order ma'lumoti buzilmaydi, lekin referens saqlanadi)
-  variantId       String?
+  variantId          String?
   /// O'qiladigan variant label snapshot: "Qora / XL"
-  variantSnapshot String?
+  variantSnapshot    String?
   /// Variant SKU snapshot
-  sku             String?
+  sku                String?
   /// Variant barcode snapshot
-  barcode         String?
+  barcode            String?
   /// Mahsulot attributes snapshot (JSON) — sotib olingan paytdagi holat
   attributesSnapshot String?
-  order           Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  product         Product @relation(fields: [productId], references: [id])
-  variantRel      ProductVariant? @relation(fields: [variantId], references: [id])
+  order              Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product            Product         @relation(fields: [productId], references: [id])
+  variantRel         ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@index([orderId])
   @@index([productId])
@@ -329,54 +331,54 @@ model Cargo {
 }
 
 model Product {
-  id            String         @id @default(cuid())
-  vendorId      String?
-  title         String
+  id              String                  @id @default(cuid())
+  vendorId        String?
+  title           String
   /// SEO URL slug — title'dan avtomatik generatsiya qilinadi (unique, nullable)
-  slug          String?
-  description   String
-  price         Float
-  oldPrice      Float?
-  discount      Float?
-  discountType  String?
+  slug            String?
+  description     String
+  price           Float
+  oldPrice        Float?
+  discount        Float?
+  discountType    String?
   /// Chegirma hisoblash usuli: "NONE" | "PERCENTAGE" | "FIXED".
   /// `discount` miqdori shu usulga bog'liq (foiz yoki so'm). Sayt hozircha
   /// foizni oldPrice'dan hisoblaydi — bu field kelajakda FIXED ni ham
   /// to'g'ri ko'rsatish uchun saqlanadi. `discountType` esa marketing
   /// kategoriyasi (SALE/PROMO/HOT) — aralashtirilmaydi.
-  discountMethod String?
-  image         String
-  images        String?
-  stock         Int            @default(0)
-  attributes    String?
-  specs         String?
-  fulfillmentType String       @default("LOCAL") // LOCAL | CHINA_ORDER
-  rating        Float          @default(0)
-  reviewsCount  Int            @default(0)
-  category      String
-  isDeleted     Boolean        @default(false)
-  status        String         @default("ACTIVE")
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  categoryId    String?
-  mxikCode      String?
-  packageCode   String?
-  vatPercent    Int            @default(0)
-  brand         String?
+  discountMethod  String?
+  image           String
+  images          String?
+  stock           Int                     @default(0)
+  attributes      String?
+  specs           String?
+  fulfillmentType String                  @default("LOCAL") // LOCAL | CHINA_ORDER
+  rating          Float                   @default(0)
+  reviewsCount    Int                     @default(0)
+  category        String
+  isDeleted       Boolean                 @default(false)
+  status          String                  @default("ACTIVE")
+  createdAt       DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+  categoryId      String?
+  mxikCode        String?
+  packageCode     String?
+  vatPercent      Int                     @default(0)
+  brand           String?
   /// Brand entity FK — eski `brand` TEXT'dan mustaqil (backward compatible).
-  brandId       String?
-  banners       Banner[]
-  cartItems     CartItem[]
-  orderItems    OrderItem[]
-  categoryRel   Category?      @relation("ProductCategoryOld", fields: [categoryId], references: [id])
-  vendor        User?          @relation("VendorProducts", fields: [vendorId], references: [id])
-  brandRel      Brand?         @relation(fields: [brandId], references: [id])
-  reviews       Review[]
-  wishlistItems WishlistItem[]
-  categories    Category[]     @relation("ProductToCategory")
+  brandId         String?
+  banners         Banner[]
+  cartItems       CartItem[]
+  orderItems      OrderItem[]
+  categoryRel     Category?               @relation("ProductCategoryOld", fields: [categoryId], references: [id])
+  vendor          User?                   @relation("VendorProducts", fields: [vendorId], references: [id])
+  brandRel        Brand?                  @relation(fields: [brandId], references: [id])
+  reviews         Review[]
+  wishlistItems   WishlistItem[]
+  categories      Category[]              @relation("ProductToCategory")
   attributeValues ProductAttributeValue[]
-  variants      ProductVariant[]
-  bannerProducts BannerProduct[]
+  variants        ProductVariant[]
+  bannerProducts  BannerProduct[]
 
   @@index([title])
   @@index([slug])
@@ -387,21 +389,21 @@ model Product {
 }
 
 model Category {
-  id              String     @id @default(cuid())
-  name            String
-  slug            String     @unique
-  image           String?
-  order           Int        @default(0)
-  isActive        Boolean    @default(true)
-  parentId        String?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
-  bannersAsTarget Banner[]   @relation("BannerTargetCategory")
-  parent          Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
-  children        Category[] @relation("CategoryHierarchy")
-  productsOld     Product[]  @relation("ProductCategoryOld")
-  banners         Banner[]   @relation("BannerToCategory")
-  products        Product[]  @relation("ProductToCategory")
+  id                   String                        @id @default(cuid())
+  name                 String
+  slug                 String                        @unique
+  image                String?
+  order                Int                           @default(0)
+  isActive             Boolean                       @default(true)
+  parentId             String?
+  createdAt            DateTime                      @default(now())
+  updatedAt            DateTime                      @updatedAt
+  bannersAsTarget      Banner[]                      @relation("BannerTargetCategory")
+  parent               Category?                     @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children             Category[]                    @relation("CategoryHierarchy")
+  productsOld          Product[]                     @relation("ProductCategoryOld")
+  banners              Banner[]                      @relation("BannerToCategory")
+  products             Product[]                     @relation("ProductToCategory")
   attributeDefinitions CategoryAttributeDefinition[]
 }
 
@@ -414,40 +416,40 @@ model Category {
 /// `forVariant = true` bo'lgan definition Variant o'qi sifatida ishlatiladi
 /// (masalan Rang, O'lcham) — bitta model attribute ham, variant ham bo'la oladi.
 model CategoryAttributeDefinition {
-  id         String        @id @default(cuid())
-  categoryId String
+  id           String        @id @default(cuid())
+  categoryId   String
   /// Ichki nom (slug-ish): masalan "material", "size", "color"
-  name       String
+  name         String
   /// Default label (i18n key: `attributes.{name}` orqali override qilinadi)
-  label      String
-  type       AttributeType @default(TEXT)
-  required   Boolean       @default(false)
+  label        String
+  type         AttributeType @default(TEXT)
+  required     Boolean       @default(false)
   /// SELECT/MULTI_SELECT/COLOR uchun vergul bilan ajratilgan optionlar
   /// masalan: "Qizil,Ko'k,Yashil" yoki "#FF0000,#0000FF,#00FF00"
-  options    String?
+  options      String?
   /// MEASUREMENT/NUMBER uchun o'lchov birligi: "kg", "cm", "m²", "GB", "MP"
-  unit       String?
+  unit         String?
   /// MEASUREMENT uchun ruxsat etilgan birliklar (JSON array): ["g","kg"]
   /// UI da unit select sifatida chiqadi; bo'sh bo'lsa yagona `unit` ishlatiladi.
   allowedUnits String?
   /// JSON: {"field": "material", "value": "Paxta"} — faqat shu qiymatda ko'rinadi.
-  visibleWhen String?
+  visibleWhen  String?
   /// JSON: {"field": "material", "value": "Paxta"} — shu qiymatda majburiy.
   requiredWhen String?
   /// JSON: ["field1", "field2"] — bog'liq fieldlar (resert/cleanup uchun).
   dependsOn    String?
-  minValue   Float?
-  maxValue   Float?
+  minValue     Float?
+  maxValue     Float?
   /// true bo'lsa — bu definition Variant o'qi (Rang/O'lcham kombinatsiyasi)
-  forVariant Boolean       @default(false)
-  order      Int           @default(0)
+  forVariant   Boolean       @default(false)
+  order        Int           @default(0)
   /// Faol emas qilinsa, yangi mahsulot formasida ko'rinmaydi (eskilar saqlanadi).
   /// O'chirishdan farqli — bog'langan product qiymatlari yo'qotilmaydi.
-  isActive   Boolean       @default(true)
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
-  category Category                  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category Category                @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   values   ProductAttributeValue[]
 
   @@index([categoryId])
@@ -458,7 +460,7 @@ model CategoryAttributeDefinition {
 /// Eski `Product.attributes` JSON bilan PARALLEL ishlaydi (transitional):
 /// yangi structured format shu jadvalda saqlanadi, eski JSON o'chirilmaydi.
 model ProductAttributeValue {
-  id             String    @id @default(cuid())
+  id             String @id @default(cuid())
   productId      String
   attributeDefId String
   /// JSON.stringify qiymat:
@@ -483,30 +485,30 @@ model ProductAttributeValue {
 /// `variantKey` — kombinatsiyaning canonical JSON stringi (kalitlar saralangan),
 /// shuning uchun bir xil variant 2 marta yaratilmaydi (`@@unique`).
 model ProductVariant {
-  id             String   @id @default(cuid())
-  productId      String
+  id              String   @id @default(cuid())
+  productId       String
   /// Canonical JSON: {"O'lcham":"XL","Rang":"Qora"} (kalitlar saralangan)
-  variantKey     String
+  variantKey      String
   /// O'qiladigan variant label: "Qora / XL" — UI va order snapshot uchun
-  variantLabel   String?
-  sku            String?
-  barcode        String?
+  variantLabel    String?
+  sku             String?
+  barcode         String?
   /// Variant maxsus narxi. 0 bo'lsa Product.price ishlatiladi.
-  price          Float    @default(0)
+  price           Float    @default(0)
   /// Chizilgan eski narx
-  compareAtPrice Float?
+  compareAtPrice  Float?
   /// Variant maxsus stock'i. -1 bo'lsa Product.stock ishlatiladi.
-  stock          Int      @default(-1)
+  stock           Int      @default(-1)
   /// gramm (kargo hisoblash uchun CHINA_ORDER)
-  weight         Float?
+  weight          Float?
   /// Fulfillment override — default Product.fulfillmentType
   fulfillmentType String?
-  isDefault      Boolean  @default(false)
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  isDefault       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  product    Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product    Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   cartItems  CartItem[]
   orderItems OrderItem[]
   images     VariantImage[]
@@ -517,11 +519,11 @@ model ProductVariant {
 
 /// Variantga tegishli rasm (masalan Qora rangdagi mahsulot fotolari).
 model VariantImage {
-  id        String   @id @default(cuid())
+  id        String  @id @default(cuid())
   variantId String
   url       String
-  order     Int      @default(0)
-  isPrimary Boolean  @default(false)
+  order     Int     @default(0)
+  isPrimary Boolean @default(false)
 
   variant ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
 
@@ -529,29 +531,29 @@ model VariantImage {
 }
 
 model Banner {
-  id               String         @id @default(cuid())
+  id               String          @id @default(cuid())
   title            String
   description      String?
   image            String?
   link             String?
-  position         BannerPosition @default(HOME_TOP)
-  isActive         Boolean        @default(true)
-  order            Int            @default(0)
+  position         BannerPosition  @default(HOME_TOP)
+  isActive         Boolean         @default(true)
+  order            Int             @default(0)
   price            Float?
   oldPrice         Float?
   discount         String?
-  clickCount       Int            @default(0)
-  impressionCount  Int            @default(0)
+  clickCount       Int             @default(0)
+  impressionCount  Int             @default(0)
   startDate        DateTime?
   endDate          DateTime?
   variant          String?
   productId        String?
   targetCategoryId String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  product          Product?       @relation(fields: [productId], references: [id])
-  targetCategory   Category?      @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
-  categories       Category[]     @relation("BannerToCategory")
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  product          Product?        @relation(fields: [productId], references: [id])
+  targetCategory   Category?       @relation("BannerTargetCategory", fields: [targetCategoryId], references: [id])
+  categories       Category[]      @relation("BannerToCategory")
   events           BannerEvent[]
   bannerProducts   BannerProduct[]
 
@@ -615,7 +617,6 @@ model BannerEvent {
 enum BannerEventType {
   IMPRESSION
   CLICK
-
 }
 
 model Review {
@@ -712,16 +713,16 @@ model Cart {
 }
 
 model CartItem {
-  id        String    @id @default(cuid())
-  cartId    String
-  productId String
-  quantity  Int
-  variant   String?
-  variantId String?
+  id              String          @id @default(cuid())
+  cartId          String
+  productId       String
+  quantity        Int
+  variant         String?
+  variantId       String?
   fulfillmentType String?
-  cart      Cart      @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
-  variantRel ProductVariant? @relation(fields: [variantId], references: [id])
+  cart            Cart            @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  variantRel      ProductVariant? @relation(fields: [variantId], references: [id])
 
   @@unique([cartId, productId, variantId])
   @@index([variantId])
@@ -841,6 +842,77 @@ model Coupon {
   isActive      Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+}
+
+/// Invoice counter — yagona qator, concurrent-safe raqamlash (Postgres row lock)
+model InvoiceCounter {
+  id         String @id @default("default")
+  lastNumber Int    @default(0)
+}
+
+/// Soliq hisob-fakturasi / elektron chek
+model Invoice {
+  id             String    @id @default(cuid())
+  invoiceNumber  String    @unique
+  orderId        String
+  userId         String
+  invoiceType    String    @default("RECEIPT") // RECEIPT | INVOICE
+  issueDate      DateTime  @default(now())
+  currency       String    @default("UZS")
+  subtotal       Float
+  discountAmount Float     @default(0)
+  deliveryFee    Float     @default(0)
+  taxAmount      Float     @default(0)
+  totalAmount    Float
+  paymentStatus  String    @default("PAID")
+  status         String    @default("ISSUED") // ISSUED | CANCELLED | REFUNDED
+  snapshotData   String // JSON — buyurtma vaqtidagi immutable snapshot
+  documentHash   String // sha256 — snapshot+metadata uchun
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  sentAt         DateTime?
+  resendEmailId  String?
+  resendStatus   String? // QUEUED | SENT | DELIVERED | BOUNCED | FAILED
+
+  order     Order          @relation(fields: [orderId], references: [id])
+  user      User           @relation(fields: [userId], references: [id])
+  events    InvoiceEvent[]
+  emailLogs EmailLog[]
+
+  @@index([orderId])
+  @@index([userId])
+  @@index([invoiceNumber])
+}
+
+/// Invoice hodisalari — audit trail
+model InvoiceEvent {
+  id        String   @id @default(cuid())
+  invoiceId String
+  type      String // CREATED | EMAIL_QUEUED | EMAIL_SENT | EMAIL_DELIVERED | EMAIL_FAILED | RESEND_WEBHOOK | RETRY | CANCELLED
+  metadata  String? // JSON
+  createdAt DateTime @default(now())
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([createdAt])
+}
+
+/// Email yuborish log'i
+model EmailLog {
+  id            String   @id @default(cuid())
+  invoiceId     String
+  email         String
+  status        String // QUEUED | SENT | DELIVERED | BOUNCED | FAILED
+  resendEmailId String?
+  error         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId])
+  @@index([resendEmailId])
 }
 
 enum BannerPosition {

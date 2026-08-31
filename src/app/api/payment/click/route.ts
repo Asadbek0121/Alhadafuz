@@ -176,6 +176,18 @@ export async function POST(req: NextRequest) {
                 data: { provider: "CLICK", transactionId: clickTransId, status: "SUCCESS", responseData: "PAID", ipAddress: ip }
             });
 
+            // Invoice yaratish + email yuborish (async, bloklamaydi)
+            import('@/lib/invoice/invoice-service').then(({ createInvoiceForOrder }) => {
+                createInvoiceForOrder(merchantTransId).then(({ invoice }) => {
+                    if (invoice) {
+                        import('@/lib/invoice/send-invoice-email').then(({ sendInvoiceEmail }) => {
+                            sendInvoiceEmail(invoice.id).catch((e: any) =>
+                                console.error('[invoice] Click: email send failed', e));
+                        });
+                    }
+                }).catch((e: any) => console.error('[invoice] Click: create failed', e));
+            }).catch((e: any) => console.error('[invoice] Click: module load failed', e));
+
             return NextResponse.json({
                 click_trans_id: clickTransId,
                 merchant_trans_id: merchantTransId,

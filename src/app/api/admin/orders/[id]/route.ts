@@ -49,6 +49,20 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
             include: { user: true }
         });
 
+        // Buyurtma DELIVERED/PAID bo'lsa — elektron chek yaratish va email yuborish
+        if (status === 'DELIVERED' || updateData.paymentStatus === 'PAID') {
+            import('@/lib/invoice/invoice-service').then(({ createInvoiceForOrder }) => {
+                createInvoiceForOrder(id).then(({ invoice }) => {
+                    if (invoice) {
+                        import('@/lib/invoice/send-invoice-email').then(({ sendInvoiceEmail }) => {
+                            sendInvoiceEmail(invoice.id).catch((e: any) =>
+                                console.error('[invoice] Admin: email send failed', e));
+                        });
+                    }
+                }).catch((e: any) => console.error('[invoice] Admin: create failed', e));
+            }).catch((e: any) => console.error('[invoice] Admin: module load failed', e));
+        }
+
         // Create notification for user
         const notificationMessages: Record<string, string> = {
             'PENDING': 'Buyurtmangiz qabul qilindi va kutilmoqda.',

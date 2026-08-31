@@ -20,6 +20,7 @@ const menuItems = [
     { name: "Bildirishnomalar", icon: <Bell size={20} />, path: "/admin/notifications", roles: ["ADMIN"] },
     { name: "Buyurtmalar", icon: <FileStack size={20} />, path: "/admin/orders", roles: ["ADMIN", "VENDOR"] },
     { name: "Hisob-fakturalar", icon: <FileText size={20} />, path: "/admin/invoices", roles: ["ADMIN", "VENDOR"] },
+    { name: "Elektron cheklar", icon: <FileText size={20} />, path: "/admin/receipts", roles: ["ADMIN"] },
     { name: "Kategoriyalar", icon: <LayoutGrid size={20} />, path: "/admin/categories", roles: ["ADMIN"] },
     { name: "Brendlar", icon: <Tag size={20} />, path: "/admin/brands", roles: ["ADMIN"] },
     { name: "Bannerlar", icon: <Palette size={18} />, path: "/admin/banners", roles: ["ADMIN"] },
