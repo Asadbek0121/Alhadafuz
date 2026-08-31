@@ -39,7 +39,7 @@ Code: ${otpCode}
 
     try {
         const { data, error } = await resend.emails.send({
-            from: 'Hadaf Market <onboarding@resend.dev>',
+            from: process.env.RESEND_FROM_EMAIL || 'Hadaf Market <onboarding@resend.dev>',
             to: [email],
             subject: `${title} kodi | Hadaf Market`,
             html: `
