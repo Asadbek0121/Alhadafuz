@@ -2,10 +2,9 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Phone, Mail, MapPin } from 'lucide-react';
-import { Link } from '@/navigation';
+import { Link, usePathname } from '@/navigation';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
 import { Montserrat } from "next/font/google";
 import InstallAppButtons from '../InstallAppButtons';
 import VendorApplicationModal from '../VendorApplicationModal';
