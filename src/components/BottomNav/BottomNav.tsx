@@ -3,14 +3,11 @@
 
 import { usePathname, Link } from '@/navigation';
 import { motion } from 'framer-motion';
-import {
-    User,
-    Home,
-    LayoutGrid,
-    ShoppingBag,
-    Heart,
-    UserCircle
-} from "lucide-react";
+import HomeIcon from '../icons/HomeIcon';
+import CartIcon from '../icons/CartIcon';
+import HeartIcon from '../icons/HeartIcon';
+import UserIcon from '../icons/UserIcon';
+import CategoryIcon from '../icons/CategoryIcon';
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { useTranslations } from "next-intl";
@@ -39,11 +36,11 @@ export default function BottomNav({ firstRootSlug }: { firstRootSlug?: string | 
     const isCatalogRoute = pathname.includes('/category/');
 
     const navItems = [
-        { label: t('bosh_sahifa'), icon: Home, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru" || pathname === "/en") && !isCatalogRoute, action: () => closeCatalog() },
-        { label: t('katalog'), icon: LayoutGrid, href: firstRootSlug ? `/category/${firstRootSlug}` : "/", isActive: isCatalogRoute, action: () => closeCatalog() },
-        { label: t('savatcha'), icon: ShoppingBag, href: "/cart", isActive: pathname === "/cart" && !isCatalogRoute, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
-        { label: t('sevimlilar'), icon: Heart, href: "/favorites", isActive: pathname === "/favorites" && !isCatalogRoute, action: () => closeCatalog(), badge: wishlist.length },
-        { label: t('kabinet'), icon: isAuthenticated ? User : UserCircle, href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogRoute, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
+        { label: t('bosh_sahifa'), icon: HomeIcon, href: "/", isActive: (pathname === "/" || pathname === "/uz" || pathname === "/ru" || pathname === "/en") && !isCatalogRoute, action: () => closeCatalog() },
+        { label: t('katalog'), icon: CategoryIcon, iconColor: '#2f89fc', href: firstRootSlug ? `/category/${firstRootSlug}` : "/", isActive: isCatalogRoute, action: () => closeCatalog() },
+        { label: t('savatcha'), icon: CartIcon, href: "/cart", isActive: pathname === "/cart" && !isCatalogRoute, action: () => closeCatalog(), badge: isHydrated ? items.length : 0 },
+        { label: t('sevimlilar'), icon: HeartIcon, href: "/favorites", isActive: pathname === "/favorites" && !isCatalogRoute, action: () => closeCatalog(), badge: wishlist.length },
+        { label: t('kabinet'), icon: UserIcon, href: isAuthenticated ? "/profile" : null, isActive: pathname.includes("/profile") && !isCatalogRoute, action: (e: any) => { closeCatalog(); if (!isAuthenticated) { e?.preventDefault(); openAuthModal(); } } }
     ];
 
     // Checkout o'z fokusli flow'iga ega (o'z mobile sticky CTA) — BottomNav u yerda ko'rsatilmaydi.
@@ -97,12 +94,14 @@ function BottomNavIcon({ item, active }: { item: any; active: boolean }) {
             <motion.div
                 animate={{
                     scale: active ? 1.3 : 1,
-                    color: active ? "#FFCA6C" : "#94a3b8"
+                    // Fill-based yangi icon'lar ichki rangga ega — `color` ularga
+                    // ta'sir qilmaydi. Active to'liq, nofaol xira (opacity) ko'rinadi.
+                    opacity: active ? 1 : 0.55
                 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="relative flex items-center justify-center"
             >
-                <Icon size={24} strokeWidth={active ? 2.5 : 2} />
+                <Icon size={24} style={item.iconColor ? { color: item.iconColor } : undefined} />
                 {(item.badge || 0) > 0 && (
                     <span className={cn(
                         "absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white",

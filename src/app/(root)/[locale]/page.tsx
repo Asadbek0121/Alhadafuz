@@ -47,9 +47,10 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     <div className="pb-[60px] md:pb-0">
       <Hero initialBanners={banners} fallbackProducts={products} />
 
-      {/* Kategoriya tezkor-linklari — faqat real data mavjud bo'lsa ko'rsatiladi */}
+      {/* Kategoriya tezkor-linklari — faqat real data mavjud bo'lsa ko'rsatiladi.
+          Mobile'da yashirin — kategoriyalar Katalog (MegaMenu) ichida bor. */}
       {categories.length > 0 && (
-        <section className="container py-6 md:py-10">
+        <section className="container hidden py-6 md:py-10 md:block">
           <h2 className="mb-4 text-lg font-black uppercase tracking-wider text-slate-900 md:mb-6 md:text-xl">
             {t('kategoriyalar')}
           </h2>

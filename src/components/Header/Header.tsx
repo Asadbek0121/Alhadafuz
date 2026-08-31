@@ -6,10 +6,17 @@ import { Link } from '@/navigation';
 import { useRouter, usePathname } from '@/navigation';
 import NextLink from 'next/link';
 import {
-    LayoutGrid, Search, ShoppingBag, Heart, UserCircle, Bell, Globe, X, Check,
+    Globe, X, Check,
     Package, Tag, Info, LogOut, LayoutDashboard, Scale, Menu, Sun, Moon,
-    ChevronRight, MapPin, Loader2
+    ChevronRight, Loader2
 } from 'lucide-react';
+import HeartIcon from '../icons/HeartIcon';
+import CartIcon from '../icons/CartIcon';
+import UserIcon from '../icons/UserIcon';
+import NotificationIcon from '../icons/NotificationIcon';
+import SearchIcon from '../icons/SearchIcon';
+import CategoryIcon from '../icons/CategoryIcon';
+import LocationIcon from '../icons/LocationIcon';
 import styles from './Header.module.css';
 import { useCartStore } from '@/store/useCartStore';
 import { useLocationStore } from '@/store/useLocationStore';
@@ -26,7 +33,6 @@ import dynamic from 'next/dynamic';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
 import AnnouncementBar from './AnnouncementBar';
-import NotificationIcon from '../ui/NotificationIcon';
 
 const CartDrawer = dynamic(() => import('../Cart/CartDrawer'), { ssr: false });
 const MegaMenu = dynamic(() => import('./MegaMenu'), { ssr: false });
@@ -422,8 +428,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                             style={{ paddingLeft: `max(24px, calc((100vw - 1400px) / 2 + 24px))` }}
                             onClick={openMap}
                         >
-                            <div className="w-6 h-6 rounded-full bg-white border border-slate-200 flex items-center justify-center text-blue-600 shadow-sm shrink-0 group-hover:border-blue-300 transition-colors">
-                                {isLocationLoading ? <Loader2 size={12} className="animate-spin" /> : <MapPin size={12} />}
+                            <div className="flex items-center justify-center text-blue-600 shrink-0">
+                                {isLocationLoading ? <Loader2 size={12} className="animate-spin" /> : <LocationIcon size={14} />}
                             </div>
                             <div className="flex items-center gap-2 min-w-0">
                                 <span className="text-xs font-black text-slate-800 truncate leading-none border-b border-slate-300 border-dashed pb-0.5">
@@ -469,7 +475,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                 }`}
                             onClick={() => { setMenuMode('catalog'); toggleCatalog(); }}
                         >
-                            {isCatalogOpen ? <X size={20} strokeWidth={2.5} /> : <LayoutGrid size={20} strokeWidth={2.5} />}
+                            {isCatalogOpen ? <X size={20} strokeWidth={2.5} /> : <CategoryIcon size={20} className="text-black" />}
                             <span>{t('katalog')}</span>
                         </button>
                     </div>
@@ -479,7 +485,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                         className="xl:hidden flex items-center justify-center h-10 cursor-pointer active:opacity-60 transition-opacity min-w-0 shrink"
                         onClick={openMap}
                     >
-                        <MapPin size={16} className="text-blue-600 shrink-0 mr-1.5" strokeWidth={2.5} />
+                        <LocationIcon size={16} className="shrink-0 mr-1.5" />
                         <div className="flex flex-col justify-center leading-tight min-w-0">
                             <span className="text-[10px] font-black text-slate-800 truncate max-w-[80px] xs:max-w-[100px] sm:max-w-[140px] text-right">
                                 {isClient && address ? address.replace(/^O['ʻ‘]zbekiston,?\s*/, '').split(',')[0] : (t('joylashuvni_aniqlash') || "Manzilni")}
@@ -513,11 +519,11 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                             />
                             <button
                                 onClick={handleSearchSubmit}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors shadow-sm"
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-blue-600 transition-colors"
                                 title={t('katalog')}
                                 aria-label={t('search_placeholder')}
                             >
-                                <Search size={20} strokeWidth={2.5} />
+                                <SearchIcon size={22} />
                             </button>
                         </div>
 
@@ -533,7 +539,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                                 onClick={() => handleRecentSearchClick(term)}
                                                 className={`flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm font-medium transition-colors ${activeIndex === idx ? 'bg-blue-50 text-blue-600' : 'text-slate-700 hover:bg-slate-50'}`}
                                             >
-                                                <Search size={14} className="text-slate-400" />
+                                                <SearchIcon size={14} className="text-slate-400" />
                                                 {term}
                                             </button>
                                         ))}
@@ -545,7 +551,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                     </div>
                                 ) : searchError ? (
                                     <div className="p-8 text-center text-slate-500">
-                                        <Search size={24} className="mx-auto mb-2 opacity-50" />
+                                        <SearchIcon size={24} className="mx-auto mb-2 opacity-50" />
                                         {t('not_found')}
                                     </div>
                                 ) : searchResults.length > 0 ? (
@@ -578,7 +584,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                     </>
                                 ) : (
                                     <div className="p-6 text-center text-slate-500">
-                                        <Search size={24} className="mx-auto mb-2 opacity-50" />
+                                        <SearchIcon size={24} className="mx-auto mb-2 opacity-50" />
                                         {t('not_found')}
                                     </div>
                                 )}
@@ -690,8 +696,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
 
                         {/* Favorites */}
                         <Link href="/favorites" className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-red-500 transition-all flex items-center justify-center w-10 h-10">
-                                <Heart size={24} strokeWidth={2} className="text-slate-600 group-hover:text-red-500 transition-colors" />
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 transition-all flex items-center justify-center w-10 h-10">
+                                <HeartIcon size={24} className="opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                                 {wishlist.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{wishlist.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('sevimlilar')}</span>
@@ -699,8 +705,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
 
                         {/* Cart */}
                         <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer" title="Savatcha" aria-label="Savatchani ochish">
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-emerald-600 transition-all flex items-center justify-center w-10 h-10">
-                                <ShoppingBag size={24} strokeWidth={2} className="text-slate-600 group-hover:text-emerald-600 transition-colors" />
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 transition-all flex items-center justify-center w-10 h-10">
+                                <CartIcon size={24} className="opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors hidden md:block">{t('savatcha')}</span>
@@ -710,11 +716,11 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
 
                         {/* Profile */}
                         <Link href="/profile" onClick={handleProfileClick} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">
-                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center w-10 h-10">
+                            <div className="relative p-2 rounded-xl group-hover:bg-slate-50 transition-all flex items-center justify-center w-10 h-10">
                                 {user?.image ? (
                                     <img src={user.image} alt={user.name || "User"} className="w-6 h-6 rounded-full object-cover" />
                                 ) : (
-                                    <UserCircle size={24} strokeWidth={2} className="text-slate-600 group-hover:text-blue-600 transition-colors" />
+                                    <UserIcon size={24} className="opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                                 )}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors max-w-[80px] truncate">
@@ -731,7 +737,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                     <div className="flex items-center gap-2 relative z-[60]" ref={mobileSearchRef}>
                         <div className="relative flex-1 group">
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                <Search size={16} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                                <SearchIcon size={16} className="text-slate-400 group-focus-within:text-blue-600 transition-colors" />
                             </div>
                             <input
                                 type="text"
@@ -776,7 +782,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                         ) : searchError ? (
                             <div className="p-10 text-center text-slate-500">
                                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Search size={28} className="opacity-20" />
+                                    <SearchIcon size={28} className="opacity-20" />
                                 </div>
                                 <span className="text-sm font-semibold">{t('not_found')}</span>
                             </div>
@@ -809,7 +815,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                         ) : (
                             <div className="p-10 text-center text-slate-500">
                                 <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <Search size={28} className="opacity-20" />
+                                    <SearchIcon size={28} className="opacity-20" />
                                 </div>
                                 <span className="text-sm font-semibold">{t('not_found')}</span>
                             </div>

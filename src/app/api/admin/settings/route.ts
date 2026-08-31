@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { revalidateTag } from 'next/cache';
 import { normalizeSocialLinks, serializeSocialLinks } from '@/lib/social-links';
 
 
@@ -86,6 +87,8 @@ export async function POST(req: Request) {
             update: updateData,
             create: { id: 'default', ...updateData }
         });
+        // getCachedStoreSettings 3600s keshlanadi — admin o'zgartirganda darhol yangilash
+        revalidateTag('settings', { expire: 0 });
         return NextResponse.json(settings);
     } catch (e: any) {
         console.error("Settings update error:", e);

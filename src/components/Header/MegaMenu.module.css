@@ -159,7 +159,7 @@
 .icon img {
     width: 20px;
     height: 20px;
-    object-fit: contain;
+    object-fit: cover;
 }
 
 .catItem:hover .icon {
@@ -283,7 +283,7 @@
 
 .brandLogos img {
     height: 40px;
-    object-fit: contain;
+    object-fit: cover;
     opacity: 0.7;
     transition: opacity 0.2s;
 }
@@ -372,17 +372,15 @@
     }
 
     .catItem {
-        display: block;
-        /* Changed from flex to block for absolute positioning context */
+        display: flex;
+        flex-direction: column;
         width: 100%;
-        aspect-ratio: 1 / 1;
+        padding: 0;
         background: #fff;
-        border-radius: 20px;
-        /* Softer corners */
-        position: relative;
+        border-radius: 14px;
         overflow: hidden;
-        border: 1px solid rgba(0, 0, 0, 0.04);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         color: #333;
         transition: transform 0.2s;
     }
@@ -392,8 +390,8 @@
     }
 
     .activeCat {
-        border: 2px solid var(--primary);
-        box-shadow: 0 8px 20px rgba(0, 82, 255, 0.15);
+        border: 1.5px solid #2563eb;
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
     }
 
     .activeCat::before {
@@ -401,47 +399,32 @@
     }
 
     .catName {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 10;
-        padding: 40px 12px 12px 12px;
-        /* Top padding for gradient space */
-        background: linear-gradient(to top, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
-        color: #fff;
-        font-size: 13px;
-        font-weight: 700;
+        order: 2;
+        flex: none;
+        padding: 8px 6px 10px;
+        background: #fff;
+        color: #1e293b;
+        font-size: 12px;
+        font-weight: 600;
         text-align: center;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
-        border-radius: 0 0 20px 20px;
-        width: 100%;
-        box-sizing: border-box;
+        line-height: 1.2;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .mobileCatImage {
-        display: flex;
-        position: absolute;
-        top: 0;
-        left: 0;
+        order: 1;
         width: 100%;
-        height: 100%;
-        /* Take full height */
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-        padding: 20px;
-        padding-bottom: 30px;
-        /* Push image up slightly */
+        aspect-ratio: 1 / 1;
+        overflow: hidden;
+        position: relative;
     }
 
     .mobileCatImage img {
         width: 100%;
         height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         transition: transform 0.3s;
     }
 
@@ -479,13 +462,12 @@
 @media (max-width: 576px) {
     .leftCol {
         grid-template-columns: repeat(2, 1fr);
-        /* 2 cols for mobile */
         gap: 10px;
     }
 
     .catName {
-        font-size: 12px;
-        padding: 3px 6px;
+        font-size: 11px;
+        padding: 6px 4px 8px;
     }
 }
 
