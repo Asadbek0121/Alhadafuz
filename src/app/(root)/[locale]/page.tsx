@@ -2,12 +2,10 @@ import Hero from "@/components/Hero/Hero";
 import ProductCard from "@/components/ProductCard/ProductCard";
 import ViewMoreButton from "@/components/Home/ViewMoreButton";
 import CategoryCard from "@/components/Home/CategoryCard";
-import TrustSection from "@/components/Home/TrustSection";
 import { getTranslations } from 'next-intl/server';
 import { getCachedHomepageProducts, getCachedBanners, getCachedFlashDeals, getCachedRootCategories } from '@/lib/data';
 import type { Metadata } from 'next';
 import { translatedPageMetadata } from '@/lib/seo';
-import { Truck, CreditCard, ShieldCheck, Package } from 'lucide-react';
 
 export const revalidate = 3600;
 
@@ -19,8 +17,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function Home({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: 'Header' });
-  const tFooter = await getTranslations({ locale, namespace: 'Footer' });
-  const tHome = await getTranslations({ locale, namespace: 'Home' });
 
   // Parallel server-side fetch — barcha cached, 3600s revalidation.
   // Yangi cached funksiyalar qo'shilgan: kategoriyalar va chegirmali mahsulotlar.
@@ -34,14 +30,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
     getCachedRootCategories(),
     getCachedFlashDeals(8),
   ]).then(results => results.map(r => (r.status === 'fulfilled' ? r.value : [])));
-
-  // "Nega HADAF?" ishonch bloki uchun real xizmat ma'lumotlari
-  const trustItems = [
-    { icon: Truck, title: tFooter('fast_delivery'), description: tFooter('throughout_uzb') },
-    { icon: CreditCard, title: tFooter('easy_payment'), description: tFooter('cash_or_card') },
-    { icon: ShieldCheck, title: tFooter('warranty'), description: tHome('warranty_desc') },
-    { icon: Package, title: tFooter('quality_products'), description: tHome('quality_desc') },
-  ];
 
   return (
     <div className="pb-[60px] md:pb-0">
@@ -138,8 +126,6 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
         )}
       </section>
 
-      {/* Nega HADAF? — ishonch bloki */}
-      <TrustSection items={trustItems} />
     </div>
   );
 }

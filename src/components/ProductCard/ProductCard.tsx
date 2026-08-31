@@ -209,7 +209,7 @@ export default function ProductCard(props: ProductProps) {
             <button
                 type="button"
                 onClick={handleToggleWishlist}
-                className={`absolute top-2 right-2 z-30 p-2.5 rounded-full bg-white/90 backdrop-blur-sm shadow-sm transition-all duration-300 cursor-pointer group/heart ${activeWishlist ? 'bg-red-50 text-red-500' : 'text-slate-400 hover:text-red-500 hover:bg-white'}`}
+                className={`absolute top-2 right-2 z-30 p-1.5 transition-all duration-300 cursor-pointer group/heart ${activeWishlist ? 'text-red-500' : 'text-slate-400 hover:text-red-500'}`}
                 aria-pressed={activeWishlist}
                 aria-label={activeWishlist ? "Sevimlilardan olib tashlash" : "Sevimlilarga qo'shish"}
             >
