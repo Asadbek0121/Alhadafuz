@@ -6,22 +6,28 @@ import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import BottomNav from "@/components/BottomNav/BottomNav";
 import { Toaster } from "@/components/ui/sonner";
-import SupportChat from "@/components/SupportChat/SupportChat";
-import SessionSync from "@/components/SessionSync";
-import { auth } from "@/auth";
-import AuthModalGate from "@/components/Auth/AuthModalGate";
-import MapModal from "@/components/LocationPicker/MapModal";
-import TelegramAuthSync from "@/components/TelegramAuthSync";
-import PinLock from "@/components/Auth/PinLock";
-import OfflineOverlayLazy from "@/components/OfflineOverlayLazy";
+import dynamic from 'next/dynamic';
+
+const SupportChat = dynamic(() => import('@/components/SupportChat/SupportChat'));
+const AuthModalGate = dynamic(() => import('@/components/Auth/AuthModalGate'));
+const MapModal = dynamic(() => import('@/components/LocationPicker/MapModal'));
+const PinLock = dynamic(() => import('@/components/Auth/PinLock'));
+const OfflineOverlayLazy = dynamic(() => import('@/components/OfflineOverlayLazy'));
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
+import { auth } from "@/auth";
+import SessionSync from "@/components/SessionSync";
+import TelegramAuthSync from "@/components/TelegramAuthSync";
 
 import { ClientProviders } from "@/providers/ClientProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { routing } from "@/navigation";
-import { getCachedRootCategories } from '@/lib/data';
-import { prisma } from '@/lib/prisma';
+import { getCachedRootCategories, getCachedStoreSettings } from '@/lib/data';
+
+// auth() ni React.cache bilan o'rash — bitta request ichida bir necha marta
+// chaqirilsa ham bitta session tekshiruvi bajariladi (TTFB'ni qisqartiradi).
+import { cache } from 'react';
+const getSession = cache(async () => auth());
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -71,17 +77,12 @@ export default async function LocaleLayout({
   // getCachedRootCategories transient DB xatosida throw qilishi mumkin (kesh
   // bo'sh saqlanmasligi uchun). Butun layout (va sayt) 500 bermasligi uchun
   // unga alohida ishlov beriladi.
-  const [messages, session, storeSettings] = await Promise.all([
+  const [messages, session, storeSettings, rootCategories] = await Promise.all([
     getMessages(),
-    auth(),
-    prisma.storeSettings.findUnique({ where: { id: 'default' } }),
+    getSession(),
+    getCachedStoreSettings().catch(() => null),
+    getCachedRootCategories().catch(() => [] as any[]),
   ]);
-  let rootCategories: any[] = [];
-  try {
-    rootCategories = await getCachedRootCategories();
-  } catch {
-    rootCategories = [];
-  }
   const tMeta = await getTranslations({ locale, namespace: 'Meta' });
 
   const footerSettings = storeSettings

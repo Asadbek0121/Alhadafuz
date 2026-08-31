@@ -22,12 +22,14 @@ const montserrat = Montserrat({ weight: ["700", "900"], subsets: ["latin"] });
 import { useTranslations, useLocale } from 'next-intl';
 import { useUserStore } from '@/store/useUserStore';
 import { useSession } from 'next-auth/react';
-import CartDrawer from '../Cart/CartDrawer';
-import MegaMenu from './MegaMenu';
+import dynamic from 'next/dynamic';
 import { useUIStore } from '@/store/useUIStore';
 import LanguageSwitcher from '../LanguageSwitcher';
 import AnnouncementBar from './AnnouncementBar';
 import NotificationIcon from '../ui/NotificationIcon';
+
+const CartDrawer = dynamic(() => import('../Cart/CartDrawer'), { ssr: false });
+const MegaMenu = dynamic(() => import('./MegaMenu'), { ssr: false });
 
 
 

@@ -9,7 +9,7 @@ import type { Metadata } from 'next';
 import { translatedPageMetadata } from '@/lib/seo';
 import { Truck, CreditCard, ShieldCheck, Package } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
+export const revalidate = 3600;
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;

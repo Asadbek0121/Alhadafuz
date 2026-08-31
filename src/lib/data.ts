@@ -1,5 +1,6 @@
 import { prisma } from './prisma';
 import { unstable_cache } from 'next/cache';
+import { deserializeAttributeValue } from './universal-product';
 
 // Marketing bayroqlarini attributes JSON'dan ajratib oladi — default false
 // (YANGI belgisi faqat admin aniq belgilaganda chiqadi)
@@ -160,6 +161,70 @@ export const getCachedRootCategories = unstable_cache(
 );
 
 /**
+ * Kategoriya sahifasi uchun kategoriya + ota/bola + bannerlar keshi.
+ * Kategoriyalar kam o'zgaradi — 3600s, admin tahrirlaganda `['categories']`
+ * tag orqali revalidate bo'ladi. Slug orqali qidiriladi.
+ */
+export const getCachedCategoryBySlug = unstable_cache(
+    async (slug: string) => {
+        return (prisma as any).category.findFirst({
+            where: { slug: slug },
+            include: {
+                parent: { select: { id: true, name: true, slug: true } },
+                children: { orderBy: { name: 'asc' } },
+                banners: {
+                    where: { isActive: true, position: 'CATEGORY_TOP' },
+                    orderBy: { order: 'asc' }
+                }
+            }
+        });
+    },
+    ['category-by-slug'],
+    { revalidate: 3600, tags: ['categories'] }
+);
+
+/**
+ * Kategoriya mahsulotlari keshi — default (filter/sort yo'q) holat uchun.
+ * Filter/sort parametrlari bo'lganda dynamic query ishlatiladi (keshga
+ * ta'sir qilmaydi). 3600s, admin mahsulot tahrirlaganda `['products']` tag
+ * orqali revalidate bo'ladi.
+ */
+export const getCachedCategoryProducts = unstable_cache(
+    async (categoryIds: string[]) => {
+        const where: any = {
+            isDeleted: false,
+            OR: [{ status: 'published' }, { status: 'ACTIVE' }],
+            categories: { some: { id: { in: categoryIds } } },
+        };
+        const [products, totalCount] = await Promise.all([
+            (prisma as any).product.findMany({ where, take: 50, orderBy: { createdAt: 'desc' } }),
+            (prisma as any).product.count({ where }),
+        ]);
+        return { products, totalCount };
+    },
+    ['category-products'],
+    { revalidate: 3600, tags: ['products'] }
+);
+
+/**
+ * Store settings keshi — footer/telefon/kontaktlar. Admin sozlamalarni
+ * tahrirlaganda `revalidateTag('settings')` bilan yangilanadi.
+ */
+export const getCachedStoreSettings = unstable_cache(
+    async () => {
+        const s = await (prisma as any).storeSettings.findUnique({ where: { id: 'default' } });
+        return s ? {
+            phone: s.phone || '',
+            email: s.email || '',
+            address: s.address || '',
+            socialLinks: s.socialLinks || '',
+        } : null;
+    },
+    ['store-settings'],
+    { revalidate: 3600, tags: ['settings'] }
+);
+
+/**
  * Search filter uchun to'liq kategoriya tree — ildiz va bolalar bir ro'yxatda.
  * Har bir element `depth` bilan (0=root, 1=child), filter `indent` uchun.
  */
@@ -278,3 +343,157 @@ export async function getCachedBanners() {
         return true;
     });
 }
+
+/**
+ * Product detali — /api/products/[id] bilan bir xil payload, lekin server
+ * komponent ichida to'g'ridan-to'g'ri Prisma orqali. Product sahifasi HTTP
+ * self-fetch (double-hop) qilmasligi uchun ishlatiladi — TTFB qisqaradi.
+ * `id` ID yoki slug bo'lishi mumkin.
+ */
+export async function getProductDetail(idOrSlug: string): Promise<any | null> {    const id = idOrSlug;
+    const dbProduct = await (prisma as any).product.findFirst({
+        where: { OR: [{ id }, { slug: id }] }
+    });
+    if (!dbProduct || dbProduct.isDeleted) return null;
+
+    const rawReviews: any[] = await (prisma as any).$queryRaw`
+        SELECT r.*, u.name as "userName", u.image as "userImage"
+        FROM "Review" r
+        LEFT JOIN "User" u ON r."userId" = u.id
+        WHERE r."productId" = ${dbProduct.id} AND r."status" = 'APPROVED'
+        ORDER BY r."createdAt" DESC
+    `;
+
+    const reviews = rawReviews.map(r => ({
+        id: r.id,
+        rating: r.rating,
+        comment: r.comment,
+        createdAt: r.createdAt,
+        adminReply: r.adminReply,
+        user: { name: r.userName, image: r.userImage }
+    }));
+
+    let images = [dbProduct.image];
+    if (dbProduct.images) {
+        try {
+            const parsed = JSON.parse(dbProduct.images);
+            if (Array.isArray(parsed)) images = parsed;
+        } catch (e) {
+            console.error("Failed to parse images JSON for product", dbProduct.id);
+        }
+    }
+
+    let specs: Record<string, any> = {};
+    if (dbProduct.attributes) {
+        try {
+            specs = JSON.parse(dbProduct.attributes);
+        } catch (e) {
+            console.error("Failed to parse attributes JSON for product", dbProduct.id);
+        }
+    }
+
+    const rawTags = specs?._tags;
+    const tags: string[] = Array.isArray(rawTags)
+        ? rawTags.map((t: any) => String(t).trim()).filter(Boolean)
+        : typeof rawTags === 'string'
+            ? rawTags.split(',').map((t) => t.trim()).filter(Boolean)
+            : [];
+    if ('_tags' in specs) {
+        const { _tags, ...rest } = specs;
+        specs = rest;
+    }
+
+    const marketing = mapProductMarketing(dbProduct);
+    const { isNew, freeDelivery, hasVideo, hasGift, showLowStock, allowInstallment } = marketing;
+
+    const reviewsCount = reviews.length;
+    const rawRating = reviewsCount > 0
+        ? reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / reviewsCount
+        : (dbProduct.rating || 0);
+    const rating = parseFloat(rawRating.toFixed(1));
+
+    let categorySlug: string | null = null;
+    if (dbProduct.categoryId) {
+        try {
+            const cat = await (prisma as any).category.findUnique({
+                where: { id: dbProduct.categoryId }
+            });
+            categorySlug = cat?.slug || null;
+        } catch (e) {
+            console.error("Failed to fetch category for product", dbProduct.id);
+        }
+    }
+
+    let attributeValues: any[] = [];
+    let variants: any[] = [];
+    try {
+        const values = await (prisma as any).productAttributeValue.findMany({
+            where: { productId: dbProduct.id },
+            include: { attributeDef: true },
+        });
+        attributeValues = values.map((v: any) => ({
+            id: v.id,
+            attributeDefId: v.attributeDefId,
+            attributeDef: {
+                name: v.attributeDef.name,
+                label: v.attributeDef.label,
+                type: v.attributeDef.type,
+                forVariant: v.attributeDef.forVariant,
+            },
+            value: deserializeAttributeValue(v.attributeDef.type, v.value),
+        }));
+    } catch (e) {
+        console.error("Failed to fetch attributeValues for product", dbProduct.id, e);
+    }
+
+    try {
+        const vns = await (prisma as any).productVariant.findMany({
+            where: { productId: dbProduct.id, isActive: true },
+            include: {
+                images: { orderBy: { order: 'asc' }, select: { id: true, url: true, order: true, isPrimary: true } },
+            },
+            orderBy: [{ isDefault: 'desc' }, { createdAt: 'asc' }],
+        });
+        variants = vns.map((v: any) => ({
+            ...v,
+            price: v.price !== 0 ? v.price : dbProduct.price,
+            stock: v.stock !== -1 ? v.stock : dbProduct.stock,
+        }));
+    } catch (e) {
+        console.error("Failed to fetch variants for product", dbProduct.id, e);
+    }
+
+    return {
+        ...dbProduct,
+        images,
+        specs,
+        tags,
+        isNew,
+        freeDelivery,
+        hasVideo,
+        hasGift,
+        showLowStock,
+        allowInstallment,
+        rating,
+        reviewsCount,
+        reviews,
+        oldPrice: dbProduct.oldPrice,
+        discount: dbProduct.discount,
+        stock: dbProduct.stock,
+        categorySlug,
+        attributeValues,
+        variants,
+    };
+}
+
+/**
+ * Product detail keshi — 3600s, admin product tahrirlaganda
+ * `revalidateTag('products')` bilan yangilanadi. `getProductDetail` ichida
+ * Date/Decimal qiymatlar unstable_cache orqali serialize qilinadi — frontend
+ * `new Date()`/raqam konversiyasini ishlata oladi.
+ */
+export const getCachedProductDetail = unstable_cache(
+    async (idOrSlug: string) => getProductDetail(idOrSlug),
+    ['product-detail'],
+    { revalidate: 3600, tags: ['products'] }
+);

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
-import { getCachedRootCategories } from '@/lib/data';
+import { getCachedRootCategories, getCachedCategoryBySlug, getCachedCategoryProducts } from '@/lib/data';
 import CategoryContent from './CategoryContent';
 
 /**
@@ -13,28 +13,7 @@ import CategoryContent from './CategoryContent';
  * hitting the database twice per request.
  */
 const getCategory = cache(async (slug: string) => {
-    return (prisma as any).category.findFirst({
-        where: { slug: slug },
-        include: {
-            parent: {
-                select: { id: true, name: true, slug: true }
-            },
-            children: {
-                orderBy: { name: 'asc' }
-            },
-            banners: {
-                where: {
-                    isActive: true,
-                    // Admin panelda joylashuv "Kategoriya Sahifasi - Yuqori Banner"
-                    // deb tanlangan bannerlar. Bu filtrsiz, masalan, bosh sahifa
-                    // slider banneri kategoriyaga bog'lansa u ham shu yerda
-                    // chiqib ketardi.
-                    position: 'CATEGORY_TOP'
-                },
-                orderBy: { order: 'asc' }
-            }
-        }
-    });
+    return getCachedCategoryBySlug(slug);
 });
 
 export async function generateMetadata({
@@ -129,10 +108,18 @@ export default async function CategoryPage({
     }
     if (resolvedSearch.discount === '1') where.discount = { gt: 0 };
 
-    const [products, totalCount] = await Promise.all([
-        (prisma as any).product.findMany({ where, take: 50, orderBy }),
-        (prisma as any).product.count({ where }),
-    ]);
+    // Default holat (filter/sort yo'q) — keshlangan query ishlatiladi, TTFB qisqaradi.
+    // Filter/sort berilgan bo'lsa dynamic query (har so'rovda DB).
+    const hasFilters = !!(resolvedSearch.sort || filterSlug || resolvedSearch.minPrice || resolvedSearch.maxPrice || resolvedSearch.discount);
+    const [products, totalCount] = hasFilters
+        ? await Promise.all([
+            (prisma as any).product.findMany({ where, take: 50, orderBy }),
+            (prisma as any).product.count({ where }),
+        ])
+        : await (async () => {
+            const cached = await getCachedCategoryProducts(categoryIds);
+            return [cached.products, cached.totalCount] as const;
+        })();
 
     // Filter banners by scheduling
     const now = new Date();

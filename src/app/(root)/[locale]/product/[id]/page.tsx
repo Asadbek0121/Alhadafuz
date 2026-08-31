@@ -1,28 +1,19 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
-import { headers } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { getTranslations } from 'next-intl/server';
 import { metaDescription, translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
 import { SITE_NAME } from '@/lib/seo';
+import { getCachedProductDetail } from '@/lib/data';
 import ProductContent from './ProductContent';
 
-/** Server-side fetch uchun base URL — request host'dan (Vercel/local host
- *  avtomatik), env'lar yo'q bo'lsa localhost fallback. */
-async function baseUrl(): Promise<string> {
-    const h = await headers();
-    const host = h.get('x-forwarded-host') || h.get('host');
-    const proto = h.get('x-forwarded-proto') || 'http';
-    if (host) return `${proto}://${host}`;
-    return process.env.NEXTAUTH_URL || process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-}
-
+// React.cache() — generateMetadata va page bir xil product so'rovini deduplicate
+// qiladi (double-fetch yo'q). unstable_cache esa requestlar orasida 3600s kesh
+// saqlaydi — TTFB keskin qisqaradi. Admin product tahrirlaganda `['products']`
+// tag orqali revalidate bo'ladi.
 const fetchProduct = cache(async (id: string) => {
     try {
-        const url = `${await baseUrl()}/api/products/${id}`;
-        const res = await fetch(url, { cache: 'no-store' });
-        if (!res.ok) return null;
-        return await res.json();
+        return await getCachedProductDetail(id);
     } catch {
         return null;
     }
