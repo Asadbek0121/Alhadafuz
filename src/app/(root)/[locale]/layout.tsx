@@ -1,6 +1,6 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import type { Metadata } from "next";
-import { getMessages, getTranslations } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
 import { notFound } from "next/navigation";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
@@ -15,7 +15,6 @@ const PinLock = dynamic(() => import('@/components/Auth/PinLock'));
 const OfflineOverlayLazy = dynamic(() => import('@/components/OfflineOverlayLazy'));
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Analytics } from "@vercel/analytics/next";
-import { auth } from "@/auth";
 import SessionSync from "@/components/SessionSync";
 import TelegramAuthSync from "@/components/TelegramAuthSync";
 
@@ -23,11 +22,6 @@ import { ClientProviders } from "@/providers/ClientProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 import { routing } from "@/navigation";
 import { getCachedRootCategories, getCachedStoreSettings } from '@/lib/data';
-
-// auth() ni React.cache bilan o'rash — bitta request ichida bir necha marta
-// chaqirilsa ham bitta session tekshiruvi bajariladi (TTFB'ni qisqartiradi).
-import { cache } from 'react';
-const getSession = cache(async () => auth());
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -77,12 +71,17 @@ export default async function LocaleLayout({
   // getCachedRootCategories transient DB xatosida throw qilishi mumkin (kesh
   // bo'sh saqlanmasligi uchun). Butun layout (va sayt) 500 bermasligi uchun
   // unga alohida ishlov beriladi.
-  const [messages, session, storeSettings, rootCategories] = await Promise.all([
-    getMessages(),
-    getSession(),
+  //
+  // Session bu yerda SERVERDA olinmaydi — `auth()` (cookies/headers) layout'ni
+  // dynamic qilib, ISR edge cache'ni o'chirardi. Session'ni client-side
+  // `SessionProvider` o'zi oladi (NextAuth v5 default behavior).
+  const [storeSettings, rootCategories] = await Promise.all([
     getCachedStoreSettings().catch(() => null),
     getCachedRootCategories().catch(() => [] as any[]),
   ]);
+  // messages to'g'ridan-to'g'ri JSON import — `getMessages()` request-scoped
+  // bo'lib, layout'ni dynamic qilib ISR edge cache'ni o'chirardi.
+  const messages = (await import(`../../../../messages/${locale}.json`)).default;
   const tMeta = await getTranslations({ locale, namespace: 'Meta' });
 
   const footerSettings = storeSettings
@@ -172,7 +171,7 @@ export default async function LocaleLayout({
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdWebsite) }}
       />
-    <ClientProviders messages={messages} locale={locale} session={session}>
+    <ClientProviders messages={messages} locale={locale}>
           <SessionSync />
           <TelegramAuthSync />
           <Header firstRootSlug={firstRootSlug} />

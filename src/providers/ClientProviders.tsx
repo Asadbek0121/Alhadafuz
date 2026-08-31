@@ -10,7 +10,8 @@ interface ClientProvidersProps {
   children: ReactNode;
   messages: any;
   locale: string;
-  session: any;
+  /** Ixtiyoriy — berilmasa SessionProvider session'ni client-side oladi. */
+  session?: any;
 }
 
 export function ClientProviders({ 
