@@ -135,6 +135,25 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
     const { activeMenu, toggleMenu, closeAllMenus, isCatalogOpen, toggleCatalog, closeCatalog } = useUIStore();
 
     const notifOpen = activeMenu === 'notifications';
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    // Badge uchun o'qilmaganlar soni
+    useEffect(() => {
+        if (!isAuthenticated) return;
+        let cancelled = false;
+        const fetchUnread = async () => {
+            try {
+                const res = await fetch('/api/user/notifications', { cache: 'no-store' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!cancelled) setUnreadCount(Array.isArray(data) ? data.filter((n: any) => !n.isRead).length : 0);
+                }
+            } catch (e) { /* quiet */ }
+        };
+        fetchUnread();
+        const iv = setInterval(fetchUnread, 60000);
+        return () => { cancelled = true; clearInterval(iv); };
+    }, [isAuthenticated]);
 
     const [menuMode, setMenuMode] = useState<'full' | 'catalog'>('full');
 
@@ -171,41 +190,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
         });
     };
 
-    // Notification State
-    const [notifications, setNotifications] = useState<any[]>([]);
-    const [unreadCount, setUnreadCount] = useState(0);
 
-    useEffect(() => {
 
-        const fetchNotifications = async () => {
-            if (isAuthenticated) {
-                try {
-                    const res = await fetch('/api/user/notifications', {
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        cache: 'no-store'
-                    });
-
-                    if (res.ok) {
-                        const data = await res.json();
-                        setNotifications(data);
-                        setUnreadCount(data.filter((n: any) => !n.isRead).length);
-                    } else {
-                        console.warn("Failed to fetch notifications:", res.status, res.statusText);
-                    }
-                } catch (e) {
-                    // Start quiet logging for network errors
-                    console.warn("Notification fetch error (likely network or server down):", e);
-                }
-            }
-        };
-
-        fetchNotifications();
-        // Poll every minute
-        const interval = setInterval(fetchNotifications, 60000);
-        return () => clearInterval(interval);
-    }, [isAuthenticated]);
 
     // I'll add this logic back, it's safer than leaving it broken.
 
@@ -605,14 +591,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                         {/* Notifications */}
                         <div
                             className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer"
-                            onClick={() => {
-                                if (!notifOpen && unreadCount > 0) {
-                                    setUnreadCount(0);
-                                    setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
-                                    fetch('/api/user/notifications', { method: 'PUT' }).catch(console.error);
-                                }
-                                toggleMenu('notifications');
-                            }}
+                            onClick={() => toggleMenu('notifications')}
                         >
                             <div 
                                 className="relative p-2 rounded-xl group-hover:bg-slate-50 text-slate-600 group-hover:text-blue-600 transition-all flex items-center justify-center w-10 h-10 cursor-pointer"
@@ -622,78 +601,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors">{t('bildirishnoma')}</span>
 
-                            {/* Notification Dropdown */}
-                            {notifOpen && (
-                                <div className="absolute top-full right-0 mt-4 w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden z-[60] origin-top-right animate-scale-in">
-                                    <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
-                                        <span className="font-bold text-slate-900">{t('bildirishnoma')}</span>
-                                        <Link href="/profile/notifications" className="text-xs text-blue-600 font-medium hover:underline">{t('bildirishnomalarni_boshqarish')}</Link>
-                                    </div>
-                                    <div className="max-h-[300px] overflow-y-auto p-2">
-                                        {notifications.map(notif => {
-                                            const getLocalized = (n: any) => {
-                                                let title = n.title;
-                                                let message = n.message;
-
-                                                if (title === "Buyurtma Holati" || title === "Buyurtma holati yangilandi") {
-                                                    title = tNotif('order_status_title');
-                                                    if (message.includes('raqamli buyurtmangiz holati:')) {
-                                                        const idMatch = message.match(/#([A-Z0-9]+)/i);
-                                                        const id = idMatch ? idMatch[1].toUpperCase() : '';
-                                                        const statusPart = message.split(': ')[1];
-                                                        const uzStatuses: any = {
-                                                            'Buyurtmangiz qabul qilindi va kutilmoqda.': 'pending',
-                                                            'Buyurtmangiz tasdiqlandi va tayyorlanmoqda.': 'processing',
-                                                            'Buyurtmangiz yo\'lga chiqdi va tez orada yetkaziladi.': 'shipping',
-                                                            'Buyurtmangiz muvaffaqiyatli yetkazib berildi. Xaridingiz uchun rahmat!': 'delivered',
-                                                            'Buyurtmangiz bekor qilindi.': 'cancelled'
-                                                        };
-                                                        const status = uzStatuses[statusPart] ? tProfile(uzStatuses[statusPart]) : statusPart;
-                                                        message = tNotif('order_status_msg', { id, status });
-                                                    }
-                                                } else if (title === "Yangi Buyurtma") {
-                                                    title = tNotif('new_order_title');
-                                                    if (message.includes('qabul qilindi. Summa:')) {
-                                                        const idMatch = message.match(/#([A-Z0-9]+)/i);
-                                                        const id = idMatch ? idMatch[1].toUpperCase() : '';
-                                                        const totalVal = message.split('Summa: ')[1]?.replace(/so'm|сум|UZS/i, '').trim();
-                                                        message = tNotif('new_order_msg', { id, total: totalVal + ' ' + t('som') });
-                                                    }
-                                                } else if (title === "Yangi Foydalanuvchi") {
-                                                    title = tNotif('new_user_title');
-                                                    if (message.includes("ro'yxatdan o'tdi.")) {
-                                                        const name = message.replace(" ro'yxatdan o'tdi.", "");
-                                                        message = tNotif('new_user_msg', { name });
-                                                    }
-                                                }
-
-                                                return { title, message };
-                                            };
-
-                                            const localized = getLocalized(notif);
-
-                                            return (
-                                                <div key={notif.id} className="p-3 mb-1 rounded-xl hover:bg-slate-50 transition-colors flex gap-3">
-                                                    <div className="shrink-0 w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center">
-                                                        <Info size={16} />
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-sm font-medium text-slate-900">{localized.title}</div>
-                                                        <div className="text-xs text-slate-500 mt-0.5 line-clamp-2">{localized.message}</div>
-                                                        <div className="text-[10px] text-slate-400 mt-1">{new Date(notif.createdAt).toLocaleDateString()}</div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                        {notifications.length === 0 && (
-                                            <div className="py-8 text-center text-slate-400 text-sm">
-                                                {t('empty_notif') || "Bildirishnomalar yo'q"}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
+                            </div>
 
                         {/* Favorites */}
                         <Link href="/favorites" className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer">

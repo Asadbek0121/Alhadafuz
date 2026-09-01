@@ -45,16 +45,6 @@ export default function NotificationDrawer() {
     return () => { cancelled = true; clearInterval(iv); };
   }, [isOpen, isAuthenticated]);
 
-  // Ochilganda unread -> read
-  useEffect(() => {
-    if (isOpen && unreadCount > 0) {
-      setUnreadCount(0);
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      fetch("/api/user/notifications", { method: "PUT" }).catch(() => {});
-    }
-
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
