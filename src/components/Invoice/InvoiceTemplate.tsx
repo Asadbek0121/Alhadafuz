@@ -31,7 +31,6 @@ export default function InvoiceTemplate({ order, settings, subTotal, grandTotal,
         <div className="invoice-container">
             <div className="header">
                 <div className="brand">
-                    <img src="/logo.png" alt="Logo" className="logo" />
                     <div className="brand-text">
                         <h1>Hadaf</h1>
                         <span className="market">Market</span>
