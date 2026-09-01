@@ -23,7 +23,8 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `inline; filename="${filename}"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        'X-Content-Type-Options': 'nosniff',
         'Cache-Control': 'private, max-age=300',
       },
     });

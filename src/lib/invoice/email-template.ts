@@ -2,7 +2,13 @@
  * Hadaf Market professional email template (Uzbek).
  * Inline-styled — React Email kutubxonasisiz ishlaydi.
  */
-export function buildInvoiceEmailHtml(invoice: any): string {
+interface InvoiceEmailOptions {
+  qrDataUrl?: string;
+  pdfUrl?: string;
+  logoUrl?: string;
+}
+
+export function buildInvoiceEmailHtml(invoice: any, opts: InvoiceEmailOptions = {}): string {
     const snap = typeof invoice.snapshotData === 'string'
         ? JSON.parse(invoice.snapshotData)
         : invoice.snapshotData;
@@ -42,12 +48,29 @@ export function buildInvoiceEmailHtml(invoice: any): string {
                     <td style="padding:32px 32px 0;">
                         <table role="presentation" width="100%">
                             <tr>
-                                <td style="font-size:24px;font-weight:900;color:#1e293b;">
-                                    <span style="color:#2563eb;">Hadaf</span> Market
+                                <td>
+                                    <img src="${opts.logoUrl || 'https://www.alhadaf.uz/icon-512.png'}" alt="Hadaf Market" width="48" height="48" style="vertical-align:middle;border-radius:8px;"/>
+                                    <span style="font-size:22px;font-weight:900;color:#0f172a;vertical-align:middle;margin-left:8px;">Hadaf <span style="color:#2563eb;">Market</span></span>
                                 </td>
-                                <td style="text-align:right;font-size:12px;color:#94a3b8;line-height:1.4;">
-                                    Elektron chek<br>
-                                    № ${invoice.invoiceNumber}
+                                <td style="text-align:right;font-size:12px;color:#94a3b8;line-height:1.5;">
+                                    <span style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;display:block;">Elektron chek</span>
+                                    <span style="font-size:15px;font-weight:800;color:#2563eb;">${invoice.invoiceNumber}</span>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
+                <!-- Payment status -->
+                <tr>
+                    <td style="padding:20px 32px 0;">
+                        <table role="presentation" width="100%">
+                            <tr>
+                                <td>
+                                    <span style="display:inline-block;background:#059669;color:#ffffff;font-size:11px;font-weight:700;padding:6px 14px;border-radius:9999px;">&#9679; TO'LANDI</span>
+                                </td>
+                                <td style="text-align:right;font-size:12px;color:#64748b;">
+                                    <span style="display:block;">${new Date(invoice.issueDate || invoice.createdAt).toLocaleDateString('uz-UZ', {year:'numeric',month:'long',day:'numeric'})}</span>
                                 </td>
                             </tr>
                         </table>
@@ -130,6 +153,26 @@ export function buildInvoiceEmailHtml(invoice: any): string {
                     </td>
                 </tr>
 
+                <!-- QR + Download -->
+                <tr>
+                    <td style="padding:24px 32px;">
+                        <table role="presentation" width="100%">
+                            <tr>
+                                <td width="55%" valign="middle">
+                                    ${opts.pdfUrl ? `
+                                    <a href="${opts.pdfUrl}" style="display:inline-block;background:#2563eb;color:#ffffff;padding:12px 24px;border-radius:10px;font-size:13px;font-weight:600;text-decoration:none;">&#128229; PDF chekni yuklab olish</a>` : ''}
+                                    <p style="margin:10px 0 0;font-size:11px;color:#94a3b8;">Chek — to'langan buyurtma uchun rasmiy tasdiq.</p>
+                                </td>
+                                <td width="45%" align="right" valign="middle">
+                                    ${opts.qrDataUrl ? `
+                                    <img src="${opts.qrDataUrl}" width="120" height="120" style="display:block;margin-left:auto;" alt="QR kod"/>
+                                    <p style="font-size:9px;color:#94a3b8;text-align:right;margin:4px 0 0;">Buyurtmani kuzatish</p>` : ''}
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+
                 <!-- Footer -->
                 <tr>
                     <td style="padding:24px 32px 32px;text-align:center;background-color:#f8fafc;border-radius:0 0 16px 16px;">
@@ -137,7 +180,7 @@ export function buildInvoiceEmailHtml(invoice: any): string {
                             Hadaf Market — Surxondaryo viloyati, Termiz shahri
                         </p>
                         <p style="margin:0 0 4px;font-size:12px;color:#94a3b8;">
-                            Telefon: +998 (33) 686-20-01
+                            +998 (33) 686-20-01 | receipts@alhadaf.uz
                         </p>
                         <p style="margin:0;font-size:11px;color:#cbd5e1;">
                             © ${new Date().getFullYear()} Hadaf Market. Barcha huquqlar himoyalangan.

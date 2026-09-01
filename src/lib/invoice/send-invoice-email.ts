@@ -2,6 +2,8 @@ import { Resend } from 'resend';
 import { prisma } from '@/lib/prisma';
 import { buildInvoiceEmailHtml } from './email-template';
 import { logInvoiceEvent } from './invoice-service';
+import { generateQrDataUrl } from './qr';
+import { buildInvoicePdfSignedUrl } from './signed-url';
 
 function getResend(): Resend | null {
     const apiKey = process.env.RESEND_API_KEY;
@@ -10,6 +12,7 @@ function getResend(): Resend | null {
 }
 
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'Hadaf Market <receipts@alhadaf.uz>';
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || process.env.AUTH_URL || 'https://www.alhadaf.uz';
 
 export async function sendInvoiceEmail(invoiceId: string, opts: { force?: boolean } = {}) {
     const invoice = await prisma.invoice.findUnique({
@@ -36,7 +39,13 @@ export async function sendInvoiceEmail(invoiceId: string, opts: { force?: boolea
     }
 
     const subject = `Hadaf Market — Elektron chek №${invoice.invoiceNumber}`;
-    const html = buildInvoiceEmailHtml(invoice);
+
+    // QR kod (buyurtmani kuzatish uchun) — server-side generatsiya, email ichida ishonchli
+    const orderUrl = `${APP_URL}/uz/delivery?order=${invoice.orderId}`;
+    const qrDataUrl = await generateQrDataUrl(orderUrl, 160);
+    const pdfUrl = buildInvoicePdfSignedUrl(invoice.id, APP_URL);
+
+    const html = buildInvoiceEmailHtml(invoice, { qrDataUrl, pdfUrl });
 
     const emailLog = await prisma.emailLog.create({
         data: { invoiceId, email: recipient, status: 'QUEUED' },
