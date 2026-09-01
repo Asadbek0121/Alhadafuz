@@ -9,6 +9,12 @@ import { translatedPageMetadata } from '@/lib/seo';
 
 export const revalidate = 3600;
 
+// ISR edge cache: [locale] parametrlarini prerender qilish. Faqat shu page
+// (homepage) statik + revalidate bo'ladi; boshqa route'lar dynamic qoladi.
+export function generateStaticParams() {
+    return ['uz', 'ru', 'en'].map((locale) => ({ locale }));
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   return translatedPageMetadata('home', { locale, path: '', absoluteTitle: true });
