@@ -38,6 +38,7 @@ interface InvoicePdfProps {
   paymentMethod: string;
   paymentStatus: string;
   qrDataUrl?: string;
+  logoUrl?: string;
 }
 
 const InvoicePdfDocument: React.FC<InvoicePdfProps> = (props) => (
@@ -45,9 +46,15 @@ const InvoicePdfDocument: React.FC<InvoicePdfProps> = (props) => (
     <Page size="A4" style={styles.page}>
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.brandName}>Hadaf Market</Text>
-          <Text style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>Surxondaryo, Termiz</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <Image
+            src={props.logoUrl || 'https://www.alhadaf.uz/logo.png'}
+            style={{ width: 34, height: 34, borderRadius: 6 }}
+          />
+          <View style={{ marginLeft: 8 }}>
+            <Text style={styles.brandName}>Hadaf Market</Text>
+            <Text style={{ fontSize: 9, color: '#64748b', marginTop: 2 }}>Surxondaryo, Termiz</Text>
+          </View>
         </View>
         <View>
           <Text style={{ fontSize: 14, fontWeight: 'bold', color: '#1e293b' }}>INVOICE</Text>
@@ -157,6 +164,7 @@ export async function generateInvoicePdf(invoice: any): Promise<Buffer> {
       paymentMethod={snap.order?.paymentMethod || ''}
       paymentStatus={snap.order?.paymentStatus || ''}
       qrDataUrl={qrDataUrl}
+      logoUrl={process.env.NEXT_PUBLIC_APP_URL ? `${process.env.NEXT_PUBLIC_APP_URL}/logo.png` : undefined}
     />
   );
 

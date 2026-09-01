@@ -49,8 +49,7 @@ export function buildInvoiceEmailHtml(invoice: any, opts: InvoiceEmailOptions = 
                         <table role="presentation" width="100%">
                             <tr>
                                 <td>
-                                    <img src="${opts.logoUrl || 'https://www.alhadaf.uz/icon-512.png'}" alt="Hadaf Market" width="48" height="48" style="vertical-align:middle;border-radius:8px;"/>
-                                    <span style="font-size:22px;font-weight:900;color:#0f172a;vertical-align:middle;margin-left:8px;">Hadaf <span style="color:#2563eb;">Market</span></span>
+                                    <span style="font-size:24px;font-weight:900;color:#0f172a;">Hadaf <span style="color:#2563eb;">Market</span></span>
                                 </td>
                                 <td style="text-align:right;font-size:12px;color:#94a3b8;line-height:1.5;">
                                     <span style="font-size:10px;text-transform:uppercase;letter-spacing:1px;color:#64748b;display:block;">Elektron chek</span>
