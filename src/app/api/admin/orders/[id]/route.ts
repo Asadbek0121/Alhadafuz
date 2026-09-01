@@ -140,6 +140,10 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     const { id } = await context.params;
 
     try {
+        // Invoice'lar oldin o'chiriladi — Invoice_orderId_fkey constraint
+        // Order delete'ni bloklaydi. InvoiceEvent/EmailLog cascade bilan.
+        await prisma.invoice.deleteMany({ where: { orderId: id } });
+
         await prisma.order.delete({
             where: { id }
         });
