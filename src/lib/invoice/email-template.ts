@@ -165,8 +165,8 @@ export function buildInvoiceEmailHtml(invoice: any, opts: InvoiceEmailOptions = 
                                 </td>
                                 <td width="45%" align="right" valign="middle">
                                     ${opts.qrDataUrl ? `
-                                    <img src="${opts.qrDataUrl}" width="120" height="120" style="display:block;margin-left:auto;" alt="QR kod"/>
-                                    <p style="font-size:9px;color:#94a3b8;text-align:right;margin:4px 0 0;">Buyurtmani kuzatish</p>` : ''}
+                                    <img src="${opts.qrDataUrl}" width="80" height="80" style="display:block;margin-left:auto;" alt="QR kod"/>
+                                    <p style="font-size:8px;color:#94a3b8;text-align:right;margin:2px 0 0;">Buyurtmani kuzatish</p>` : ''}
                                 </td>
                             </tr>
                         </table>

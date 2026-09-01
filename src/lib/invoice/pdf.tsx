@@ -37,6 +37,7 @@ interface InvoicePdfProps {
   currency: string;
   paymentMethod: string;
   paymentStatus: string;
+  qrDataUrl?: string;
 }
 
 const InvoicePdfDocument: React.FC<InvoicePdfProps> = (props) => (
@@ -105,6 +106,17 @@ const InvoicePdfDocument: React.FC<InvoicePdfProps> = (props) => (
         </View>
       </View>
 
+      {/* QR */}
+      {props.qrDataUrl && (
+        <View style={{ marginTop: 24, flexDirection: 'row', alignItems: 'center' }}>
+          <Image src={props.qrDataUrl} style={{ width: 90, height: 90 }} />
+          <View style={{ marginLeft: 12 }}>
+            <Text style={{ fontSize: 9, color: '#64748b' }}>Buyurtmani kuzatish</Text>
+            <Text style={{ fontSize: 8, color: '#94a3b8', marginTop: 2 }}>QR kodni skanerlang</Text>
+          </View>
+        </View>
+      )}
+
       {/* Footer */}
       <View style={styles.footer}>
         <Text>Hadaf Market — Surxondaryo viloyati, Termiz shahri | Tel: +998 (33) 686-20-01</Text>
@@ -118,6 +130,17 @@ export async function generateInvoicePdf(invoice: any): Promise<Buffer> {
   const snap = typeof invoice.snapshotData === 'string' ? JSON.parse(invoice.snapshotData) : invoice.snapshotData;
   const issueDate = new Date(invoice.issueDate || invoice.createdAt).toLocaleDateString('uz-UZ', {
     year: 'numeric', month: 'long', day: 'numeric'  });
+
+  // QR kod — buyurtmani kuzatish uchun
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz';
+  const orderUrl = `${appUrl}/uz/delivery?order=${invoice.orderId}`;
+  let qrDataUrl: string | undefined;
+  try {
+    const { generateQrDataUrl } = await import('./qr');
+    qrDataUrl = await generateQrDataUrl(orderUrl, 120);
+  } catch (e) {
+    console.error('[invoice] PDF QR generation failed:', e);
+  }
 
   const pdfStream = await ReactPDF.renderToStream(
     <InvoicePdfDocument
@@ -133,6 +156,7 @@ export async function generateInvoicePdf(invoice: any): Promise<Buffer> {
       currency={snap.currency || 'UZS'}
       paymentMethod={snap.order?.paymentMethod || ''}
       paymentStatus={snap.order?.paymentStatus || ''}
+      qrDataUrl={qrDataUrl}
     />
   );
 
