@@ -14,6 +14,7 @@ import HeartIcon from '../icons/HeartIcon';
 import CartIcon from '../icons/CartIcon';
 import UserIcon from '../icons/UserIcon';
 import NotificationIcon from '../icons/NotificationIcon';
+import NotificationDrawer from '../NotificationDrawer';
 import SearchIcon from '../icons/SearchIcon';
 import CategoryIcon from '../icons/CategoryIcon';
 import LocationIcon from '../icons/LocationIcon';
@@ -825,6 +826,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
             </header>
             <MegaMenu isOpen={isCatalogOpen} close={closeCatalog} menuMode={menuMode} />
             <CartDrawer />
+            <NotificationDrawer />
         </>
 
 

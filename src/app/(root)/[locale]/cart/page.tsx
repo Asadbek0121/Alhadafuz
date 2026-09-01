@@ -49,9 +49,7 @@ export default function CartPage() {
         return (
             <div className="container min-h-[60vh] flex flex-col items-center justify-center text-center py-12 px-4">
                 <div className="mb-6 relative">
-                    <div className="w-24 h-24 md:w-32 md:h-32 bg-blue-50 rounded-full flex items-center justify-center">
-                        <ShoppingCart size={48} className="text-blue-500 md:w-14 md:h-14 fill-blue-500/10" strokeWidth={1.5} />
-                    </div>
+                    <img src="/icons/empty-cart.svg" alt="Savat bo'sh" className="w-40 h-40 md:w-52 md:h-52 object-contain" />
                 </div>
                 <h3 className="text-xl md:text-2xl font-bold text-slate-900 mb-3">{tCart('empty_title')}</h3>
                 <p className="text-slate-500 text-sm md:text-base max-w-[300px] mb-8 leading-relaxed">

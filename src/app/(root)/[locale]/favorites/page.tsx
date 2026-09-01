@@ -46,13 +46,7 @@ export default function FavoritesPage() {
     if (wishlist.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
-                <div className="w-20 h-20 md:w-32 md:h-32 bg-red-50 rounded-full flex items-center justify-center mb-4 md:mb-6 relative">
-                    <Heart
-                        size={40}
-                        className="text-red-500 md:w-14 md:h-14 fill-red-500/10"
-                        strokeWidth={1.5}
-                    />
-                </div>
+                <img src="/icons/empty-favorite.svg" alt="Sevimlilar bo'sh" className="w-40 h-40 md:w-56 md:h-56 object-contain mb-4 md:mb-6" />
                 <h2 className="text-xl md:text-3xl font-black text-slate-900 mb-2 md:mb-3 tracking-tight">{tWishlist('empty_title')}</h2>
                 <p className="text-slate-500 max-w-[280px] md:max-w-sm mb-6 md:mb-8 leading-relaxed text-xs md:text-base mx-auto">
                     {tWishlist('empty_desc')}
