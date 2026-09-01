@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
-import { X, Bell } from "lucide-react";
+import { X, Bell, CheckCheck } from "lucide-react";
 import styles from "./NotificationDrawer.module.css";
 import { Link } from "@/navigation";
 import { useUIStore } from "@/store/useUIStore";
@@ -21,6 +21,7 @@ export default function NotificationDrawer() {
 
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showUnreadOnly, setShowUnreadOnly] = useState(false);
 
   useScrollLock(isOpen);
 
@@ -45,6 +46,14 @@ export default function NotificationDrawer() {
     return () => { cancelled = true; clearInterval(iv); };
   }, [isOpen, isAuthenticated]);
 
+  const markAllRead = async () => {
+    try {
+      await fetch("/api/user/notifications", { method: "PUT" });
+      setNotifications((prev) => prev.map((n: any) => ({ ...n, isRead: true })));
+      setUnreadCount(0);
+    } catch (e) { /* quiet */ }
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -53,8 +62,36 @@ export default function NotificationDrawer() {
       <div className={styles.drawer} role="dialog" aria-modal="true" aria-label={t("bildirishnoma")}>
         <div className={styles.header}>
           <h3>{t("bildirishnoma")}</h3>
-          <button onClick={closeAllMenus} className={styles.closeBtn} aria-label={t("yopish")}><X size={24} /></button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {unreadCount > 0 && (
+              <button onClick={markAllRead} className={styles.closeBtn} title="Barchasini o'qilgan deb belgilash" aria-label="Barchasini o'qilgan deb belgilash">
+                <CheckCheck size={20} />
+              </button>
+            )}
+            <button onClick={closeAllMenus} className={styles.closeBtn} aria-label={t("yopish")}><X size={24} /></button>
+          </div>
         </div>
+
+        {unreadCount > 0 && (
+          <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light, #e2e8f0)' }}>
+            <button
+              onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+              style={{
+                background: showUnreadOnly ? '#2563eb' : 'transparent',
+                color: showUnreadOnly ? '#fff' : '#64748b',
+                border: '1px solid',
+                borderColor: showUnreadOnly ? '#2563eb' : '#e2e8f0',
+                padding: '4px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {showUnreadOnly ? `O'qilmaganlar (${unreadCount})` : `Barcha bildirishnomalar`}
+            </button>
+          </div>
+        )}
 
         <div className={styles.list}>
           {!isAuthenticated || notifications.length === 0 ? (
@@ -65,7 +102,7 @@ export default function NotificationDrawer() {
               <Link href="/profile/notifications" onClick={closeAllMenus}>{t("bildirishnomalarni_boshqarish")}</Link>
             </div>
           ) : (
-            notifications.map((n: any) => (
+            notifications.filter((n: any) => !showUnreadOnly || !n.isRead).map((n: any) => (
               <div key={n.id} className={`${styles.item} ${n.isRead ? "" : styles.unread}`}>
                 <div className={styles.iconBadge}><Bell size={18} /></div>
                 <div className={styles.itemBody}>
