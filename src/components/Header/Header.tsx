@@ -205,9 +205,10 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
             const isCatalogBtn = target.closest('#category-btn-trigger');
             // MegaMenu ichidagi bosishlar menyuni yopmaydi — kategoriya tanlash uchun
             const isInsideCatalogMenu = target.closest('#catalog-menu') !== null;
+            const isInsideNotificationDrawer = target.closest('[role="dialog"]') !== null;
             
             if (!isInsideSearch) setSearchResults([]);
-            if (!isInsideDropdown && !isCatalogBtn && !isInsideCatalogMenu) closeAllMenus();
+            if (!isInsideDropdown && !isCatalogBtn && !isInsideCatalogMenu && !isInsideNotificationDrawer) closeAllMenus();
         };
 
         const handleCloseMenu = () => closeAllMenus();
