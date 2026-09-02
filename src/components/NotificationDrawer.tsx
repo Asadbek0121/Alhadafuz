@@ -63,7 +63,7 @@ export default function NotificationDrawer() {
         <div className={styles.header}>
           <h3>{t("bildirishnoma")}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {unreadCount > 0 && (
+            {notifications.length > 0 && (
               <button onClick={markAllRead} className={styles.closeBtn} title="Barchasini o'qilgan deb belgilash" aria-label="Barchasini o'qilgan deb belgilash">
                 <CheckCheck size={20} />
               </button>
@@ -72,7 +72,7 @@ export default function NotificationDrawer() {
           </div>
         </div>
 
-        {unreadCount > 0 && (
+        {notifications.length > 0 && (
           <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light, #e2e8f0)' }}>
             <button
               onClick={() => setShowUnreadOnly(!showUnreadOnly)}
