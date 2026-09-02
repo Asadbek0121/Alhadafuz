@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/ratelimit";
 import { normalizeUzPhone } from "@/lib/phone";
+import { verifyRecaptcha } from "@/lib/recaptcha";
 
 export async function POST(req: Request) {
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
@@ -16,7 +17,13 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { phone, isRegister } = body;
+        const { phone, isRegister, recaptchaToken } = body;
+
+        // reCAPTCHA v3 — bot himoyasi
+        const captcha = recaptchaToken ? await verifyRecaptcha(recaptchaToken) : { success: false };
+        if (!captcha.success) {
+            return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
+        }
 
         if (!phone) {
             return NextResponse.json({ message: "Telefon raqam kiritilishi shart", code: "PHONE_INVALID" }, { status: 400 });

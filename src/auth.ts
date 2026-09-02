@@ -50,6 +50,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         login: z.string().min(2),
                         otp: z.string().optional(),
                         password: z.string().optional(),
+                        recaptchaToken: z.string().optional(),
                         name: z.string().optional(),
                         deviceId: z.string().optional(),
                         deviceName: z.string().optional(),
@@ -58,7 +59,16 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     .safeParse(credentials);
 
                 if (parsedCredentials.success) {
-                    const { login, otp, password, name, deviceId, deviceName, fingerprint } = parsedCredentials.data;
+                    const { login, otp, password, name, deviceId, deviceName, fingerprint, recaptchaToken } = parsedCredentials.data;
+
+                    // reCAPTCHA v3 — bot himoyasi
+                    if (recaptchaToken) {
+                        const { verifyRecaptcha } = await import('@/lib/recaptcha');
+                        const captcha = await verifyRecaptcha(recaptchaToken);
+                        if (!captcha.success) {
+                            throw new Error('Bot tekshiruvidan o'tmadi');
+                        }
+                    }
 
                     // Normalize login (phone number)
                     let normalizedPhone = login.replace(/[^0-9+]/g, '');

@@ -15,6 +15,7 @@ import successAnimation from '@/components/success-animation.json';
 import lockAnimation from './lock-animation.json';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import DocumentViewer from './DocumentViewer';
+import { getRecaptchaToken } from '@/lib/recaptcha-client';
 import styles from './AuthModal.module.css';
 
 // Faqat shu sayt ichidagi manzillarga yo'naltirish — open-redirect himoyasi
@@ -225,10 +226,11 @@ export default function AuthModal({
         setIsLoading(true);
 
         try {
+            const recaptchaToken = await getRecaptchaToken('send_otp');
             const res = await fetch('/api/auth/send-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ phone, isRegister: mode === 'register' }),
+                body: JSON.stringify({ phone, isRegister: mode === 'register', recaptchaToken }),
             });
 
             const data = await res.json();
@@ -269,6 +271,7 @@ export default function AuthModal({
             localStorage.setItem('mergeCartOnLogin', 'true');
             const fullName = mode === 'register' ? `${name} ${surname}`.trim() : undefined;
 
+            const recaptchaToken = await getRecaptchaToken('login');
             const result = await signIn('credentials', {
                 login: phone,
                 otp: otpValue,
@@ -276,6 +279,7 @@ export default function AuthModal({
                 deviceId: dId || undefined,
                 deviceName: dName,
                 fingerprint,
+                recaptchaToken: recaptchaToken || undefined,
                 redirect: false,
             });
 

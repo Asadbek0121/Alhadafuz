@@ -13,7 +13,12 @@ export async function POST(req: Request) {
     }
 
     try {
-        const { phone } = await req.json();
+        const { phone, recaptchaToken } = await req.json();
+
+        const captcha = recaptchaToken ? await (await import('@/lib/recaptcha')).verifyRecaptcha(recaptchaToken) : { success: false };
+        if (!captcha.success) {
+            return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi" }, { status: 400 });
+        }
 
         // Telefon formatini tekshirish
         const normalizedPhone = normalizeUzPhone(phone);

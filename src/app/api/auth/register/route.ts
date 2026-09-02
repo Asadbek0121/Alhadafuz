@@ -38,6 +38,13 @@ export async function POST(req: Request) {
         }
 
         const { name, email, password, phone } = result.data;
+        const { recaptchaToken } = body;
+
+        // reCAPTCHA v3 — bot himoyasi
+        const captcha = recaptchaToken ? await (await import('@/lib/recaptcha')).verifyRecaptcha(recaptchaToken) : { success: false };
+        if (!captcha.success) {
+            return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
+        }
 
         // Telefon berilgan bo'lsa formatini tekshirish
         if (phone) {
