@@ -73,22 +73,40 @@ export default function NotificationDrawer() {
         </div>
 
         {notifications.length > 0 && (
-          <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light, #e2e8f0)' }}>
+          <div style={{ padding: '8px 16px', borderBottom: '1px solid var(--border-light, #e2e8f0)', display: 'flex', gap: 8 }}>
             <button
-              onClick={() => setShowUnreadOnly(!showUnreadOnly)}
+              onClick={() => setShowUnreadOnly(true)}
               style={{
-                background: showUnreadOnly ? '#2563eb' : 'transparent',
+                flex: 1,
+                background: showUnreadOnly ? '#2563eb' : '#f1f5f9',
                 color: showUnreadOnly ? '#fff' : '#64748b',
                 border: '1px solid',
                 borderColor: showUnreadOnly ? '#2563eb' : '#e2e8f0',
-                padding: '4px 12px',
+                padding: '6px 12px',
                 borderRadius: 8,
                 fontSize: 12,
                 fontWeight: 600,
                 cursor: 'pointer',
               }}
             >
-              {showUnreadOnly ? `O'qilmaganlar (${unreadCount})` : `Barcha bildirishnomalar`}
+              O'qilmaganlar{unreadCount > 0 ? ` (${unreadCount})` : ''}
+            </button>
+            <button
+              onClick={() => setShowUnreadOnly(false)}
+              style={{
+                flex: 1,
+                background: !showUnreadOnly ? '#2563eb' : '#f1f5f9',
+                color: !showUnreadOnly ? '#fff' : '#64748b',
+                border: '1px solid',
+                borderColor: !showUnreadOnly ? '#2563eb' : '#e2e8f0',
+                padding: '6px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              Barcha bildirishnomalar
             </button>
           </div>
         )}
