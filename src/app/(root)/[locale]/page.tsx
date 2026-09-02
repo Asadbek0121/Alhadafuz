@@ -4,6 +4,7 @@ import ViewMoreButton from "@/components/Home/ViewMoreButton";
 import CategoryCard from "@/components/Home/CategoryCard";
 import { getTranslations } from 'next-intl/server';
 import { getCachedHomepageProducts, getCachedBanners, getCachedFlashDeals, getCachedRootCategories } from '@/lib/data';
+import { getCategoryName } from '@/lib/translate';
 import type { Metadata } from 'next';
 import { translatedPageMetadata } from '@/lib/seo';
 
@@ -44,7 +45,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           </h2>
           <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar md:grid md:grid-cols-4 md:gap-4 lg:grid-cols-6 xl:grid-cols-8">
             {categories.map((cat: any) => (
-              <CategoryCard key={cat.id} name={cat.name} slug={cat.slug} image={cat.image} />
+              <CategoryCard key={cat.id} name={getCategoryName(cat, locale)} slug={cat.slug} image={cat.image} />
             ))}
           </div>
         </section>

@@ -6,6 +6,7 @@ import { getTranslations } from 'next-intl/server';
 import { prisma } from '@/lib/prisma';
 import { translatedPageMetadata, breadcrumbJsonLd } from '@/lib/seo';
 import { getCachedRootCategories, getCachedCategoryBySlug, getCachedCategoryProducts } from '@/lib/data';
+import { getCategoryName } from '@/lib/translate';
 import CategoryContent from './CategoryContent';
 
 /**
@@ -34,7 +35,7 @@ export async function generateMetadata({
     return translatedPageMetadata('categoryPage', {
         locale,
         path: `/category/${slug}`,
-        values: { name: category.name },
+        values: { name: getCategoryName(category, locale) },
     });
 }
 
@@ -59,8 +60,8 @@ export default async function CategoryPage({
     // BreadcrumbList JSON-LD — Home → Parent → Category (faqat real route'lar)
     const breadcrumbItems = [
         { name: tHeader('bosh_sahifa'), path: '' },
-        ...(category.parent ? [{ name: category.parent.name, path: `/category/${category.parent.slug}` }] : []),
-        { name: category.name, path: `/category/${category.slug}` },
+        ...(category.parent ? [{ name: getCategoryName(category.parent, locale), path: `/category/${category.parent.slug}` }] : []),
+        { name: getCategoryName(category, locale), path: `/category/${category.slug}` },
     ];
 
     // Sort parametriga qarab tartib

@@ -11,6 +11,7 @@ import { useState, useEffect } from 'react';
 import ProductCard from '@/components/ProductCard/ProductCard';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTranslations, useLocale } from 'next-intl';
+import { getCategoryName } from '@/lib/translate';
 
 interface CategoryBanner {
     id: string;
@@ -324,7 +325,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                                     onClick={() => setDraftFilters(f => ({ ...f, category: root.slug }))}
                                                     className={`flex w-full items-center rounded-xl px-4 py-2.5 text-left text-sm font-bold ${draftFilters.category === root.slug ? 'bg-blue-50 text-blue-600' : 'text-slate-800 hover:bg-slate-50'}`}
                                                 >
-                                                    {root.name}
+                                                    {getCategoryName(root, locale)}
                                                 </button>
                                                 {(root.children || []).map((child: any) => (
                                                     <button
@@ -332,7 +333,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                                         onClick={() => setDraftFilters(f => ({ ...f, category: child.slug }))}
                                                         className={`flex w-full items-center rounded-xl py-2 pl-10 pr-4 text-left text-sm font-medium ${draftFilters.category === child.slug ? 'bg-blue-50 text-blue-600' : 'text-slate-600 hover:bg-slate-50'}`}
                                                     >
-                                                        <span className="mr-2 text-slate-300">└</span>{child.name}
+                                                        <span className="mr-2 text-slate-300">└</span>{getCategoryName(child, locale)}
                                                     </button>
                                                 ))}
                                             </div>
@@ -423,7 +424,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                     }}>
                         <ChevronLeft size={20} />
                     </button>
-                    <h1 className={styles.headerTitle}>{showRoots ? t('category') : (selectedParent ? selectedParent.name : category.name)}</h1>
+                    <h1 className={styles.headerTitle}>{showRoots ? t('category') : (selectedParent ? getCategoryName(selectedParent, locale) : getCategoryName(category, locale))}</h1>
                 </div>
 
                 {/* Banners Section */}
@@ -477,11 +478,11 @@ export default function CategoryContent({ category, banners = [], products = [],
                                     }}
                                     className={styles.cardRoot}
                                 >
-                                    {root.image ? (                                        <img src={root.image} alt={root.name} className={styles.cardRootImg} />
+                                    {root.image ? (                                        <img src={root.image} alt={getCategoryName(root, locale)} className={styles.cardRootImg} />
                                     ) : (
-                                        <div className={styles.cardRootIcon}>{root.name.charAt(0)}</div>
+                                        <div className={styles.cardRootIcon}>{getCategoryName(root, locale).charAt(0)}</div>
                                     )}
-                                    <span className={styles.cardRootName}>{root.name}</span>
+                                    <span className={styles.cardRootName}>{getCategoryName(root, locale)}</span>
                                 </button>
                             ))}
                         </div>
@@ -497,12 +498,12 @@ export default function CategoryContent({ category, banners = [], products = [],
                                 >
                                     <div className={styles.cardSubImage}>
                                         {child.image ? (
-                                            <img src={child.image} alt={child.name} loading="lazy" />
+                                            <img src={child.image} alt={getCategoryName(child, locale)} loading="lazy" />
                                         ) : (
-                                            <span className={styles.cardSubLetter}>{child.name.charAt(0)}</span>
+                                            <span className={styles.cardSubLetter}>{getCategoryName(child, locale).charAt(0)}</span>
                                         )}
                                     </div>
-                                    <span className={styles.cardSubName}>{child.name}</span>
+                                    <span className={styles.cardSubName}>{getCategoryName(child, locale)}</span>
                                 </a>
                             ))}
                         </div>
@@ -629,10 +630,10 @@ export default function CategoryContent({ category, banners = [], products = [],
                         </>
                     )}
                     <span className="text-gray-300">/</span>
-                    <span className="text-blue-600 font-semibold">{category.name}</span>
+                    <span className="text-blue-600 font-semibold">{getCategoryName(category, locale)}</span>
                 </div>
 
-                <h1 className="text-3xl font-bold mb-2 text-gray-900">{category.name}</h1>
+                <h1 className="text-3xl font-bold mb-2 text-gray-900">{getCategoryName(category, locale)}</h1>
                 <p className="text-sm font-bold text-slate-500 mb-8">{t('results', { count })}</p>
 
                 {/* Desktop Banners */}

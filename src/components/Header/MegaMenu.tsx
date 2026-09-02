@@ -5,6 +5,7 @@ import styles from './MegaMenu.module.css';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { ChevronRight, X, Smartphone, Laptop, Home, Shirt, BookOpen, Car, Monitor, Package, UserCircle, ShoppingBag, Heart, LogOut, LayoutDashboard } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { getCategoryName } from '@/lib/translate';
 import { useCartStore } from '@/store/useCartStore';
 import { useWishlist } from '@/context/WishlistContext';
 import { useUserStore } from '@/store/useUserStore';
@@ -166,7 +167,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                     onClick={handleBackToRoots}
                                     style={{ fontStyle: 'italic', opacity: 0.7 }}
                                 >
-                                    <span className={styles.catName}>← {selectedRoot.name}</span>
+                                    <span className={styles.catName}>← {getCategoryName(selectedRoot, locale)}</span>
                                 </button>
                                 <a
                                     href={catHref(selectedRoot.slug)}
@@ -186,7 +187,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             setTimeout(close, 0);
                                         }}
                                     >
-                                        <span className={styles.catName}>{child.name}</span>
+                                        <span className={styles.catName}>{getCategoryName(child, locale)}</span>
                                         <ChevronRight size={16} className={styles.arrow} />
                                     </a>
                                 ))}
@@ -206,19 +207,19 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             aria-selected={activeIdx === idx}
                                             style={{ textDecoration: 'none' }}
                                         >
-                                            <span className={styles.catName}>{cat.name}</span>
+                                            <span className={styles.catName}>{getCategoryName(cat, locale)}</span>
 
                                             {/* Mobile Image (Bottom Right) */}
                                             <div className={styles.mobileCatImage}>
                                                 {cat.image ? (
-                                                    <img src={cat.image} alt={cat.name} />
+                                                    <img src={cat.image} alt={getCategoryName(cat, locale)} />
                                                 ) : <div className={styles.fallbackIcon}>{getIcon(cat.slug || '')}</div>}
                                             </div>
 
                                             {/* Desktop Icon (original) */}
                                             <span className={styles.icon}>
                                                 {cat.image ? (
-                                                    <img src={cat.image} alt={cat.name} />
+                                                    <img src={cat.image} alt={getCategoryName(cat, locale)} />
                                                 ) : getIcon(cat.slug || '')}
                                             </span>
 
@@ -230,7 +231,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                     {categories[activeIdx] && (
                                         <>
                                             <div className={styles.rightColHeader}>
-                                                <h3>{categories[activeIdx].name}</h3>
+                                                <h3>{getCategoryName(categories[activeIdx], locale)}</h3>
                                                 {/* "Barchasini ko'rish" — kichik secondary text-link */}
                                                 <a
                                                     href={catHref(categories[activeIdx].slug)}
@@ -261,7 +262,7 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                                             setTimeout(close, 0);
                                                         }}
                                                     >
-                                                        {sub.name}
+                                                        {getCategoryName(sub, locale)}
                                                     </a>
                                                     ))
                                                 ) : (
