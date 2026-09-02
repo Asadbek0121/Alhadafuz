@@ -120,17 +120,31 @@ export default function NotificationDrawer() {
               <Link href="/profile/notifications" onClick={closeAllMenus}>{t("bildirishnomalarni_boshqarish")}</Link>
             </div>
           ) : (
-            notifications.filter((n: any) => !showUnreadOnly || !n.isRead).map((n: any) => (
-              <div key={n.id} className={`${styles.item} ${n.isRead ? "" : styles.unread}`}>
-                <div className={styles.iconBadge}><Bell size={18} /></div>
-                <div className={styles.itemBody}>
-                  <p className={styles.itemTitle}>{n.title}</p>
-                  <p className={styles.itemMsg}>{n.message}</p>
-                  <p className={styles.itemTime}>{new Date(n.createdAt).toLocaleString("uz-UZ")}</p>
+            (() => {
+              const filtered = notifications.filter((n: any) => !showUnreadOnly || !n.isRead);
+              if (filtered.length === 0) {
+                return (
+                  <div className={styles.empty}>
+                    <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
+                    <h3>Hammasi o'qilgan</h3>
+                    <p style={{ color: '#888', fontSize: 14, maxWidth: 260, lineHeight: 1.4, margin: '0 auto' }}>
+                      {showUnreadOnly ? "O\u2018qilmagan bildirishnomalar yo\u2018q" : "Bildirishnomalar mavjud emas"}
+                    </p>
+                  </div>
+                );
+              }
+              return filtered.map((n: any) => (
+                <div key={n.id} className={`${styles.item} ${n.isRead ? "" : styles.unread}`}>
+                  <div className={styles.iconBadge}><Bell size={18} /></div>
+                  <div className={styles.itemBody}>
+                    <p className={styles.itemTitle}>{n.title}</p>
+                    <p className={styles.itemMsg}>{n.message}</p>
+                    <p className={styles.itemTime}>{new Date(n.createdAt).toLocaleString("uz-UZ")}</p>
+                  </div>
+                  {!n.isRead && <span className={styles.dot}></span>}
                 </div>
-                {!n.isRead && <span className={styles.dot}></span>}
-              </div>
-            ))
+              ));
+            })()
           )}
         </div>
       </div>
