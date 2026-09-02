@@ -66,7 +66,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                         const { verifyRecaptcha } = await import('@/lib/recaptcha');
                         const captcha = await verifyRecaptcha(recaptchaToken);
                         if (!captcha.success) {
-                            throw new Error('Bot tekshiruvidan o'tmadi');
+                            throw new Error("Bot tekshiruvidan o'tmadi");
                         }
                     }
 
