@@ -625,7 +625,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                         <>
                             <span className="text-gray-300">/</span>
                             <Link href={`/category/${category.parent.slug}`} className="text-gray-500 hover:text-blue-600">
-                                {category.parent.name}
+                                {getCategoryName(category.parent, locale)}
                             </Link>
                         </>
                     )}
@@ -662,7 +662,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                                 {sub.image ? (
                                                     <Image
                                                         src={sub.image}
-                                                        alt={sub.name}
+                                                        alt={getCategoryName(sub, locale)}
                                                         fill
                                                         sizes="80px"
                                                         className="object-contain group-hover:scale-110 transition-transform duration-300"
@@ -673,7 +673,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                                 ) : (
                                                 <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
                                                     <span className="text-white text-3xl font-bold">
-                                                        {sub.name.charAt(0)}
+                                                        {getCategoryName(sub, locale).charAt(0)}
                                                     </span>
                                                 </div>
                                             )}
@@ -681,7 +681,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                         <div className="p-4 border-t border-gray-100 bg-white">
                                             <div className="flex items-center justify-between">
                                                 <span className="font-semibold text-gray-800 text-sm line-clamp-2 flex-1">
-                                                    {sub.name}
+                                                    {getCategoryName(sub, locale)}
                                                 </span>
                                                 <ChevronRight
                                                     size={18}

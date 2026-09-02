@@ -149,6 +149,7 @@ export const getCachedRootCategories = unstable_cache(
             select: {
                 id: true,
                 name: true,
+                translations: true,
                 slug: true,
                 image: true,
             }
@@ -235,14 +236,14 @@ export const getCachedCategoryTree = unstable_cache(
         const roots = await (prisma as any).category.findMany({
             where: { isActive: true, parentId: null },
             orderBy: { order: 'asc' },
-            select: { id: true, name: true, slug: true, parentId: true },
+            select: { id: true, name: true, translations: true, slug: true, parentId: true },
         });
         for (const root of roots) {
             flat.push({ ...root, depth: 0 });
             const children = await (prisma as any).category.findMany({
                 where: { parentId: root.id, isActive: true },
                 orderBy: { name: 'asc' },
-                select: { id: true, name: true, slug: true, parentId: true },
+                select: { id: true, name: true, translations: true, slug: true, parentId: true },
             });
             for (const child of children) {
                 flat.push({ ...child, depth: 1 });
