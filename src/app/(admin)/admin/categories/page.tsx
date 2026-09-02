@@ -37,6 +37,8 @@ export default function AdminCategoriesPage() {
 
     // Form state
     const [name, setName] = useState('');
+    const [translations, setTranslations] = useState<Record<string, string>>({ uz: '', ru: '', en: '' });
+    const [translating, setTranslating] = useState(false);
     const [parentId, setParentId] = useState('');
     const [image, setImage] = useState('');
     const [isActive, setIsActive] = useState(true);
@@ -110,7 +112,7 @@ export default function AdminCategoriesPage() {
             const res = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, parentId: parentId || null, image, isActive })
+                body: JSON.stringify({ name, translations, parentId: parentId || null, image, isActive })
             });
 
             if (res.ok) {
@@ -327,6 +329,62 @@ export default function AdminCategoriesPage() {
                                         className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm font-medium"
                                         placeholder="Masalan: Uy va Bog' uchun"
                                     />
+                                </div>
+
+                                {/* Tarjimalar — 3 til */}
+                                <div className="space-y-2 md:col-span-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-gray-700 ml-1">Tarjimalar (RU / EN)</label>
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (!name.trim()) { toast.error("Avval kategoriya nomini yozing"); return; }
+                                                setTranslating(true);
+                                                try {
+                                                    const res = await fetch('/api/admin/translate', {
+                                                        method: 'POST',
+                                                        headers: { 'Content-Type': 'application/json' },
+                                                        body: JSON.stringify({ name })
+                                                    });
+                                                    const data = await res.json();
+                                                    if (data.translations) {
+                                                        setTranslations(data.translations);
+                                                        toast.success("Tarjima qilindi");
+                                                    } else {
+                                                        toast.error(data.error || "Tarjima xatosi");
+                                                    }
+                                                } catch (e) {
+                                                    toast.error("Tarjima xizmati ishlamayapti");
+                                                } finally {
+                                                    setTranslating(false);
+                                                }
+                                            }}
+                                            disabled={translating}
+                                            className="px-3 py-1.5 bg-indigo-50 text-indigo-600 text-xs font-bold rounded-lg hover:bg-indigo-100 transition-colors disabled:opacity-50"
+                                        >
+                                            {translating ? 'Tarjima...' : '⚡ Avtomatik tarjima'}
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-500 mb-1 block">🇷🇺 Ruscha</label>
+                                            <input
+                                                value={translations.ru || ''}
+                                                onChange={e => setTranslations(prev => ({ ...prev, ru: e.target.value }))}
+                                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                                placeholder="Например: Для дома и сада"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs font-semibold text-gray-500 mb-1 block">🇬🇧 Inglizcha</label>
+                                            <input
+                                                value={translations.en || ''}
+                                                onChange={e => setTranslations(prev => ({ ...prev, en: e.target.value }))}
+                                                className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all text-sm"
+                                                placeholder="For example: For home and garden"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">

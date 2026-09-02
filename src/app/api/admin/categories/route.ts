@@ -28,7 +28,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { name, parentId, image, isActive } = body;
+        const { name, translations, parentId, image, isActive } = body;
 
         // Simple slug generation
         const slug = name.toLowerCase().replace(/ /g, '-').replace(/[^\w-]+/g, '') + '-' + Date.now();
@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         const category = await (prisma as any).category.create({
             data: {
                 name,
+                translations: translations ? JSON.stringify(translations) : null,
                 slug,
                 parentId: parentId || null,
                 image,

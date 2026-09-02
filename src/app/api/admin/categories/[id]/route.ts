@@ -38,13 +38,14 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
     const { id } = await context.params;
     const body = await req.json();
-    const { name, parentId, image } = body;
+    const { name, translations, parentId, image } = body;
 
     try {
         await (prisma as any).category.update({
             where: { id },
             data: {
                 name,
+                translations: translations ? JSON.stringify(translations) : undefined,
                 parentId: parentId || null,
                 image,
                 isActive: body.isActive

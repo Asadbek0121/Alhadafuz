@@ -391,6 +391,8 @@ model Product {
 model Category {
   id                   String                        @id @default(cuid())
   name                 String
+  /// Tarjimalar: JSON `{"uz":"...","ru":"...","en":"..."}` — name'ning tillardagi variantlari
+  translations         String?
   slug                 String                        @unique
   image                String?
   order                Int                           @default(0)
