@@ -47,7 +47,19 @@ export default async function AdminLayout({
     const locale = resolvedParams?.locale || 'uz';
 
     const is2faPassed = (session?.user as any)?.admin2fa;
+    let db2faApproved = false;
     if (userRole === 'ADMIN' && !is2faPassed) {
+        // Session flag yo'q bo'lsa DB'dan tekshirish — Telegram'da tasdiqlangan bo'lsa
+        // session update ishlamasa ham panelga o'tkazamiz.
+        try {
+            const { prisma } = await import('@/lib/prisma');
+            const tokenData = await prisma.verificationToken.findFirst({
+                where: { identifier: `admin_2fa_${(session.user as any).id}` },
+            });
+            db2faApproved = tokenData?.token === 'APPROVED' && tokenData.expires > new Date();
+        } catch { /* DB xatosi bo'lsa 2FA oynasi ko'rsatiladi */ }
+    }
+    if (userRole === 'ADMIN' && !is2faPassed && !db2faApproved) {
         return (
             <>
                 <SessionProviderWrapper session={session}>
