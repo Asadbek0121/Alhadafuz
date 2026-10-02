@@ -19,9 +19,13 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { phone, isRegister, recaptchaToken } = body;
 
-        // reCAPTCHA v3 — bot himoyasi
-        const captcha = recaptchaToken ? await verifyRecaptcha(recaptchaToken) : { success: false };
-        if (!captcha.success) {
+        // reCAPTCHA v3 — bot himoyasi (dev'da token yo'q bo'lsa bypass)
+        const hasToken = recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
+        const captcha = hasToken ? await verifyRecaptcha(recaptchaToken) : { success: false };
+        if (hasToken && !captcha.success) {
+            return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
+        }
+        if (!hasToken && process.env.NODE_ENV === "production") {
             return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
         }
 

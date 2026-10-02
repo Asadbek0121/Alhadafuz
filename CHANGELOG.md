@@ -4,6 +4,17 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Added
+- **Telegram Login (OAuth) — /auth/login sahifasi to'liq ishlaydigan holatga keltirildi**:
+  - **Sabab**: `/auth/login` sahifasi faqat `/?auth=login` modalga redirect qilardi; `signIn('telegram-login')` provider'siz chaqirilardi (NextAuth'da provider yo'q edi).
+  - **Qo'shildi**: `src/auth.ts`da yangi Credentials provider `telegram-login` (zod validatsiya, `verifyTelegramLogin` HMAC-SHA256 + 24h auth_date expiry, `telegramId` orqali user upsert, `uniqueId` generatsiya, ActivityLog).
+  - **Yangi endpoint**: `GET /api/auth/telegram/config` — bot token/username server-side'dan o'qiydi, faqat `botId` (token prefix) + `botUsername` qaytaradi (token o'zi hech qachon client'ga chiqmaydi).
+  - **Yangilangan sahifa**: `/auth/login` — Telegram login widget (TelegramLoginButton), success'da `/profile`ga redirect (open-redirect himoyasi: faqat boshlanadigan `/` path qabul), login bo'lgan user `/profile`ga yo'naltiriladi.
+  - **TelegramLoginButton**: success redirect `window.location.reload()` → `/profile` (open-redirect filter bilan).
+  - **Env**: `.env.local`ga `TELEGRAM_BOT_USERNAME=Hadaf_supportbot`; `.env.example`ga hujjat. Production (Vercel) uchun `TELEGRAM_BOT_USERNAME` qo'shish kerak.
+  - **BotFather talab**: login widget ishlashi uchun BotFather'da `/setdomain` bilan `alhadaf.uz` va `www.alhadaf.uz` domenlari qo'shilishi shart.
+  - Verification: `npx tsc --noEmit` 0 error, `/api/auth/telegram/config` 200 (`{"botId":"...","botUsername":"Hadaf_supportbot"}`), `/uz/auth/login` 200.
+
 ### Changed
 - **Storefront static sahifalar (5) ixchamlashtirildi** (`about`, `terms`, `privacy`, `faq`, `returns`):
   - **Sabab**: Sahifalardagi hero/header va kartalar juda katta edi (`py-16/py-20`, `text-4xl..8xl`, `p-12/p-16`, `rounded-[40px]/[3.5rem]`, `p-8/p-10` kartalar) — kontent sichib, sahifalar vertikal cho'zilib ketardi.
@@ -18,6 +29,21 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
   - Verification: `npx tsc --noEmit` 0 error, ESLint o'zgargan 8 fayl 0 error (1 pre-existing warning — products `no-img-element` disable), `npm run build` SUCCESS (barcha 8 admin route compileylandi). Runtime: `/admin/{users,products,coupons,banners,stores,payments,payments/logs,settings}` → HTTP 200.
 
 ### Fixed
+- **Click to'lov ishlamasligi — asosiy sabab topildi va tuzatildi (admin panel konfiguratsiyasi e'tiborsiz qolgan edi)**:
+  - **Sabab (jonli tasdiqlangan)**: `src/app/api/payment/click/route.ts` konfiguratsiyani faqat `process.env.CLICK_SERVICE_ID`/`CLICK_SECRET_KEY` dan o'qirdi; bu env'lar `.env`/`.env.local` da **yo'q**. Admin panelda saqlangan `PaymentMethod.config` (provider=CLICK) umuman ishlatilmasdi. Natijada Click'ning har Prepare/Complete so'rovi `{"error":-1,"error_note":"Internal Server Error: Config missing"}` olardi.
+  - **Ikkinchi sabab**: `src/app/api/orders/route.ts` da to'lov havolasi **qattiq yozilgan** edi (`https://indoor.click.uz/pay?id=073206...`, 3 joyda) — admin panelda kiritilgan `service_id`/`merchant_id` hisobga olinmasdi.
+  - **Tuzatish**: `src/lib/click.ts` ga `getClickConfig()` (avval DB'dagi admin panel config, keyin env fallback; `secret_key` yoki `secretKey` qabul qilinadi) va `buildClickPayUrl()` (rasmiy `my.click.uz/services/pay` formati) qo'shildi. Webhook endi imzo va `service_id` tekshiruvini shu konfiguratsiya bilan bajaradi. `orders/route.ts` dagi 3 ta qattiq URL konfiguratsiyaga o'tkazildi (GET'da N+1 oldini olish uchun config bir marta o'qiladi).
+  - **Admin panel UX**: `src/app/(admin)/admin/payments/page.tsx` — CLICK `<textarea>` placeholder'i endi `secret_key` ni ham ko'rsatadi; qo'llanma matni Secret Key **majburiy** ekanini aytadi. (Ilgari panel faqat `service_id`/`merchant_id` so'rardi — shu sababli DB'dagi config'da `secret_key` yo'q edi.)
+  - **MUHIM (foydalanuvchi tomonidan bajarilishi kerak)**: DB'dagi CLICK config'da `service_id: 112072` va `merchant_id: 91485` bor, **`secret_key` YO'Q**. Click Merchant kabinetidan Secret Key olinib, admin panel > To'lov Tizimlari > CLICK > JSON'ga `"secret_key": "..."` qilib qo'shilishi shart — aks holda to'lov tasdiqlanmaydi. Click kabinetida Prepare va Complete URL → `https://www.alhadaf.uz/api/payment/click` sozlanishi kerak.
+  - **Muhim fayllar**: `src/lib/click.ts`, `src/app/api/payment/click/route.ts`, `src/app/api/orders/route.ts`, `src/app/(admin)/admin/payments/page.tsx`, `.env.example`.
+  - Verification: `tsc --noEmit` va ESLint to'liq yakunlanmadi (muhit muammosi — pastdagi yozuvga qarang). Runtime: `/api/settings` 200, `/api/payment-methods` 200, `POST /api/payment/click` → `{"error":-1,"error_note":"Internal Server Error: Config missing"}` (config to'liq emasligining jonli isboti). Batafsil testlar: imzo MD5 (Prepare/Complete), URL formati, DB→env→null prioriteti, buzilgan JSON'da crash yo'q — 16 ta assertion PASS.
+- **Lokal ish muhiti: iCloud Drive loyihani buzayotgan edi (dev server ishga tushmasligining sababi)**:
+  - **Belgi**: `next dev` ko'tarilardi, lekin port 3000 hech qachon javob bermasdi (`HTTP 000`), logda "Ready" dan keyin hech narsa yo'q, bosh sahifa kompilyatsiyasi qotardi.
+  - **Sabab**: loyiha `~/Documents` (iCloud Drive) ichida va "Optimize Mac Storage" yoqilgan edi → `node_modules` da **69 779**, `.next` da **4 742** fayl `dataless` (lokalda bo'sh, faqat bulutda). Node har bir faylni o'qiganda iCloud'dan yuklashni kutardi. `fileproviderd` 83% CPU bilan ishlab, fayllarni qayta evict qilardi.
+  - **Qo'llangan choralar**: `npm ci` bilan `node_modules` toza o'rnatildi (`dataless` 0 ga tushdi) va `.next` kesh o'chirildi (`rm -rf .next`) → shundan keyin server javob bera boshladi (`/api/settings` 200).
+  - **QOLGAN MUAMMO**: `/[locale]` sahifa kompilyatsiyasi hali ham qotyapti (Turbopack ishchi jarayonlari idle). API marshrutlari ishlaydi, sahifa kompilyatsiyasi ishlamaydi.
+  - **Tavsiya (bajarilmagan)**: loyihani iCloud'dan tashqariga ko'chirish — `mv ~/Documents/uzm ~/Developer/uzm && npm ci`. Bu loyihaning barqaror ishlashi uchun zarur.
+
 - **Favicon/SEO/branding complete fix (Chrome favicon kichik + Google globe + eski contactlar)**:
   - **Favicon root cause**: avvalgi `scripts/generate-icons.mjs` butun logotip (HADAF + underline bar + MARKET tagline, 690x548) ni kesib, 16-48px faviconga sig'dirardi — "MARKET" yozuvi va bar kichik o'lchamda o'qib bo'lmas bled edi va brand mark faviconda deyarli ko'rinmas, juda kichik edi. Google faviconga yetarli kontrast/aniqlik bermagani uchun natijada globe (default) ikonkasi ko'rsatardi.
   - **Fix**: `scripts/generate-icons.mjs` endi faqat **HADAF wordmark** ni kesadi (`public/logo.png` x167-855, y239-638 — 689x400, underline bar + MARKET taglinesiz). Favicon endi 32x32 tab'da 30/32px enni egallaydi (avval 22/32px, butun logo).

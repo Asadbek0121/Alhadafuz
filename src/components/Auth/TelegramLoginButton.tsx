@@ -67,7 +67,12 @@ export default function TelegramLoginButton({ botName }: { botName: string }) {
                     localStorage.removeItem('mergeCartOnLogin');
                 } else {
                     toast.success("Muvaffaqiyatli kirildi!");
-                    window.location.reload();
+                    const params = new URLSearchParams(window.location.search);
+                    const raw = params.get('callbackUrl');
+                    const target = raw && raw.startsWith('/') && !raw.startsWith('//')
+                        ? raw
+                        : '/profile';
+                    window.location.assign(`/${'uz'}${target === '/' ? '' : target}`);
                 }
             } catch (error) {
                 console.error("Login Catch Error:", error);

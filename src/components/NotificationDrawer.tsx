@@ -125,7 +125,7 @@ export default function NotificationDrawer() {
               if (filtered.length === 0) {
                 return (
                   <div className={styles.empty}>
-                    <div style={{ fontSize: 48, marginBottom: 16 }}>&#10003;</div>
+                    <img src="/icons/no-messages.svg" alt="" width={160} height={160} style={{ marginBottom: 24 }} />
                     <h3>Hammasi o'qilgan</h3>
                     <p style={{ color: '#888', fontSize: 14, maxWidth: 260, lineHeight: 1.4, margin: '0 auto' }}>
                       {showUnreadOnly ? "O\u2018qilmagan bildirishnomalar yo\u2018q" : "Bildirishnomalar mavjud emas"}

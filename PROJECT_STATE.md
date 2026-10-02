@@ -20,6 +20,7 @@
 
 ## Current Focus
 
+- **Telegram Login (OAuth)** — `/auth/login` sahifasi to'liq ishlaydigan holatga keltirildi (2026-10-02): `telegram-login` provider `src/auth.ts`ga qo'shildi, `/api/auth/telegram/config` endpoint, widget redirect `/profile`ga. **Qolgan (foydalanuvchi)**: BotFather `/setdomain` → `alhadaf.uz` + `www.alhadaf.uz`; Vercel env `TELEGRAM_BOT_USERNAME=Hadaf_supportbot`.
 - Admin panel banner formasi frontend tizimiga moslashtirildi (dinamik position forma).
 - Production readiness: Phase 11 audit — qolgan risklar (Click env, Upstash).
 - Navbatdagi: frontendni tekshirish, admin panel boshqa bo'limlarini frontend bilan sinxronlash.
@@ -274,6 +275,33 @@ Avvalgi sessiyalardan:
 - `revalidatePath` faqat admin orders assign/auto-dispatch'da.
 - Data-cache deyarli yo'q; `unstable_cache` `lib/data.ts` da (products/banners).
 
+## Click Payment — Holat (2026-09-17)
+
+**Asosiy sabab topildi va tuzatildi** (kod admin panel konfiguratsiyasini e'tiborsiz qoldirardi):
+- `src/lib/click.ts` — yangi `getClickConfig()`: avval DB'dagi `PaymentMethod.config` (admin panel), keyin env fallback; `buildClickPayUrl()`.
+- `src/app/api/payment/click/route.ts` — imzo + `service_id` tekshiruvi konfiguratsiyadan (avval faqat env'dan o'qirdi).
+- `src/app/api/orders/route.ts` — qattiq yozilgan `indoor.click.uz/pay?id=073206` havolasi (3 joyda) konfiguratsiyaga o'tkazildi.
+- `src/app/(admin)/admin/payments/page.tsx` — placeholder/qo'llanma endi `secret_key` ni ham so'raydi.
+
+**⚠️ FOYDALANUVCHI BAJARISHI SHART (aks holda to'lov ishlamaydi):**
+1. DB'dagi CLICK config'da `service_id: 112072`, `merchant_id: 91485` bor, lekin **`secret_key` YO'Q** (jonli tekshirildi).
+2. Click Merchant kabinetidan **Secret Key** olinib, admin panel > To'lov Tizimlari > CLICK > JSON konfiguratsiyaga qo'shilsin:
+   `{"service_id": "112072", "merchant_id": "91485", "secret_key": "..."}`
+3. Click kabinetida **Prepare URL** va **Complete URL** → `https://www.alhadaf.uz/api/payment/click`
+4. Production (Vercel) env'ga ham qo'yish mumkin: `CLICK_SERVICE_ID`, `CLICK_MERCHANT_ID`, `CLICK_SECRET_KEY` (DB'dagi config env'dan ustun turadi).
+
+**Tasdiqlangan (jonli)**: `POST /api/payment/click` → `{"error":-1,"error_note":"Internal Server Error: Config missing"}` — secret_key yo'qligining isboti.
+**Ochiq savol**: `id=073206` — Click "indoor pay" havolasi edi. Agar do'kon shu usulda ishlagan bo'lsa, webhook umuman ishlatilmaydi (tasdiq qo'lda) — bu holda tuzatish boshqa oqimga tegishli bo'ladi.
+
+## Lokal ish muhiti — iCloud Drive muammosi (2026-09-17)
+
+- Loyiha `~/Documents/uzm` — **iCloud Drive ichida**. "Optimize Mac Storage" fayllarni evict qilgan: `node_modules` da **69 779**, `.next` da **4 742** fayl `dataless` edi (lokalda bo'sh).
+- Natija: `next dev` "Ready" derdi, lekin port 3000 javob bermasdi (`HTTP 000`); `fileproviderd` 83% CPU.
+- Bajarildi: `npm ci` (node_modules tozalandi → dataless 0) + `rm -rf .next` → keyin **API marshrutlari ishlay boshladi** (`/api/settings` 200, `/api/payment-methods` 200, Click webhook 200).
+- **Qolgan**: `/[locale]` sahifa kompilyatsiyasi qotyapti (Turbopack worker'lari idle, CPU 0%). API ishlaydi, sahifa ishlamaydi.
+- **Tavsiya**: loyihani iCloud'dan tashqariga ko'chirish — `mv ~/Documents/uzm ~/Developer/uzm && npm ci`. Barqaror ishlash uchun zarur.
+- `DIRECT_URL` hozir **pooler**ga (6543) ishora qilyapti; Supabase'da direct host `db.zzxcnoronqpexxcxfsmd.supabase.co:5432` bo'lishi kerak (migratsiyalar uchun).
+
 ## Last Updated
 
-2026-08-30 (BASE_URL production fix; CHINA_ORDER seed; BannerEvent analitika; Public shipping; Product slug route)
+2026-10-02 (Telegram Login OAuth: `telegram-login` NextAuth provider + `/auth/login` sahifasi + `/api/auth/telegram/config`; BotFather /setdomain va Vercel TELEGRAM_BOT_USERNAME qolgan)

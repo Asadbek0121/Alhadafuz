@@ -33,7 +33,7 @@ export async function POST(req: Request) {
         const user = await prisma.user.findUnique({ where: { id: userId } });
         
         if (user?.telegramId) {
-            const token = process.env.TELEGRAM_BOT_TOKEN;
+            const token = process.env.ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
             if (token) {
                 await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
                     method: 'POST',

@@ -1,6 +1,7 @@
 // Metadata holder for this route: the page here is a Client Component, and
 // generateMetadata is a Server Component-only export.
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { translatedPageMetadata } from "@/lib/seo";
 
 export async function generateMetadata({
@@ -13,5 +14,5 @@ export async function generateMetadata({
 }
 
 export default function AuthLoginLayout({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
+    return <Suspense fallback={null}>{children}</Suspense>;
 }

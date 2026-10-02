@@ -44,6 +44,76 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
             allowDangerousEmailAccountLinking: true,
         }),
         Credentials({
+            id: "telegram-login",
+            name: "Telegram Login",
+            credentials: {
+                id: {},
+                first_name: {},
+                last_name: {},
+                username: {},
+                photo_url: {},
+                auth_date: {},
+                hash: {},
+            },
+            async authorize(credentials) {
+                const parsed = z
+                    .object({
+                        id: z.union([z.string(), z.number()]).transform(String),
+                        first_name: z.string().min(1),
+                        last_name: z.string().optional(),
+                        username: z.string().optional(),
+                        photo_url: z.string().optional(),
+                        auth_date: z.union([z.string(), z.number()]).transform(String),
+                        hash: z.string().min(1),
+                    })
+                    .safeParse(credentials);
+
+                if (!parsed.success) return null;
+
+                const data = parsed.data;
+                if (!data.id || !/^\d+$/.test(data.id)) return null;
+                if (typeof data.first_name !== "string" || !data.first_name.trim() || data.first_name.length > 64) return null;
+                if (data.username && !/^[A-Za-z0-9_]{4,32}$/.test(data.username)) return null;
+                if (data.photo_url && !/^https:\/\/[\w.-]+t\.me\//.test(data.photo_url)) return null;
+
+                const isValid = await verifyTelegramLogin(data);
+                if (!isValid) return null;
+
+                let user = await prisma.user.findUnique({
+                    where: { telegramId: data.id },
+                });
+
+                if (!user) {
+                    const uniqueId = await generateNextUniqueId("USER");
+                    user = await prisma.user.create({
+                        data: {
+                            telegramId: data.id,
+                            name: [data.first_name, data.last_name].filter(Boolean).join(" ").trim(),
+                            image: data.photo_url || null,
+                            role: "USER",
+                            uniqueId,
+                        },
+                    });
+                } else {
+                    const newName = [data.first_name, data.last_name].filter(Boolean).join(" ").trim();
+                    const needsUpdate =
+                        user.name !== newName || (data.photo_url && user.image !== data.photo_url);
+                    if (needsUpdate) {
+                        user = await prisma.user.update({
+                            where: { id: user.id },
+                            data: {
+                                name: newName || user.name,
+                                ...(data.photo_url ? { image: data.photo_url } : {}),
+                            },
+                        });
+                    }
+                }
+
+                await logActivity(user.id, "LOGIN", { method: "TELEGRAM", telegramId: data.id });
+                return user;
+            },
+        }),
+        Credentials({
             async authorize(credentials) {
                 const parsedCredentials = z
                     .object({
@@ -62,7 +132,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     const { login, otp, password, name, deviceId, deviceName, fingerprint, recaptchaToken } = parsedCredentials.data;
 
                     // reCAPTCHA v3 — bot himoyasi
-                    if (recaptchaToken) {
+                    if (recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null") {
                         const { verifyRecaptcha } = await import('@/lib/recaptcha');
                         const captcha = await verifyRecaptcha(recaptchaToken);
                         if (!captcha.success) {
