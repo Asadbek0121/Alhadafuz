@@ -1,4 +1,5 @@
-"use client";
+// Server Component — faqat JSX (hooks/handlers yo'q), "use client" shart emas:
+// bundle hajmi va hydration ishi kamayadi.
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { Button } from "@/components/ui/button";

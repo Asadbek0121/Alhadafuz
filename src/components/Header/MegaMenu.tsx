@@ -212,14 +212,14 @@ export default function MegaMenu({ isOpen, close, menuMode = 'full' }: { isOpen:
                                             {/* Mobile Image (Bottom Right) */}
                                             <div className={styles.mobileCatImage}>
                                                 {cat.image ? (
-                                                    <img src={cat.image} alt={getCategoryName(cat, locale)} />
+                                                    <img src={cat.image} alt={getCategoryName(cat, locale)} loading="lazy" decoding="async" />
                                                 ) : <div className={styles.fallbackIcon}>{getIcon(cat.slug || '')}</div>}
                                             </div>
 
                                             {/* Desktop Icon (original) */}
                                             <span className={styles.icon}>
                                                 {cat.image ? (
-                                                    <img src={cat.image} alt={getCategoryName(cat, locale)} />
+                                                    <img src={cat.image} alt={getCategoryName(cat, locale)} loading="lazy" decoding="async" />
                                                 ) : getIcon(cat.slug || '')}
                                             </span>
 

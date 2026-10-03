@@ -1,4 +1,5 @@
-"use client";
+// Server Component — statistik jadval, interaktivlik yo'q (hooks/handlers
+// ishlatilmaydi), "use client" shart emas.
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { MoreVertical } from 'lucide-react';

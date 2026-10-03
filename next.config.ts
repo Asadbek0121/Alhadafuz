@@ -37,7 +37,11 @@ const cspHeader = [
     (isDev ? " 'unsafe-eval'" : " 'wasm-unsafe-eval'") +
     " https://telegram.org https://api-maps.yandex.ru" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net https://unpkg.com" +
-    " https://va.vercel-scripts.com https://*.vercel-scripts.com",
+    " https://va.vercel-scripts.com https://*.vercel-scripts.com" +
+    // Vercel Toolbar (Preview Comments / feedback.js) — Vercel platformasi
+    // tomonidan inject qilinadi, bizning kodimizda emas. Ruxsat berilmasa
+    // har bir production sahifada CSP xatosi chiqardi.
+    " https://vercel.live",
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net",
   "font-src 'self' data: https://fonts.gstatic.com",
@@ -50,6 +54,7 @@ const cspHeader = [
   "connect-src 'self' https://lottie.host https://ipapi.co" +
     " https://o4511251276955648.ingest.de.sentry.io https://hadaf-la.sentry.io" +
     " https://geocode-maps.yandex.ru https://*.yandex.ru https://*.yandex.net https://yastatic.net" +
+    " https://vercel.live" +
     (isDev ? " ws://localhost:3000" : ""),
   "worker-src 'self' blob:",
   "manifest-src 'self'",

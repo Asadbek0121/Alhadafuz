@@ -59,6 +59,19 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **Performance audit + optimizatsiya** (2026-10-03):
+  - `getProductDetail`: 5 ketma-ket query → 2 bosqichli parallel (Promise.all) + `select` (faqat kerakli ustunlar) — kesh miss'da ~4×RTT ortiqcha kutish yo'qoldi.
+  - `getCachedCategoryTree` N+1 → 2 ta parallel to'liq query (root + children).
+  - `DispatchService`: `fs.readFile` har courierda → bir marta `loadWeights()`; N×`dispatchLog.create` → bitta `createMany`.
+  - `src/lib/data.ts`: barcha `unstable_cache` eksportlari `React.cache(dedupe)` bilan wrap — request ichida parallel chaqiruv (layout+page) DB'ga ikki marta tushmaydi.
+  - `/api/products?ids=` yangi param — favorites sahifasi butun katalogni emas, faqat sevimli mahsulotlarni oladi (payload ~100x kichik).
+  - `/api/user/notifications` GET `select` (faqat 6 ta UI ustuni).
+  - CSP: `https://vercel.live` script-src/connect-src (Vercel Toolbar feedback.js CSP xatosi; kod bizniki emas).
+  - `"use client"` olib tashlandi: `src/app/not-found.tsx`, `admin/RecentOrdersTable.tsx` (faqat JSX).
+  - `<img loading="lazy" decoding="async">`: MegaMenu kategoriya ikonkalari (2 joy), Footer PaymentIcon.
+  - Redirectlar tekshirildi: `/`→`/uz` (307, `localePrefix: 'always'` — intentional SEO), `/uz/`→`/uz` (308 trailing slash) — normal, o'zgartirilmadi.
+  - Verification: `npm run build` ✅, tsc 0, lint (8 xato eskirgan fayllarda), sahifalar 200 (home 1.1s→, product cached 0.21s, search 0.35s, category 0.39s, admin/users 0.24s), 404 sahifa ishlaydi.
+
 - **Admin performance** (`41e31b1`): DB Tokiyada (RTT 303ms, query 1.2-3.5s) — asosiy sekinlik sababi. Xavfsiz keshlash: `/admin/users` `unstable_cache` 60s (create/delete/role-change'da `revalidateTag('admin-users', {expire:0})`) → **1.9s → 0.16s (12x)**; admin/chat conversations 5s→15s, messages 3s→10s polling; AdminHeader notifications 15s→30s. tsc 0, lint 0 (8 xato eskirgan fayllarda). DB region ko'chirish (Frankfurt) keyingi katta qadam — hali qilinmadi.
 
 - **BASE_URL production fix** (`15a24a3`): product page server-side fetch Vercel'da `localhost:3000` ga borardi (NEXTAUTH_URL/APP_URL/NEXT_PUBLIC_APP_URL yo'q) → `notFound()` 404. Endi `headers()` orqali `x-forwarded-host/host/proto` autodetection; fallback env'lar. Verification: production slug 200, id 308 redirect, API 200.

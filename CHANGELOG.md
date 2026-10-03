@@ -5,6 +5,20 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 ## [Unreleased]
 
 ### Changed
+- **Performance audit + optimizatsiya (2026-10-03)**:
+  - **Sabab**: DB Supabase Tokiyoda (RTT ~300ms) — har ketma-ket query ~300ms; homepage/product sahifalari ko'p parallel/ketma-ket so'rov yuborardi; favorites butun katalogni fetch qilardi; DispatchService har courierda disk I/O + N ta INSERT; CSP Vercel Toolbar feedback.js'ni bloklaydi.
+  - **O'zgarishlar**:
+    - `src/lib/data.ts` — `getProductDetail`: 5 ketma-ket query → `Promise.all` (2 bosqich) + `select` faqat kerakli ustunlar; `getCachedCategoryTree` N+1 → 2 parallel query; barcha cached eksportlar `React.cache` dedup (layout+page parallel chaqiruvi bitta so'rovga tushadi).
+    - `src/services/DispatchService.ts` — weights fayli bir marta o'qiladi; N×`dispatchLog.create` → bitta `createMany`.
+    - `src/app/api/products/route.ts` + `favorites/page.tsx` — `?ids=` param (butun katalogni o'rniga faqat sevimli mahsulotlar).
+    - `src/app/api/user/notifications/route.ts` — `select` (6 UI ustuni).
+    - `next.config.ts` — CSP'ga `https://vercel.live` (script-src + connect-src): Vercel platformasi inject qiladigan `feedback.js` CSP xatosi yo'qoldi (kod bizniki emas, olib tashlab bo'lmaydi).
+    - `"use client"` olib tashlandi (faqat JSX bo'lgan): `src/app/not-found.tsx`, `src/app/(admin)/admin/RecentOrdersTable.tsx`.
+    - MegaMenu/Footer `<img loading="lazy" decoding="async">`.
+    - Redirectlar tekshirildi: `/`→`/uz` (307) va trailing slash 308 — `localePrefix: 'always'` (SEO), o'zgartirilmadi.
+  - Verification: `npm run build` ✅, `npx tsc --noEmit` 0, lint 8 xato (eski, tegmagan fayllar), asosiy sahifalar 200 (product keshda 0.21s, search 0.35s, admin/users 0.24s), 404 sahifa ishlaydi.
+
+### Changed
 - **Admin performance** (`41e31b1`, 2026-10-03):
   - **Sabab**: DB Supabase Tokiyoda (TCP RTT ~303ms, oddiy query ham 1.2–3.5s) — admin sahifalari sekin; chat/header 3s/5s/15s polling DB'ni doim urib turardi.
   - **O'zgarish**: `/admin/users` server sahifasi `unstable_cache` (60s, `tags: ['admin-users']`); `POST/DELETE/PATCH /api/admin/users*` da `revalidateTag('admin-users', { expire: 0 })` (Next 16 ikki argumentli shakl) — yangi user darhol ko'rinadi. Natija: **1.9s → 0.16s (12x)**. admin/chat: conversations 5s→15s, messages 3s→10s; AdminHeader notifications 15s→30s.

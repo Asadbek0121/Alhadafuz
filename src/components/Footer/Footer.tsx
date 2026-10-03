@@ -223,7 +223,7 @@ function FooterLink({ href, children }: { href: string, children: React.ReactNod
 function PaymentIcon({ src, alt }: { src: string, alt: string }) {
     return (
         <div className="bg-white px-2 py-1 rounded h-8 w-14 flex items-center justify-center overflow-hidden">
-            <img src={src} alt={alt} className="h-full w-auto object-contain" />
+            <img src={src} alt={alt} loading="lazy" decoding="async" className="h-full w-auto object-contain" />
         </div>
     );
 }

@@ -14,6 +14,16 @@ export async function GET() {
             where: {
                 userId: session.user.id
             },
+            // Faqat UI'da ko'rsatiladigan maydonlar — body/katta ustunlar
+            // (masalan payload JSON) javob hajmini ortiqcha oshirmaydi.
+            select: {
+                id: true,
+                title: true,
+                message: true,
+                type: true,
+                isRead: true,
+                createdAt: true,
+            },
             orderBy: {
                 createdAt: 'desc'
             },

@@ -24,6 +24,9 @@ export async function GET(request: Request) {
     const categoryId = searchParams.get('categoryId');
     const categorySlug = searchParams.get('category');
     const exclude = searchParams.get('exclude');
+    // Sevimlilar sahifasi uchun: /api/products?ids=a,b,c — faqat kerakli
+    // mahsulotlar (butun katalogni fetch qilish o'rniga, ~100x kichik payload).
+    const idsParam = searchParams.get('ids');
     const sort = searchParams.get('sort') || 'newest';
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
@@ -36,12 +39,20 @@ export async function GET(request: Request) {
 
     try {
         // Hech qanday parametr bo'lmasa — eski holat: cached barcha mahsulotlar
-        if (!q && !categoryId && !categorySlug && !minPrice && !maxPrice) {
+        if (!q && !categoryId && !categorySlug && !minPrice && !maxPrice && !idsParam) {
             const processedProducts = await getCachedProducts();
             return NextResponse.json(processedProducts);
         }
 
         const where: any = { isDeleted: false };
+
+        if (idsParam) {
+            const ids = idsParam.split(',').map(s => s.trim()).filter(Boolean).slice(0, 100);
+            if (ids.length === 0) {
+                return NextResponse.json({ products: [], total: 0, page, limit, totalPages: 0 });
+            }
+            where.id = { in: ids };
+        }
 
         if (q) {
             where.title = { contains: q, mode: 'insensitive' };
@@ -118,8 +129,11 @@ export async function GET(request: Request) {
             (prisma as any).product.findMany({
                 where,
                 orderBy,
-                skip: (page - 1) * limit,
-                take: limit,
+                // ids bo'lganda pagination chegarasi emas — barcha mos ID'lar
+                // (wishlist uchun 100 ta cheklovi bilan yuqorida qo'yilgan).
+                ...(idsParam
+                    ? { take: 100 }
+                    : { skip: (page - 1) * limit, take: limit }),
             }),
         ]);
 

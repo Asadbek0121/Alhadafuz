@@ -6,14 +6,36 @@ export class DispatchService {
      * Scoring algorithm:
      * score = (distance * 40%) + courier_rating * 25% + workload * 20% + response_speed * 15%
      * Note: This is an simplified implementation for Uzbekistan conditions.
+     *
+     * `weights` argument — tashqi (bir marta o'qilgan) sozlamalar. Agar
+     * topilmasa default ishlatiladi. Har courier uchun fayl o'qish (N×disk I/O)
+     * o'rniga `findBestCourier` ichida bir marta o'qiladi.
      */
-    async calculateScore(courier: any, order: any) {
+    async calculateScore(courier: any, order: any, weights?: Record<string, number>) {
         const distance = this.calculateDistance(
             courier.currentLat, courier.currentLng,
             order.lat, order.lng
         );
 
-        // Load dynamic weights
+        const w = weights || (await this.loadWeights());
+
+        // Normalize distance (max 10km for calculation)
+        const distanceScore = Math.max(0, 100 - (distance * 10));
+        const ratingScore = courier.rating * 20; // 5.0 * 20 = 100
+        const workloadScore = Math.max(0, 100 - (courier.totalDeliveries * 2));
+        const responseScore = 100; // Placeholder for historical data
+
+        const totalScore =
+            (distanceScore * w.distance) +
+            (ratingScore * w.rating) +
+            (workloadScore * w.workload) +
+            (responseScore * w.response);
+
+        return totalScore;
+    }
+
+    /** Dynamic weights — fayl bir marta o'qiladi (xato bo'lsa default). */
+    private async loadWeights(): Promise<Record<string, number>> {
         let weights = { distance: 0.4, rating: 0.25, workload: 0.2, response: 0.15 };
         try {
             const fs = require('fs/promises');
@@ -27,20 +49,7 @@ export class DispatchService {
                 response: saved.responseWeight
             };
         } catch (e) { }
-
-        // Normalize distance (max 10km for calculation)
-        const distanceScore = Math.max(0, 100 - (distance * 10));
-        const ratingScore = courier.rating * 20; // 5.0 * 20 = 100
-        const workloadScore = Math.max(0, 100 - (courier.totalDeliveries * 2));
-        const responseScore = 100; // Placeholder for historical data
-
-        const totalScore =
-            (distanceScore * weights.distance) +
-            (ratingScore * weights.rating) +
-            (workloadScore * weights.workload) +
-            (responseScore * weights.response);
-
-        return totalScore;
+        return weights;
     }
 
     calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
@@ -68,26 +77,38 @@ export class DispatchService {
             include: { courierProfile: true }
         });
 
+        // Sozlamalar bir marta o'qiladi (har courierda emas) + scoring
+        // endi fayl I/O'siz — faqat arifmetika.
+        const weights = await this.loadWeights();
+
         let bestCourier = null;
         let highestScore = -1;
+        const attempts: { orderId: string; courierId: string; status: string; score: number }[] = [];
 
         for (const courier of activeCouriers) {
             const courierProfile = (courier as any).courierProfile;
-            const score = await this.calculateScore(courierProfile, order);
+            const score = await this.calculateScore(courierProfile, order, weights);
 
-            // Save attempt log
-            await (prisma as any).dispatchLog.create({
-                data: {
-                    orderId: (order as any).id,
-                    courierId: courier.id,
-                    status: "PENDING",
-                    score
-                }
+            attempts.push({
+                orderId: (order as any).id,
+                courierId: courier.id,
+                status: "PENDING",
+                score
             });
 
             if (score > highestScore) {
                 highestScore = score;
                 bestCourier = courier;
+            }
+        }
+
+        // N ta dispatchLog.create (N round-trip) → bitta createMany.
+        // Xato yuz bersa ham scoring natijasi buzilmaydi (log majburiy emas).
+        if (attempts.length > 0) {
+            try {
+                await (prisma as any).dispatchLog.createMany({ data: attempts });
+            } catch (e) {
+                console.error("[DispatchService] dispatchLog.createMany failed:", e);
             }
         }
 

@@ -25,12 +25,12 @@ export default function FavoritesPage() {
             }
 
             try {
-                // Fetch all products and filter for simplicity in mock environment
-                // In real app, you might have an official /api/wishlist route
-                const res = await fetch('/api/products');
-                const allProducts = await res.json();
-                const filtered = allProducts.filter((p: any) => wishlist.includes(p.id));
-                setProducts(filtered);
+                // Faqat sevimli mahsulotlar — ?ids= bilan (butun katalogni
+                // fetch qilish o'rniga; payload ~100x kichik, DB'da bitta IN).
+                const res = await fetch(`/api/products?ids=${encodeURIComponent(wishlist.join(','))}`);
+                const data = await res.json();
+                const list = Array.isArray(data) ? data : (data.products || []);
+                setProducts(list);
             } catch (e) {
                 console.error(e);
             } finally {
@@ -39,7 +39,7 @@ export default function FavoritesPage() {
         };
 
         fetchWishlistProducts();
-    }, [wishlist]);
+    }, [wishlist.join(',')]);
 
     if (loading) return <div className="container" style={{ padding: '40px' }}>{tProduct('loading')}</div>;
 
