@@ -1,257 +1,211 @@
 import { prisma } from "@/lib/prisma";
 
-export class CourierService {
-  /**
-   * Assigns a courier to an order atomically.
-   * Prevents race conditions by using a transaction.
-   */
-  async assignOrder(
-    orderId: string,
-    courierId: string,
-    reason: string = "Auto-assigned"
-  ): Promise<{ orderId: string; courierId: string; status: string }> {
-    const order = await prisma.order.findUnique({
-      where: { id: orderId },
-      include: { courierId: true }
-    });
-    if (!order) throw new Error(`Order ${orderId} not found`);
+const DEFAULT_COURIER_FEE = 12000;
 
-    // Check if already assigned
-    if (order.courierId) {
-      throw new Error(`Order ${orderId} is already assigned to ${order.courierId}`);
-    }
-
-    // Calculate score based on distance, rating, and workload
-    const score = this._calculateScore(order, courierId);
-
-    // Atomic transaction: update order and record assignment
-    const result = await this.$transaction(async (tx) => {
-      tx.order.update({
-        id: orderId,
-        courierId,
-        status: "ASSIGNED",
-        assignedAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      // Record the assignment in DispatchLog
-      await tx.DispatchLog.create({
-        orderId,
-        courierId,
-        status: "ASSIGNED",
-        score,
-        createdAt: new Date()
-      });
-
-      // Update courier profile balance
-      await tx.user.update({
-        where: { id: courierId },
-        data: { balance: (tx.user.balance ?? 0) + 12000 } // courierFeePerOrder
-      });
-
-      return { orderId, courierId, status: "ASSIGNED" };
-    });
-
-    return result;
-  }
-
-  /**
-   * Marks an order as delivered (requires photo proof).
-   * Ensures photo is uploaded before marking delivered.
-   */
-  async deliverOrder(
-    orderId: string,
-    photoId?: string
-  ): Promise<{ orderId: string; status: string }> {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) throw new Error(`Order ${orderId} not found`);
-
-    // Enforce photo proof
-    if (!photoId) {
-      throw new Error(`Order ${orderId} must have a delivery photo before marking as delivered`);
-    }
-
-    // Verify photo belongs to this order
-    const photo = await prisma.order.findFirst({
-      where: { orderId, deliveryPhoto: photoId }
-    });
-    if (!photo) throw new Error(`Photo ${photoId} not found for order ${orderId}`);
-
-    await this.$transaction(async (tx) => {
-      tx.order.update({
-        id: orderId,
-        status: "DELIVERED",
-        deliveryPhoto: photoId,
-        deliveredAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      // Log completion
-      await tx.DispatchLog.create({
-        orderId,
-        status: "DELIVERED",
-        score: 100,
-        createdAt: new Date()
-      });
-
-      return { orderId, status: "DELIVERED" };
-    });
-  }
-
-  /**
-   * Updates an order's status atomically.
-   */
-  async updateOrderStatus(
-    orderId: string,
-    status: string,
-    extra?: Record<string, any>
-  ): Promise<{ orderId: string; status: string }> {
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        status,
-        updatedAt: new Date(),
-        ...extra
-      }
-    });
-    return { orderId, status };
-  }
-
-  /**
-   * Marks an order as completed (after delivery + payment).
-   * Requires deliveryPhoto if present in the order.
-   */
-  async completeOrder(
-    orderId: string,
-    deliveryPhoto?: string
-  ): Promise<{ orderId: string; status: string }> {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) throw new Error(`Order ${orderId} not found`);
-
-    const photo = deliveryPhoto || order.deliveryPhoto;
-    if (!photo) {
-      throw new Error(`Order ${orderId} must have a delivery photo before completion`);
-    }
-
-    await this.$transaction(async (tx) => {
-      tx.order.update({
-        id: orderId,
-        status: "COMPLETED",
-        deliveryPhoto: photo,
-        finishedAt: new Date(),
-        updatedAt: new Date()
-      });
-
-      await tx.DispatchLog.create({
-        orderId,
-        status: "DELIVERED",
-        score: 100,
-        createdAt: new Date()
-      });
-
-      await tx.DispatchLog.create({
-        orderId,
-        status: "COMPLETED",
-        score: 100,
-        createdAt: new Date()
-      });
-    });
-  }
-
-  /**
-   * Marks an order as paid.
-   */
-  async markOrderPaid(
-    orderId: string
-  ): Promise<{ orderId: string; paymentStatus: string }> {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) throw new Error(`Order ${orderId} not found`);
-
-    await prisma.order.update({
-      where: { id: orderId },
-      data: {
-        paymentStatus: "PAID",
-        updatedAt: new Date()
-      }
-    });
-    return { orderId, paymentStatus: "PAID" };
-  }
-
-  /**
-   * Calculates assignment score based on distance, rating, and workload.
-   */
-  private _calculateScore(
-    order: any,
-    courierId: string
-  ): number {
-    // Distance factor (40%)
-    const distance = order.distance || 9999;
-    const distScore = 100 - (distance / 1000) * 40; // Max 40 points
-
-    // Rating factor (25%)
-    const rating = order.rating ?? 5;
-    const ratingScore = (rating / 5) * 25;
-
-    // Workload factor (20%) - lower workload gets higher score
-    const workload = order.totalDeliveries ?? 0;
-    const workloadScore = Math.max(0, 100 - (workload * 2));
-
-    // Priority factor (15%) - recently assigned orders get bonus
-    const priority = order.createdAt ? (order.createdAt - new Date(Date.now() - 86400000)) / 86400000 : 0;
-    const priorityScore = priority * 15;
-
-    return distScore + ratingScore + workloadScore + priorityScore;
-  }
-
-  /**
-   * Handles customer notifications (with retry logic).
-   */
-  async notifyCustomer(
-    orderId: string,
-    message: string
-  ): Promise<void> {
-    const order = await prisma.order.findUnique({ where: { id: orderId } });
-    if (!order) throw new Error(`Order ${orderId} not found`);
-
-    if (order.user?.notificationsEnabled) {
-      // In production, integrate with SMS gateway or Firebase
-      console.log(`[SMS to ${order.user.phone}]: ${message}`);
-
-      await prisma.notification.create({
-        data: {
-          userId: order.userId,
-          title: "Buyurtma holati",
-          message,
-          type: "ORDER"
-        }
-      });
-    }
-  }
-
-  /**
-   * Handles courier-specific notifications (with retry).
-   */
-  async notifyCourier(
-    courierId: string,
-    title: string,
-    message: string
-  ): Promise<void> {
-    const courier = await prisma.user.findUnique({ where: { id: courierId } });
-    if (!courier) throw new Error(`Courier ${courierId} not found`);
-    if (!courier.telegramId) throw new Error(`Courier ${courierId} has no Telegram ID`);
-
+async function getCourierFee(): Promise<number> {
     try {
-      await fetch(`https://api.telegram.org/bot${process.env.COURIER_BOT_TOKEN}/sendMessage`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: courier.telegramId,
-          text: `<b>${title}</b><br/>📩 ${message}`,
-          parse_mode: "HTML"
-        })
-      });
-    } catch (err) {
-      console.error(`Failed to notify courier ${courierId}:`, err);
+        const settings: any = await prisma.$queryRawUnsafe(
+            'SELECT "courierFeePerOrder" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default'
+        );
+        return Number(settings[0]?.courierFeePerOrder || DEFAULT_COURIER_FEE);
+    } catch {
+        return DEFAULT_COURIER_FEE;
     }
-  }
+}
+
+export class CourierService {
+    /**
+     * Kuryerni buyurtmaga atomik biriktiradi (transaction ichida).
+     * Race condition himoyasi: courierId bo'sh bo'lsaagina assign qilinadi.
+     */
+    async assignOrder(
+        orderId: string,
+        courierId: string,
+        reason: string = "Auto-assigned"
+    ): Promise<{ orderId: string; courierId: string; status: string }> {
+        const fee = await getCourierFee();
+
+        const result = await prisma.$transaction(async (tx) => {
+            const order = await tx.order.findUnique({
+                where: { id: orderId },
+                select: { id: true, courierId: true, status: true }
+            });
+            if (!order) throw new Error(`Order ${orderId} not found`);
+            if (order.courierId) {
+                throw new Error(`Order ${orderId} is already assigned to ${order.courierId}`);
+            }
+
+            await tx.order.update({
+                where: { id: orderId },
+                data: { courierId, status: "ASSIGNED" }
+            });
+
+            await tx.dispatchLog.create({
+                data: { orderId, courierId, status: "ASSIGNED" }
+            });
+
+            return { orderId, courierId, status: "ASSIGNED", fee };
+        });
+
+        return { orderId: result.orderId, courierId: result.courierId, status: result.status };
+    }
+
+    /**
+     * Buyurtma holatini o'zgartiradi.
+     */
+    async updateOrderStatus(
+        orderId: string,
+        status: string,
+        extra?: Record<string, unknown>
+    ): Promise<{ orderId: string; status: string }> {
+        await prisma.order.update({
+            where: { id: orderId },
+            data: { status, ...extra }
+        });
+        return { orderId, status };
+    }
+
+    /**
+     * Buyurtmani DELIVERED deb belgilaydi — rasm (photo proof) majburiy.
+     */
+    async deliverOrder(
+        orderId: string,
+        photoId: string
+    ): Promise<{ orderId: string; status: string }> {
+        if (!photoId) {
+            throw new Error(`Order ${orderId} must have a delivery photo before marking as delivered`);
+        }
+
+        await prisma.order.update({
+            where: { id: orderId },
+            data: { status: "DELIVERED", deliveryPhoto: photoId }
+        });
+
+        return { orderId, status: "DELIVERED" };
+    }
+
+    /**
+     * Buyurtmani COMPLETED qiladi: rasm majburiy, kuryer balansiga haqi yoziladi,
+     * totalDeliveries oshadi — barchasi bir transactionda.
+     */
+    async completeOrder(
+        orderId: string
+    ): Promise<{ orderId: string; status: string; fee: number }> {
+        const fee = await getCourierFee();
+
+        const result = await prisma.$transaction(async (tx) => {
+            const order = await tx.order.findUnique({
+                where: { id: orderId },
+                select: { id: true, status: true, courierId: true, deliveryPhoto: true }
+            });
+            if (!order) throw new Error(`Order ${orderId} not found`);
+            if (!order.deliveryPhoto) {
+                throw new Error(`Order ${orderId} must have a delivery photo before completion`);
+            }
+
+            // Ikki marta completed qilishdan himoya
+            if (order.status === "COMPLETED") {
+                return { orderId, status: "COMPLETED", fee, alreadyDone: true };
+            }
+
+            await tx.order.update({
+                where: { id: orderId },
+                data: { status: "COMPLETED", finishedAt: new Date() }
+            });
+
+            if (order.courierId) {
+                await tx.courierProfile.update({
+                    where: { userId: order.courierId },
+                    data: {
+                        totalDeliveries: { increment: 1 },
+                        balance: { increment: fee }
+                    }
+                });
+            }
+
+            return { orderId, status: "COMPLETED", fee, alreadyDone: false };
+        });
+
+        return { orderId: result.orderId, status: result.status, fee: result.fee };
+    }
+
+    /**
+     * To'lovni PAID deb belgilaydi.
+     */
+    async markOrderPaid(
+        orderId: string
+    ): Promise<{ orderId: string; paymentStatus: string }> {
+        await prisma.order.update({
+            where: { id: orderId },
+            data: { paymentStatus: "PAID" }
+        });
+        return { orderId, paymentStatus: "PAID" };
+    }
+
+    /**
+     * Mijozga bildirishnoma (DB notification + SMS placeholder).
+     */
+    async notifyCustomer(
+        orderId: string,
+        message: string
+    ): Promise<void> {
+        const order = await prisma.order.findUnique({
+            where: { id: orderId },
+            include: { user: { select: { id: true, phone: true, notificationsEnabled: true } } }
+        });
+        if (!order) throw new Error(`Order ${orderId} not found`);
+
+        if (order.user?.notificationsEnabled) {
+            console.log(`[SMS to ${order.user.phone}]: ${message}`);
+            await prisma.notification.create({
+                data: {
+                    userId: order.userId,
+                    title: "Buyurtma holati",
+                    message,
+                    type: "ORDER"
+                }
+            });
+        }
+    }
+
+    /**
+     * Kuryerga Telegram xabar (retry bilan — 3 urinish, exponential backoff).
+     */
+    async notifyCourier(
+        courierId: string,
+        title: string,
+        message: string
+    ): Promise<void> {
+        const courier = await prisma.user.findUnique({
+            where: { id: courierId },
+            select: { telegramId: true }
+        });
+        if (!courier) throw new Error(`Courier ${courierId} not found`);
+        if (!courier.telegramId) return;
+
+        const botToken = process.env.COURIER_BOT_TOKEN;
+        if (!botToken) return;
+
+        for (let attempt = 1; attempt <= 3; attempt++) {
+            try {
+                const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        chat_id: courier.telegramId,
+                        text: `<b>${title}</b>\n${message}`,
+                        parse_mode: "HTML"
+                    }),
+                    signal: AbortSignal.timeout(10000)
+                });
+                if (res.ok) return;
+                throw new Error(`Telegram API ${res.status}`);
+            } catch (err) {
+                console.error(`notifyCourier attempt ${attempt}/3 failed:`, err);
+                if (attempt < 3) {
+                    await new Promise(r => setTimeout(r, 1000 * attempt));
+                }
+            }
+        }
+    }
 }
