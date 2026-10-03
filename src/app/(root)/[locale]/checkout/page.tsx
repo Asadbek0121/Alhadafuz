@@ -978,9 +978,9 @@ export default function CheckoutPage() {
                                                 onClick={() => setPaymentMethod(method.provider)}
                                             >
                                                 {providerUpper === 'CLICK' ? (
-                                                    <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-white border", isSelected ? "border-blue-200" : "border-slate-100")}>
+                                                    <div className={cn("w-14 h-14 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-white border", isSelected ? "border-blue-200" : "border-slate-100")}>
                                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                        <img src="/icons/click-01.png" alt="Click" className="w-8 h-8 object-contain" />
+                                                        <img src="/icons/click-01.png" alt="Click" className="w-11 h-11 object-contain" />
                                                     </div>
                                                 ) : (
                                                     <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors", isSelected ? `${iconBg} ${iconColor}` : "bg-slate-50 text-slate-400")}>
