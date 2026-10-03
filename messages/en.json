@@ -176,7 +176,10 @@
     "chegirmalar": "Deals",
     "recent_searches": "Recent searches",
     "language_switcher": "Select language",
-    "yopish": "Close"
+    "yopish": "Close",
+    "savatni_ochish": "Open cart",
+    "tozalash": "Clear",
+    "qidiruvni_tozalash": "Clear search field"
   },
   "Home": {
     "warranty_desc": "Every product comes with an official warranty",
@@ -484,7 +487,12 @@
     "new_order_title": "New Order",
     "new_order_msg": "Order #{id} accepted. Total: {total}",
     "new_user_title": "New User",
-    "new_user_msg": "{name} has registered."
+    "new_user_msg": "{name} has registered.",
+    "unread_filter": "Unread",
+    "all_filter": "All notifications",
+    "all_read_title": "All read",
+    "no_unread": "No unread notifications",
+    "no_any": "No notifications"
   },
   "Profile": {
     "personal_info": "Personal Info",

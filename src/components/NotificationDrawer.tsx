@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 import { X, Bell, CheckCheck } from "lucide-react";
 import styles from "./NotificationDrawer.module.css";
 import { Link } from "@/navigation";
 import { useUIStore } from "@/store/useUIStore";
 import { useScrollLock } from "@/hooks/useScrollLock";
+
+// Locale → Intl sana formati (next-intl locale: uz/ru/en)
+const DATE_LOCALES: Record<string, string> = { uz: "uz-UZ", ru: "ru-RU", en: "en-US" };
 
 /** Bildirishnoma drawer — savatcha drawer'iga o'xshash o'ngdan ochiladi. */
 export default function NotificationDrawer() {
@@ -16,6 +19,7 @@ export default function NotificationDrawer() {
   const isOpen = activeMenu === "notifications";
   const t = useTranslations("Header");
   const tNotif = useTranslations("Notifications");
+  const locale = useLocale();
   const { data: session } = useSession();
   const isAuthenticated = !!session?.user;
 
@@ -64,7 +68,7 @@ export default function NotificationDrawer() {
           <h3>{t("bildirishnoma")}</h3>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {notifications.length > 0 && (
-              <button onClick={markAllRead} className={styles.closeBtn} title="Barchasini o'qilgan deb belgilash" aria-label="Barchasini o'qilgan deb belgilash">
+              <button onClick={markAllRead} className={styles.closeBtn} title={tNotif("mark_all_read")} aria-label={tNotif("mark_all_read")}>
                 <CheckCheck size={20} />
               </button>
             )}
@@ -89,7 +93,7 @@ export default function NotificationDrawer() {
                 cursor: 'pointer',
               }}
             >
-              O'qilmaganlar{unreadCount > 0 ? ` (${unreadCount})` : ''}
+              {tNotif("unread_filter")}{unreadCount > 0 ? ` (${unreadCount})` : ''}
             </button>
             <button
               onClick={() => setShowUnreadOnly(false)}
@@ -106,7 +110,7 @@ export default function NotificationDrawer() {
                 cursor: 'pointer',
               }}
             >
-              Barcha bildirishnomalar
+              {tNotif("all_filter")}
             </button>
           </div>
         )}
@@ -126,9 +130,9 @@ export default function NotificationDrawer() {
                 return (
                   <div className={styles.empty}>
                     <img src="/icons/no-messages.svg" alt="" width={160} height={160} style={{ marginBottom: 24 }} />
-                    <h3>Hammasi o'qilgan</h3>
+                    <h3>{tNotif("all_read_title")}</h3>
                     <p style={{ color: '#888', fontSize: 14, maxWidth: 260, lineHeight: 1.4, margin: '0 auto' }}>
-                      {showUnreadOnly ? "O\u2018qilmagan bildirishnomalar yo\u2018q" : "Bildirishnomalar mavjud emas"}
+                      {showUnreadOnly ? tNotif("no_unread") : tNotif("no_any")}
                     </p>
                   </div>
                 );
@@ -139,7 +143,7 @@ export default function NotificationDrawer() {
                   <div className={styles.itemBody}>
                     <p className={styles.itemTitle}>{n.title}</p>
                     <p className={styles.itemMsg}>{n.message}</p>
-                    <p className={styles.itemTime}>{new Date(n.createdAt).toLocaleString("uz-UZ")}</p>
+                    <p className={styles.itemTime}>{new Date(n.createdAt).toLocaleString(DATE_LOCALES[locale] || "uz-UZ")}</p>
                   </div>
                   {!n.isRead && <span className={styles.dot}></span>}
                 </div>

@@ -614,7 +614,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                         </Link>
 
                         {/* Cart */}
-                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer" title="Savatcha" aria-label="Savatchani ochish">
+                        <button onClick={openCart} className="relative group hidden md:flex flex-col items-center gap-1 cursor-pointer" title={t('savatcha')} aria-label={t('savatni_ochish')}>
                             <div className="relative p-2 rounded-xl group-hover:bg-slate-50 transition-all flex items-center justify-center w-10 h-10">
                                 <CartIcon size={24} className="opacity-90 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                                 {isHydrated && items.length > 0 && <span className="absolute top-1 right-1 w-4 h-4 bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">{items.length}</span>}
@@ -668,8 +668,8 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                 <button
                                     onClick={() => { setSearchQuery(''); setSearchResults([]); }}
                                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 bg-slate-200/50 rounded-full text-slate-500"
-                                    title="Tozalash"
-                                    aria-label="Qidiruv maydonini tozalash"
+                                    title={t('tozalash')}
+                                    aria-label={t('qidiruvni_tozalash')}
                                 >
                                     <X size={14} />
                                 </button>

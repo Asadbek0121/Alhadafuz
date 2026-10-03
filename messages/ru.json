@@ -176,7 +176,10 @@
     "chegirmalar": "Скидки",
     "recent_searches": "Недавние поиски",
     "language_switcher": "Выберите язык",
-    "yopish": "Закрыть"
+    "yopish": "Закрыть",
+    "savatni_ochish": "Открыть корзину",
+    "tozalash": "Очистить",
+    "qidiruvni_tozalash": "Очистить поле поиска"
   },
   "Home": {
     "warranty_desc": "Все товары имеют официальную гарантию",
@@ -482,7 +485,12 @@
     "new_order_title": "Новый Заказ",
     "new_order_msg": "Заказ #{id} принят. Сумма: {total}",
     "new_user_title": "Новый Пользователь",
-    "new_user_msg": "{name} зарегистрировался."
+    "new_user_msg": "{name} зарегистрировался.",
+    "unread_filter": "Непрочитанные",
+    "all_filter": "Все уведомления",
+    "all_read_title": "Все прочитано",
+    "no_unread": "Непрочитанных уведомлений нет",
+    "no_any": "Нет уведомлений"
   },
   "Profile": {
     "personal_info": "Личные данные",

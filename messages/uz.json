@@ -176,7 +176,10 @@
     "chegirmalar": "Chegirmalar",
     "recent_searches": "So'nggi qidiruvlar",
     "language_switcher": "Tilni tanlang",
-    "yopish": "Yopish"
+    "yopish": "Yopish",
+    "savatni_ochish": "Savatchani ochish",
+    "tozalash": "Tozalash",
+    "qidiruvni_tozalash": "Qidiruv maydonini tozalash"
   },
   "Home": {
     "warranty_desc": "Barcha mahsulotlar rasmiy kafolatga ega",
@@ -481,7 +484,12 @@
     "new_order_title": "Yangi Buyurtma",
     "new_order_msg": "Buyurtma #{id} qabul qilindi. Summa: {total}",
     "new_user_title": "Yangi Foydalanuvchi",
-    "new_user_msg": "{name} ro'yxatdan o'tdi."
+    "new_user_msg": "{name} ro'yxatdan o'tdi.",
+    "unread_filter": "O‘qilmaganlar",
+    "all_filter": "Barcha bildirishnomalar",
+    "all_read_title": "Hammasi o‘qilgan",
+    "no_unread": "O‘qilmagan bildirishnomalar yo‘q",
+    "no_any": "Bildirishnomalar mavjud emas"
   },
   "Profile": {
     "personal_info": "Shaxsiy ma'lumotlar",
