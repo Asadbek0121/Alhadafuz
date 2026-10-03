@@ -94,6 +94,20 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                             uniqueId,
                         },
                     });
+                    // Birinchi Telegram orqali kirish — bot welcome message yuboradi
+                    // (request_access=write ruxsati bilan). Login flow'ni bloklamaslik
+                    // uchun xato bo'lsa jim o'tkaziladi.
+                    import("@/lib/telegram-bot")
+                        .then(({ sendTelegramMessage }) =>
+                            sendTelegramMessage(
+                                data.id,
+                                `🎉 <b>HADAF Market'ga xush kelibsiz, ${data.first_name}!</b>\n\n` +
+                                `Telegram akkauntingiz orqali muvaffaqiyatli kirdingiz.\n` +
+                                `🛒 Endi buyurtma berishingiz mumkin.\n\n` +
+                                `Savollaringiz bo'lsa shu yerga yozing — tez javob beramiz.`
+                            )
+                        )
+                        .catch(() => {});
                 } else {
                     const newName = [data.first_name, data.last_name].filter(Boolean).join(" ").trim();
                     const needsUpdate =
