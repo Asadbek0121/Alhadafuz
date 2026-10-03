@@ -31,6 +31,7 @@ interface OrderItem {
 
 interface Order {
     id: string;
+    orderNumber?: string | null;
     createdAt: string;
     total: number;
     status: "PENDING" | "PROCESSING" | "SHIPPED" | "DELIVERED" | "CANCELLED" | "AWAITING_PAYMENT" | "DELIVERING" | "PICKED_UP" | "ASSIGNED" | "COMPLETED";
