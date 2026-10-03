@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 
@@ -25,6 +26,7 @@ export async function DELETE(
         await (prisma as any).user.delete({
             where: { id: id },
         });
+        revalidateTag("admin-users", { expire: 0 });
 
         return NextResponse.json({ message: "Foydalanuvchi muvaffaqiyatli o'chirildi" });
     } catch (error: any) {
@@ -57,6 +59,7 @@ export async function PATCH(
             where: { id },
             data: { role }
         });
+        revalidateTag("admin-users", { expire: 0 });
 
         return NextResponse.json(updatedUser);
     } catch (error: any) {

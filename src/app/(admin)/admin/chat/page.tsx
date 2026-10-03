@@ -117,7 +117,7 @@ export default function AdminChatPage() {
         };
 
         fetchConversations();
-        const interval = setInterval(fetchConversations, 5000);
+        const interval = setInterval(fetchConversations, 15000);
         return () => clearInterval(interval);
     }, []);
 
@@ -155,7 +155,7 @@ export default function AdminChatPage() {
         };
 
         fetchMessages();
-        const interval = setInterval(fetchMessages, 3000);
+        const interval = setInterval(fetchMessages, 10000);
         return () => clearInterval(interval);
     }, [selectedUser]);
 

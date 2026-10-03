@@ -54,7 +54,7 @@ export default function AdminHeader() {
 
     useEffect(() => {
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 15000); // Poll every 15s
+        const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
         return () => clearInterval(interval);
     }, []);
 

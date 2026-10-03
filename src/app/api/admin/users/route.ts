@@ -1,5 +1,6 @@
 
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import bcrypt from "bcryptjs";
@@ -53,6 +54,7 @@ export async function POST(req: Request) {
             }
         });
 
+        revalidateTag("admin-users", { expire: 0 });
         return NextResponse.json({ success: true, user: { id: newUser.id, email: newUser.email } });
     } catch (error: any) {
         console.error("User creation error:", error);

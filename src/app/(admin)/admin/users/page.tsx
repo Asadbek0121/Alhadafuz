@@ -3,23 +3,32 @@ import Link from "next/link";
 import { Search, ChevronLeft, ChevronRight, User, Shield, Calendar, Mail, Phone } from "lucide-react";
 import CreateUserModal from "./CreateUserModal";
 import type { Metadata } from "next";
+import { unstable_cache } from "next/cache";
 
 export const metadata: Metadata = {
     title: "Foydalanuvchilar",
 };
 
-async function getUsers(where: any, skip: number, take: number) {
-    return await Promise.all([
-        prisma.user.findMany({
-            where,
-            skip,
-            take,
-            orderBy: { createdAt: "desc" },
-            select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
-        }),
-        prisma.user.count({ where }),
-    ]);
-}
+const CACHE_TIME = 60; // 60s — admin 1 minutdan so'ng yangi foydalanuvchilarni ko'radi
+
+const getUsers = unstable_cache(
+    async (q: string, skip: number, take: number) => {
+        const where = q
+            ? { OR: [{ email: { contains: q, mode: 'insensitive' as const } }, { name: { contains: q, mode: 'insensitive' as const } }] }
+            : {};
+        const [users, total] = await Promise.all([
+            prisma.user.findMany({
+                where, skip, take,
+                orderBy: { createdAt: "desc" },
+                select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
+            }),
+            prisma.user.count({ where }),
+        ]);
+        return { users, total };
+    },
+    ["admin-users-list"],
+    { revalidate: CACHE_TIME, tags: ["admin-users"] }
+);
 
 export default async function TopshiriqUsersPage({
     searchParams,
@@ -32,17 +41,7 @@ export default async function TopshiriqUsersPage({
     const skip = (page - 1) * limit;
     const query = params.q || "";
 
-    const where = query
-        ? {
-            OR: [
-                { email: { contains: query, mode: 'insensitive' as const } },
-                { name: { contains: query, mode: 'insensitive' as const } },
-            ],
-        }
-        : {};
-
-    // No cache wrapper, fetch fresh data
-    const [users, total] = await getUsers(where, skip, limit);
+    const { users, total } = await getUsers(query, skip, limit);
 
     const totalPages = Math.ceil(total / limit);
 
