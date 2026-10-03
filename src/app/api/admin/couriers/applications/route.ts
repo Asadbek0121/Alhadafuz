@@ -72,9 +72,11 @@ export async function POST(req: Request) {
         let userId = '';
         if (existingUsers.length > 0) {
             userId = existingUsers[0].id;
+            // MUHIM: arizadagi telefon raqamini User.phone ga ham yozamiz —
+            // aks holda kuryer telefoni admin ro'yxatida ko'rinmaydi.
             await prisma.$executeRawUnsafe(
-                'UPDATE "User" SET role = $1, "telegramId" = $2, name = COALESCE(name, $3), "updatedAt" = $4 WHERE id = $5',
-                'COURIER', app.telegramId, app.name, new Date(), userId
+                'UPDATE "User" SET role = $1, "telegramId" = $2, name = COALESCE(NULLIF($3, \'\'), name), phone = COALESCE($4, phone), "updatedAt" = $5 WHERE id = $6',
+                'COURIER', app.telegramId, app.name, app.phone, new Date(), userId
             );
         } else {
             userId = `u_${Date.now()}`;
@@ -93,14 +95,22 @@ export async function POST(req: Request) {
 
         if (profiles.length === 0) {
             await prisma.$executeRawUnsafe(
-                'INSERT INTO "CourierProfile" (id, "userId", status, balance, "vehicleType", "updatedAt", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7)',
+                'INSERT INTO "CourierProfile" (id, "userId", status, balance, "vehicleType", "vehicleColor", "vehicleNumber", "updatedAt", "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)',
                 `cp_${userId}`,
                 userId,
                 "OFFLINE",
                 0,
                 app.vehicleType || "CAR",
+                app.vehicleColor || null,
+                app.vehicleNumber || null,
                 new Date(),
                 new Date()
+            );
+        } else {
+            // Mavjud profile'ga transport ma'lumotlarini yangilaymiz
+            await prisma.$executeRawUnsafe(
+                'UPDATE "CourierProfile" SET "vehicleType" = COALESCE($1, "vehicleType"), "vehicleColor" = COALESCE($2, "vehicleColor"), "vehicleNumber" = COALESCE($3, "vehicleNumber"), "updatedAt" = $4 WHERE "userId" = $5',
+                app.vehicleType, app.vehicleColor, app.vehicleNumber, new Date(), userId
             );
         }
 

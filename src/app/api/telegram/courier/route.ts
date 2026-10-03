@@ -351,26 +351,78 @@ export async function POST(req: Request) {
             // Normal Text / Menu / Registration Flow
             const user = await prisma.user.findUnique({ where: { telegramId } });
 
+            const getTemp = (): any => {
+                try { return user?.tempData ? JSON.parse(user.tempData) : {}; }
+                catch { return {}; }
+            };
+            const saveTemp = async (data: any) => {
+                if (!user) return;
+                await prisma.user.update({ where: { id: user.id }, data: { tempData: JSON.stringify(data) } });
+            };
+
+            // --- Ariza wizard: ism → familiya → telefon → transport → rang → davlat raqami ---
             if (user?.botState === 'REG_NAME') {
-                await prisma.user.update({ where: { id: user.id }, data: { name: text, botState: 'REG_PHONE' } });
+                await saveTemp({ ...getTemp(), firstName: text });
+                await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_LASTNAME' } });
+                await bot.sendMessage(chatId, "👤 Familiyangizni kiriting:", { reply_markup: { remove_keyboard: true } });
+            } else if (user?.botState === 'REG_LASTNAME') {
+                await saveTemp({ ...getTemp(), lastName: text });
+                await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_PHONE' } });
                 await bot.sendMessage(chatId, "📞 Telefon raqamingizni yuboring:", {
                     reply_markup: { keyboard: [[{ text: "📞 Raqamni yuborish", request_contact: true }]], resize_keyboard: true, one_time_keyboard: true }
                 });
-            } else if (user?.botState === 'REG_PHONE' || msg.contact) {
+            } else if (user?.botState === 'REG_PHONE' || (msg.contact && user?.botState?.startsWith('REG'))) {
                 const phone = msg.contact ? msg.contact.phone_number : text;
+                await saveTemp({ ...getTemp(), phone });
+                await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_VEHICLE' } });
+                await bot.sendMessage(chatId, "🚗 Transport turingizni tanlang:", {
+                    reply_markup: {
+                        keyboard: [[{ text: "🚗 Mashina" }, { text: "🛵 Skuter/Moto" }], [{ text: "🚲 Velosiped" }]],
+                        resize_keyboard: true, one_time_keyboard: true
+                    }
+                });
+            } else if (user?.botState === 'REG_VEHICLE') {
+                const vehicleType = text.includes('Skuter') || text.includes('Moto') ? 'MOTO'
+                    : text.includes('Velosiped') ? 'BIKE' : 'CAR';
+                await saveTemp({ ...getTemp(), vehicleType, vehicleTypeLabel: text });
+                await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_COLOR' } });
+                await bot.sendMessage(chatId, "🎨 Transportingiz rangini kiriting (masalan: oq, qora, ko'k):", {
+                    reply_markup: { remove_keyboard: true }
+                });
+            } else if (user?.botState === 'REG_COLOR') {
+                await saveTemp({ ...getTemp(), vehicleColor: text });
+                await prisma.user.update({ where: { id: user.id }, data: { botState: 'REG_NUMBER' } });
+                await bot.sendMessage(chatId, "🔢 Transportingiz davlat raqamini kiriting (masalan: 01 ABC 123):", {
+                    reply_markup: { remove_keyboard: true }
+                });
+            } else if (user?.botState === 'REG_NUMBER') {
+                const temp = getTemp();
+                const fullName = [temp.firstName, temp.lastName].filter(Boolean).join(' ').trim() || text;
 
                 await prisma.$executeRawUnsafe(`
-                    INSERT INTO "CourierApplication" (id, "telegramId", name, phone, "updatedAt") 
-                    VALUES ($1, $2, $3, $4, NOW())
-                    ON CONFLICT ("telegramId") DO UPDATE SET 
-                        name = EXCLUDED.name, 
-                        phone = EXCLUDED.phone, 
-                        status = 'PENDING', 
+                    INSERT INTO "CourierApplication" (id, "telegramId", "firstName", "lastName", name, phone, "vehicleType", "vehicleColor", "vehicleNumber", "updatedAt")
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
+                    ON CONFLICT ("telegramId") DO UPDATE SET
+                        "firstName" = EXCLUDED."firstName",
+                        "lastName" = EXCLUDED."lastName",
+                        name = EXCLUDED.name,
+                        phone = EXCLUDED.phone,
+                        "vehicleType" = EXCLUDED."vehicleType",
+                        "vehicleColor" = EXCLUDED."vehicleColor",
+                        "vehicleNumber" = EXCLUDED."vehicleNumber",
+                        status = 'PENDING',
                         "updatedAt" = NOW()
-                `, `app_${Date.now()}`, telegramId, user?.name, phone);
+                `, `app_${Date.now()}`, telegramId, temp.firstName || null, temp.lastName || null, fullName, temp.phone, temp.vehicleType || 'CAR', temp.vehicleColor || null, text);
 
-                await prisma.user.update({ where: { id: user?.id }, data: { botState: 'IDLE' } });
-                await bot.sendMessage(chatId, "🎉 Arizangiz qabul qilindi! Admin tasdiqlashini kuting.", { reply_markup: { remove_keyboard: true } });
+                await prisma.user.update({ where: { id: user.id }, data: { botState: 'IDLE', tempData: null, name: fullName } });
+                await bot.sendMessage(chatId,
+                    `🎉 <b>Arizangiz qabul qilindi!</b>\n\n` +
+                    `👤 <b>${fullName}</b>\n` +
+                    `📞 <code>${temp.phone}</code>\n` +
+                    `🚗 ${temp.vehicleTypeLabel || 'Mashina'} — ${temp.vehicleColor || ''}, 🔢 ${text}\n\n` +
+                    `Admin tasdiqlashini kuting.`,
+                    { parse_mode: 'HTML', reply_markup: { remove_keyboard: true } }
+                );
             }
 
             // Menu Buttons

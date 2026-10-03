@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { Plus, Users, Search, Truck, Navigation, Star, Phone, CreditCard, ChevronLeft, ChevronRight, LayoutGrid, CheckCircle2, XCircle, Clock, MapPin, BarChart3, Zap, Wallet, X, Trash2, Edit2, Loader2, Save } from "lucide-react";
+import { Plus, Users, Search, Truck, Navigation, Star, Phone, CreditCard, ChevronLeft, ChevronRight, LayoutGrid, CheckCircle2, XCircle, Clock, MapPin, BarChart3, Zap, Wallet, X, Trash2, Edit2, Loader2, Save, Bike } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
 import { Button } from '@/components/ui/button';
@@ -398,6 +398,14 @@ export default function AdminShippingPage() {
                                                         <div>
                                                             <div className="font-black text-gray-900">{app.name}</div>
                                                             <div className="text-[10px] font-bold text-blue-600 uppercase font-mono">{app.phone}</div>
+                                                            {(app.vehicleType || app.vehicleColor || app.vehicleNumber) && (
+                                                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-500 mt-0.5">
+                                                                    {app.vehicleType === 'MOTO' ? <Zap size={11} className="text-orange-500" /> : app.vehicleType === 'BIKE' ? <Bike size={11} className="text-green-600" /> : <Truck size={11} className="text-gray-400" />}
+                                                                    <span>{app.vehicleType === 'MOTO' ? 'Skuter/Moto' : app.vehicleType === 'BIKE' ? 'Velosiped' : 'Mashina'}</span>
+                                                                    {app.vehicleColor && <span>· {app.vehicleColor}</span>}
+                                                                    {app.vehicleNumber && <span className="font-mono text-gray-700">· {app.vehicleNumber}</span>}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </div>
                                                     <div className="flex gap-2">
@@ -457,6 +465,14 @@ export default function AdminShippingPage() {
                                                         <span className="flex items-center gap-0.5 text-amber-500">
                                                             ★ {Number(courier.courierProfile?.rating || 5).toFixed(1)}
                                                         </span>
+                                                        {(courier.courierProfile?.vehicleColor || courier.courierProfile?.vehicleNumber) && (
+                                                            <>
+                                                                <span>•</span>
+                                                                <span className="normal-case">
+                                                                    {courier.courierProfile?.vehicleColor}{courier.courierProfile?.vehicleNumber ? ` · ${courier.courierProfile.vehicleNumber}` : ''}
+                                                                </span>
+                                                            </>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </div>

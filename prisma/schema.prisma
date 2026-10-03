@@ -72,6 +72,8 @@ model CourierProfile {
   currentLat      Float?
   currentLng      Float?
   vehicleType     String?
+  vehicleColor    String?
+  vehicleNumber   String?
   balance         Float     @default(0)
   isVerified      Boolean   @default(false)
   lastOnlineAt    DateTime  @default(now())
@@ -84,14 +86,18 @@ model CourierProfile {
 }
 
 model CourierApplication {
-  id          String   @id @default(cuid())
-  telegramId  String   @unique
-  name        String
-  phone       String   @unique
-  status      String   @default("PENDING")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  vehicleType String?
+  id            String   @id @default(cuid())
+  telegramId    String   @unique
+  firstName     String?
+  lastName      String?
+  name          String
+  phone         String   @unique
+  status        String   @default("PENDING")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  vehicleType   String?
+  vehicleColor  String?
+  vehicleNumber String?
 }
 
 model MerchantProfile {

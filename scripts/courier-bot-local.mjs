@@ -164,6 +164,12 @@ async function initDb() {
         // Update CourierApplication if column missing
         try {
             await prisma.$executeRawUnsafe('ALTER TABLE "CourierApplication" ADD COLUMN IF NOT EXISTS "vehicleType" TEXT;');
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierApplication" ADD COLUMN IF NOT EXISTS "firstName" TEXT;');
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierApplication" ADD COLUMN IF NOT EXISTS "lastName" TEXT;');
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierApplication" ADD COLUMN IF NOT EXISTS "vehicleColor" TEXT;');
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierApplication" ADD COLUMN IF NOT EXISTS "vehicleNumber" TEXT;');
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierProfile" ADD COLUMN IF NOT EXISTS "vehicleColor" TEXT;');
+            await prisma.$executeRawUnsafe('ALTER TABLE "CourierProfile" ADD COLUMN IF NOT EXISTS "vehicleNumber" TEXT;');
         } catch (e) { }
 
         // 2. CourierProfile
@@ -504,22 +510,41 @@ Quyidagi menyudan foydalaning:`;
         });
     } else if (state.step === 'VEHICLE') {
         if (!text || text.startsWith('/')) return;
-        state.vehicleType = text;
+        state.vehicleType = text.includes('Mototsikl') || text.includes('Skuter') ? 'MOTO'
+            : text.includes('Velosiped') ? 'BIKE' : 'CAR';
+        state.vehicleLabel = text;
+        state.step = 'COLOR';
+        bot.sendMessage(chatId, "✅ Transport turi qabul qilindi.\n\n5. Transportingiz rangini kiriting (masalan: oq, qora, ko'k):", {
+            reply_markup: { remove_keyboard: true }
+        });
+    } else if (state.step === 'COLOR') {
+        if (!text || text.startsWith('/')) return;
+        state.vehicleColor = text;
+        state.step = 'NUMBER';
+        bot.sendMessage(chatId, "✅ Rang qabul qilindi.\n\n6. Transportingiz davlat raqamini kiriting (masalan: 01 ABC 123):", {
+            reply_markup: { remove_keyboard: true }
+        });
+    } else if (state.step === 'NUMBER') {
+        if (!text || text.startsWith('/')) return;
         const fullName = `${state.firstName} ${state.lastName}`;
 
         try {
             await prisma.$executeRawUnsafe(`
-                INSERT INTO "CourierApplication" (id, "telegramId", name, phone, "vehicleType", status, "updatedAt") 
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO "CourierApplication" (id, "telegramId", "firstName", "lastName", name, phone, "vehicleType", "vehicleColor", "vehicleNumber", status, "updatedAt") 
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
                 ON CONFLICT ("telegramId") DO UPDATE SET 
+                    "firstName" = EXCLUDED."firstName",
+                    "lastName" = EXCLUDED."lastName",
                     name = EXCLUDED.name, 
                     phone = EXCLUDED.phone, 
                     "vehicleType" = EXCLUDED."vehicleType",
+                    "vehicleColor" = EXCLUDED."vehicleColor",
+                    "vehicleNumber" = EXCLUDED."vehicleNumber",
                     status = 'PENDING', 
                     "updatedAt" = EXCLUDED."updatedAt"
-            `, `app_${Date.now()}`, telegramId, fullName, state.phone, state.vehicleType, 'PENDING', new Date());
+            `, `app_${Date.now()}`, telegramId, state.firstName, state.lastName, fullName, state.phone, state.vehicleType, state.vehicleColor, text, 'PENDING', new Date());
 
-            bot.sendMessage(chatId, `🎉 Tabriklaymiz! Ro'yxatdan o'tish yakunlandi.\n\n👤 Ism: ${fullName}\n📞 Tel: ${state.phone}\n🚚 Transport: ${state.vehicleType}\n\nAdminlar arizangizni ko'rib chiqishadi. Tasdiqlanganingizdan so'ng xabar olasiz.`, {
+            bot.sendMessage(chatId, `🎉 Tabriklaymiz! Ro'yxatdan o'tish yakunlandi.\n\n👤 Ism: ${fullName}\n📞 Tel: ${state.phone}\n🚚 Transport: ${state.vehicleLabel} (${state.vehicleColor}, 🔢 ${text})\n\nAdminlar arizangizni ko'rib chiqishadi. Tasdiqlanganingizdan so'ng xabar olasiz.`, {
                 reply_markup: { remove_keyboard: true }
             });
             userState.delete(chatId);
