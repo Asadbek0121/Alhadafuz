@@ -261,7 +261,7 @@ bot.on('message', async (msg) => {
         let user = null;
         try {
             const results = await prisma.$queryRawUnsafe(`
-                SELECT u.*, cp.status as cp_status, cp.balance, cp."totalDeliveries"
+                SELECT u.*, cp.status as cp_status, cp.balance, cp."totalDeliveries", cp."vehicleType" as cp_vehicleType, cp."vehicleColor" as cp_vehicleColor, cp."vehicleNumber" as cp_vehicleNumber
                 FROM "User" u
                 LEFT JOIN "CourierProfile" cp ON u.id = cp."userId"
                 WHERE u."telegramId" = $1
@@ -276,6 +276,28 @@ bot.on('message', async (msg) => {
         }
 
         if (user && user.role === 'COURIER') {
+            // Eski kuryerlar tekshiruvi: transport ma'lumotlari to'liq emas —
+            // yangi talablar bo'yicha to'ldirish wizard'i ochiladi
+            if (!user.cp_vehicleType || !user.cp_vehicleColor || !user.cp_vehicleNumber) {
+                userState.set(chatId, { step: 'VEHICLE', profileUpdate: true });
+                return bot.sendMessage(chatId,
+                    `⚠️ <b>Diqqat!</b> Yangi talablar bo'yicha transport ma'lumotlaringizni to'ldirish shart.\n\n` +
+                    `Bu yetkazib berishlaringizni davom ettirish uchun majburiy.\n\n` +
+                    `🚗 Transport turingizni tanlang:`,
+                    {
+                        parse_mode: 'HTML',
+                        reply_markup: {
+                            keyboard: [
+                                [{ text: "🚶 Piyoda" }, { text: "🚴 Velosiped" }],
+                                [{ text: "🛵 Mototsikl / Skuter" }, { text: "🚗 Mashina" }]
+                            ],
+                            one_time_keyboard: true,
+                            resize_keyboard: true
+                        }
+                    }
+                );
+            }
+
             const welcomeMsg = `
 👋 <b>Xush kelibsiz, ${user.name || 'Kuryer'}!</b>
 ━━━━━━━━━━━━━━━━━━━━━━━━
@@ -529,24 +551,38 @@ Quyidagi menyudan foydalaning:`;
         const fullName = `${state.firstName} ${state.lastName}`;
 
         try {
-            await prisma.$executeRawUnsafe(`
-                INSERT INTO "CourierApplication" (id, "telegramId", "firstName", "lastName", name, phone, "vehicleType", "vehicleColor", "vehicleNumber", status, "updatedAt") 
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-                ON CONFLICT ("telegramId") DO UPDATE SET 
-                    "firstName" = EXCLUDED."firstName",
-                    "lastName" = EXCLUDED."lastName",
-                    name = EXCLUDED.name, 
-                    phone = EXCLUDED.phone, 
-                    "vehicleType" = EXCLUDED."vehicleType",
-                    "vehicleColor" = EXCLUDED."vehicleColor",
-                    "vehicleNumber" = EXCLUDED."vehicleNumber",
-                    status = 'PENDING', 
-                    "updatedAt" = EXCLUDED."updatedAt"
-            `, `app_${Date.now()}`, telegramId, state.firstName, state.lastName, fullName, state.phone, state.vehicleType, state.vehicleColor, text, 'PENDING', new Date());
+            if (state.profileUpdate) {
+                // Eski kuryer profili to'ldirilmoqda — CourierProfile'ga yoziladi
+                await prisma.$executeRawUnsafe(`
+                    UPDATE "CourierProfile"
+                    SET "vehicleType" = $1, "vehicleColor" = $2, "vehicleNumber" = $3, "updatedAt" = NOW()
+                    WHERE "userId" = (SELECT id FROM "User" WHERE "telegramId" = $4 LIMIT 1)
+                `, state.vehicleType, state.vehicleColor, text, telegramId);
 
-            bot.sendMessage(chatId, `🎉 Tabriklaymiz! Ro'yxatdan o'tish yakunlandi.\n\n👤 Ism: ${fullName}\n📞 Tel: ${state.phone}\n🚚 Transport: ${state.vehicleLabel} (${state.vehicleColor}, 🔢 ${text})\n\nAdminlar arizangizni ko'rib chiqishadi. Tasdiqlanganingizdan so'ng xabar olasiz.`, {
-                reply_markup: { remove_keyboard: true }
-            });
+                bot.sendMessage(chatId, `✅ <b>Transport ma'lumotlaringiz saqlandi!</b>\n\n🚗 ${state.vehicleLabel} — ${state.vehicleColor}, 🔢 ${text}\n\nEndi botdan to'liq foydalanishingiz mumkin. /start ni bosing.`, {
+                    parse_mode: 'HTML',
+                    reply_markup: { remove_keyboard: true }
+                });
+            } else {
+                await prisma.$executeRawUnsafe(`
+                    INSERT INTO "CourierApplication" (id, "telegramId", "firstName", "lastName", name, phone, "vehicleType", "vehicleColor", "vehicleNumber", status, "updatedAt") 
+                    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+                    ON CONFLICT ("telegramId") DO UPDATE SET 
+                        "firstName" = EXCLUDED."firstName",
+                        "lastName" = EXCLUDED."lastName",
+                        name = EXCLUDED.name, 
+                        phone = EXCLUDED.phone, 
+                        "vehicleType" = EXCLUDED."vehicleType",
+                        "vehicleColor" = EXCLUDED."vehicleColor",
+                        "vehicleNumber" = EXCLUDED."vehicleNumber",
+                        status = 'PENDING', 
+                        "updatedAt" = EXCLUDED."updatedAt"
+                `, `app_${Date.now()}`, telegramId, state.firstName, state.lastName, fullName, state.phone, state.vehicleType, state.vehicleColor, text, 'PENDING', new Date());
+
+                bot.sendMessage(chatId, `🎉 Tabriklaymiz! Ro'yxatdan o'tish yakunlandi.\n\n👤 Ism: ${fullName}\n📞 Tel: ${state.phone}\n🚚 Transport: ${state.vehicleLabel} (${state.vehicleColor}, 🔢 ${text})\n\nAdminlar arizangizni ko'rib chiqishadi. Tasdiqlanganingizdan so'ng xabar olasiz.`, {
+                    reply_markup: { remove_keyboard: true }
+                });
+            }
             userState.delete(chatId);
         } catch (e) {
             bot.sendMessage(chatId, "❌ Xatolik: " + e.message);
