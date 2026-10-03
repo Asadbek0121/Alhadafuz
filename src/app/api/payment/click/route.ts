@@ -1,12 +1,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyClickSignature } from "@/lib/click";
+import { verifyClickSignature, getClickConfig } from "@/lib/click";
 import crypto from "crypto";
-
-// Environment variables
-const CLICK_SERVICE_ID = process.env.CLICK_SERVICE_ID;
-const CLICK_SECRET_KEY = process.env.CLICK_SECRET_KEY;
 
 // Constants for Click actions
 const ACTION_PREPARE = 0;
@@ -22,8 +18,10 @@ const ERROR_ORDER_NOT_FOUND = -5;
 const ERROR_TRANSACTION_CANCELLED = -9;
 
 export async function POST(req: NextRequest) {
-    if (!CLICK_SERVICE_ID || !CLICK_SECRET_KEY) {
-        console.error("Click credentials missing in environment variables");
+    // Click konfiguratsiyasi: avval admin paneldagi PaymentMethod.config, keyin env
+    const config = await getClickConfig();
+    if (!config) {
+        console.error("Click credentials missing (DB config va env bo'sh)");
         return NextResponse.json({ error: -1, error_note: "Internal Server Error: Config missing" });
     }
 
@@ -65,7 +63,7 @@ export async function POST(req: NextRequest) {
         const computedSignature = verifyClickSignature(
             clickTransId,
             serviceId,
-            CLICK_SECRET_KEY,
+            config.secretKey,
             merchantTransId,
             action === ACTION_COMPLETE ? merchantPrepareId : null,
             amountStr,
@@ -74,7 +72,7 @@ export async function POST(req: NextRequest) {
         );
 
         // Verify Service ID
-        if (serviceId !== CLICK_SERVICE_ID) {
+        if (serviceId !== config.serviceId) {
             return NextResponse.json({ error: ERROR_SIGN_CHECK_FAILED, error_note: "Service ID mismatch" });
         }
 
@@ -100,9 +98,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: -1, error_note: "Payment method disabled" });
         }
 
-        // 3. Find Order
-        const order = await prisma.order.findUnique({
-            where: { id: merchantTransId },
+        // 3. Find Order — Click transaction_param sifatida readable orderNumber yuboradi
+        const order = await prisma.order.findFirst({
+            where: {
+                OR: [
+                    { orderNumber: merchantTransId },
+                    { id: merchantTransId }, // eski havolalar (to'liq order id) ham ishlashi uchun
+                ],
+            },
         });
 
         if (!order) {
@@ -162,7 +165,7 @@ export async function POST(req: NextRequest) {
             // Perform Update Transactionally
             // Note: If you have inventory management, decrement stock here inside a transaction.
             await prisma.order.update({
-                where: { id: merchantTransId },
+                where: { id: order.id },
                 data: {
                     paymentStatus: "PAID",
                     paymentProvider: "CLICK",

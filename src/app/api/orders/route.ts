@@ -44,27 +44,33 @@ const createOrderSchema = z.object({
 /**
  * Click to'lov URL — dedupe natijasida qaytarilgan order uchun ham ishlaydi.
  * Allaqachon PAID bo'lgan order uchun qayta payment yaratilmaydi.
+ * URL admin paneldagi (PaymentMethod.config) yoki env'dagi konfiguratsiyadan quriladi.
  */
-function buildClickPaymentUrl(order: any): string | null {
+async function buildClickPaymentUrl(order: any): Promise<string | null> {
     if (String(order.paymentMethod || '').toLowerCase() === 'click'
         && String(order.paymentStatus || '').toUpperCase() !== 'PAID'
         && String(order.status || '').toUpperCase() !== 'CANCELLED') {
-        return `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
+        const clickConfig = await getClickConfig();
+        if (clickConfig) {
+            return buildClickPayUrl(clickConfig, order.orderNumber || order.id, order.total);
+        }
+        console.error("[click] Konfiguratsiya topilmadi — paymentUrl qaytarilmadi");
     }
     return null;
 }
 
 /** Order javobini yagona joydan quradi — yangi va dedupe'da bir xil format. */
-function buildOrderResponse(order: any): { success: boolean; order: any; paymentUrl: string | null } {
+async function buildOrderResponse(order: any): Promise<{ success: boolean; order: any; paymentUrl: string | null }> {
     return {
         success: true,
         order,
-        paymentUrl: buildClickPaymentUrl(order),
+        paymentUrl: await buildClickPaymentUrl(order),
     };
 }
 
 import { checkRateLimit } from '@/lib/ratelimit';
 import { autoDispatchOrder } from '@/lib/dispatch';
+import { getClickConfig, buildClickPayUrl } from '@/lib/click';
 
 export async function POST(req: Request) {
     // 1. RATE LIMITING (Security Layer)
@@ -271,7 +277,7 @@ export async function POST(req: Request) {
                 include: { items: true },
             });
             if (existing) {
-                return NextResponse.json(buildOrderResponse(existing));
+                return NextResponse.json(await buildOrderResponse(existing));
             }
         }
 
@@ -295,20 +301,25 @@ export async function POST(req: Request) {
                 // Generate a random ID for the order (Prisma uses cuid)
                 const orderId = `order_${Math.random().toString(36).slice(2, 11)}`;
 
+                // Readable order number (#1000xxx) — Click'da transaction_param sifatida ishlatiladi
+                const maxNum = await tx.$queryRawUnsafe(`SELECT COALESCE(MAX(("orderNumber"::bigint) - 1000000), 0)::int AS n FROM "Order" WHERE "orderNumber" LIKE '100%'`);
+                const orderNumber = `100${String((maxNum[0]?.n || 0) + 1).padStart(4, '0')}`;
+
                 // USE RAW SQL to bypass Prisma client limitations with lat/lng
                 await tx.$executeRawUnsafe(`
                     INSERT INTO "Order" (
-                        "id", "userId", "total", "deliveryFee", "status", "paymentMethod",
+                        "id", "orderNumber", "userId", "total", "deliveryFee", "status", "paymentMethod",
                         "deliveryMethod", "storeId", "shippingCity", "shippingDistrict",
                         "shippingAddress", "comment", "shippingPhone", "shippingName",
                         "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "updatedAt"
-                    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+                    ) VALUES ($1, $20, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
                 `,
                     orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
                     deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',
                     deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
                     deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
-                    lat || null, lng || null, validatedCoupon?.code || null, discountAmount, idempotencyKey || null
+                    lat || null, lng || null, validatedCoupon?.code || null, discountAmount, idempotencyKey || null,
+                    orderNumber
                 );
 
             // Create items and decrease stock
@@ -393,7 +404,7 @@ export async function POST(req: Request) {
                     include: { items: true },
                 });
                 if (existing) {
-                    return NextResponse.json(buildOrderResponse(existing));
+                    return NextResponse.json(await buildOrderResponse(existing));
                 }
             }
             throw txError;
@@ -419,7 +430,7 @@ export async function POST(req: Request) {
             }
         }
 
-        return NextResponse.json(buildOrderResponse(order));
+        return NextResponse.json(await buildOrderResponse(order));
 
     } catch (error: any) {
         console.error("Order creation error:", error);
@@ -441,11 +452,14 @@ export async function GET(req: Request) {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Add paymentUrl to orders awaiting payment
+        // Add paymentUrl to orders awaiting payment (config bir marta o'qiladi — N+1 oldini olish uchun)
+        const clickConfig = await getClickConfig();
         const ordersWithPayments = orders.map((order: any) => {
             let paymentUrl = null;
-            if (order.status === 'AWAITING_PAYMENT' && order.paymentMethod.toLowerCase() === 'click') {
-                paymentUrl = `https://indoor.click.uz/pay?id=073206&t=0&amount=${order.total}&transaction_param=${order.id}`;
+            if (clickConfig
+                && order.status === 'AWAITING_PAYMENT'
+                && String(order.paymentMethod || '').toLowerCase() === 'click') {
+                paymentUrl = buildClickPayUrl(clickConfig, order.orderNumber || order.id, order.total);
             }
             return { ...order, paymentUrl };
         });

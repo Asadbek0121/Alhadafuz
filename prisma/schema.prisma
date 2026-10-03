@@ -138,6 +138,7 @@ model Order {
   gpsLogs           String?
   deliveryPhoto     String?
   deliveryToken     String?       @unique
+  orderNumber       String?       @unique
   tokenExpiresAt    DateTime?
   createdAt         DateTime      @default(now())
   updatedAt         DateTime      @updatedAt

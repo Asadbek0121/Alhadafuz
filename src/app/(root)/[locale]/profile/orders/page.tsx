@@ -146,7 +146,7 @@ export default function OrderHistoryPage() {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex flex-wrap items-center gap-1.5 mb-0.5">
-                                            <span className="font-bold text-[13px] md:text-base text-gray-900">#{order.id.slice(-6).toUpperCase()}</span>
+                                            <span className="font-bold text-[13px] md:text-base text-gray-900">#{order.orderNumber || order.id.slice(-6).toUpperCase()}</span>
                                             <span className={`text-[8px] md:text-[10px] font-black px-2 py-0.5 rounded-full border uppercase tracking-tight ${getStatusColor(order.status)}`}>
                                                 {t(order.status.toLowerCase())}
                                             </span>

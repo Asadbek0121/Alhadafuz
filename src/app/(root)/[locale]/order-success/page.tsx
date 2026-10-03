@@ -174,7 +174,7 @@ export default function OrderSuccessPage() {
                 {/* Order ID Badge */}
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm font-black text-slate-900 mb-10">
                     <Package size={20} className="text-blue-600" />
-                    <span className="uppercase tracking-widest text-xs">BUYURTMA RAQAMI: #{orderId?.slice(-8).toUpperCase()}</span>
+                    <span className="uppercase tracking-widest text-xs">BUYURTMA RAQAMI: #{order?.orderNumber || orderId?.slice(-8).toUpperCase()}</span>
                 </div>
 
                 {/* P2P Instructions Section */}
