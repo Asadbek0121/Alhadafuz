@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isAdminChat } from "@/lib/telegram-bot";
 
 const ADMIN_BOT_TOKEN = process.env.ADMIN_BOT_TOKEN;
 
@@ -21,7 +22,19 @@ export async function POST(req: Request) {
         const update = await req.json();
         const query = update.callback_query;
 
+        // XAVFSIZLIK: callback FAQAT yagona admin chat'idan kelishi mumkin.
+        // Boshqa har qanday foydalanuvchi "Ha, bu men" bosib sessiyani
+        // tasdiqlay olmaydi yoki bloklash buyrug'ini yubora olmaydi.
         if (query?.data?.startsWith("admin_2fa:")) {
+            if (!isAdminChat(query.message?.chat?.id)) {
+                await fetch(`https://api.telegram.org/bot${ADMIN_BOT_TOKEN}/answerCallbackQuery`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ callback_query_id: query.id, text: "Sizda ruxsat yo'q" }),
+                }).catch(() => null);
+                return NextResponse.json({ ok: true });
+            }
+
             const [, action, userId] = query.data.split(":");
             const chatId = query.message.chat.id;
             const messageId = query.message.message_id;

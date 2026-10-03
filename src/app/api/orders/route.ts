@@ -414,7 +414,7 @@ export async function POST(req: Request) {
         try {
             await notifyAdmins(
                 "Yangi Buyurtma",
-                `Buyurtma #${order.id.slice(-6)} qabul qilindi. Summa: ${order.total.toLocaleString()} so'm`,
+                `Buyurtma #${(order as any).orderNumber || order.id.slice(-6)} qabul qilindi. Summa: ${order.total.toLocaleString()} so'm`,
                 "ORDER"
             );
         } catch (e) {

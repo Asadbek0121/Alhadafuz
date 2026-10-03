@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendTelegramMessage } from "./telegram-bot";
+import { sendTelegramMessage, ADMIN_CHAT_ID } from "./telegram-bot";
 
 export async function notifyAdmins(title: string, message: string, type: 'ORDER' | 'USER' | 'MESSAGE' | 'SYSTEM' = 'SYSTEM') {
     try {
@@ -24,18 +24,13 @@ export async function notifyAdmins(title: string, message: string, type: 'ORDER'
             });
         }
 
-        // 2. Send Telegram Notification to configured Admin IDs
+        // 2. Telegram bildirishnoma — FAQAT yagona admin chat ID'ga, ADMIN_BOT_TOKEN (admin bot) orqali.
+        //    Boshqa hech qanday chat'ga yuborilmaydi (maxfiylik).
         try {
-            const settings = await prisma.storeSettings.findFirst();
-            if (settings?.telegramAdminIds) {
-                const chatIds = settings.telegramAdminIds.split(',').map(id => id.trim());
-                const tgMessage = `🔔 <b>${title}</b>\n\n${message}\n\n<i>#${type}</i>`;
-
-                for (const chatId of chatIds) {
-                    if (chatId) {
-                        await sendTelegramMessage(chatId, tgMessage);
-                    }
-                }
+            const tgMessage = `🔔 <b>${title}</b>\n\n${message}\n\n<i>#${type}</i>`;
+            if (ADMIN_CHAT_ID) {
+                const token = process.env.ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+                await sendTelegramMessage(ADMIN_CHAT_ID, tgMessage, {}, token);
             }
         } catch (tgError) {
             console.error("Telegram notify failed:", tgError);

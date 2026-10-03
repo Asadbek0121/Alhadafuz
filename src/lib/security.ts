@@ -26,6 +26,21 @@ export async function logActivity(userId: string, action: string, details?: any)
                     lastIp: ip
                 } as any
             });
+
+            // Admin bot'ga kirish bildirishnomasi (faqat yagona admin chat ID'ga)
+            try {
+                const { notifyAdmins } = await import("@/lib/notifications");
+                const user = await prisma.user.findUnique({
+                    where: { id: userId },
+                    select: { name: true, phone: true },
+                });
+                const method = (details?.method as string) || "UNKNOWN";
+                await notifyAdmins(
+                    "🔑 Saytga kirish",
+                    `${user?.name || "Foydalanuvchi"} tizimga kirdi.\nUsul: ${method}`,
+                    "USER"
+                );
+            } catch { /* bildirishnoma xatosi login'ni buzmasin */ }
         }
     } catch (error) {
         console.error("Activity logging failed:", error);
