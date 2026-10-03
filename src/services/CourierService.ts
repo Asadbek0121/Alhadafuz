@@ -130,7 +130,7 @@ export class CourierService {
 
     const photo = deliveryPhoto || order.deliveryPhoto;
     if (!photo) {
-      throw new Error(`Order ${orderId} must have a delivery photo before completion');
+      throw new Error(`Order ${orderId} must have a delivery photo before completion`);
     }
 
     await this.$transaction(async (tx) => {
