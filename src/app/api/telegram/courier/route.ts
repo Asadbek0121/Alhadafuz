@@ -183,38 +183,20 @@ export async function POST(req: Request) {
                 await bot.editMessageText(`❌ Siz ushbu buyurtmani (#${orderId.slice(-6).toUpperCase()}) rad etdingiz.`, {
                     chat_id: chatId, message_id: messageId, parse_mode: 'HTML'
                 });
-            } else             if (action === 'pick_up') {
+            } else if (action === 'pick_up') {
                 const cs = new CourierService();
                 await cs.updateOrderStatus(orderId, 'PROCESSING');
-                await cs.notifyCourier(orderId, "Buyurtma qabul qilindi", `Buyurtma #${orderId.slice(-6).toUpperCase()} qabul qilindi.`);
-                await bot.answerCallbackQuery(query.id);
             } else if (action === 'delivering') {
                 const cs = new CourierService();
                 await cs.updateOrderStatus(orderId, 'DELIVERING');
-                await cs.notifyCourier(orderId, "Yetkazib berish boshlandi", `Buyurtma #${orderId.slice(-6).toUpperCase()} yetkazib berish boshlandi.`);
-                await bot.answerCallbackQuery(query.id);
             } else if (action === 'delivered') {
                 const cs = new CourierService();
                 await cs.updateOrderStatus(orderId, 'DELIVERED');
-                await bot.sendMessage(chatId, "📸 <b>Yetkazib berishni tasdiqlash uchun rasm yuboring.</b>", { parse_mode: 'HTML' });
-                await bot.answerCallbackQuery(query.id);
-            } else if (action === 'completed') {
-                const cs = new CourierService();
-                await cs.completeOrder(orderId);
-                await cs.notifyCourier(orderId, "Buyurtma yakunlandi", `Buyurtma #${orderId.slice(-6).toUpperCase()} yakunlandi.`);
-                await bot.answerCallbackQuery(query.id);
-            } else if (action === 'paid') {
-                const cs = new CourierService();
-                await cs.markOrderPaid(orderId);
-                await cs.notifyCourier(orderId, "To'lov bajarildi", `Buyurtma #${orderId.slice(-6).toUpperCase()} to'lovlandi.`);
-                await bot.answerCallbackQuery(query.id);
-            }
-            } else if (action === 'delivered') {
                 await prisma.user.update({ where: { telegramId }, data: { botState: `WAITING_PHOTO:${orderId}` } });
                 await bot.sendMessage(chatId, "📸 <b>Yetkazib berishni tasdiqlash uchun rasm yuboring.</b>", { parse_mode: 'HTML' });
             } else if (action === 'completed') {
-                await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "finishedAt" = NOW(), "updatedAt" = NOW() WHERE "id" = $2', 'COMPLETED', orderId);
-
+                const cs = new CourierService();
+                await cs.completeOrder(orderId);
                 const fee = await getCourierFee();
                 await prisma.$executeRawUnsafe(`
                     UPDATE "CourierProfile" 
@@ -224,7 +206,8 @@ export async function POST(req: Request) {
                     WHERE "userId" = (SELECT id FROM "User" WHERE "telegramId" = $2 LIMIT 1)
                 `, fee, telegramId);
             } else if (action === 'paid') {
-                await prisma.$executeRawUnsafe('UPDATE "Order" SET "paymentStatus" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'PAID', orderId);
+                const cs = new CourierService();
+                await cs.markOrderPaid(orderId);
             }
 
             if (orderId && action !== 'reject_assign') {
@@ -310,8 +293,27 @@ export async function POST(req: Request) {
                     });
                 } else {
                     const app: any = await prisma.$queryRawUnsafe('SELECT status FROM "CourierApplication" WHERE "telegramId" = $1 LIMIT 1', telegramId);
-                    if (app[0]) {
-                        await bot.sendMessage(chatId, app[0].status === 'PENDING' ? "⏳ Arizangiz ko'rib chiqilmoqda." : "❌ Arizangiz rad etilgan.");
+                    const appStatus = app[0]?.status;
+
+                    if (appStatus === 'APPROVED') {
+                        // Ariza tasdiqlangan — kuryer profili yaratish va panelni ko'rsatish
+                        await prisma.$executeRawUnsafe('UPDATE "User" SET role = $1 WHERE id = $2', 'COURIER', user.id);
+                        await prisma.courierProfile.upsert({
+                            where: { userId: user.id },
+                            update: {},
+                            create: { userId: user.id, status: 'OFFLINE', isVerified: true }
+                        });
+                        await bot.sendMessage(chatId, `🎉 Tabriklaymiz, ${user?.name || msg.from.first_name}! Kuryer sifatida tasdiqlandingiz.\n\nBotdan to'liq foydalanish uchun /start ni qayta bosing.`, {
+                            reply_markup: { remove_keyboard: true }
+                        });
+                    } else if (appStatus === 'PENDING') {
+                        await bot.sendMessage(chatId, "⏳ Arizangiz ko'rib chiqilmoqda. Admin tasdiqlashini kuting.");
+                    } else if (appStatus === 'REJECTED') {
+                        await bot.sendMessage(chatId, "❌ Arizangiz rad etilgan.", {
+                            reply_markup: {
+                                inline_keyboard: [[{ text: "🔄 Qayta ariza berish", callback_data: 'reapply' }]]
+                            }
+                        });
                     } else {
                         await bot.sendMessage(chatId, "👋 Kuryerlikka ariza berish uchun ismingizni kiriting:");
                         await prisma.user.upsert({

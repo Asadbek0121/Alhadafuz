@@ -8,7 +8,7 @@ export class CourierService {
   async assignOrder(
     orderId: string,
     courierId: string,
-    reason?: string = "Auto-assigned"
+    reason: string = "Auto-assigned"
   ): Promise<{ orderId: string; courierId: string; status: string }> {
     const order = await prisma.order.findUnique({
       where: { id: orderId },
