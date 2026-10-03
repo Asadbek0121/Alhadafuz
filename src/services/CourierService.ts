@@ -25,7 +25,7 @@ export class CourierService {
     ): Promise<{ orderId: string; courierId: string; status: string }> {
         const fee = await getCourierFee();
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             const order = await tx.order.findUnique({
                 where: { id: orderId },
                 select: { id: true, courierId: true, status: true }
@@ -93,7 +93,7 @@ export class CourierService {
     ): Promise<{ orderId: string; status: string; fee: number }> {
         const fee = await getCourierFee();
 
-        const result = await prisma.$transaction(async (tx) => {
+        const result = await prisma.$transaction(async (tx: any) => {
             const order = await tx.order.findUnique({
                 where: { id: orderId },
                 select: { id: true, status: true, courierId: true, deliveryPhoto: true }

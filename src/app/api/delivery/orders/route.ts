@@ -35,7 +35,7 @@ export async function GET(req: Request) {
         });
 
         // Map to simpler format for the delivery UI
-        const formattedOrders = orders.map(o => ({
+        const formattedOrders = orders.map((o: any) => ({
             id: o.id,
             status: o.status.toLowerCase(),
             customerName: o.user?.name || 'Mijoz',
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
         let nearestCourierId = null;
         let minDist = Infinity;
 
-        onlineCouriers.forEach(c => {
+        onlineCouriers.forEach((c: any) => {
             if (c.currentLat && c.currentLng) {
                 const d = Math.sqrt(Math.pow(c.currentLat - customerLat, 2) + Math.pow(c.currentLng - customerLng, 2));
                 if (d < minDist) {

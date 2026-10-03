@@ -11,7 +11,7 @@ export async function notifyAdmins(title: string, message: string, type: 'ORDER'
 
         if (admins.length > 0) {
             // Create internal notifications for each admin
-            const data = admins.map(admin => ({
+            const data = admins.map((admin: any) => ({
                 userId: admin.id,
                 title,
                 message,

@@ -30,7 +30,7 @@ export async function GET() {
             userID: user.id,
             userName: user.email || user.phone || user.id,
             // Don't re-register already registered authenticators
-            excludeCredentials: user.authenticators.map(auth => ({
+            excludeCredentials: user.authenticators.map((auth: any) => ({
                 id: Buffer.from(auth.credentialID, 'base64'),
                 type: 'public-key',
                 transports: auth.transports ? JSON.parse(auth.transports) : undefined,

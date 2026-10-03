@@ -91,7 +91,7 @@ export async function POST(req: Request) {
             },
         });
 
-        const formattedItems = finalCart?.items.map((item) => ({
+        const formattedItems = finalCart?.items.map((item: any) => ({
             id: item.product.id,
             title: item.product.title,
             price: item.product.price,

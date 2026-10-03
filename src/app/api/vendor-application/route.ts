@@ -10,7 +10,7 @@ export async function POST(req: Request) {
 
         // 1. Get Store Settings for Admin Telegram IDs
         const settings = await prisma.storeSettings.findFirst();
-        const adminTelegramIds = settings?.telegramAdminIds?.split(',').map(id => id.trim()) || [];
+        const adminTelegramIds = settings?.telegramAdminIds?.split(',').map((id: any) => id.trim()) || [];
 
         // 2. Prepare Telegram Message Text
         const telegramText = `

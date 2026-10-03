@@ -10,7 +10,7 @@ export async function GET() {
             }
         });
 
-        const formatted = couriers.map(c => ({
+        const formatted = couriers.map((c: any) => ({
             id: c.userId,
             name: c.user?.name || 'Kuryer',
             phone: c.user?.phone || '',

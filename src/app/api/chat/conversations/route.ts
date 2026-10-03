@@ -99,7 +99,7 @@ export async function GET(req: Request) {
             where: { id: { in: convs.map(c => c.userId) } },
             select: { id: true, name: true, image: true, telegramId: true }
         });
-        const userMap = new Map(users.map(u => [u.id, u]));
+        const userMap = new Map(users.map((u: any) => [u.id, u]));
 
         // `hasTelegram` — admin javobi botga yetib boradimi. Buni bilmasa, mijoz
         // faqat sayt chatidan yozgan bo'lsa ham javobni Telegramda kutadi.
@@ -120,7 +120,7 @@ export async function GET(req: Request) {
         const conversations = convs.map(c =>
             toEntry(
                 c.userId,
-                userMap.get(c.userId),
+                userMap.get(c.userId) as any,
                 c.content,
                 formatConversationTime(c.createdAt),
                 c.unread

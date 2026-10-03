@@ -210,7 +210,7 @@ export async function POST(req: Request) {
             }
         }
 
-        const product = await prisma.$transaction(async (tx) => {
+        const product = await prisma.$transaction(async (tx: any) => {
             const created = await tx.product.create({
                 data: createData as any
             });

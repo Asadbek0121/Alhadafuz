@@ -26,7 +26,7 @@ export default async function PrintInvoicePage({ params }: { params: Promise<{ i
         where: { provider: 'CLICK', isActive: true }
     });
 
-    const subTotal = order.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+    const subTotal = order.items.reduce((acc: any, item: any) => acc + (item.price * item.quantity), 0);
     const grandTotal = subTotal;
 
     return (

@@ -26,7 +26,7 @@ export async function GET() {
             },
         });
 
-        const formattedItems = cart?.items.map((item) => ({
+        const formattedItems = cart?.items.map((item: any) => ({
             id: item.product.id,
             title: item.product.title,
             price: item.product.price,
@@ -77,7 +77,7 @@ export async function PUT(req: Request) {
 
         // 2. Transaction: Delete all items, Re-create all items
         // This ensures the server state exactly matches the client state
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // Delete existing
             await tx.cartItem.deleteMany({
                 where: { cartId: cart.id }
