@@ -977,9 +977,16 @@ export default function CheckoutPage() {
                                                 )}
                                                 onClick={() => setPaymentMethod(method.provider)}
                                             >
-                                                <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors", isSelected ? `${iconBg} ${iconColor}` : "bg-slate-50 text-slate-400")}>
-                                                    <Icon size={24} className="transition-colors" />
-                                                </div>
+                                                {providerUpper === 'CLICK' ? (
+                                                    <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-white border", isSelected ? "border-blue-200" : "border-slate-100")}>
+                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                        <img src="/click_logo.png" alt="Click" className="w-8 h-8 object-contain" />
+                                                    </div>
+                                                ) : (
+                                                    <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors", isSelected ? `${iconBg} ${iconColor}` : "bg-slate-50 text-slate-400")}>
+                                                        <Icon size={24} className="transition-colors" />
+                                                    </div>
+                                                )}
 
                                                 <div className="flex-1 min-w-0">
                                                     <p className={cn("text-sm font-black truncate transition-colors", isSelected ? "text-slate-900" : "text-slate-600")}>{method.name}</p>
