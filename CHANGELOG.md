@@ -4,6 +4,13 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 
 ## [Unreleased]
 
+### Changed
+- **Admin performance** (`41e31b1`, 2026-10-03):
+  - **Sabab**: DB Supabase Tokiyoda (TCP RTT ~303ms, oddiy query ham 1.2–3.5s) — admin sahifalari sekin; chat/header 3s/5s/15s polling DB'ni doim urib turardi.
+  - **O'zgarish**: `/admin/users` server sahifasi `unstable_cache` (60s, `tags: ['admin-users']`); `POST/DELETE/PATCH /api/admin/users*` da `revalidateTag('admin-users', { expire: 0 })` (Next 16 ikki argumentli shakl) — yangi user darhol ko'rinadi. Natija: **1.9s → 0.16s (12x)**. admin/chat: conversations 5s→15s, messages 3s→10s; AdminHeader notifications 15s→30s.
+  - Verification: `npx tsc --noEmit` 0, `npm run lint` (8 xato — eskirgan, o'zgartirilmagan fayllarda), curl `/admin/users` 3x (1.9s → 0.16s → 0.16s).
+  - Keyingi katta qadam (qilinmadi): DB'ni yaqin regionga (Frankfurt) ko'chirish — 4-5x global samara.
+
 ### Added
 - **Kuryer ariza wizard 6 bosqichga kengaytirildi (2026-10-03)**: ism → familiya → telefon (contact) → transport turi (Mashina/Skuter-Moto/Velosiped) → rang → davlat raqami. `CourierApplication` ga `firstName`, `lastName`, `vehicleColor`, `vehicleNumber` ustunlari; `CourierProfile` ga `vehicleColor`, `vehicleNumber` qo'shildi (migratsiyalar pooler orqali qo'lda apply + `_prisma_migrations` record).
 - **Eski kuryerlarga majburiy yangilash wizard'i**: roli COURIER bo'lgan lekin transport ma'lumotlari to'liq bo'lmagan kuryer `/start` bosganda bot avtomatik to'ldirish wizard'ini ochadi (`REG_VEHICLE` state, `tempData.profileUpdate=true`), yakunida `CourierProfile`ga yoziladi — yangi ariza yaratmaydi.

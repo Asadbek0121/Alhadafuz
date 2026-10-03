@@ -59,6 +59,8 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **Admin performance** (`41e31b1`): DB Tokiyada (RTT 303ms, query 1.2-3.5s) — asosiy sekinlik sababi. Xavfsiz keshlash: `/admin/users` `unstable_cache` 60s (create/delete/role-change'da `revalidateTag('admin-users', {expire:0})`) → **1.9s → 0.16s (12x)**; admin/chat conversations 5s→15s, messages 3s→10s polling; AdminHeader notifications 15s→30s. tsc 0, lint 0 (8 xato eskirgan fayllarda). DB region ko'chirish (Frankfurt) keyingi katta qadam — hali qilinmadi.
+
 - **BASE_URL production fix** (`15a24a3`): product page server-side fetch Vercel'da `localhost:3000` ga borardi (NEXTAUTH_URL/APP_URL/NEXT_PUBLIC_APP_URL yo'q) → `notFound()` 404. Endi `headers()` orqali `x-forwarded-host/host/proto` autodetection; fallback env'lar. Verification: production slug 200, id 308 redirect, API 200.
 - **CHINA_ORDER test mahsulot seed** (`981f5d5`): `scripts/seed-china-product.ts` — LED chiroq (CHINA_ORDER) "Xitoy tovarlari" root kategoriyasida. Order creation test: OrderItem'da `fulfillmentType: CHINA_ORDER` saqlanadi (backend qoidasi: china product variant LOCAL bo'la olmaydi). Product page 200. tsc 0, lint 0.
 - **BannerEvent analitika** (`db99dce`): impression/click route'lari endi `BannerEvent` record yozadi (sessionId — `bsid` cookie yoki IP+UA hash, shaxs aniqlamaydi); yangi `/api/admin/banners/analytics?days=7|30|90` — banner bo'yicha impression/click/CTR/yagona tashrifchi; admin banners page'da analitika panel (davr filter + stats table + loading state). Verification: impression/click 200, analytics 200 (3 impression/3 unique/1 click/CTR 33%), tsc 0, lint 0.
@@ -304,7 +306,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-03 (Kuryer tizimi to'liq: CourierService unified + transaction-safe flow, photo proof majburiy, Mini App dashboard (auth fix + real GPS + 3 tab), ariza wizard 6 bosqich (ism/familiya/telefon/transport/rang/davlat raqami), eski kuryerlarga majburiy to'ldirish wizard'i, admin'da phone/transport ko'rinishi. Migratsiyalar: courier_application_fields, courier_vehicle_details)
+2026-10-03 (Admin perf `41e31b1`: /admin/users kesh 12x, polling sekinlashtirildi; Kuryer tizimi to'liq: CourierService unified + transaction-safe flow, photo proof majburiy, Mini App dashboard (auth fix + real GPS + 3 tab), ariza wizard 6 bosqich (ism/familiya/telefon/transport/rang/davlat raqami), eski kuryerlarga majburiy to'ldirish wizard'i, admin'da phone/transport ko'rinishi. Migratsiyalar: courier_application_fields, courier_vehicle_details)
 
 ## Recent Changes (2026-10-03)
 
