@@ -5,6 +5,12 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
 ## [Unreleased]
 
 ### Added
+- **Kuryer ariza wizard 6 bosqichga kengaytirildi (2026-10-03)**: ism → familiya → telefon (contact) → transport turi (Mashina/Skuter-Moto/Velosiped) → rang → davlat raqami. `CourierApplication` ga `firstName`, `lastName`, `vehicleColor`, `vehicleNumber` ustunlari; `CourierProfile` ga `vehicleColor`, `vehicleNumber` qo'shildi (migratsiyalar pooler orqali qo'lda apply + `_prisma_migrations` record).
+- **Eski kuryerlarga majburiy yangilash wizard'i**: roli COURIER bo'lgan lekin transport ma'lumotlari to'liq bo'lmagan kuryer `/start` bosganda bot avtomatik to'ldirish wizard'ini ochadi (`REG_VEHICLE` state, `tempData.profileUpdate=true`), yakunida `CourierProfile`ga yoziladi — yangi ariza yaratmaydi.
+- **Admin approve flow tuzatildi**: arizadagi telefon `User.phone`ga ham yoziladi (avval yo'q edi — shuning uchun kuryer telefoni admin ro'yxatida ko'rinmasdi); transport ma'lumotlari `CourierProfile`ga saqlanadi (yangi/mavjud profil).
+- **Admin UI (`/admin/shipping`)**: ariza ro'yxatida transport turi/rang/davlat raqami; kuryerlar jadvalida rang + raqam ko'rsatiladi.
+- **Kuryer Mini App dashboard to'liq qayta yozildi**: auth teshigi yopildi (kuryer faqat o'z buyurtmalari), haqiqiy GPS (navigator.geolocation → `/api/delivery/couriers/location`, 30s interval), mijoz telefoni `tel:` tugma, to'lov turi, 3 tab (Buyurtmalar/Hamyon/Statistika), `/api/delivery/couriers/stats` endpoint.
+- **CourierService unified** (`src/services/CourierService.ts`): transaction-safe `assignOrder`, `updateOrderStatus`, `deliverOrder` (photo proof majburiy), `completeOrder` (balans+statistika atomik), `markOrderPaid`, `notifyCourier` (3x retry).
 - **Telegram Login (OAuth) — /auth/login sahifasi to'liq ishlaydigan holatga keltirildi**:
   - **Sabab**: `/auth/login` sahifasi faqat `/?auth=login` modalga redirect qilardi; `signIn('telegram-login')` provider'siz chaqirilardi (NextAuth'da provider yo'q edi).
   - **Qo'shildi**: `src/auth.ts`da yangi Credentials provider `telegram-login` (zod validatsiya, `verifyTelegramLogin` HMAC-SHA256 + 24h auth_date expiry, `telegramId` orqali user upsert, `uniqueId` generatsiya, ActivityLog).

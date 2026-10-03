@@ -304,7 +304,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-02 (Telegram Login OAuth: `telegram-login` NextAuth provider + `/auth/login` sahifasi + `/api/auth/telegram/config`; BotFather /setdomain va Vercel TELEGRAM_BOT_USERNAME qolgan)
+2026-10-03 (Kuryer tizimi to'liq: CourierService unified + transaction-safe flow, photo proof majburiy, Mini App dashboard (auth fix + real GPS + 3 tab), ariza wizard 6 bosqich (ism/familiya/telefon/transport/rang/davlat raqami), eski kuryerlarga majburiy to'ldirish wizard'i, admin'da phone/transport ko'rinishi. Migratsiyalar: courier_application_fields, courier_vehicle_details)
 
 ## Recent Changes (2026-10-03)
 
