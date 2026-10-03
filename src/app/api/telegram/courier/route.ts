@@ -296,16 +296,38 @@ export async function POST(req: Request) {
                     const appStatus = app[0]?.status;
 
                     if (appStatus === 'APPROVED') {
-                        // Ariza tasdiqlangan — kuryer profili yaratish va panelni ko'rsatish
-                        await prisma.$executeRawUnsafe('UPDATE "User" SET role = $1 WHERE id = $2', 'COURIER', user.id);
+                        // Ariza tasdiqlangan — kuryer profili yaratish va panelni ko'rsatish.
+                        // MUHIM: ADMIN rolga tegmaymiz — adminning rolini COURIER ga
+                        // almashtirish huquqlarini buzib qo'yadi (avvalgi xato shu edi).
+                        if (user?.role === 'USER') {
+                            await prisma.$executeRawUnsafe('UPDATE "User" SET role = $1 WHERE id = $2', 'COURIER', user.id);
+                        }
                         await prisma.courierProfile.upsert({
                             where: { userId: user.id },
                             update: {},
                             create: { userId: user.id, status: 'OFFLINE', isVerified: true }
                         });
-                        await bot.sendMessage(chatId, `🎉 Tabriklaymiz, ${user?.name || msg.from.first_name}! Kuryer sifatida tasdiqlandingiz.\n\nBotdan to'liq foydalanish uchun /start ni qayta bosing.`, {
-                            reply_markup: { remove_keyboard: true }
-                        });
+                        if (user?.role === 'ADMIN') {
+                            // Admin — kuryer buyurtmalarini ko'rish uchun panel ochamiz,
+                            // lekin rolini o'zgartirmaymiz
+                            const cp = await prisma.courierProfile.findUnique({ where: { userId: user.id } });
+                            const welcome = `👋 <b>Xush kelibsiz, ${user.name}! (Admin)</b>\n\n💰 Balans: ${(cp?.balance || 0).toLocaleString()} SO'M\n🚚 Yetkazmalar: ${cp?.totalDeliveries || 0} ta`;
+                            await bot.sendMessage(chatId, welcome, {
+                                parse_mode: 'HTML',
+                                reply_markup: {
+                                    keyboard: [
+                                        [{ text: "🚀 Dashbord (Open Dashboard)", web_app: { url: `https://alhadafuz.vercel.app/uz/courier/dashboard` } }],
+                                        [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
+                                        [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]
+                                    ],
+                                    resize_keyboard: true
+                                }
+                            });
+                        } else {
+                            await bot.sendMessage(chatId, `🎉 Tabriklaymiz, ${user?.name || msg.from.first_name}! Kuryer sifatida tasdiqlandingiz.\n\nBotdan to'liq foydalanish uchun /start ni qayta bosing.`, {
+                                reply_markup: { remove_keyboard: true }
+                            });
+                        }
                     } else if (appStatus === 'PENDING') {
                         await bot.sendMessage(chatId, "⏳ Arizangiz ko'rib chiqilmoqda. Admin tasdiqlashini kuting.");
                     } else if (appStatus === 'REJECTED') {
