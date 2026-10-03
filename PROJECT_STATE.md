@@ -305,3 +305,29 @@ Avvalgi sessiyalardan:
 ## Last Updated
 
 2026-10-02 (Telegram Login OAuth: `telegram-login` NextAuth provider + `/auth/login` sahifasi + `/api/auth/telegram/config`; BotFather /setdomain va Vercel TELEGRAM_BOT_USERNAME qolgan)
+
+## Recent Changes (2026-10-03)
+
+### Courier Bot Unified Service
+- `src/services/CourierService.ts` yaratildi — transaction-safe business logic:
+  - `assignOrder(orderId, courierId, reason)` — atomic transaction, scoring (distance/rating/workload), DispatchLog create
+  - `updateOrderStatus(orderId, status, extra)` — status transitions
+  - `deliverOrder(orderId, photoId)` — **photo proof mandatory** before DELIVERED
+  - `completeOrder(orderId, deliveryPhoto)` — photo proof mandatory before COMPLETED
+  - `markOrderPaid(orderId)` — paymentStatus → PAID
+  - `notifyCourier(courierId, title, message)` — Telegram send with retry (3x)
+- `src/app/api/telegram/courier/route.ts` — webhook CourierService'ga o'tkazildi:
+  - `pick_up` → `updateOrderStatus(PROCESSING)` + notify
+  - `delivering` → `updateOrderStatus(DELIVERING)` + notify
+  - `delivered` → `updateOrderStatus(DELIVERED)` + photo request
+  - `completed` → `completeOrder(orderId)` + notify
+  - `paid` → `markOrderPaid(orderId)` + notify
+- Race condition fix: `assignOrder` uses Prisma `$transaction` — order + DispatchLog + courier balance update atomic
+- Photo proof mandatory: `deliverOrder` and `completeOrder` throw if no photoId
+- Notification retry: `notifyCourier` retries 3x with exponential backoff
+- Lint 0, tsc 0
+
+### Click Logotipi
+- `public/icons/click-01.png` crop qilingan (2250x2250 → 1708x714, logo faqat)
+- Checkout'da CLICK varianti logotipni ko'rsatadi (w-16 h-16)
+- `public/click_logo.png`, `public/click_logo_final.png` backup sifatida saqlanadi

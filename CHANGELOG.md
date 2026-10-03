@@ -15,6 +15,36 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
   - **BotFather talab**: login widget ishlashi uchun BotFather'da `/setdomain` bilan `alhadaf.uz` va `www.alhadaf.uz` domenlari qo'shilishi shart.
   - Verification: `npx tsc --noEmit` 0 error, `/api/auth/telegram/config` 200 (`{"botId":"...","botUsername":"Hadaf_supportbot"}`), `/uz/auth/login` 200.
 
+- **Courier Bot Unified Service** (`2026-10-03`):
+  - **Sabab**: Bot ikkala rejim (local polling + production webhook) alohida kodda bo'lib, rahnama tartibi, transaction va idempotency tuzatilmas edi. Holatlar to'liq kirib turishi va qoidali bolishi kerak edi.
+  - **Qo'shildi**: `src/services/CourierService.ts` yaratildi — transaction-safe kerakli barcha holatlar:
+    - `assignOrder(orderId, courierId, reason)` — ijobiy assign, scoring (masofa + reyting + ishlanish), DispatchLog qo'shish, courier balans yangilashi (Prisma `$transaction`)
+    - `updateOrderStatus(orderId, status, extra)` — PROCESSING ↔ DELIVERING ↔ DELIVERED ↔ COMPLETED ↔ PAID o'tishlari
+    - `deliverOrder(orderId, photoId)` — rasm tasdiqlovchi majburiy qo'shimcha (photo proof)
+    - `completeOrder(orderId, deliveryPhoto)` — rasm majburiy; COMPLETED holati oldindan rasm bilan
+    - `markOrderPaid(orderId)` — to'lov statusi PAID ga o'tkazish
+    - `notifyCourier(courierId, title, message)` — Telegram xabar yuborish (3x urinish w/ backoff)
+  - **Webhook`src/app/api/telegram/courier/route.ts` — raw SQL holat yangilovchilarini CourierService ga o'tkazildi:
+    - `pick_up` → PROCESSING, `delivering` → DELIVERING, `delivered` → DELIVERED (photo so'rovi), `completed` → COMPLETED, `paid` → PAID
+  - **Race condition tuzildi**: `assignOrder` Prisma `$transaction` — order + DispatchLog + courier balans atomik (rollback vaqi)
+  - **Idempotency**: Each action has proper transaction boundaries
+  - **Photo proof**: `deliverOrder` + `completeOrder` `deliveryPhoto` bo'lmasa xatolik beradi
+  - Notification retry: `notifyCourier` 3x attempt w/ exponential backoff
+  - Verification: `npx tsc --noEmit` 0 error, ESLint 0, build SUCCESS (101/101)
+- **Click logotipi checkout'ga qo'shildi**: `public/icons/click-01.png` (crop qilindi 2250x2250 → 1708x714). CLICK variant `w-16 h-16` bo'yicha logotip ko'rsatadi. Checkout sahifasi UI toliq yangilandi.
+- Verification: `npx tsc --noEmit` 0 error, ESLint 0 (pre-existing warning emas), `npm run build` SUCCESS.
+
+### Changed
+- **Storefront static sahifalar (5) ixchamlashtirildi**:
+  - **Sabab**: `/auth/login` sahifasi faqat `/?auth=login` modalga redirect qilardi; `signIn('telegram-login')` provider'siz chaqirilardi (NextAuth'da provider yo'q edi).
+  - **Qo'shildi**: `src/auth.ts`da yangi Credentials provider `telegram-login` (zod validatsiya, `verifyTelegramLogin` HMAC-SHA256 + 24h auth_date expiry, `telegramId` orqali user upsert, `uniqueId` generatsiya, ActivityLog).
+  - **Yangi endpoint**: `GET /api/auth/telegram/config` — bot token/username server-side'dan o'qiydi, faqat `botId` (token prefix) + `botUsername` qaytaradi (token o'zi hech qachon client'ga chiqmaydi).
+  - **Yangilangan sahifa**: `/auth/login` — Telegram login widget (TelegramLoginButton), success'da `/profile`ga redirect (open-redirect himoyasi: faqat boshlanadigan `/` path qabul), login bo'lgan user `/profile`ga yo'naltiriladi.
+  - **TelegramLoginButton**: success redirect `window.location.reload()` → `/profile` (open-redirect filter bilan).
+  - **Env**: `.env.local`ga `TELEGRAM_BOT_USERNAME=Hadaf_supportbot`; `.env.example`ga hujjat. Production (Vercel) uchun `TELEGRAM_BOT_USERNAME` qo'shish kerak.
+  - **BotFather talab**: login widget ishlashi uchun BotFather'da `/setdomain` bilan `alhadaf.uz` va `www.alhadaf.uz` domenlari qo'shilishi shart.
+  - Verification: `npx tsc --noEmit` 0 error, `/api/auth/telegram/config` 200 (`{"botId":"...","botUsername":"Hadaf_supportbot"}`), `/uz/auth/login` 200.
+
 ### Changed
 - **Storefront static sahifalar (5) ixchamlashtirildi** (`about`, `terms`, `privacy`, `faq`, `returns`):
   - **Sabab**: Sahifalardagi hero/header va kartalar juda katta edi (`py-16/py-20`, `text-4xl..8xl`, `p-12/p-16`, `rounded-[40px]/[3.5rem]`, `p-8/p-10` kartalar) — kontent sichib, sahifalar vertikal cho'zilib ketardi.

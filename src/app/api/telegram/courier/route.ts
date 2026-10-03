@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import TelegramBot from 'node-telegram-bot-api';
+import { CourierService } from '@/services/CourierService';
 
 const COURIER_TOKEN = process.env.COURIER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
 
@@ -182,10 +183,32 @@ export async function POST(req: Request) {
                 await bot.editMessageText(`❌ Siz ushbu buyurtmani (#${orderId.slice(-6).toUpperCase()}) rad etdingiz.`, {
                     chat_id: chatId, message_id: messageId, parse_mode: 'HTML'
                 });
-            } else if (action === 'pick_up') {
-                await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'PROCESSING', orderId);
+            } else             if (action === 'pick_up') {
+                const cs = new CourierService();
+                await cs.updateOrderStatus(orderId, 'PROCESSING');
+                await cs.notifyCourier(orderId, "Buyurtma qabul qilindi", `Buyurtma #${orderId.slice(-6).toUpperCase()} qabul qilindi.`);
+                await bot.answerCallbackQuery(query.id);
             } else if (action === 'delivering') {
-                await prisma.$executeRawUnsafe('UPDATE "Order" SET "status" = $1, "updatedAt" = NOW() WHERE "id" = $2', 'DELIVERING', orderId);
+                const cs = new CourierService();
+                await cs.updateOrderStatus(orderId, 'DELIVERING');
+                await cs.notifyCourier(orderId, "Yetkazib berish boshlandi", `Buyurtma #${orderId.slice(-6).toUpperCase()} yetkazib berish boshlandi.`);
+                await bot.answerCallbackQuery(query.id);
+            } else if (action === 'delivered') {
+                const cs = new CourierService();
+                await cs.updateOrderStatus(orderId, 'DELIVERED');
+                await bot.sendMessage(chatId, "📸 <b>Yetkazib berishni tasdiqlash uchun rasm yuboring.</b>", { parse_mode: 'HTML' });
+                await bot.answerCallbackQuery(query.id);
+            } else if (action === 'completed') {
+                const cs = new CourierService();
+                await cs.completeOrder(orderId);
+                await cs.notifyCourier(orderId, "Buyurtma yakunlandi", `Buyurtma #${orderId.slice(-6).toUpperCase()} yakunlandi.`);
+                await bot.answerCallbackQuery(query.id);
+            } else if (action === 'paid') {
+                const cs = new CourierService();
+                await cs.markOrderPaid(orderId);
+                await cs.notifyCourier(orderId, "To'lov bajarildi", `Buyurtma #${orderId.slice(-6).toUpperCase()} to'lovlandi.`);
+                await bot.answerCallbackQuery(query.id);
+            }
             } else if (action === 'delivered') {
                 await prisma.user.update({ where: { telegramId }, data: { botState: `WAITING_PHOTO:${orderId}` } });
                 await bot.sendMessage(chatId, "📸 <b>Yetkazib berishni tasdiqlash uchun rasm yuboring.</b>", { parse_mode: 'HTML' });
