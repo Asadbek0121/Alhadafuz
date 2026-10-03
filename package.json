@@ -8,6 +8,7 @@
     "db:push": "prisma db push",
     "start": "next start",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "bot": "node scripts/courier-bot-local.mjs",
     "bot:auth": "node scripts/auth-bot.mjs",
     "clean": "bash scripts/clean.sh"

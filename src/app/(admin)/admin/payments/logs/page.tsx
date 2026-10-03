@@ -1,17 +1,14 @@
 "use client";
-// noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import {
     ArrowLeft, RefreshCcw, ShieldAlert, CheckCircle, Clock,
     Calendar, Hash, Activity, Terminal, ShieldCheck,
-    AlertCircle, Search, ExternalLink, Filter, Copy,
-    ChevronDown, Download, PieChart, Zap
+    Search, X, Copy, ChevronDown, PieChart, Zap
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -75,19 +72,24 @@ export default function PaymentLogsPage() {
         toast.success("Nusxa olindi");
     };
 
+    const formatPayload = (raw: string | null) => {
+        if (!raw) return '{}';
+        try { return JSON.stringify(JSON.parse(raw), null, 2); } catch { return raw; }
+    };
+
     return (
         <div className="p-5 space-y-4 bg-gray-50/30 min-h-screen">
-            {/* Header & Controls */}
+            {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
                 <div className="flex items-center gap-3">
                     <Link href="/admin/payments">
-                        <Button variant="ghost" size="icon" className="rounded-xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 hover:text-blue-600 transition-all active:scale-90 h-10 w-10">
+                        <Button variant="ghost" size="icon" className="rounded-xl bg-white border border-gray-100 shadow-sm hover:bg-gray-50 hover:text-blue-600 h-10 w-10">
                             <ArrowLeft size={18} />
                         </Button>
                     </Link>
                     <div>
-                        <h1 className="text-xl font-black text-gray-900 tracking-tight italic uppercase leading-none">Audit Jurnali</h1>
-                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-[0.3em] mt-1 flex items-center gap-2">
+                        <h1 className="text-xl font-black text-gray-900 tracking-tight uppercase leading-none">Audit Jurnali</h1>
+                        <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mt-1 flex items-center gap-2">
                             <Activity size={12} className="text-blue-500" /> Tranzaksiyalar monitoringi
                         </p>
                     </div>
@@ -95,18 +97,9 @@ export default function PaymentLogsPage() {
 
                 <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
                     <Button
-                        onClick={() => {
-                            toast.success("Loglar eksport qilinmoqda...");
-                        }}
-                        variant="outline"
-                        className="gap-2 bg-white border-gray-100 rounded-xl hover:bg-gray-50 font-black uppercase tracking-widest shadow-sm h-10 px-4 text-[10px] italic"
-                    >
-                        <Download size={14} /> Eksport
-                    </Button>
-                    <Button
                         onClick={() => refetch()}
                         variant="default"
-                        className="gap-2 bg-gray-900 hover:bg-black text-white rounded-xl font-black uppercase tracking-widest shadow-md h-10 px-4 text-[10px] italic"
+                        className="gap-2 bg-gray-900 hover:bg-black text-white rounded-xl font-black uppercase tracking-widest shadow-md h-10 px-4 text-[10px]"
                     >
                         <RefreshCcw size={14} className={isRefetching ? "animate-spin" : ""} />
                         Yangilash
@@ -114,7 +107,7 @@ export default function PaymentLogsPage() {
                 </div>
             </div>
 
-            {/* Metrics Bar */}
+            {/* Metrics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <MetricCard icon={<Activity />} label="JAMI SO'ROVLAR" value={stats.total} color="blue" />
                 <MetricCard icon={<ShieldCheck />} label="MUVAFFAQIYATLI" value={stats.success} color="emerald" />
@@ -122,24 +115,28 @@ export default function PaymentLogsPage() {
                 <MetricCard icon={<Zap />} label="SAMARADORLIK" value={`${stats.rate}%`} color="indigo" />
             </div>
 
-            {/* Filters Bar */}
-            <div className="bg-white/50 backdrop-blur rounded-2xl border border-gray-100 p-4 flex flex-wrap items-center gap-3 shadow-sm">
+            {/* Filters */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-4 flex flex-wrap items-center gap-3 shadow-sm">
                 <div className="relative flex-1 min-w-[280px]">
+                    <label htmlFor="log-search" className="sr-only">Tranzaksiya qidirish</label>
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input
+                        id="log-search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         placeholder="Tranzaksiya ID yoki status bo'yicha qidirish..."
-                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl shadow-inner outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold text-sm italic"
+                        className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-sm"
                     />
                 </div>
 
                 <div className="flex items-center gap-2">
                     <div className="relative">
+                        <label htmlFor="status-filter" className="sr-only">Status filtri</label>
                         <select
+                            id="status-filter"
                             value={statusFilter}
                             onChange={(e) => setStatusFilter(e.target.value)}
-                            className="pl-3 pr-9 py-2.5 bg-white border border-gray-100 rounded-xl shadow-inner outline-none focus:ring-2 focus:ring-blue-500/10 font-bold text-xs appearance-none uppercase tracking-widest cursor-pointer"
+                            className="pl-3 pr-9 py-2.5 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 font-bold text-xs appearance-none uppercase tracking-widest cursor-pointer"
                         >
                             <option value="ALL">BARCHA STATUSLAR</option>
                             <option value="SUCCESS">MUVAFFAQIYATLI</option>
@@ -150,10 +147,12 @@ export default function PaymentLogsPage() {
                     </div>
 
                     <div className="relative">
+                        <label htmlFor="provider-filter" className="sr-only">Tizim filtri</label>
                         <select
+                            id="provider-filter"
                             value={providerFilter}
                             onChange={(e) => setProviderFilter(e.target.value)}
-                            className="pl-3 pr-9 py-2.5 bg-white border border-gray-100 rounded-xl shadow-inner outline-none focus:ring-2 focus:ring-blue-500/10 font-bold text-xs appearance-none uppercase tracking-widest cursor-pointer"
+                            className="pl-3 pr-9 py-2.5 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 font-bold text-xs appearance-none uppercase tracking-widest cursor-pointer"
                         >
                             <option value="ALL">BARCHA TIZIMLAR</option>
                             {providers.map(p => (
@@ -166,16 +165,16 @@ export default function PaymentLogsPage() {
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
-                {/* Logs Table Area */}
+                {/* Logs Table */}
                 <div className="xl:col-span-8 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
                     <div className="overflow-x-auto">
                         <table className="w-full text-left border-collapse">
                             <thead>
                                 <tr className="bg-gray-50/50">
-                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-[0.2em]">Vaqt & Sana</th>
-                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-[0.2em]">Tizim</th>
-                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-[0.2em]">Status</th>
-                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-[0.2em] text-right">Mablag'</th>
+                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Vaqt & Sana</th>
+                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Tizim</th>
+                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Status</th>
+                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest text-right">Mablag'</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-50">
@@ -183,68 +182,59 @@ export default function PaymentLogsPage() {
                                     <tr>
                                         <td colSpan={4} className="px-4 py-16 text-center">
                                             <div className="flex flex-col items-center gap-3">
-                                                <div className="relative w-10 h-10">
-                                                    <div className="absolute inset-0 rounded-full border-4 border-blue-500/20 animate-pulse" />
-                                                    <RefreshCcw className="animate-spin text-blue-500 w-10 h-10" />
-                                                </div>
-                                                <p className="text-xs font-black text-gray-400 uppercase tracking-[0.3em] italic">Ma'lumotlar olinmoqda...</p>
+                                                <RefreshCcw className="animate-spin text-blue-500 w-8 h-8" />
+                                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Ma'lumotlar olinmoqda...</p>
                                             </div>
                                         </td>
                                     </tr>
                                 ) : (
-                                    filteredLogs?.map((log, index) => {
+                                    filteredLogs?.map((log) => {
                                         const config = getStatusConfig(log.status);
                                         const isSelected = selectedLog?.id === log.id;
                                         return (
-                                            <motion.tr
+                                            <tr
                                                 key={log.id}
                                                 onClick={() => setSelectedLog(log)}
-                                                initial={{ opacity: 0, x: -10 }}
-                                                animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: index * 0.02 }}
-                                                className={`cursor-pointer transition-all duration-300 hover:bg-blue-50/30 group ${isSelected ? 'bg-blue-50/50' : 'white'}`}
+                                                className={`cursor-pointer hover:bg-blue-50/30 ${isSelected ? 'bg-blue-50/50' : ''}`}
                                             >
                                                 <td className="px-4 py-2.5">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`w-8 h-8 rounded-lg ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400 group-hover:bg-blue-100 group-hover:text-blue-600'} flex items-center justify-center transition-all duration-500`}>
+                                                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isSelected ? 'bg-blue-600 text-white' : 'bg-gray-50 text-gray-400'}`}>
                                                             <Calendar size={14} />
                                                         </div>
                                                         <div>
-                                                            <div className="text-sm font-black text-gray-900 italic leading-none">{format(new Date(log.createdAt), 'HH:mm:ss')}</div>
-                                                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-tighter mt-0.5">{format(new Date(log.createdAt), 'dd.MM.yyyy')}</div>
+                                                            <div className="text-sm font-black text-gray-900 leading-none">{format(new Date(log.createdAt), 'HH:mm:ss')}</div>
+                                                            <div className="text-[10px] font-bold text-gray-400 uppercase mt-0.5">{format(new Date(log.createdAt), 'dd.MM.yyyy')}</div>
                                                         </div>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2.5">
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />
-                                                        <span className="text-sm font-black text-gray-700 tracking-tight uppercase italic">{log.provider}</span>
-                                                    </div>
+                                                    <span className="text-sm font-black text-gray-700 tracking-tight uppercase">{log.provider}</span>
                                                 </td>
                                                 <td className="px-4 py-2.5">
-                                                    <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border shadow-sm ${config.bg} ${config.color} ${config.border}`}>
+                                                    <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border ${config.bg} ${config.color} ${config.border}`}>
                                                         {config.icon}
-                                                        <span className="text-[10px] font-black uppercase tracking-tight italic">{config.label}</span>
+                                                        <span className="text-[10px] font-black uppercase tracking-tight">{config.label}</span>
                                                     </div>
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right">
                                                     <span className="text-sm font-black text-gray-900 tabular-nums">
                                                         {log.amount?.toLocaleString() || '0'}
                                                     </span>
-                                                    <span className="text-[10px] font-black text-gray-300 uppercase ml-1 italic">uzs</span>
+                                                    <span className="text-[10px] font-black text-gray-300 uppercase ml-1">uzs</span>
                                                 </td>
-                                            </motion.tr>
+                                            </tr>
                                         );
                                     })
                                 )}
                                 {filteredLogs?.length === 0 && !isLoading && (
                                     <tr>
                                         <td colSpan={4} className="px-4 py-16 text-center">
-                                            <div className="flex flex-col items-center gap-3 opacity-40 grayscale group hover:grayscale-0 transition-all">
+                                            <div className="flex flex-col items-center gap-3 opacity-40">
                                                 <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 border-2 border-dashed border-gray-100">
                                                     <PieChart size={24} />
                                                 </div>
-                                                <p className="text-xs font-black text-gray-400 uppercase tracking-[0.3em] italic mt-1">Loglar mavjud emas</p>
+                                                <p className="text-xs font-black text-gray-400 uppercase tracking-widest mt-1">Loglar mavjud emas</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -256,104 +246,77 @@ export default function PaymentLogsPage() {
 
                 {/* Details Panel */}
                 <div className="xl:col-span-4 space-y-4 sticky top-8">
-                    <AnimatePresence mode="wait">
-                        {selectedLog ? (
-                            <motion.div
-                                key={selectedLog.id}
-                                initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                                className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4 relative overflow-hidden"
-                            >
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-gray-50/50 rounded-full -mr-20 -mt-20 z-0" />
+                    {selectedLog ? (
+                        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-4 space-y-4">
+                            <div className="flex items-start justify-between mb-4">
+                                <div>
+                                    <h3 className="text-lg font-black text-gray-900 tracking-tight uppercase leading-none">Tafsilotlar</h3>
+                                    <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-1">Tranzaksiya arxivi</p>
+                                </div>
+                                <button onClick={() => setSelectedLog(null)} className="p-2 bg-gray-50 hover:bg-red-50 hover:text-red-500 rounded-xl text-gray-400" aria-label="Yopish">
+                                    <X size={16} />
+                                </button>
+                            </div>
 
-                                <div className="relative z-10">
-                                    <div className="flex items-start justify-between mb-4">
-                                        <div>
-                                            <h3 className="text-lg font-black text-gray-900 tracking-tight italic uppercase leading-none">Tafsilotlar</h3>
-                                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mt-1 italic">Tranzaksiya arxivi</p>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-1 gap-3">
+                                    <DetailItem
+                                        icon={<Hash size={16} />}
+                                        label="TRANSAKSIYA ID"
+                                        value={selectedLog.transactionId || "YO'Q"}
+                                        canCopy={!!selectedLog.transactionId}
+                                        onCopy={() => copyToClipboard(selectedLog.transactionId || '')}
+                                    />
+                                    <DetailItem
+                                        icon={<Activity size={16} />}
+                                        label="IP MANZIL (CLIENT)"
+                                        value={selectedLog.ipAddress || "MA'LUMOT YO'Q"}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between ml-1">
+                                        <div className="flex items-center gap-2">
+                                            <Terminal size={14} className="text-emerald-500" />
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Server Payload</span>
                                         </div>
-                                        <button onClick={() => setSelectedLog(null)} className="p-2 bg-gray-50 hover:bg-white hover:shadow-md rounded-xl transition-all group">
-                                            <X size={16} className="text-gray-400 group-hover:text-red-500" />
-                                        </button>
-                                    </div>
-
-                                    <div className="space-y-4">
-                                        <div className="grid grid-cols-1 gap-3">
-                                            <DetailItem
-                                                icon={<Hash size={16} />}
-                                                label="TRANSAKSIYA ID"
-                                                value={selectedLog.transactionId || "YO'Q"}
-                                                color="blue"
-                                                canCopy
-                                                onCopy={() => copyToClipboard(selectedLog.transactionId || '')}
-                                            />
-                                            <DetailItem
-                                                icon={<Activity size={16} />}
-                                                label="IP MANZIL (CLIENT)"
-                                                value={selectedLog.ipAddress || "MA'LUMOT YO'Q"}
-                                                color="indigo"
-                                            />
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <div className="flex items-center justify-between ml-1">
-                                                <div className="flex items-center gap-2">
-                                                    <Terminal size={14} className="text-emerald-500" />
-                                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">Server Payload</span>
-                                                </div>
-                                                {selectedLog.requestData && (
-                                                    <button
-                                                        onClick={() => copyToClipboard(selectedLog.requestData!)}
-                                                        className="text-[9px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg transition-colors"
-                                                    >
-                                                        <Copy size={10} /> Nusxa olish
-                                                    </button>
-                                                )}
-                                            </div>
-                                            <div className="relative group/code">
-                                                <div className="absolute right-4 top-4 opacity-0 group-hover/code:opacity-100 transition-opacity">
-                                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                                </div>
-                                                <pre className="bg-[#0f172a] p-4 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[250px] shadow-lg border border-slate-800 leading-relaxed scrollbar-thin scrollbar-thumb-slate-700">
-                                                    {selectedLog.requestData ? JSON.stringify(JSON.parse(selectedLog.requestData), null, 2) : '{}'}
-                                                </pre>
-                                            </div>
-                                        </div>
-
-                                        {selectedLog.responseData && (
-                                            <div className="space-y-2 bg-blue-50/30 p-4 rounded-xl border border-blue-100/50">
-                                                <div className="flex items-center gap-2 ml-1">
-                                                    <ExternalLink size={14} className="text-blue-500" />
-                                                    <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest italic">Tizim Metadata</span>
-                                                </div>
-                                                <div className="text-[11px] font-mono text-blue-700 break-all leading-relaxed italic">
-                                                    {selectedLog.responseData}
-                                                </div>
-                                            </div>
+                                        {selectedLog.requestData && (
+                                            <button
+                                                onClick={() => copyToClipboard(selectedLog.requestData!)}
+                                                className="text-[9px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg"
+                                            >
+                                                <Copy size={10} /> Nusxa olish
+                                            </button>
                                         )}
                                     </div>
+                                    <pre className="bg-[#0f172a] p-4 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[250px] leading-relaxed">
+                                        {formatPayload(selectedLog.requestData)}
+                                    </pre>
                                 </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                initial={{ opacity: 0, scale: 0.9 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm relative overflow-hidden"
-                            >
-                                <div className="absolute inset-0 bg-gradient-to-b from-gray-50/50 to-transparent pointer-events-none" />
-                                <div className="relative z-10 flex flex-col items-center">
-                                    <div className="w-14 h-14 rounded-full bg-white shadow-md flex items-center justify-center text-gray-200 border border-gray-50 mb-4 transform hover:rotate-12 transition-transform duration-700">
-                                        <Filter size={24} />
+
+                                {selectedLog.responseData && (
+                                    <div className="space-y-2 bg-blue-50/30 p-4 rounded-xl border border-blue-100/50">
+                                        <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Tizim Metadata</span>
+                                        <div className="text-[11px] font-mono text-blue-700 break-all leading-relaxed">
+                                            {selectedLog.responseData}
+                                        </div>
                                     </div>
-                                    <h3 className="text-base font-black text-gray-900 tracking-tight italic uppercase">Tanlov kutilmoqda</h3>
-                                    <p className="text-gray-400 text-xs mt-2 leading-relaxed max-w-[200px] font-medium italic">
-                                        Batafsil ma'lumotni kshirish uchun chapdagi ro'yxatdan tranzaksiyani tanlang.
-                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="bg-white rounded-2xl border border-gray-100 p-8 text-center shadow-sm">
+                            <div className="flex flex-col items-center">
+                                <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 border border-gray-100 mb-4">
+                                    <PieChart size={24} />
                                 </div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                <h3 className="text-base font-black text-gray-900 tracking-tight uppercase">Tanlov kutilmoqda</h3>
+                                <p className="text-gray-400 text-xs mt-2 leading-relaxed max-w-[200px] font-medium">
+                                    Batafsil ma'lumotni ko'rish uchun chapdagi ro'yxatdan tranzaksiyani tanlang.
+                                </p>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
@@ -369,44 +332,35 @@ function MetricCard({ icon, label, value, color }: { icon: any, label: string, v
     };
 
     return (
-        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3 hover:shadow-md hover:-translate-y-0.5 transition-all group overflow-hidden relative">
-            <div className={`absolute -right-2 -top-2 opacity-5 scale-[2] group-hover:rotate-12 transition-transform duration-700`}>{icon}</div>
-            <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${colors[color]} group-hover:scale-110 transition-transform`}>
+        <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-col gap-3">
+            <div className={`w-9 h-9 rounded-xl flex items-center justify-center border ${colors[color]}`}>
                 {icon}
             </div>
             <div>
-                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">{label}</p>
-                <p className="text-lg font-black text-gray-900 mt-0.5 tabular-nums tracking-tighter italic">{value}</p>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</p>
+                <p className="text-lg font-black text-gray-900 mt-0.5 tabular-nums tracking-tight">{value}</p>
             </div>
         </div>
     );
 }
 
-function DetailItem({ icon, label, value, color, canCopy, onCopy }: { icon: any, label: string, value: string, color: string, canCopy?: boolean, onCopy?: () => void }) {
+function DetailItem({ icon, label, value, canCopy, onCopy }: { icon: any, label: string, value: string, canCopy?: boolean, onCopy?: () => void }) {
     return (
-        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-50 space-y-2 group/item">
+        <div className="p-3 bg-gray-50/50 rounded-xl border border-gray-50 space-y-2">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <span className="text-blue-500">{icon}</span>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest italic">{label}</span>
+                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{label}</span>
                 </div>
                 {canCopy && (
-                    <button onClick={onCopy} className="opacity-0 group-hover/item:opacity-100 transition-opacity p-1 hover:bg-white rounded-lg text-gray-400 hover:text-blue-500">
+                    <button onClick={onCopy} className="p-1 hover:bg-white rounded-lg text-gray-400 hover:text-blue-500" aria-label="Nusxa olish">
                         <Copy size={12} />
                     </button>
                 )}
             </div>
-            <div className={`text-xs font-black italic break-all leading-relaxed ${canCopy ? 'text-blue-600 bg-white p-2 rounded-lg shadow-inner border border-blue-50' : 'text-gray-700'}`}>
+            <div className={`text-xs font-black break-all leading-relaxed ${canCopy ? 'text-blue-600 bg-white p-2 rounded-lg border border-blue-50' : 'text-gray-700'}`}>
                 {value}
             </div>
         </div>
     );
-}
-
-function X({ size, className }: { size: number, className: string }) {
-    return (
-        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-            <path d="M18 6 6 18" /><path d="m6 6 12 12" />
-        </svg>
-    )
 }
