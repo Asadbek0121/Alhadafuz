@@ -385,7 +385,7 @@ export async function getProductDetail(idOrSlug: string): Promise<any | null> { 
     // ilgari ketma-ket 5 RTT ≈ 4×300ms ortiqcha kutish edi).
     const [rawReviews, categorySlug, attributeValues, variants] = await Promise.all([
         (prisma as any).$queryRaw`
-            SELECT r.id, r.rating, r.comment, r.createdAt, r.adminReply,
+            SELECT r.id, r.rating, r.comment, r."createdAt", r."adminReply",
                    u.name as "userName", u.image as "userImage"
             FROM "Review" r
             LEFT JOIN "User" u ON r."userId" = u.id
