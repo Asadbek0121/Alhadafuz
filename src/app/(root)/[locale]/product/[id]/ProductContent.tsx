@@ -270,6 +270,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
             return changed ? next : prev;
         });
         setActiveImage(0);
+        setImgError(false);
     }, [product?.id, product?.variants]);
 
     // Faqat initialProduct bo'lmasa client'dan fetch qilinadi (double-fetch oldini olish)
@@ -331,6 +332,12 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
         if (!hasVariants) return null;
         return findVariantByOptions(variants, selectedOptions);
     }, [hasVariants, variants, selectedOptions]);
+
+    // Variant almashganda rasm xatosi holatini tozalash — aks holda avvalgi
+    // variantning yuklash xatosi keyingi variantning rasmini ham bloklab qo'yadi.
+    useEffect(() => {
+        setImgError(false);
+    }, [selectedVariant?.id]);
 
     // Effektiv narx/stock/rasm — variant maxsus qiymat, aks holda product fallback.
     const effectivePrice = hasVariants ? variantPrice(selectedVariant, product?.price ?? 0) : (product?.price ?? 0);
@@ -511,15 +518,11 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                             aria-label={tProduct('zoom_hint') || 'Rasmni kattalashtirish'}
                         >
                             {!imgError ? (
-                                <Image
+                                <img
                                     src={activeImg}
                                     alt={product.title}
-                                    width={500}
-                                    height={500}
-                                    sizes="(max-width: 768px) 100vw, 500px"
-                                    priority
-                                    onError={() => setImgError(true)}
                                     className={styles.mainImg}
+                                    onError={() => setImgError(true)}
                                 />
                             ) : (
                                 <div className={`${styles.mainImg} flex flex-col items-center justify-center gap-2 text-slate-300`}>

@@ -76,7 +76,7 @@ export function variantStock(variant: any, productStock: number): number {
 
 export function variantImages(variant: any, productImages: string[]): string[] {
   if (variant && variant.images && variant.images.length > 0) {
-    return variant.images;
+    return variant.images.map((img: any) => typeof img === 'string' ? img : img.url).filter(Boolean);
   }
   return productImages;
 }
