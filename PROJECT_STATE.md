@@ -319,9 +319,15 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-03 (Admin perf `41e31b1`: /admin/users kesh 12x, polling sekinlashtirildi; Kuryer tizimi to'liq: CourierService unified + transaction-safe flow, photo proof majburiy, Mini App dashboard (auth fix + real GPS + 3 tab), ariza wizard 6 bosqich (ism/familiya/telefon/transport/rang/davlat raqami), eski kuryerlarga majburiy to'ldirish wizard'i, admin'da phone/transport ko'rinishi. Migratsiyalar: courier_application_fields, courier_vehicle_details)
+2026-10-06 (Courier dashboard hook fix, Telegram WebApp authentication, profile update sync, public order tracking `/uz/track` search page)
 
-## Recent Changes (2026-10-03)
+## Recent Changes (2026-10-06)
+
+### Courier Dashboard & Telegram WebApp Authentication
+- **CourierDashboard Hook Fix**: Barcha React hooklari (`useEffect`, `useState`, `useRef`, `useCallback`) komponentning eng yuqori qismiga ko'chirildi va early return shartlari ulardan pastga tushirildi ("React Rules of Hooks" xatosi bartaraf etildi).
+- **Telegram WebApp Auth (`src/lib/telegram-webapp-auth.ts`)**: Kuryer API'lari uchun `x-telegram-init-data` header'i orqali HMAC-SHA256 validatsiya tizimi qo'shildi. Mini App orqali kirgan kuryerlar avtomatik autentifikatsiyadan o'tadi va "Faqat kuryerlar uchun" xatosi chiqmaydi.
+- **Profile & Admin Sync**: Shaxsiy ma'lumotlar (`/profile/info`) yangilanganda NextAuth session (`update()`), Zustand store (`setUser()`) va admin panel (`revalidateTag('admin-users', { expire: 0 })`) sinxron yangilanishi ta'minlandi.
+- **Public Order Tracking (`/uz/track`)**: Buyurtma raqami yoki ID orqali qidirish imkonini beruvchi ochiq sahifa yaratildi (`src/app/(root)/[locale]/track/page.tsx`).
 
 ### Courier Bot Unified Service
 - `src/services/CourierService.ts` yaratildi — transaction-safe business logic:
