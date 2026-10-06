@@ -376,6 +376,7 @@ export async function getProductDetail(idOrSlug: string): Promise<any | null> { 
             category: true, attributes: true, specs: true,
             fulfillmentType: true, createdAt: true, reviewsCount: true,
             brand: true, brandId: true, mxikCode: true, packageCode: true,
+            brandRel: { select: { name: true, slug: true, logo: true } },
             vatPercent: true, vendorId: true,
         }
     });

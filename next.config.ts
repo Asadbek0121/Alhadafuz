@@ -45,7 +45,7 @@ const cspHeader = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net",
   "font-src 'self' data: https://fonts.gstatic.com",
-  "img-src 'self' data: blob:" +
+  "img-src 'self' data: blob: https:" +
     " https://lh3.googleusercontent.com https://images.samsung.com https://placehold.co" +
     " https://ui-avatars.com https://olcha.uz https://mi-store.uz https://fdn2.gsmarena.com" +
     " https://res.cloudinary.com https://*.public.blob.vercel-storage.com" +

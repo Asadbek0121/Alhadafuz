@@ -557,9 +557,10 @@ export default function CheckoutPage() {
             }
 
             if (data.paymentUrl) {
-                // Savat to'lovdan OLDIN tozalanmaydi — foydalanuvchi to'lovni
-                // bekor qilsa yoki qaytsa, savat saqlanib qoladi. Savat
-                // order-success sahifasida buyurtma tasdiqlangandan keyin tozalanadi.
+                // Buyurtma yaratildi — savat darhol tozalanadi (chala/PENDING
+                // buyurtmada mahsulot savatda qotib qolmasin). To'lov bekor
+                // qilinsa ham buyurtma /profile/orders dan davom ettiriladi.
+                clearCart();
                 window.location.href = data.paymentUrl;
                 return;
             }

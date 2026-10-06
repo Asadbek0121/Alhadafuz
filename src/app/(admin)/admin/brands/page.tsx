@@ -83,6 +83,14 @@ export default function AdminBrandsPage() {
                     <div className="space-y-1.5">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Logo URL (ixtiyoriy)</label>
                         <input value={logo} onChange={e => setLogo(e.target.value)} className="w-full bg-gray-50 border-2 border-transparent focus:border-blue-500 p-2.5 rounded-xl outline-none font-medium text-gray-900" placeholder="https://..." />
+                        {logo.trim() && (
+                            <div className="flex items-center gap-2 p-2 bg-gray-50 rounded-xl">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={logo.trim()} alt="Logo preview" className="h-10 w-16 object-contain bg-white rounded-lg border border-gray-100"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.opacity = '0.3'; }} />
+                                <span className="text-[10px] text-gray-400">Rasmi yuqorida ko'rinmasa URL noto'g'ri yoki CSP/rasm serveri bloklaydi</span>
+                            </div>
+                        )}
                     </div>
                     <div className="flex gap-2">
                         <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-4 rounded-xl font-black">
@@ -108,8 +116,12 @@ export default function AdminBrandsPage() {
                     {brands.map((b) => (
                         <div key={b.id} className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-shadow">
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-sm shrink-0">
-                                    {b.name.charAt(0).toUpperCase()}
+                                <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600 font-black text-sm shrink-0 overflow-hidden">
+                                    {b.logo ? (
+                                        // eslint-disable-next-line @next/next/no-img-element
+                                        <img src={b.logo} alt={b.name} className="w-full h-full object-contain"
+                                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                                    ) : b.name.charAt(0).toUpperCase()}
                                 </div>
                                 <div className="min-w-0">
                                     <p className="font-bold text-gray-900 text-sm truncate">{b.name}</p>

@@ -111,7 +111,7 @@ export default async function ViewInvoicePage({ params }: { params: Promise<{ id
                             <ArrowLeft size={18} />
                         </Button>
                     </Link>
-                    <h1 className="text-xl font-bold text-gray-800">Hisob-faktura <span className="text-blue-600">#{order.id.slice(-6).toUpperCase()}</span></h1>
+                    <h1 className="text-xl font-bold text-gray-800">Hisob-faktura <span className="text-blue-600">#{order.orderNumber || order.id.slice(-6).toUpperCase()}</span></h1>
                 </div>
                 <div className="flex gap-3">
                     <PrintButton />

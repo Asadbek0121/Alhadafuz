@@ -230,12 +230,16 @@ export async function POST(req: Request) {
             // Variants — bulk create + images (atomic)
             if (variantsPayload && variantsPayload.length > 0) {
                 for (const v of variantsPayload) {
+                    // variantKey pipe formatda yoziladi (edit yo'li bilan bir xil:
+                    // "rang=qora|olcham=xl") — JSON format public parseVariantKey
+                    // tomonidan ham tan olsa-da, bir xillik muhim.
+                    const opts = v.options ? Object.fromEntries(
+                        Object.entries(v.options).sort(([a], [b]) => a.localeCompare(b))
+                    ) as Record<string, string> : null;
                     const variant = await tx.productVariant.create({
                         data: {
                             productId: created.id,
-                            variantKey: v.options ? JSON.stringify(Object.fromEntries(
-                                Object.entries(v.options).sort(([a], [b]) => a.localeCompare(b))
-                            )) : "",
+                            variantKey: opts ? Object.entries(opts).map(([k, val]) => `${k}=${val}`).join('|') : "",
                             variantLabel: v.options ? Object.values(v.options).join(" / ") : "",
                             sku: v.sku || null,
                             barcode: v.barcode || null,

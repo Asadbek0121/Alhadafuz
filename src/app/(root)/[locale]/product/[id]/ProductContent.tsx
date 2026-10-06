@@ -217,6 +217,34 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
             setSelections(sels);
             setStaticSpecs(stats);
         }
+
+        // Strukturaviy xususiyatlar (CategoryAttributeDefinition bo'yicha admin
+        // kiritgan ProductAttributeValue'lar) — specs bo'limiga qo'shiladi.
+        // Legacy attributes JSON'dan kelgan bir xil kalit bo'lsa ustuvor emas
+        // (o'zgarmas — avval yozilgan qoladi).
+        const structured = (data as any).attributeValues;
+        if (Array.isArray(structured) && structured.length > 0) {
+            setStaticSpecs(prev => {
+                const next = [...prev];
+                const seen = new Set(prev.map(([k]) => k.toLowerCase()));
+                for (const av of structured) {
+                    const label = av?.attributeDef?.label || av?.attributeDef?.name;
+                    let value = av?.value;
+                    if (value === null || value === undefined || label === undefined) continue;
+                    if (typeof value === 'object') {
+                        // MEASUREMENT: {value, unit} yoki MULTI_SELECT: array
+                        if (Array.isArray(value)) value = value.join(', ');
+                        else if (typeof value.value !== 'undefined') value = `${value.value}${value.unit ? ' ' + value.unit : ''}`;
+                        else value = JSON.stringify(value);
+                    }
+                    const valStr = String(value).trim();
+                    if (!label || !valStr || seen.has(String(label).toLowerCase())) continue;
+                    seen.add(String(label).toLowerCase());
+                    next.push([label, valStr]);
+                }
+                return next;
+            });
+        }
     };
 
     // Serverdan initialProduct kelganda ham spec'lar parse qilinishi kerak
@@ -618,11 +646,31 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                     </div>
 
                     <div className={styles.metaInfo}>
-                        {/* Brand */}
+                        {/* Brand — admin paneldagi Brand entity'dan (logo bilan),
+                            bo'lmasa eski brand TEXT maydoni */}
                         <div className={styles.metaRow}>
                             <span className={styles.metaLabel}>{tProduct('brand')}:</span>
                             <div className={styles.metaDots}></div>
-                            <span className={styles.metaValue}>{product.brand || "Hadaf Market"}</span>
+                            <span className={styles.metaValue}>
+                                {(() => {
+                                    const rel = (product as any).brandRel;
+                                    const name = (rel?.name || product.brand || "Hadaf Market") as string;
+                                    if (!rel?.logo) return name;
+                                    return (
+                                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
+                                                src={rel.logo}
+                                                alt={name}
+                                                loading="lazy"
+                                                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                                                style={{ height: 22, width: 'auto', maxWidth: 90, objectFit: 'contain', borderRadius: 4 }}
+                                            />
+                                            {name}
+                                        </span>
+                                    );
+                                })()}
+                            </span>
                         </div>
 
                         {/* Stock */}

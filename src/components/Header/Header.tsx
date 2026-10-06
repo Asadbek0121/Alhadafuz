@@ -117,9 +117,13 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
     // Sync store user with session user to prevent stale data (especially from persistence)
     useEffect(() => {
         if (status === "authenticated" && session?.user) {
-            // Only update if storeUser is out of sync or missing
-            if (!storeUser || storeUser.email !== session.user.email) {
-                // Here we might want to fetch full user data, but for now just sync session
+            // Sync when any of the identity fields differ (email, name, phone) —
+            // previously only email was compared, so a changed name never synced.
+            const su = session.user as any;
+            if (!storeUser
+                || storeUser.email !== su.email
+                || storeUser.name !== su.name
+                || storeUser.phone !== su.phone) {
                 setUser(session.user as any);
             }
         } else if (status === "unauthenticated" && storeUser) {

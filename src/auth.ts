@@ -325,6 +325,14 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                 if (session.role) token.role = session.role;
                 if (session.uniqueId) token.uniqueId = session.uniqueId;
                 if (session.admin2fa !== undefined) token.admin2fa = session.admin2fa;
+                // Profil sahifasidan kelgan shaxsiy ma'lumotlar — token'da
+                // yangilansin, aks holda ism/email/telefon qayta login'gacha
+                // eskirgan qoladi (header + admin panelda ko'rinadi).
+                if (session.user) {
+                    if (session.user.name) token.name = session.user.name;
+                    if (session.user.email) token.email = session.user.email;
+                    if ((session.user as any).phone !== undefined) token.phone = (session.user as any).phone;
+                }
             }
 
             return token;

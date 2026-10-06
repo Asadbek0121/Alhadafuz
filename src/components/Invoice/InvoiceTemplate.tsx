@@ -1,5 +1,6 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 import React from 'react';
+import { SITE_URL } from '@/lib/seo';
 
 interface InvoiceTemplateProps {
     order: any;
@@ -16,16 +17,22 @@ export default function InvoiceTemplate({ order, settings, subTotal, grandTotal,
         try {
             const config = JSON.parse(clickMethod.config);
             if (config.service_id && config.merchant_id) {
-                clickUrl = `https://my.click.uz/services/pay?service_id=${config.service_id}&merchant_id=${config.merchant_id}&amount=${grandTotal}&transaction_param=${order.id}`;
+                // transaction_param — o'qiladigan buyurtma raqami (1000001 formatida).
+                // Ilgari xom order.id (cuid) yozilgandi — QR skanda Click'da boshqa
+                // raqam ko'rinardi. Webhook ikkala formatni taniydi (OR query).
+                const transactionParam = order.orderNumber || order.id;
+                clickUrl = `https://my.click.uz/services/pay?service_id=${config.service_id}&merchant_id=${config.merchant_id}&amount=${grandTotal}&transaction_param=${encodeURIComponent(transactionParam)}`;
             }
         } catch (e) {
             console.error("Click config parsing error", e);
         }
     }
 
-    // Kuryer bot linki (Buyurtmani boshqarish uchun)
-    const courierBotUsername = "Hadaf_kuryerbot"; // Haqiqiy kuryer bot username
-    const courierBotUrl = `https://t.me/${courierBotUsername}?start=${order.id}`;
+    // Kuryer nazorati — sayt tracking sahifasi (buyurtma holati, kuryer, GPS).
+    // Ilgari Telegram bot deep-link ishlatilgandi, lekin bot username hardcode
+    // noto'g'ri edi (`Hadaf_kuryerbot`) — skan qilinsa bot ochilmasdi. Site URL
+    // proxy tomonidan avtomatik locale prefiksiga redirect qilinadi (/uz/track/...).
+    const courierTrackingUrl = `${SITE_URL}/track/${order.id}`;
 
     return (
         <div className="invoice-container">
@@ -56,7 +63,7 @@ export default function InvoiceTemplate({ order, settings, subTotal, grandTotal,
                 <div className="invoice-meta">
                     <div className="meta-item">
                         <div className="meta-label">Invoys № :</div>
-                        <div className="meta-value">#{order.id.slice(-6).toUpperCase()}</div>
+                        <div className="meta-value">#{order.orderNumber || order.id.slice(-6).toUpperCase()}</div>
                     </div>
                     <div className="meta-item">
                         <div className="meta-label">Sana :</div>
@@ -198,7 +205,7 @@ export default function InvoiceTemplate({ order, settings, subTotal, grandTotal,
                             background: 'white'
                         }}>
                             <img
-                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(courierBotUrl)}`}
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(courierTrackingUrl)}`}
                                 alt="Courier QR"
                                 style={{ width: '100%', height: '100%' }}
                             />

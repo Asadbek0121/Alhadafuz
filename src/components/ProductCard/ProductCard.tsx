@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/navigation";
 import styles from './ProductCard.module.css';
 import { ShoppingBag, Heart, Scale, Star, Loader2, Truck, Play, Gift, AlertTriangle } from 'lucide-react';
 import { useCartStore } from '@/store/useCartStore'; // Updated import
@@ -84,14 +84,22 @@ export default function ProductCard(props: ProductProps) {
     const handleBuyNow = async (e: React.MouseEvent) => {
         e.preventDefault();
         setIsBuying(true);
-        addToCart({
-            id,
-            title,
-            price,
-            image,
-            fulfillmentType: isChinaItem({ fulfillmentType }) ? 'CHINA_ORDER' : 'LOCAL'
-        });
-        router.push(`/${window.location.pathname.split('/')[1]}/checkout`);
+        try {
+            // 2-argument openDrawer=false — savat drawer'i checkout ustida
+            // ochilib qolmasin, to'g'ridan-to'g'ri rasmiylashtirishga o'tadi.
+            addToCart({
+                id,
+                title,
+                price,
+                image,
+                fulfillmentType: isChinaItem({ fulfillmentType }) ? 'CHINA_ORDER' : 'LOCAL'
+            }, false);
+            // @/navigation router — locale prefiksni avtomatik qo'shadi
+            // (`window.location.pathname` usuli root bo'lmagan yo'llarda buzilardi).
+            router.push('/checkout');
+        } finally {
+            setIsBuying(false);
+        }
     };
 
     const handleToggleWishlist = (e: React.MouseEvent) => {
