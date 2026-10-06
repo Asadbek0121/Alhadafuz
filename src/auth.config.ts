@@ -34,9 +34,13 @@ export const authConfig = {
                 token.picture = user.image;
             }
             if (trigger === "update" && session) {
-                token.name = session.name || token.name;
-                token.email = session.email || token.email;
-                token.picture = session.image || token.picture;
+                token.name = session.user?.name ?? session.name ?? token.name;
+                token.email = session.user?.email ?? session.email ?? token.email;
+                token.picture = session.user?.image ?? session.image ?? token.picture;
+                // Phone o'zgarishini ham tokenda saqlash uchun
+                if ((session.user as any)?.phone !== undefined) {
+                    (token as any).phone = (session.user as any).phone;
+                }
             }
             return token;
         },
@@ -47,6 +51,7 @@ export const authConfig = {
                 session.user.name = token.name as string;
                 session.user.email = token.email as string;
                 session.user.image = token.picture as string;
+                (session.user as any).phone = (token as any).phone;
             }
             return session;
         }

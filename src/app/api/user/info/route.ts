@@ -58,24 +58,35 @@ export async function PUT(req: Request) {
         const user = await prisma.user.findUnique({ where: { id: userId } });
         if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-        // Check if new email/phone/username is taken by others
+        // Email conflict tekshiruvi: faqat boshqa foydalanuvchida bo'lsa xato qaytar
         if (validatedData.email && validatedData.email !== user.email) {
             const exists = await prisma.user.findFirst({
-                where: { email: validatedData.email, NOT: { id: user.id } }
+                where: {
+                    email: { equals: validatedData.email, mode: 'insensitive' },
+                    NOT: { id: user.id }
+                }
             });
             if (exists) return NextResponse.json({ error: "Email already taken" }, { status: 409 });
         }
 
+        // Username conflict tekshiruvi
         if (validatedData.username && validatedData.username !== user.username) {
             const exists = await prisma.user.findFirst({
-                where: { username: validatedData.username, NOT: { id: user.id } }
+                where: {
+                    username: { equals: validatedData.username, mode: 'insensitive' },
+                    NOT: { id: user.id }
+                }
             });
             if (exists) return NextResponse.json({ error: "Username already taken" }, { status: 409 });
         }
 
+        // Phone conflict tekshiruvi
         if (validatedData.phone && validatedData.phone !== user.phone) {
             const exists = await prisma.user.findFirst({
-                where: { phone: validatedData.phone, NOT: { id: user.id } }
+                where: {
+                    phone: validatedData.phone,
+                    NOT: { id: user.id }
+                }
             });
             if (exists) return NextResponse.json({ error: "Phone already taken" }, { status: 409 });
         }

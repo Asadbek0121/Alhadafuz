@@ -114,6 +114,8 @@ export default function PersonalInfoPage() {
                     name: data.name,
                     email: data.email,
                     phone: data.phone,
+                    dateOfBirth: data.dateOfBirth,
+                    gender: data.gender,
                 },
             });
 
@@ -124,6 +126,8 @@ export default function PersonalInfoPage() {
                     name: data.name,
                     email: data.email,
                     phone: data.phone,
+                    dateOfBirth: data.dateOfBirth,
+                    gender: data.gender,
                 } as any);
             }
 

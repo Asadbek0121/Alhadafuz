@@ -1,0 +1,1 @@
+- [Profile Update and Account Linking](memory/profile-update-and-account-linking.md) — Fix profile update sync and soft conflict checks for email/phone.
