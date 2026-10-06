@@ -56,7 +56,10 @@
     },
     "track": {
       "title": "Track order",
-      "description": "Where your order is — follow its status in real time."
+      "description": "Where your order is — follow its status in real time.",
+      "order_number": "Order number or ID",
+      "placeholder": "Enter order number (e.g. 1000001)",
+      "search": "Track"
     },
     "auth": {
       "title": "Sign in",

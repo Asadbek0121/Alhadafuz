@@ -20,7 +20,7 @@ export async function GET(
 
     try {
         // 1. Get Order (Raw SQL backup due to Prisma Client sync issues)
-        const orders: any[] = await prisma.$queryRaw`SELECT * FROM "Order" WHERE "id" = ${id}`;
+        const orders: any[] = await prisma.$queryRaw`SELECT * FROM "Order" WHERE "id" = ${id} OR "orderNumber" = ${id}`;
         const order = orders[0];
 
         if (!order) {

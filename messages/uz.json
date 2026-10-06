@@ -56,7 +56,10 @@
     },
     "track": {
       "title": "Buyurtmani kuzatish",
-      "description": "Buyurtmangiz qayerda — real vaqtda holatini kuzatib boring."
+      "description": "Buyurtmangiz qayerda — real vaqtda holatini kuzatib boring.",
+      "order_number": "Buyurtma raqami yoki ID",
+      "placeholder": "Buyurtma raqamini kiriting (masalan: 1000001)",
+      "search": "Kuzatish"
     },
     "auth": {
       "title": "Kirish",
