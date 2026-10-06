@@ -29,7 +29,12 @@ export async function GET(req: Request) {
             include: {
                 user: { select: { name: true, phone: true } },
                 courier: { select: { name: true } },
-                store: true
+                store: true,
+                items: {
+                    include: {
+                        product: { select: { title: true, image: true, price: true } }
+                    }
+                }
             },
             orderBy: { createdAt: 'desc' }
         });
@@ -37,6 +42,7 @@ export async function GET(req: Request) {
         // Map to simpler format for the delivery UI
         const formattedOrders = orders.map((o: any) => ({
             id: o.id,
+            orderNumber: o.orderNumber || null,
             status: o.status.toLowerCase(),
             customerName: o.user?.name || 'Mijoz',
             customerPhone: o.shippingPhone || o.user?.phone || null,
@@ -48,7 +54,14 @@ export async function GET(req: Request) {
             paymentMethod: o.paymentMethod,
             paymentStatus: o.paymentStatus,
             courierId: o.courierId,
-            courierName: o.courier?.name || 'Tayinlanmagan'
+            courierName: o.courier?.name || 'Tayinlanmagan',
+            items: o.items?.map((item: any) => ({
+                id: item.id,
+                title: item.product?.title || item.title || 'Mahsulot',
+                image: item.product?.image || null,
+                quantity: item.quantity,
+                price: item.price
+            })) || []
         }));
 
         return NextResponse.json(formattedOrders);

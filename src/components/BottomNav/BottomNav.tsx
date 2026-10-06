@@ -45,7 +45,7 @@ export default function BottomNav({ firstRootSlug }: { firstRootSlug?: string | 
 
     // Checkout o'z fokusli flow'iga ega (o'z mobile sticky CTA) — BottomNav u yerda ko'rsatilmaydi.
     // Product sahifasida esa BottomNav ko'rsatiladi (sticky CTA uning ustiga chiqariladi).
-    if (pathname === '/checkout') return null;
+    if (pathname === '/checkout' || pathname?.includes('/courier')) return null;
 
     return (
         <nav className="lg:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-4 right-4 bg-white/95 backdrop-blur-xl border border-white/20 shadow-[0_10px_40px_rgba(0,0,0,0.1)] flex items-center justify-around h-[65px] z-[100] rounded-[24px] px-2" aria-label={t('katalog')}>

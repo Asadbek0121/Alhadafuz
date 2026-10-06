@@ -196,17 +196,28 @@ function LottieIconInner({
   useEffect(() => {
     const container = containerRef.current;
     if (!container || typeof window === 'undefined' || !window.lottie) return;
-    const anim = window.lottie.loadAnimation({
-      container,
-      renderer: 'svg',
-      loop,
-      autoplay: true,
-      animationData: data,
-    });
-    animRef.current = anim;
-    if (!loop) anim.addEventListener?.('complete', () => onDone?.());
+
+    let anim: AnimationItem | null = null;
+    try {
+      anim = window.lottie.loadAnimation({
+        container,
+        renderer: 'svg',
+        loop,
+        autoplay: true,
+        animationData: data,
+      });
+      animRef.current = anim;
+      if (!loop) anim.addEventListener?.('complete', () => onDone?.());
+    } catch (err) {
+      console.error("Lottie load animation failed:", err);
+    }
+
     return () => {
-      anim.destroy();
+      try {
+        anim?.destroy();
+      } catch (e) {
+        // ignore destroy error
+      }
       animRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps

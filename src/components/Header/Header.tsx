@@ -396,8 +396,9 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
 
     const pathname = usePathname();
     const isCheckoutPage = pathname === '/checkout';
+    const isCourierPage = pathname?.includes('/courier');
 
-    if (isCheckoutPage) return null;
+    if (isCheckoutPage || isCourierPage) return null;
 
     return (
         <>

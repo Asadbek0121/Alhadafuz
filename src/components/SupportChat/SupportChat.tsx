@@ -23,6 +23,7 @@ type Message = {
 type ViewState = 'menu' | 'chat';
 
 import { useChatStore } from '@/store/useChatStore';
+import { usePathname } from '@/navigation';
 
 export default function SupportChat() {
     const t = useTranslations('Chat');
@@ -39,6 +40,9 @@ export default function SupportChat() {
     const [supportAnimationData, setSupportAnimationData] = useState(null);
     const scrollRef = useRef<HTMLDivElement>(null);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const pathname = usePathname();
+    if (pathname?.includes('/courier')) return null;
 
     useEffect(() => {
         // O'z domenimizdan: lottie.host'ga uchinchi tomon DNS + TLS qo'l siqishi

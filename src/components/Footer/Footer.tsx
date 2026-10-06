@@ -19,6 +19,7 @@ export default function Footer({ initialSettings }: { initialSettings?: { phone?
     const t = useTranslations('Footer');
     const pathname = usePathname();
     const isCheckout = pathname === '/checkout' || pathname?.includes('/checkout');
+    const isCourier = pathname?.includes('/courier');
 
     const [socials, setSocials] = useState(() => {
         const parsed = initialSettings?.socialLinks
@@ -65,7 +66,7 @@ export default function Footer({ initialSettings }: { initialSettings?: { phone?
             .catch(err => console.error("Footer settings error", err));
     }, []);
 
-    if (isCheckout) return null;
+    if (isCheckout || isCourier) return null;
 
     return (
         <footer className={`bg-[#111827] text-gray-300 border-t border-gray-800 ${!isHome ? 'hidden lg:block' : ''}`}>

@@ -21,8 +21,5 @@ export const ratelimit = new Ratelimit({
  * Higher-order function to wrap API handlers with rate limiting
  */
 export async function checkRateLimit(identifier: string) {
-    if (!process.env.UPSTASH_REDIS_REST_URL) {
-        return { success: true, limit: 0, remaining: 0, reset: 0 };
-    }
     return await ratelimit.limit(identifier);
 }

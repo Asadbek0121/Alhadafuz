@@ -174,7 +174,7 @@ export default function OrderSuccessPage() {
                 {/* Order ID Badge */}
                 <div className="inline-flex items-center gap-3 px-6 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm font-black text-slate-900 mb-10">
                     <Package size={20} className="text-blue-600" />
-                    <span className="uppercase tracking-widest text-xs">BUYURTMA RAQAMI: #{order?.orderNumber || orderId?.slice(-8).toUpperCase()}</span>
+                    <span className="uppercase tracking-widest text-xs">{t('order_number')}: #{order?.orderNumber || orderId?.slice(-8).toUpperCase()}</span>
                 </div>
 
                 {/* P2P Instructions Section */}
@@ -300,7 +300,7 @@ export default function OrderSuccessPage() {
                 {/* Bottom Actions */}
                 <div className="w-full flex flex-col sm:flex-row gap-4 justify-center">
                     <Link href={`/track/${orderId}`} className="flex-1 sm:max-w-[280px] h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-[20px] shadow-2xl shadow-blue-600/20 flex items-center justify-center gap-3 font-black text-sm uppercase tracking-wider transition-all transform hover:scale-[1.02] active:scale-95">
-                        🚚 BUYURTMANI KUZATISH
+                        🚚 {t('btn_orders')}
                     </Link>
                     <Link href="/" className="flex-1 sm:max-w-[180px] h-16 bg-white border border-slate-100 hover:bg-slate-50 text-slate-900 rounded-[20px] shadow-sm flex items-center justify-center gap-3 font-black text-sm uppercase tracking-wider transition-all">
                         {t('btn_home')}

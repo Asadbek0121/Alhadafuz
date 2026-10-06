@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { checkRateLimit } from "@/lib/ratelimit";
-import { normalizeUzPhone } from "@/lib/phone";
 import { verifyRecaptcha } from "@/lib/recaptcha";
 
 export async function POST(req: Request) {
@@ -17,7 +16,7 @@ export async function POST(req: Request) {
 
     try {
         const body = await req.json();
-        const { phone, isRegister, recaptchaToken } = body;
+        const { email, recaptchaToken } = body;
 
         // reCAPTCHA v3 — bot himoyasi (dev'da token yo'q bo'lsa bypass)
         const hasToken = recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
@@ -29,81 +28,40 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
         }
 
-        if (!phone) {
-            return NextResponse.json({ message: "Telefon raqam kiritilishi shart", code: "PHONE_INVALID" }, { status: 400 });
+        if (!email) {
+            return NextResponse.json({ message: "Email kiritilishi shart", code: "EMAIL_INVALID" }, { status: 400 });
         }
 
-        // Normalize va formatni tekshirish (+998 XX XXX XX XX)
-        const normalizedPhone = normalizeUzPhone(phone);
-        if (!normalizedPhone) {
-            return NextResponse.json(
-                { message: "Telefon raqam noto'g'ri formatda (998 XX XXX XX XX)", code: "PHONE_INVALID" },
-                { status: 400 }
-            );
-        }
-
-        const existingUser = await prisma.user.findFirst({
-            where: { phone: { equals: normalizedPhone } }
-        });
-
-        if (isRegister && existingUser) {
-            return NextResponse.json(
-                { message: "Bu telefon raqam bilan allaqachon ro'yxatdan o'tilgan" },
-                { status: 409 }
-            );
-        }
-
-        if (!isRegister && !existingUser) {
-            return NextResponse.json(
-                { message: "Hisob topilmadi. Avval ro'yxatdan o'ting" },
-                { status: 404 }
-            );
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return NextResponse.json({ message: "Email noto'g'ri formatda", code: "EMAIL_INVALID" }, { status: 400 });
         }
 
         // Generate 6-digit OTP
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
-        const expires = new Date(Date.now() + 2 * 60 * 1000); // 2 minutes
+        const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-        // Save OTP to DB
+        // Save OTP to DB (identifier is email)
         await prisma.verificationToken.deleteMany({
-            where: { identifier: normalizedPhone }
+            where: { identifier: email }
         });
 
         await prisma.verificationToken.create({
             data: {
-                identifier: normalizedPhone,
+                identifier: email,
                 token: otp,
                 expires: expires,
             }
         });
 
-        // 1. Log to console for development/debug
-        console.log(`[SMS KODI YO'NALTIRILDI] Raqam: ${normalizedPhone}, Kod: ${otp}`);
-        
-        // 2. Try to send via Telegram automatically if user has linked Telegram ID
-        let sentViaTelegram = false;
-        if (existingUser?.telegramId) {
-            try {
-                const { sendTelegramMessage } = await import("@/lib/telegram-bot");
-                await sendTelegramMessage(
-                    existingUser.telegramId, 
-                    `🔐 <b>Hadaf Marketga kirish uchun kod</b>\n\nSizning tasdiqlash kodingiz: <b>${otp}</b>\n\n<code>Kod faqat 2 daqiqa davomida amal qiladi.</code>`,
-                    { parse_mode: 'HTML' }
-                );
-                sentViaTelegram = true;
-                console.log(`[TELEGRAM OTP SENT] Automatically sent to user ${existingUser.telegramId}`);
-            } catch (tgError) {
-                console.error("Failed to send automatic Telegram OTP:", tgError);
-            }
-        }
+        // Log for development/debug
+        console.log(`[EMAIL OTP GENERATED] Email: ${email}, OTP: ${otp}`);
 
         return NextResponse.json(
             {
-                message: sentViaTelegram 
-                    ? "Tasdiqlash kodi Telegram orqali yuborildi" 
-                    : "Tasdiqlash kodi tayyorlandi",
+                message: "Tasdiqlash kodi email orqali yuborildi",
                 success: true,
-                sentViaTelegram // Frontend can use this to show 'Check your Telegram' message
             },
             { status: 200 }
         );
