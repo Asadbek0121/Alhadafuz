@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
+import { getAuthenticatedCourier } from '@/lib/telegram-webapp-auth';
 
 // Kuryer o'ziga tayinlangan buyurtma holatini yangilaydi. Ilgari bu route
 // `auth`ni import qilgani bilan hech qachon chaqirmagan — ya'ni istalgan kishi
@@ -12,8 +12,8 @@ const ALLOWED_STATUSES = new Set(['ASSIGNED', 'PICKED_UP', 'DELIVERING', 'COMPLE
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
 
-    const session = await auth();
-    if (!session?.user) {
+    const courier = await getAuthenticatedCourier(req);
+    if (!courier) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -34,8 +34,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         }
 
         // Faqat admin yoki shu buyurtmaga tayinlangan kuryer o'zgartira oladi
-        const role = (session.user as any).role;
-        const isOwnCourier = order.courierId && order.courierId === (session.user as any).id;
+        const role = courier.role;
+        const isOwnCourier = order.courierId && order.courierId === courier.id;
         if (role !== 'ADMIN' && !isOwnCourier) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }

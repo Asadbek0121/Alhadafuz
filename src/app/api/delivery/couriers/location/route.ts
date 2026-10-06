@@ -2,20 +2,17 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { getAuthenticatedCourier } from '@/lib/telegram-webapp-auth';
 
 // Kuryer o'z joylashuvini yangilaydi (Mini App dashboard / GPS tracking uchun).
 // Faqat ro'yxatdan o'tgan kuryer o'z koordinatasini yozishi mumkin.
 export async function POST(req: Request) {
-    const session = await auth();
-    if (!session?.user) {
+    const courier = await getAuthenticatedCourier(req);
+    if (!courier) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = (session.user as any).role;
-    const userId = (session.user as any).id as string;
-    if (role !== 'COURIER' && role !== 'ADMIN') {
-        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const userId = courier.id;
 
     try {
         const body = await req.json();

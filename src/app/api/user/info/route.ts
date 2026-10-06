@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
 
 export const dynamic = 'force-dynamic';
 
@@ -91,6 +92,9 @@ export async function PUT(req: Request) {
                 gender: validatedData.gender || null,
             }
         });
+
+        // Clear admin users cache to reflect changes immediately in admin panel
+        revalidateTag('admin-users', { expire: 0 });
 
         return NextResponse.json({ success: true, user: updatedUser });
     } catch (error) {

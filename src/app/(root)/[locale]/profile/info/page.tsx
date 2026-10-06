@@ -5,6 +5,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useSession, signOut } from "next-auth/react";
+import { useUserStore } from "@/store/useUserStore";
 import { Save, Camera, Loader2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import Image from "next/image";
@@ -16,6 +17,7 @@ import { PhoneInput } from "@/components/ui/phone-input";
 export default function PersonalInfoPage() {
     const t = useTranslations('Profile');
     const { data: session, update } = useSession();
+    const { setUser } = useUserStore();
     const [isSaving, setIsSaving] = useState(false);
     const router = useRouter();
 
@@ -114,6 +116,16 @@ export default function PersonalInfoPage() {
                     phone: data.phone,
                 },
             });
+
+            // Update local user store to reflect changes immediately
+            if (session?.user) {
+                setUser({
+                    ...session.user,
+                    name: data.name,
+                    email: data.email,
+                    phone: data.phone,
+                } as any);
+            }
 
             toast.success(t('success_update'));
             router.refresh(); // Refresh server components

@@ -2,15 +2,16 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { getAuthenticatedCourier } from '@/lib/telegram-webapp-auth';
 
 export async function GET(req: Request) {
-    const session = await auth();
-    if (!session?.user) {
+    const courier = await getAuthenticatedCourier(req);
+    if (!courier) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const role = (session.user as any).role;
-    const userId = (session.user as any).id as string;
+    const role = courier.role;
+    const userId = courier.id;
 
     try {
         // Xavfsizlik: kuryer FAQAT o'z buyurtmalarini ko'radi; admin hammasini.

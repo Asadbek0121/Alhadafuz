@@ -5,7 +5,7 @@
 import { YANDEX_MAPS_KEY } from "@/lib/maps";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Script from 'next/script';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { MapPin, Navigation, CheckCircle, Package, User, Phone, Wallet, BarChart3, ClipboardList, Send, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -41,7 +41,7 @@ type Stats = {
 };
 
 export default function CourierDashboard() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const [orders, setOrders] = useState<Order[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
     const [tab, setTab] = useState<'orders' | 'wallet' | 'stats'>('orders');
@@ -50,30 +50,53 @@ export default function CourierDashboard() {
     const mapRef = useRef<any>(null);
     const multiRouteRef = useRef<any>(null);
 
-    const userRole = (session?.user as any)?.role;
+    useEffect(() => {
+        if (status === 'unauthenticated' && typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
+            const initData = (window as any).Telegram.WebApp.initData;
+            signIn("telegram-login", { initData, redirect: false }).then(response => {
+                if (response?.error) {
+                    console.error("Telegram WebApp login error:", response.error);
+                    toast.error("Telegram orqali kirishda xatolik!");
+                } else if (response?.ok && response?.url) {
+                    // If signIn is successful and it's not a redirect, we might need to refresh the session
+                    // window.location.reload(); // This causes full page refresh, maybe not ideal for Mini App
+                    // Or force update session if possible
+                    // toast.success("Muvaffaqiyatli kirildi!");
+                }
+            });
+        }
+    }, [status]); // Run once when component mounts and session status is known
 
     const fetchAll = useCallback(async () => {
         if (!session?.user?.id) return;
         try {
             const [ordersRes, statsRes] = await Promise.all([
-                fetch('/api/delivery/orders'),
-                fetch('/api/delivery/couriers/stats')
+                fetch('/api/delivery/orders', { headers: { 'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || '' } }),
+                fetch('/api/delivery/couriers/stats', { headers: { 'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || '' } })
             ]);
             if (ordersRes.ok) setOrders(await ordersRes.json());
+            else if (ordersRes.status === 401) {
+                // Unauthorized, possibly session expired or not a courier, force re-auth
+                console.log("Unauthorized from /api/delivery/orders");
+            }
             if (statsRes.ok) setStats(await statsRes.json());
+            else if (statsRes.status === 401) {
+                console.log("Unauthorized from /api/delivery/couriers/stats");
+            }
         } catch (e) {
             console.error("Courier dashboard error", e);
         }
     }, [session]);
 
     useEffect(() => {
+        if (!session?.user?.id || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN')) return;
         const interval = setInterval(fetchAll, 5000);
         fetchAll();
         return () => clearInterval(interval);
-    }, [fetchAll]);
+    }, [fetchAll, session?.user?.id, (session?.user as any)?.role]);
 
     useEffect(() => {
-        if (userRole !== 'COURIER' && userRole !== 'ADMIN') return;
+        if (!session?.user?.id || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN')) return;
         const update = () => {
             navigator.geolocation?.getCurrentPosition(
                 (pos) => {
@@ -81,7 +104,10 @@ export default function CourierDashboard() {
                     setCourierPos([lat, lng]);
                     fetch('/api/delivery/couriers/location', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || ''
+                        },
                         body: JSON.stringify({ lat, lng })
                     }).catch(() => { });
                 },
@@ -92,22 +118,10 @@ export default function CourierDashboard() {
         update();
         const interval = setInterval(update, 30000);
         return () => clearInterval(interval);
-    }, [userRole]);
+    }, [session?.user?.id, (session?.user as any)?.role]);
 
     const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
     const currentOrder = activeOrders[0] || null;
-
-    const initMap = () => {
-        const ymaps = (window as any).ymaps;
-        if (!ymaps) return;
-        ymaps.ready(() => {
-            mapRef.current = new ymaps.Map('courier-map', {
-                center: courierPos || [37.2272, 67.2752],
-                zoom: 14,
-                controls: ['zoomControl']
-            });
-        });
-    };
 
     useEffect(() => {
         const ymaps = (window as any).ymaps;
@@ -122,11 +136,29 @@ export default function CourierDashboard() {
         mapRef.current.geoObjects.add(multiRouteRef.current);
     }, [currentOrder, courierPos]);
 
+    if (status === 'loading') return <div className="p-20 text-center">Yuklanmoqda...</div>;
+
+    if (!session?.user || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN')) {
+        return <div className="p-20 text-center">Faqat kuryerlar uchun.</div>;
+    }
+
+    const initMap = () => {
+        const ymaps = (window as any).ymaps;
+        if (!ymaps) return;
+        ymaps.ready(() => {
+            mapRef.current = new ymaps.Map('courier-map', {
+                center: courierPos || [37.2272, 67.2752],
+                zoom: 14,
+                controls: ['zoomControl']
+            });
+        });
+    };
+
     const updateStatus = async (status: string) => {
         if (!currentOrder) return;
         const res = await fetch(`/api/delivery/orders/${currentOrder.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 'Content-Type': 'application/json', 'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || '' },
             body: JSON.stringify({ status })
         });
         if (res.ok) { toast.success("Status yangilandi"); fetchAll(); }
@@ -149,8 +181,6 @@ export default function CourierDashboard() {
         const url = `https://yandex.com/maps/?rtext=${latFrom},${lngFrom}~${latTo},${lngTo}&rtt=auto`;
         window.open(url, '_blank');
     };
-
-    if (userRole !== 'COURIER' && userRole !== 'ADMIN') return <div className="p-20 text-center">Faqat kuryerlar uchun.</div>;
 
     return (
         <div className="flex flex-col h-screen bg-slate-50">
