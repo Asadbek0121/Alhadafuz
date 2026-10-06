@@ -454,7 +454,10 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
     const isLowStock = !isOutOfStock && effectiveStock < 10;
     const isChina = effectiveFulfillment === 'CHINA_ORDER';
 
-    const activeImg = displayImages?.[activeImage] || displayImages?.[0] || "https://placehold.co/400";
+    // Bo'sh stringlarni filtrlash — ReactDOM.preload / <img src=""> xatolari
+    // bo'sh href bilan yuzaga chiqadi (DB'da image="" yoki images'da "" element).
+    const safeImages = (displayImages || []).filter((s: any) => typeof s === 'string' && s.trim() !== '');
+    const activeImg = safeImages[activeImage] || safeImages[0] || "https://placehold.co/400";
 
     return (
         <div className="container" style={{ paddingBottom: '180px' }}>
@@ -477,7 +480,7 @@ export default function ProductContent({ initialProduct = null }: { initialProdu
                 {/* Left: Gallery */}
                 <div className={styles.gallerySection}>
                     <div className={styles.thumbnails}>
-                        {displayImages?.map((img, i) => (
+                        {safeImages?.map((img, i) => (
                             <div
                                 key={i}
                                 className={`${styles.thumbItem} ${i === activeImage ? styles.thumbActive : ''}`}
