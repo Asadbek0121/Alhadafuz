@@ -4,13 +4,25 @@ import { checkRateLimit } from "@/lib/ratelimit";
 
 export const { GET } = handlers;
 
-// NextAuth POST (login/signin) — brute-force himoyasi.
-// OTP/register/forgot-password kabi alohida endpointlar o'z rate limitiga ega.
+// NextAuth POST — brute-force himoyasi faqat login/signin uchun.
+// signOut va boshqa POST operatsiyalar rate limitga kirmasligi kerak.
 export async function POST(req: NextRequest) {
     const ip = req.headers.get("x-forwarded-for") || "127.0.0.1";
+
+    // SignOut endpoint — rate limit dan chetlatish
+    const url = new URL(req.url);
+    const pathname = url.pathname;
+
+    // Agar signOut bo'lsa, darhol handlers.POST ga o'tkazish
+    if (pathname.includes("/signout")) {
+        return handlers.POST(req);
+    }
+
+    // Login/signin uchun rate limit
     const { success } = await checkRateLimit(`auth_login_${ip}`);
     if (!success) {
         return new Response("Too many attempts. Please wait a moment.", { status: 429 });
     }
+
     return handlers.POST(req);
 }
