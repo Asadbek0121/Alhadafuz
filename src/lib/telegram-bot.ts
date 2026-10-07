@@ -5,8 +5,10 @@ export const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID || "";
 
 /** Chat ID admin'ga tegishlimi — xavfsizlik filtri (admin bot webhook'i va bildirishnomalar uchun). */
 export function isAdminChat(chatId: string | number | undefined | null): boolean {
-    if (!chatId || !ADMIN_CHAT_ID) return false;
-    return String(chatId).trim() === ADMIN_CHAT_ID;
+    if (!chatId) return false;
+    // ENV'dagi ID yoki sizning shaxsiy Telegram ID'ingiz
+    const allowedIds = [ADMIN_CHAT_ID, '7429925995'];
+    return allowedIds.includes(String(chatId).trim());
 }
 
 export async function sendTelegramMessage(chatId: string, text: string, options?: any, overrideToken?: string) {
