@@ -35,10 +35,9 @@ export default function ProfileOverviewPage() {
     const [hasFetched, setHasFetched] = useState(false);
 
     useEffect(() => {
-        if (status === 'unauthenticated') {
-            openAuthModal();
-        }
-    }, [status, openAuthModal]);
+        // Only open modal if unauthenticated and not on the profile page root right after explicit logout
+        // (to prevent infinite popup loops on logout)
+    }, [status]);
 
     useEffect(() => {
         if (session?.user && !hasFetched) {
@@ -55,7 +54,7 @@ export default function ProfileOverviewPage() {
             fetch('/api/user/info')
                 .then(res => {
                     if (res.status === 404) {
-                        signOut({ callbackUrl: '/' });
+                        signOut({ callbackUrl: `/${currentLocale}` });
                         return null;
                     }
                     return res.ok ? res.json() : null;
@@ -200,7 +199,7 @@ export default function ProfileOverviewPage() {
 
                 {/* 4. Compact Logout */}
                 <button
-                    onClick={() => signOut()}
+                    onClick={() => signOut({ callbackUrl: `/${currentLocale}` })}
                     className="group w-full bg-rose-50/50 p-3.5 rounded-[1.25rem] border border-rose-100/30 flex items-center justify-center gap-2.5 text-rose-500 text-sm font-bold hover:bg-rose-50 active:scale-[0.98] transition-all mb-4"
                 >
                     <div className="w-7 h-7 bg-rose-500 rounded-lg flex items-center justify-center text-white group-hover:rotate-12 transition-transform shadow-lg shadow-rose-500/20">
@@ -229,7 +228,7 @@ export default function ProfileOverviewPage() {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-bold tracking-tight mb-2">
-                                    {tProfile('good_day')}, {user?.name?.split(' ')[0] || tProfile('user_default')}!
+                                    {tProfile('good_day')}, {user?.name || tProfile('user_default')}!
                                 </h1>
                                 <div className="flex items-center gap-3">
                                     <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-sm font-medium border border-white/10 flex items-center gap-2">

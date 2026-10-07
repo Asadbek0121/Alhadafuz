@@ -24,7 +24,7 @@ export default function PersonalInfoPage() {
     const profileSchema = z.object({
         name: z.string().min(2, t('name_min')),
         username: z.string().min(3, t('username_invalid')).optional().or(z.literal("")),
-        email: z.string().email(t('email_invalid')).optional().or(z.literal("")),
+        email: z.string().email(t('email_invalid')).nullable().optional().or(z.literal("")),
         phone: z.string().min(9, t('phone_invalid')),
         dateOfBirth: z.string().optional().or(z.literal("")),
         gender: z.string().optional().or(z.literal("")),

@@ -639,7 +639,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                                 )}
                             </div>
                             <span className="text-[11px] font-bold text-slate-500 group-hover:text-slate-900 transition-colors max-w-[80px] truncate">
-                                {status === "loading" ? "..." : (isAuthenticated ? (user?.name?.split(' ')[0] || user?.email) : t('kirish'))}
+                                {status === "loading" ? "..." : (isAuthenticated ? (user?.name || user?.email) : t('kirish'))}
                             </span>
                         </Link>
                     </nav>
