@@ -172,6 +172,8 @@ export default function CourierDashboard() {
         return () => clearTimeout(timer);
     }, [isAuthorized]);
 
+    const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
+
     if (isAuthorized === false) {
         return <div className="p-20 text-center font-bold text-lg">Faqat kuryerlar uchun. (Ruxsat etilmadi)</div>;
     }
