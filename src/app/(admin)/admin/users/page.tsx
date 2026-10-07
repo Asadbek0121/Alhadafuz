@@ -20,7 +20,7 @@ const getUsers = unstable_cache(
             prisma.user.findMany({
                 where, skip, take,
                 orderBy: { createdAt: "desc" },
-                select: { id: true, name: true, email: true, phone: true, role: true, createdAt: true },
+                select: { id: true, name: true, email: true, phone: true, role: true, image: true, createdAt: true },
             }),
             prisma.user.count({ where }),
         ]);
@@ -96,9 +96,13 @@ export default async function TopshiriqUsersPage({
                                 <tr key={user.id} className="group hover:bg-blue-50/30 transition-colors">
                                     <td className="py-2.5 px-4">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold text-base">
-                                                {user.name?.[0]?.toUpperCase() || <User size={16} />}
-                                            </div>
+                                            {user.image ? (
+                                                <img src={user.image} alt={user.name || 'Foydalanuvchi'} className="w-9 h-9 rounded-full object-cover" />
+                                            ) : (
+                                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center text-blue-600 font-bold text-base">
+                                                    {user.name?.[0]?.toUpperCase() || <User size={16} />}
+                                                </div>
+                                            )}
                                             <Link
                                                 href={`/admin/users/${user.id}`}
                                                 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors"
