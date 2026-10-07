@@ -547,15 +547,21 @@ export default function CheckoutPage() {
                 }),
             });
 
-            const data = await response.json();
-
             if (!response.ok) {
-                const detailMsg = data.details
-                    ? `: ${Object.keys(data.details).map(k => `${k}: ${JSON.stringify(data.details[k])}`).join(', ')}`
-                    : '';
-                throw new Error((data.error || 'Server xatoligi') + detailMsg);
+                const text = await response.text().catch(() => '');
+                let errorMsg = `Server xatolik (${response.status})`;
+                if (text) {
+                    try {
+                        const errData = JSON.parse(text);
+                        errorMsg = errData.error || errData.message || errorMsg;
+                    } catch {
+                        errorMsg = text.slice(0, 200);
+                    }
+                }
+                throw new Error(errorMsg);
             }
 
+            const data = await response.json();
             if (data.paymentUrl) {
                 // Buyurtma yaratildi — savat darhol tozalanadi (chala/PENDING
                 // buyurtmada mahsulot savatda qotib qolmasin). To'lov bekor
