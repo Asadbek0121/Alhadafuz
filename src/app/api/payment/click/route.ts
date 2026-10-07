@@ -1,4 +1,3 @@
-
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyClickSignature, getClickConfig } from "@/lib/click";
@@ -17,49 +16,65 @@ const ERROR_ALREADY_PAID = -4;
 const ERROR_ORDER_NOT_FOUND = -5;
 const ERROR_TRANSACTION_CANCELLED = -9;
 
+/** CLICK_DEV_LOG=true bo'lsa, log'ga sensitive data tushmaydi */
+const IS_DEV = process.env.CLICK_DEV_LOG === "true";
+
 export async function POST(req: NextRequest) {
     // Click konfiguratsiyasi: avval admin paneldagi PaymentMethod.config, keyin env
     const config = await getClickConfig();
     if (!config) {
-        console.error("Click credentials missing (DB config va env bo'sh)");
+        console.error("[click] credentials missing");
         return NextResponse.json({ error: -1, error_note: "Internal Server Error: Config missing" });
     }
 
-    // IP Logging
     const ip = req.headers.get("x-forwarded-for") || "unknown";
+
+    // O'zgaruvchilarni try dan oldin e'pon qilish — catch block'da ham ishlatish uchun
+    let clickTransId = "";
+    let serviceId = "";
+    let merchantTransId = "";
+    let merchantPrepareId = "";
+    let amountStr = "0";
+    let action = 0;
+    let amount = 0;
+    let signTime = "";
+    let signString = "";
 
     try {
         const formData = await req.formData();
         const data = Object.fromEntries(formData.entries());
 
-        const clickTransId = data.click_trans_id as string;
-        const serviceId = data.service_id as string;
-        const merchantTransId = data.merchant_trans_id as string;
-        const merchantPrepareId = data.merchant_prepare_id as string || "";
-        const amountStr = data.amount as string;
+        clickTransId = data.click_trans_id as string;
+        serviceId = data.service_id as string;
+        merchantTransId = data.merchant_trans_id as string;
+        merchantPrepareId = data.merchant_prepare_id as string || "";
+        amountStr = data.amount as string;
         const actionStr = data.action as string;
-        const errorStr = data.error as string;
-        const signTime = data.sign_time as string;
-        const signString = data.sign_string as string;
+        signTime = data.sign_time as string;
+        signString = data.sign_string as string;
 
-        const action = parseInt(actionStr);
-        const amount = parseFloat(amountStr);
+        action = parseInt(actionStr);
+        amount = parseFloat(amountStr);
 
-        // 0. LOGGING (Async to not block, but await for safety in serverless)
-        // Note: Sensitive data in logs should be redacted if expanding this
+        if (!clickTransId || !merchantTransId || !amount || isNaN(action)) {
+            return NextResponse.json({ error: -1, error_note: "Invalid request parameters" });
+        }
+
+        // 0. Logging (sensitive ma'lumotlarni redakt qilish)
+        const logData = { ...data };
+        delete logData.sign_string; // imzo log'da yo'q
         await prisma.paymentLog.create({
             data: {
                 provider: "CLICK",
                 transactionId: clickTransId,
-                amount: amount,
+                amount,
                 status: "REQUEST_RECEIVED",
-                requestData: JSON.stringify(data),
-                ipAddress: ip
-            }
+                requestData: JSON.stringify(logData),
+                ipAddress: ip,
+            },
         });
 
         // 1. Validate Signature
-        // Use helper function from lib/click to ensure consistent logic
         const computedSignature = verifyClickSignature(
             clickTransId,
             serviceId,
@@ -81,29 +96,19 @@ export async function POST(req: NextRequest) {
         const mySignBuffer = Buffer.from(computedSignature);
 
         if (requestSignBuffer.length !== mySignBuffer.length || !crypto.timingSafeEqual(requestSignBuffer, mySignBuffer)) {
-            console.warn(`Signature mismatch. Calc: ${computedSignature}, Recv: ${signString}`);
+            console.warn(`[click] signature mismatch for ${clickTransId}`);
             await prisma.paymentLog.create({
-                data: { provider: "CLICK", transactionId: clickTransId, status: "SIGNATURE_FAILED", responseData: "Signature mismatch", ipAddress: ip }
+                data: { provider: "CLICK", transactionId: clickTransId, status: "SIGNATURE_FAILED", ipAddress: ip },
             });
             return NextResponse.json({ error: ERROR_SIGN_CHECK_FAILED, error_note: "Signature mismatch" });
         }
 
-        // 2. Check if Payment Method is Active
-        const paymentMethod = await prisma.paymentMethod.findFirst({
-            where: { provider: 'CLICK' }
-        });
-
-        // If payment method logic is strict, uncomment below. Currently allowing loose check or assuming it exists.
-        if (paymentMethod && !paymentMethod.isActive) {
-            return NextResponse.json({ error: -1, error_note: "Payment method disabled" });
-        }
-
-        // 3. Find Order — Click transaction_param sifatida readable orderNumber yuboradi
+        // 2. Find Order — transaction_param = orderNumber
         const order = await prisma.order.findFirst({
             where: {
                 OR: [
                     { orderNumber: merchantTransId },
-                    { id: merchantTransId }, // eski havolalar (to'liq order id) ham ishlashi uchun
+                    { id: merchantTransId },
                 ],
             },
         });
@@ -112,19 +117,22 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: ERROR_ORDER_NOT_FOUND, error_note: "Order not found" });
         }
 
-        // 4. Amount Validation
-        // Click sends amount as float string. Order total is Float.
-        // E.g. 1000.00 vs 1000
-        if (Math.abs(order.total - amount) > 0.01) { // Strict check with small epsilon
+        // 3. Amount Validation
+        if (Math.abs(order.total - amount) > 0.01) {
             await prisma.paymentLog.create({
-                data: { provider: "CLICK", transactionId: clickTransId, status: "ERROR", responseData: `Amount mismatch: ${order.total} vs ${amount}`, ipAddress: ip }
+                data: {
+                    provider: "CLICK",
+                    transactionId: clickTransId,
+                    status: "ERROR",
+                    responseData: `Amount mismatch: ${order.total} vs ${amount}`,
+                    ipAddress: ip,
+                },
             });
             return NextResponse.json({ error: ERROR_INVALID_AMOUNT, error_note: "Incorrect amount" });
         }
 
-        // 5. Handle Actions
+        // 4. Handle Actions
         if (action === ACTION_PREPARE) {
-            // Check order status
             if (order.status === "CANCELLED") {
                 return NextResponse.json({ error: ERROR_TRANSACTION_CANCELLED, error_note: "Order cancelled" });
             }
@@ -132,64 +140,57 @@ export async function POST(req: NextRequest) {
                 return NextResponse.json({ error: ERROR_ALREADY_PAID, error_note: "Already paid" });
             }
 
-            // Success Prepare
-            // We return the same info to confirm we are ready
             return NextResponse.json({
                 click_trans_id: clickTransId,
                 merchant_trans_id: merchantTransId,
-                merchant_prepare_id: merchantTransId, // Using OrderID as PrepareID for simplicity
+                merchant_prepare_id: merchantTransId,
                 error: ERROR_SUCCESS,
                 error_note: "Success",
             });
+        }
 
-        } else if (action === ACTION_COMPLETE) {
-            // Check status again
+        if (action === ACTION_COMPLETE) {
             if (order.status === "CANCELLED") {
                 return NextResponse.json({ error: ERROR_TRANSACTION_CANCELLED, error_note: "Order cancelled" });
             }
 
-            // Idempotency check
+            // Idempotency: allaqachon to'langan bo'lsa
             if (order.paymentStatus === "PAID") {
-                if (order.paymentId === clickTransId) {
-                    return NextResponse.json({
-                        click_trans_id: clickTransId,
-                        merchant_trans_id: merchantTransId,
-                        merchant_confirm_id: merchantTransId,
-                        error: ERROR_SUCCESS,
-                        error_note: "Already paid",
-                    });
-                }
-                return NextResponse.json({ error: ERROR_ALREADY_PAID, error_note: "Already paid" });
+                return NextResponse.json({
+                    click_trans_id: clickTransId,
+                    merchant_trans_id: merchantTransId,
+                    merchant_confirm_id: merchantTransId,
+                    error: ERROR_SUCCESS,
+                    error_note: "Order already paid",
+                });
             }
 
-            // Perform Update Transactionally
-            // Note: If you have inventory management, decrement stock here inside a transaction.
+            // To'lovni amalga oshirish
             await prisma.order.update({
                 where: { id: order.id },
                 data: {
                     paymentStatus: "PAID",
                     paymentProvider: "CLICK",
-                    paymentId: clickTransId,
-                    // If you want to auto-move to processing:
-                    // status: "PROCESSING" 
+                    clickTransactionId: clickTransId,
                 },
             });
 
             await prisma.paymentLog.create({
-                data: { provider: "CLICK", transactionId: clickTransId, status: "SUCCESS", responseData: "PAID", ipAddress: ip }
+                data: {
+                    provider: "CLICK",
+                    transactionId: clickTransId,
+                    status: "SUCCESS",
+                    responseData: "PAID",
+                    ipAddress: ip,
+                },
             });
 
-            // Invoice yaratish + email yuborish (async, bloklamaydi)
+            // Invoice yaratish (async)
             import('@/lib/invoice/invoice-service').then(({ createInvoiceForOrder }) => {
-                createInvoiceForOrder(merchantTransId).then(({ invoice }) => {
-                    if (invoice) {
-                        import('@/lib/invoice/send-invoice-email').then(({ sendInvoiceEmail }) => {
-                            sendInvoiceEmail(invoice.id).catch((e: any) =>
-                                console.error('[invoice] Click: email send failed', e));
-                        });
-                    }
-                }).catch((e: any) => console.error('[invoice] Click: create failed', e));
-            }).catch((e: any) => console.error('[invoice] Click: module load failed', e));
+                createInvoiceForOrder(order.id).catch((e: unknown) => {
+                    console.error("[invoice] Click invoice creation failed:", e);
+                });
+            }).catch(() => {});
 
             return NextResponse.json({
                 click_trans_id: clickTransId,
@@ -203,9 +204,15 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: ERROR_ACTION_NOT_FOUND, error_note: "Action not supported" });
 
     } catch (error) {
-        console.error("Click Handler Error:", error);
+        console.error("[click] handler error:", error);
         await prisma.paymentLog.create({
-            data: { provider: "CLICK", transactionId: "UNKNOWN", status: "CRITICAL_ERROR", responseData: String(error), ipAddress: ip }
+            data: {
+                provider: "CLICK",
+                transactionId: clickTransId || "UNKNOWN",
+                status: "CRITICAL_ERROR",
+                responseData: String(error),
+                ipAddress: ip,
+            },
         });
         return NextResponse.json({ error: -1, error_note: "Internal Server Error" });
     }

@@ -16,7 +16,15 @@ export const generateClickUrl = (
     return `${baseUrl}?${params.toString()}`;
 };
 
-export const CLICK_PAY_BASE_URL = "https://my.click.uz/services/pay";
+/** Test muhit: Click sandbox */
+export const CLICK_TEST_PAY_BASE_URL = "https://test.my.click.uz/services/pay";
+
+/** Production baseUrl — CLICK_TEST_MODE=true bo'lsa test URL ishlatiladi */
+export function getClickPayBaseUrl(): string {
+    return (process.env.CLICK_TEST_MODE === "true")
+        ? CLICK_TEST_PAY_BASE_URL
+        : "https://my.click.uz/services/pay";
+}
 
 /** Bazadagi (admin panel) CLICK PaymentMethod.config + env fallback. */
 export type ClickConfig = {
@@ -85,7 +93,7 @@ export const buildClickPayUrl = (
     if (config.merchantId) params.append("merchant_id", config.merchantId);
     params.append("amount", amount.toFixed(2));
     params.append("transaction_param", orderNumber);
-    return `${CLICK_PAY_BASE_URL}?${params.toString()}`;
+    return `${getClickPayBaseUrl()}?${params.toString()}`;
 };
 
 /**
