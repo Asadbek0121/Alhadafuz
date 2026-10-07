@@ -462,15 +462,13 @@ export async function GET(req: Request) {
         });
 
         // Add paymentUrl to orders awaiting payment (config bir marta o'qiladi — N+1 oldini olish uchun)
-        const ordersWithPayments = orders.map((order: any) => {
+        const ordersResolved = await Promise.all(orders.map(async (order: any) => {
             let paymentUrl = null;
             if (order.status === 'AWAITING_PAYMENT') {
-                paymentUrl = buildPaymentUrl(order);
+                paymentUrl = await buildPaymentUrl(order);
             }
             return { ...order, paymentUrl };
-        });
-        // Wait for all paymentUrl promises in parallel
-        const ordersResolved = await Promise.all(ordersWithPayments);
+        }));
 
         return NextResponse.json({ orders: ordersResolved });
     } catch (error) {
