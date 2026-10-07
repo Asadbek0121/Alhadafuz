@@ -103,7 +103,7 @@ export async function getAuthenticatedCourier(req: Request) {
                     });
                     user.role = "COURIER";
                 } else {
-                    const uniqueId = "H-" + Math.floor(10000 + Math.random() * 90000);
+                    const uniqueId = "C-" + Math.floor(10000 + Math.random() * 90000);
                     user = await prisma.user.create({
                         data: {
                             telegramId,

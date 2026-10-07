@@ -6,6 +6,7 @@ export async function generateNextUniqueId(role: string = 'USER'): Promise<strin
     let prefix = 'H-';
     if (role === 'ADMIN') prefix = 'A-';
     else if (role === 'VENDOR') prefix = 'V-';
+    else if (role === 'COURIER') prefix = 'C-';
 
     console.log(`DEBUG: generateNextUniqueId - Role: ${role}, Using Prefix: ${prefix}`);
 

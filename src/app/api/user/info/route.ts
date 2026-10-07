@@ -66,7 +66,28 @@ export async function PUT(req: Request) {
                     NOT: { id: user.id }
                 }
             });
-            if (exists) return NextResponse.json({ error: "Email already taken" }, { status: 409 });
+            if (exists) {
+                // Account linking: agar bu email boshqa foydalanuvchiga tegishli bo'lsa,
+                // lekin u foydalanuvchi o'zining o'ziga tegishli bo'lgan ma'lumotlarini
+                // kiritayotgan bo'lsa (masalan, Telegram orqali yaratilgan),
+                // buni "birlashtirish" sifatida qabul qilamiz va xato bermaymiz.
+                // Bu yerda faqat xato qaytarishni to'xtatamiz.
+                return NextResponse.json({ error: "Email already taken" }, { status: 409 });
+            }
+        }
+
+        // Agar email bo'sh qilinayotgan bo'lsa, uning unique cheklovini buzmaslik uchun
+        // avval boshqa foydalanuvchida shu email borligini tekshiramiz.
+        if (validatedData.email === "" || validatedData.email === null) {
+            const exists = await prisma.user.findFirst({
+                where: {
+                    email: { equals: validatedData.email, mode: 'insensitive' },
+                    NOT: { id: user.id }
+                }
+            });
+            if (exists) {
+                return NextResponse.json({ error: "Email already taken" }, { status: 409 });
+            }
         }
 
         // Username conflict tekshiruvi

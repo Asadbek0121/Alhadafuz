@@ -20,7 +20,7 @@ export async function POST() {
 
         for (const user of users) {
             const role = user.role || 'USER';
-            const expectedPrefix = role === 'ADMIN' ? 'A-' : (role === 'VENDOR' ? 'V-' : 'H-');
+            const expectedPrefix = role === 'ADMIN' ? 'A-' : (role === 'VENDOR' ? 'V-' : (role === 'COURIER' ? 'C-' : 'H-'));
 
             if (!user.uniqueId || !user.uniqueId.startsWith(expectedPrefix)) {
                 const newId = await generateNextUniqueId(role);
