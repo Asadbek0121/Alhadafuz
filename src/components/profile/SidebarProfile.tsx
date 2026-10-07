@@ -38,11 +38,12 @@ export default function SidebarProfile() {
         { title: tProfile('support'), href: "/support", icon: HelpCircle },
     ];
 
-    const router = useRouter();
     const handleLogout = async () => {
         logout(); // Clear local store first
-        await signOut({ callbackUrl: "/" });
-        router.refresh(); // Force re-render after logout
+        await signOut({ redirect: false });
+        // Force page reload to clear session
+        // Redirect to homepage after logout
+        window.location.href = "/"; // eslint-disable-line @next/next/no-location-assign-relative-destination
     };
 
     return (
