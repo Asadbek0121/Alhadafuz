@@ -42,20 +42,28 @@ const createOrderSchema = z.object({
 });
 
 /**
- * Click to'lov URL — dedupe natijasida qaytarilgan order uchun ham ishlaydi.
- * Allaqachon PAID bo'lgan order uchun qayta payment yaratilmaydi.
- * URL admin paneldagi (PaymentMethod.config) yoki env'dagi konfiguratsiyadan quriladi.
+ * To'lov URL — to'lov turi bo'yicha qaytaradi.
+ * Allaqachon PAID yoki CANCELLED bo'lgan order uchun qayta payment yaratilmaydi.
  */
-async function buildClickPaymentUrl(order: any): Promise<string | null> {
-    if (String(order.paymentMethod || '').toLowerCase() === 'click'
-        && String(order.paymentStatus || '').toUpperCase() !== 'PAID'
-        && String(order.status || '').toUpperCase() !== 'CANCELLED') {
+async function buildPaymentUrl(order: any): Promise<string | null> {
+    const pm = String(order.paymentMethod || '').toUpperCase();
+    const ps = String(order.paymentStatus || '').toUpperCase();
+    const st = String(order.status || '').toUpperCase();
+    if (ps === 'PAID' || st === 'CANCELLED') return null;
+
+    const orderId = order.orderNumber || order.id;
+    const amount = order.total;
+
+    if (pm === 'CLICK') {
         const clickConfig = await getClickConfig();
-        if (clickConfig) {
-            return buildClickPayUrl(clickConfig, order.orderNumber || order.id, order.total);
-        }
-        console.error("[click] Konfiguratsiya topilmadi — paymentUrl qaytarilmadi");
+        if (clickConfig) return buildClickPayUrl(clickConfig, orderId, amount);
     }
+
+    if (pm === 'PAYME') {
+        const paymeConfig = await getPaymeConfig('production');
+        if (paymeConfig) return buildPaymeRedirectUrl(paymeConfig, orderId, amount);
+    }
+
     return null;
 }
 
@@ -64,13 +72,14 @@ async function buildOrderResponse(order: any): Promise<{ success: boolean; order
     return {
         success: true,
         order,
-        paymentUrl: await buildClickPaymentUrl(order),
+        paymentUrl: await buildPaymentUrl(order),
     };
 }
 
 import { checkRateLimit } from '@/lib/ratelimit';
 import { autoDispatchOrder } from '@/lib/dispatch';
 import { getClickConfig, buildClickPayUrl } from '@/lib/click';
+import { getPaymeConfig, buildPaymeRedirectUrl } from '@/lib/payme';
 
 export async function POST(req: Request) {
     // 1. RATE LIMITING (Security Layer)
@@ -283,7 +292,7 @@ export async function POST(req: Request) {
 
         // Determine initial status based on payment method
         const method = paymentMethod.toLowerCase();
-        const initialStatus = method === 'click' ? 'AWAITING_PAYMENT' : 'PENDING';
+        const initialStatus = ['click', 'payme'].includes(method) ? 'AWAITING_PAYMENT' : 'PENDING';
 
         // 4. Create Order using Raw SQL for the main table to avoid "Unknown argument lat" errors
         // but keeping it inside a transaction for data integrity.
@@ -453,18 +462,17 @@ export async function GET(req: Request) {
         });
 
         // Add paymentUrl to orders awaiting payment (config bir marta o'qiladi — N+1 oldini olish uchun)
-        const clickConfig = await getClickConfig();
         const ordersWithPayments = orders.map((order: any) => {
             let paymentUrl = null;
-            if (clickConfig
-                && order.status === 'AWAITING_PAYMENT'
-                && String(order.paymentMethod || '').toLowerCase() === 'click') {
-                paymentUrl = buildClickPayUrl(clickConfig, order.orderNumber || order.id, order.total);
+            if (order.status === 'AWAITING_PAYMENT') {
+                paymentUrl = buildPaymentUrl(order);
             }
             return { ...order, paymentUrl };
         });
+        // Wait for all paymentUrl promises in parallel
+        const ordersResolved = await Promise.all(ordersWithPayments);
 
-        return NextResponse.json({ orders: ordersWithPayments });
+        return NextResponse.json({ orders: ordersResolved });
     } catch (error) {
         console.error("Order fetch error:", error);
         return NextResponse.json({ error: 'Failed to fetch orders' }, { status: 500 });

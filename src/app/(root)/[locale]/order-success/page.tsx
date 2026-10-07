@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle, ArrowRight, Package, CreditCard, Copy, UploadCloud, ShieldCheck, Loader2, Info } from 'lucide-react';
+import { CheckCircle, ArrowRight, Package, CreditCard, Copy, UploadCloud, ShieldCheck, Loader2, Info, ExternalLink } from 'lucide-react';
 import { Link } from '@/navigation';
 import { useSearchParams } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/useCartStore';
 import { ClickButton } from '@/components/payment/ClickButton';
+import { getPaymeConfig, buildPaymeRedirectUrl } from '@/lib/payme';
 
 export default function OrderSuccessPage() {
     const searchParams = useSearchParams();
@@ -23,6 +24,8 @@ export default function OrderSuccessPage() {
     const [isUploaded, setIsUploaded] = useState(false);
     // CLICK to'lov config (service_id/merchant_id) — PaymentMethod.config'dan
     const [clickConfig, setClickConfig] = useState<{ service_id: string; merchant_id: string } | null>(null);
+    // PAYME config — PaymentMethod.config'dan
+    const [paymeConfig, setPaymeConfig] = useState<{ merchant: string; key: string; login: string } | null>(null);
 
     useEffect(() => {
         // orderId bo'lmasa loading holatini darhol yakunlaymiz — cheksiz spinner bo'lmasin.
@@ -69,6 +72,14 @@ export default function OrderSuccessPage() {
                                     }
                                 } catch { /* invalid JSON — tugma ko'rsatilmaydi */ }
                             }
+                        }
+                    }
+
+                    // PAYME to'lov usuli tanlangan bo'lsa, config'ni (merchant) olamiz.
+                    if ((orderData.paymentMethod || '').toUpperCase() === 'PAYME') {
+                        const cfg = await getPaymeConfig('production');
+                        if (cfg) {
+                            setPaymeConfig({ merchant: cfg.merchant, key: cfg.key, login: cfg.login });
                         }
                     }
                 } else {
@@ -157,6 +168,7 @@ export default function OrderSuccessPage() {
 
     const isP2P = order?.paymentMethod === 'P2P';
     const isCLICK = (order?.paymentMethod || '').toUpperCase() === 'CLICK';
+    const isPAYME = (order?.paymentMethod || '').toUpperCase() === 'PAYME';
 
     return (
         <div className="min-h-screen bg-[#fafafb] py-12 md:py-24 px-4 font-sans">
@@ -292,6 +304,38 @@ export default function OrderSuccessPage() {
                                     merchantId={clickConfig.merchant_id}
                                     className="w-full md:w-auto h-16 px-12 rounded-[20px] text-base shadow-2xl"
                                 />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* PAYME payment section */}
+                {isPAYME && paymeConfig && (
+                    <div className="w-full bg-white rounded-[40px] border border-slate-100 shadow-2xl overflow-hidden mb-12 animate-slide-up">
+                        <div className="p-8 md:p-12">
+                            <div className="flex items-center gap-4 mb-8">
+                                <div className="p-3 bg-teal-50 text-teal-600 rounded-2xl">
+                                    <CreditCard size={24} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-slate-900 tracking-tight uppercase">Payme orqali to'lov</h3>
+                                    <p className="text-[11px] font-black text-slate-400 uppercase tracking-widest mt-1">To'lovni amalga oshirish</p>
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-center gap-4">
+                                <p className="text-sm text-slate-500 font-medium text-center max-w-md">
+                                    Buyurtmangizni Payme orqali to'lang. To'lov amalga oshirilgach, avtomatik tasdiqlanadi.
+                                </p>
+                                <button
+                                    onClick={() => {
+                                        const url = buildPaymeRedirectUrl(paymeConfig, order.id, order.total);
+                                        window.location.href = url;
+                                    }}
+                                    className="w-full md:w-auto h-16 px-12 rounded-[20px] text-base shadow-2xl bg-teal-500 hover:bg-teal-600 text-white font-black uppercase tracking-wider transition-all transform hover:scale-[1.02] active:scale-95 inline-flex items-center justify-center gap-2"
+                                >
+                                    Payme orqali to'lash
+                                    <ExternalLink className="ml-2 h-4 w-4" />
+                                </button>
                             </div>
                         </div>
                     </div>
