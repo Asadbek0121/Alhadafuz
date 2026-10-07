@@ -47,13 +47,16 @@ export async function getAuthenticatedCourier(req: Request) {
 
         const userData = JSON.parse(userParam);
         const telegramId = String(userData.id);
+        console.log("[TELEGRAM WEBAPP AUTH] Incoming telegramId:", telegramId);
 
         const user = await prisma.user.findUnique({
             where: { telegramId },
             select: { id: true, role: true },
         });
+        console.log("[TELEGRAM WEBAPP AUTH] Found user in DB:", user);
 
         if (!user || (user.role !== 'COURIER' && user.role !== 'ADMIN')) {
+            console.log("[TELEGRAM WEBAPP AUTH] Access denied. Role:", user?.role);
             return null;
         }
 

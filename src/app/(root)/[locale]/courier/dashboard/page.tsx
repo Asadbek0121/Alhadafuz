@@ -67,20 +67,29 @@ export default function CourierDashboard() {
         }
     }, [status]); // Run once when component mounts and session status is known
 
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+
     const fetchAll = useCallback(async () => {
         const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
-        if (!session?.user?.id && !initData) return;
+        if (!session?.user?.id && !initData) {
+            setIsAuthorized(false);
+            return;
+        }
 
         try {
             const [ordersRes, statsRes] = await Promise.all([
                 fetch('/api/delivery/orders', { headers: { 'x-telegram-init-data': initData } }),
                 fetch('/api/delivery/couriers/stats', { headers: { 'x-telegram-init-data': initData } })
             ]);
-            if (ordersRes.ok) setOrders(await ordersRes.json());
-            else if (ordersRes.status === 401) console.log("Unauthorized from /api/delivery/orders");
 
-            if (statsRes.ok) setStats(await statsRes.json());
-            else if (statsRes.status === 401) console.log("Unauthorized from /api/delivery/couriers/stats");
+            if (ordersRes.ok && statsRes.ok) {
+                setOrders(await ordersRes.json());
+                setStats(await statsRes.json());
+                setIsAuthorized(true);
+            } else if (ordersRes.status === 401 || statsRes.status === 401) {
+                console.log("Unauthorized courier access");
+                setIsAuthorized(false);
+            }
         } catch (e) {
             console.error("Courier dashboard error", e);
         }
@@ -140,10 +149,14 @@ export default function CourierDashboard() {
 
     const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
 
+    if (isAuthorized === false) {
+        return <div className="p-20 text-center font-bold text-lg">Faqat kuryerlar uchun. (Ruxsat etilmadi)</div>;
+    }
+
     if (!isTelegramApp && (status === 'loading')) return <div className="p-20 text-center">Yuklanmoqda...</div>;
 
-    if (!isTelegramApp && (!session?.user || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN'))) {
-        return <div className="p-20 text-center">Faqat kuryerlar uchun.</div>;
+    if (!isTelegramApp && !session?.user && isAuthorized === null) {
+        return <div className="p-20 text-center">Yuklanmoqda...</div>;
     }
 
     const initMap = () => {
