@@ -8,7 +8,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useCartStore } from '@/store/useCartStore';
 import { ClickButton } from '@/components/payment/ClickButton';
-import { getPaymeConfig, buildPaymeRedirectUrl } from '@/lib/payme';
+import { buildPaymeRedirectUrl } from '@/lib/payme';
 
 export default function OrderSuccessPage() {
     const searchParams = useSearchParams();
@@ -75,11 +75,21 @@ export default function OrderSuccessPage() {
                         }
                     }
 
-                    // PAYME to'lov usuli tanlangan bo'lsa, config'ni (merchant) olamiz.
+                    // PAYME to'lov usuli tanlangan bo'lsa, config'ni PaymentMethod jadvalidan olamiz.
                     if ((orderData.paymentMethod || '').toUpperCase() === 'PAYME') {
-                        const cfg = await getPaymeConfig('production');
-                        if (cfg) {
-                            setPaymeConfig({ merchant: cfg.merchant, key: cfg.key, login: cfg.login });
+                        const methodsRes = await fetch('/api/payment-methods');
+                        if (methodsRes.ok) {
+                            const methods = await methodsRes.json();
+                            const payme = (Array.isArray(methods) ? methods : [])
+                                .find((m: any) => (m.provider || '').toUpperCase() === 'PAYME');
+                            if (payme?.config) {
+                                try {
+                                    const cfg = JSON.parse(payme.config);
+                                    if (cfg.merchant && cfg.key) {
+                                        setPaymeConfig({ merchant: cfg.merchant, key: cfg.key, login: cfg.login || '' });
+                                    }
+                                } catch { /* invalid JSON — tugma ko'rsatilmaydi */ }
+                            }
                         }
                     }
                 } else {
