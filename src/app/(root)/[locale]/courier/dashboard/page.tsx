@@ -68,35 +68,37 @@ export default function CourierDashboard() {
     }, [status]); // Run once when component mounts and session status is known
 
     const fetchAll = useCallback(async () => {
-        if (!session?.user?.id) return;
+        const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
+        if (!session?.user?.id && !initData) return;
+
         try {
             const [ordersRes, statsRes] = await Promise.all([
-                fetch('/api/delivery/orders', { headers: { 'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || '' } }),
-                fetch('/api/delivery/couriers/stats', { headers: { 'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || '' } })
+                fetch('/api/delivery/orders', { headers: { 'x-telegram-init-data': initData } }),
+                fetch('/api/delivery/couriers/stats', { headers: { 'x-telegram-init-data': initData } })
             ]);
             if (ordersRes.ok) setOrders(await ordersRes.json());
-            else if (ordersRes.status === 401) {
-                // Unauthorized, possibly session expired or not a courier, force re-auth
-                console.log("Unauthorized from /api/delivery/orders");
-            }
+            else if (ordersRes.status === 401) console.log("Unauthorized from /api/delivery/orders");
+
             if (statsRes.ok) setStats(await statsRes.json());
-            else if (statsRes.status === 401) {
-                console.log("Unauthorized from /api/delivery/couriers/stats");
-            }
+            else if (statsRes.status === 401) console.log("Unauthorized from /api/delivery/couriers/stats");
         } catch (e) {
             console.error("Courier dashboard error", e);
         }
     }, [session]);
 
     useEffect(() => {
-        if (!session?.user?.id || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN')) return;
+        const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
+        if (!session?.user?.id && !initData) return;
+
         const interval = setInterval(fetchAll, 5000);
         fetchAll();
         return () => clearInterval(interval);
-    }, [fetchAll, session?.user?.id, (session?.user as any)?.role]);
+    }, [fetchAll, session?.user?.id]);
 
     useEffect(() => {
-        if (!session?.user?.id || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN')) return;
+        const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
+        if (!session?.user?.id && !initData) return;
+
         const update = () => {
             navigator.geolocation?.getCurrentPosition(
                 (pos) => {
@@ -106,7 +108,7 @@ export default function CourierDashboard() {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
-                            'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || ''
+                            'x-telegram-init-data': initData
                         },
                         body: JSON.stringify({ lat, lng })
                     }).catch(() => { });
@@ -118,7 +120,7 @@ export default function CourierDashboard() {
         update();
         const interval = setInterval(update, 30000);
         return () => clearInterval(interval);
-    }, [session?.user?.id, (session?.user as any)?.role]);
+    }, [session?.user?.id]);
 
     const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
     const currentOrder = activeOrders[0] || null;
@@ -136,9 +138,11 @@ export default function CourierDashboard() {
         mapRef.current.geoObjects.add(multiRouteRef.current);
     }, [currentOrder, courierPos]);
 
-    if (status === 'loading') return <div className="p-20 text-center">Yuklanmoqda...</div>;
+    const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
 
-    if (!session?.user || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN')) {
+    if (!isTelegramApp && (status === 'loading')) return <div className="p-20 text-center">Yuklanmoqda...</div>;
+
+    if (!isTelegramApp && (!session?.user || ((session.user as any)?.role !== 'COURIER' && (session.user as any)?.role !== 'ADMIN'))) {
         return <div className="p-20 text-center">Faqat kuryerlar uchun.</div>;
     }
 
@@ -158,7 +162,10 @@ export default function CourierDashboard() {
         if (!currentOrder) return;
         const res = await fetch(`/api/delivery/orders/${currentOrder.id}`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json', 'x-telegram-init-data': (window as any).Telegram?.WebApp?.initData || '' },
+            headers: {
+                'Content-Type': 'application/json',
+                'x-telegram-init-data': (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || ''
+            },
             body: JSON.stringify({ status })
         });
         if (res.ok) { toast.success("Status yangilandi"); fetchAll(); }
