@@ -77,10 +77,20 @@ export default function CourierDashboard() {
         }
 
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+
             const [ordersRes, statsRes] = await Promise.all([
-                fetch('/api/delivery/orders', { headers: { 'x-telegram-init-data': initData } }),
-                fetch('/api/delivery/couriers/stats', { headers: { 'x-telegram-init-data': initData } })
+                fetch('/api/delivery/orders', {
+                    headers: { 'x-telegram-init-data': initData },
+                    signal: controller.signal
+                }),
+                fetch('/api/delivery/couriers/stats', {
+                    headers: { 'x-telegram-init-data': initData },
+                    signal: controller.signal
+                })
             ]);
+            clearTimeout(timeoutId);
 
             if (ordersRes.ok && statsRes.ok) {
                 setOrders(await ordersRes.json());
@@ -89,9 +99,13 @@ export default function CourierDashboard() {
             } else if (ordersRes.status === 401 || statsRes.status === 401) {
                 console.log("Unauthorized courier access");
                 setIsAuthorized(false);
+            } else {
+                console.log("Failed to fetch courier data");
+                setIsAuthorized(false);
             }
         } catch (e) {
             console.error("Courier dashboard error", e);
+            setIsAuthorized(false);
         }
     }, [session]);
 
@@ -147,7 +161,16 @@ export default function CourierDashboard() {
         mapRef.current.geoObjects.add(multiRouteRef.current);
     }, [currentOrder, courierPos]);
 
-    const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
+    // 8 sekund ichida javob kelmasa, avtomatik xato berish (osilib qolishdan himoya)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (isAuthorized === null) {
+                console.warn("Auth check timed out, setting isAuthorized to false");
+                setIsAuthorized(false);
+            }
+        }, 8000);
+        return () => clearTimeout(timer);
+    }, [isAuthorized]);
 
     if (isAuthorized === false) {
         return <div className="p-20 text-center font-bold text-lg">Faqat kuryerlar uchun. (Ruxsat etilmadi)</div>;
