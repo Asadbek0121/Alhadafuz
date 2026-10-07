@@ -213,7 +213,7 @@ export default function ProfileOverviewPage() {
                                     .replace(
                                         /=.*/,
                                         "=;expires=" +
-                                            new Date().toGMTString() +
+                                            new Date().toUTCString() +
                                             ";path=/"
                                     );
                             });

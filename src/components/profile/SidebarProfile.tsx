@@ -53,7 +53,7 @@ export default function SidebarProfile() {
                     .replace(
                         /=.*/,
                         "=;expires=" +
-                            new Date().toGMTString() +
+                            new Date().toUTCString() +
                             ";path=/"
                     );
             });
