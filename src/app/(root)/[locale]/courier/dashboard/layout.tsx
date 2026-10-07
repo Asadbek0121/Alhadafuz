@@ -2,6 +2,7 @@
 // generateMetadata is a Server Component-only export.
 import type { Metadata } from "next";
 import { translatedPageMetadata } from "@/lib/seo";
+import SessionProviderWrapper from "@/components/SessionProviderWrapper";
 
 export async function generateMetadata({
     params,
@@ -13,5 +14,9 @@ export async function generateMetadata({
 }
 
 export default function CourierDashboardLayout({ children }: { children: React.ReactNode }) {
-    return <>{children}</>;
+    return (
+        <SessionProviderWrapper>
+            {children}
+        </SessionProviderWrapper>
+    );
 }
