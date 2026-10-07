@@ -41,8 +41,7 @@ export default function SidebarProfile() {
     const handleLogout = async () => {
         logout(); // Clear local store first
         await signOut({ redirect: false });
-        // Force page reload to clear session
-        // Redirect to homepage after logout
+        // Redirect to locale homepage after logout
         window.location.href = "/"; // eslint-disable-line @next/next/no-location-assign-relative-destination
     };
 

@@ -201,7 +201,8 @@ export default function ProfileOverviewPage() {
                 <button
                     onClick={async () => {
                         await signOut({ redirect: false });
-                        window.location.reload(); // Force reload after logout
+                        // Redirect to locale homepage after logout
+                        window.location.href = `/${currentLocale}`;
                     }}
                     className="group w-full bg-rose-50/50 p-3.5 rounded-[1.25rem] border border-rose-100/30 flex items-center justify-center gap-2.5 text-rose-500 text-sm font-bold hover:bg-rose-50 active:scale-[0.98] transition-all mb-4"
                 >
