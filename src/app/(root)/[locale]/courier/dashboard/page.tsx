@@ -41,6 +41,8 @@ type Stats = {
 };
 
 export default function CourierDashboard() {
+    const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
+
     const { data: session, status } = useSession();
     const [orders, setOrders] = useState<Order[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
@@ -171,8 +173,6 @@ export default function CourierDashboard() {
         }, 8000);
         return () => clearTimeout(timer);
     }, [isAuthorized]);
-
-    const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
 
     if (isAuthorized === false) {
         return <div className="p-20 text-center font-bold text-lg">Faqat kuryerlar uchun. (Ruxsat etilmadi)</div>;
