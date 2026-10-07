@@ -418,6 +418,8 @@ export default function PaymentMethodsPage() {
                                             onChange={e => setFormData({ ...formData, config: e.target.value })}
                                             placeholder={formData.provider === 'CLICK'
                                                 ? '{"service_id": "...", "merchant_id": "...", "secret_key": "..."}'
+                                                : formData.provider === 'PAYME'
+                                                ? '{"merchant": "...", "login": "...", "key": "...", "test_key": "..."}'
                                                 : '{"merchant_id": "...", "key": "..."}'}
                                             className="w-full bg-[#0f172a] border-2 border-transparent focus:border-blue-500 p-3 rounded-xl outline-none font-mono text-[11px] text-emerald-400 min-h-[80px]"
                                         />
