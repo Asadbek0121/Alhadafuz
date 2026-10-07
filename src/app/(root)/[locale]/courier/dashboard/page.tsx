@@ -5,7 +5,6 @@
 import { YANDEX_MAPS_KEY } from "@/lib/maps";
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import Script from 'next/script';
-import { useSession, signIn } from 'next-auth/react';
 import { toast } from 'sonner';
 import { MapPin, Navigation, CheckCircle, Package, User, Phone, Wallet, BarChart3, ClipboardList, Send, Map as MapIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
@@ -43,7 +42,6 @@ type Stats = {
 export default function CourierDashboard() {
     const isTelegramApp = typeof window !== 'undefined' && !!(window as any).Telegram?.WebApp?.initData;
 
-    const { data: session, status } = useSession();
     const [orders, setOrders] = useState<Order[]>([]);
     const [stats, setStats] = useState<Stats | null>(null);
     const [tab, setTab] = useState<'orders' | 'wallet' | 'stats'>('orders');
@@ -52,31 +50,10 @@ export default function CourierDashboard() {
     const mapRef = useRef<any>(null);
     const multiRouteRef = useRef<any>(null);
 
-    useEffect(() => {
-        if (status === 'unauthenticated' && typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) {
-            const initData = (window as any).Telegram.WebApp.initData;
-            signIn("telegram-login", { initData, redirect: false }).then(response => {
-                if (response?.error) {
-                    console.error("Telegram WebApp login error:", response.error);
-                    toast.error("Telegram orqali kirishda xatolik!");
-                } else if (response?.ok && response?.url) {
-                    // If signIn is successful and it's not a redirect, we might need to refresh the session
-                    // window.location.reload(); // This causes full page refresh, maybe not ideal for Mini App
-                    // Or force update session if possible
-                    // toast.success("Muvaffaqiyatli kirildi!");
-                }
-            });
-        }
-    }, [status]); // Run once when component mounts and session status is known
-
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
     const fetchAll = useCallback(async () => {
         const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
-        if (!session?.user?.id && !initData) {
-            setIsAuthorized(false);
-            return;
-        }
 
         try {
             const controller = new AbortController();
@@ -109,20 +86,16 @@ export default function CourierDashboard() {
             console.error("Courier dashboard error", e);
             setIsAuthorized(false);
         }
-    }, [session]);
+    }, []);
 
     useEffect(() => {
-        const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
-        if (!session?.user?.id && !initData) return;
-
         const interval = setInterval(fetchAll, 5000);
         fetchAll();
         return () => clearInterval(interval);
-    }, [fetchAll, session?.user?.id]);
+    }, [fetchAll]);
 
     useEffect(() => {
         const initData = (typeof window !== 'undefined' && (window as any).Telegram?.WebApp?.initData) || '';
-        if (!session?.user?.id && !initData) return;
 
         const update = () => {
             navigator.geolocation?.getCurrentPosition(
@@ -145,7 +118,7 @@ export default function CourierDashboard() {
         update();
         const interval = setInterval(update, 30000);
         return () => clearInterval(interval);
-    }, [session?.user?.id]);
+    }, []);
 
     const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled');
     const currentOrder = activeOrders[0] || null;
@@ -178,9 +151,7 @@ export default function CourierDashboard() {
         return <div className="p-20 text-center font-bold text-lg">Faqat kuryerlar uchun. (Ruxsat etilmadi)</div>;
     }
 
-    if (!isTelegramApp && (status === 'loading')) return <div className="p-20 text-center">Yuklanmoqda...</div>;
-
-    if (!isTelegramApp && !session?.user && isAuthorized === null) {
+    if (isAuthorized === null) {
         return <div className="p-20 text-center">Yuklanmoqda...</div>;
     }
 
