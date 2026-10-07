@@ -302,9 +302,9 @@ export default function PaymentMethodsPage() {
             {isModalOpen && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8">
                     <div onClick={() => setIsModalOpen(false)} className="absolute inset-0 bg-gray-900/80" />
-                    <div className="bg-white rounded-2xl w-full max-w-md p-5 md:p-6 relative shadow-2xl flex flex-col md:flex-row gap-4 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-2xl w-full max-w-xl p-6 md:p-8 relative shadow-2xl flex flex-col md:flex-row gap-6 max-h-[90vh] overflow-y-auto">
                         {/* Guide */}
-                        <div className="md:w-1/3 space-y-4 border-r border-gray-100 pr-0 md:pr-6 hidden md:block">
+                        <div className="md:w-[280px] md:min-w-[280px] space-y-4 border-r border-gray-100 pr-0 md:pr-6 hidden md:block">
                             <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-500 mb-4">
                                 <Info size={20} />
                             </div>
@@ -315,7 +315,7 @@ export default function PaymentMethodsPage() {
                         </div>
 
                         {/* Form */}
-                        <div className="flex-1 space-y-4">
+                        <div className="flex-1 space-y-5 min-w-0">
                             <div className="flex items-center justify-between mb-3">
                                 <div>
                                     <h2 className="text-lg font-black text-gray-900 uppercase tracking-tight">
