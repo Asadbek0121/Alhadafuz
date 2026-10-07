@@ -200,8 +200,26 @@ export default function ProfileOverviewPage() {
                 {/* 4. Compact Logout */}
                 <button
                     onClick={async () => {
-                        await signOut({ redirect: false });
-                        // Redirect to locale homepage after logout
+                        try {
+                            await signOut({ redirect: false });
+                        } catch (err) {
+                            console.error("signOut failed:", err);
+                        }
+                        // Clear cookies then redirect
+                        if (typeof document !== "undefined") {
+                            document.cookie
+                                .split(";")
+                                .forEach((c) => {
+                                    document.cookie = c
+                                        .replace(/^ +, "")
+                                        .replace(
+                                            /=.*/,
+                                            "=;expires=" +
+                                                new Date().toGMTString() +
+                                                ";path=/"
+                                        );
+                                });
+                        }
                         window.location.href = `/${currentLocale}`;
                     }}
                     className="group w-full bg-rose-50/50 p-3.5 rounded-[1.25rem] border border-rose-100/30 flex items-center justify-center gap-2.5 text-rose-500 text-sm font-bold hover:bg-rose-50 active:scale-[0.98] transition-all mb-4"

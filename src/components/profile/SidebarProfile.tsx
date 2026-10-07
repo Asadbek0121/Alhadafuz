@@ -40,8 +40,24 @@ export default function SidebarProfile() {
 
     const handleLogout = async () => {
         logout(); // Clear local store first
-        await signOut({ redirect: false });
-        // Redirect to locale homepage after logout
+        try {
+            await signOut({ redirect: false });
+        } catch (err) {
+            console.error("signOut failed:", err);
+        }
+        // Force clear any stale session state
+        if (typeof document !== "undefined") {
+            document.cookie.split(";").forEach((c) => {
+                document.cookie = c
+                    .replace(/^ +/, "")
+                    .replace(
+                        /=.*/,
+                        "=;expires=" +
+                            new Date().toGMTString() +
+                            ";path=/"
+                    );
+            });
+        }
         window.location.href = "/"; // eslint-disable-line @next/next/no-location-assign-relative-destination
     };
 
