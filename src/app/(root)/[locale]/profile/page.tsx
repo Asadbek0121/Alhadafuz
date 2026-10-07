@@ -207,18 +207,16 @@ export default function ProfileOverviewPage() {
                         }
                         // Clear cookies then redirect
                         if (typeof document !== "undefined") {
-                            document.cookie
-                                .split(";")
-                                .forEach((c) => {
-                                    document.cookie = c
-                                        .replace(/^ +, "")
-                                        .replace(
-                                            /=.*/,
-                                            "=;expires=" +
-                                                new Date().toGMTString() +
-                                                ";path=/"
-                                        );
-                                });
+                            document.cookie.split(";").forEach((c) => {
+                                document.cookie = c
+                                    .replace(/^ +/, "")
+                                    .replace(
+                                        /=.*/,
+                                        "=;expires=" +
+                                            new Date().toGMTString() +
+                                            ";path=/"
+                                    );
+                            });
                         }
                         window.location.href = `/${currentLocale}`;
                     }}
