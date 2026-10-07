@@ -193,10 +193,10 @@ export interface PaymeTransactionData {
 export async function handleCheckPerformTransaction(
     amount: number,
     account: { order_id: string }
-): Promise<{ allow: boolean; additional?: Record<string, unknown> }> {
+): Promise<{ allow: boolean }> {
     const orderId = account.order_id;
     if (!orderId) {
-        return { allow: false };
+        throw { code: -31000, message: "Invalid params: order_id required", data: [{ field: "account.order_id" }] };
     }
 
     const order = await prisma.order.findFirst({
@@ -210,18 +210,18 @@ export async function handleCheckPerformTransaction(
     });
 
     if (!order) {
-        return { allow: false };
+        throw { code: -31003, message: "Order not found", data: [{ field: "account.order_id" }] };
     }
 
     // Allaqachon to'langan
     if (order.paymentStatus === "PAID") {
-        return { allow: false };
+        throw { code: -31001, message: "Transaction already performed", data: [] };
     }
 
     // To'lov summasi mosligini tekshirish (1 tiyin xato bilan)
     const orderAmountTiyin = Math.round(order.total * 100);
     if (Math.abs(amount - orderAmountTiyin) > 1) {
-        return { allow: false };
+        throw { code: -31001, message: "Invalid amount", data: [] };
     }
 
     return { allow: true };
@@ -552,8 +552,8 @@ export async function handleGetStatement(
 // ---------------------------------------------------------------------------
 
 /**
- * Payme redirect checkout URL yaratish
- * POST/GET formatda — foydalanuvchini Payme sahifasiga yo'naltirish
+ * Payme GET formatidagi redirect URL (rasmiy: https://developer.help.paycom.uz/)
+ * Format: https://checkout.paycom.uz/base64(m=...;ac.order_id=...;a=...;l=...)
  */
 export function buildPaymeRedirectUrl(
     config: PaymeConfig,
@@ -567,29 +567,20 @@ export function buildPaymeRedirectUrl(
     } = {}
 ): string {
     const amountTiyin = Math.round(amountSom * 100);
-    const baseUrl = "https://app.payme.uz/pay";
+    const lang = options.lang ?? "uz";
 
-    const params = new URLSearchParams();
-    params.append("merchant", config.merchant);
-    params.append("amount", String(amountTiyin));
-    params.append("account[order_id]", orderId);
-    params.append("lang", options.lang ?? "uz");
+    // GET parametri: m=merchant;ac.order_id=orderId;a=amount;...
+    const params = [`m=${config.merchant}`, `ac.order_id=${orderId}`, `a=${amountTiyin}`, `l=${lang}`];
+    if (options.callback) params.push(`c=${encodeURIComponent(options.callback)}`);
+    if (options.callbackTimeout) params.push(`ct=${options.callbackTimeout}`);
+    if (options.description) params.push(`description=${encodeURIComponent(options.description)}`);
 
-    if (options.callback) {
-        params.append("callback", options.callback);
-    }
-    if (options.callbackTimeout) {
-        params.append("callback_timeout", String(options.callbackTimeout));
-    }
-    if (options.description) {
-        params.append("description", options.description);
-    }
-
-    return `${baseUrl}?${params.toString()}`;
+    const encoded = btoa(params.join(";"));
+    return `https://checkout.paycom.uz/${encoded}`;
 }
 
 /**
- * Payme GET formatidagi redirect URL
+ * @deprecated — eski funksiyani saqlab qoldik, lekin ichida buildPaymeRedirectUrl ishlatiladi.
  */
 export function buildPaymeGetUrl(
     config: PaymeConfig,

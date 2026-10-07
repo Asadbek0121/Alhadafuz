@@ -230,7 +230,7 @@ Avvalgi sessiyalardan:
 
 ## In Progress
 
-- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi.
+- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi, Payme integratsiya tuzatishlari (URL format + CheckPerformTransaction error codes).
 
 ## Next Tasks
 
@@ -319,9 +319,14 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-06 (Courier dashboard hook fix, Telegram WebApp authentication, profile update sync, public order tracking `/uz/track` search page)
+2026-10-07 (Payme integration fix — URL format + CheckPerformTransaction error codes)
 
 ## Recent Changes (2026-10-06)
+
+### Payme Integration Fix (2026-10-07)
+- **`src/lib/payme.ts` — `buildPaymeRedirectUrl`**: `https://app.payme.uz/pay?...` (DNS no response) → `https://checkout.paycom.uz/<base64>` formatiga o'zgartirildi. Rasmiy hujjat: `https://developer.help.paycom.uz/initsializatsiya-platezhey/otpravka-cheka-po-metodu-get`. Parametr formati: `m={merchant};ac.order_id={id};a={tiyin};l={lang}`.
+- **`src/lib/payme.ts` — `handleCheckPerformTransaction`**: `return { allow: false }` → xato kodlari bilan `throw` qilinadi: `-31000` (invalid params), `-31003` (order not found), `-31001` (amount mismatch / already paid). Payme Sandbox "Результат метода не соответствует спецификации" xatosi bartaraf etildi.
+- Verification: `https://checkout.paycom.uz/` → HTTP 200; base64 encoding test o'tdi; tsc 0.
 
 ### Courier Dashboard & Telegram WebApp Authentication
 - **CourierDashboard Hook Fix**: Barcha React hooklari (`useEffect`, `useState`, `useRef`, `useCallback`) komponentning eng yuqori qismiga ko'chirildi va early return shartlari ulardan pastga tushirildi ("React Rules of Hooks" xatosi bartaraf etildi).
