@@ -302,7 +302,7 @@ export const { auth, signIn, signOut, handlers } = NextAuth({
                     const dbUser = await prisma.user.findUnique({
                         where: { id: token.id as string },
                         select: { isVerified: true, role: true, lockedUntil: true } as any
-                    }) as any;
+                    }).catch(() => null);
 
                     if (dbUser) {
                         if (dbUser.lockedUntil && new Date(dbUser.lockedUntil) > new Date()) {
