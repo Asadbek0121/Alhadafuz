@@ -1,6 +1,6 @@
 "use client";
 
-import { Link, usePathname } from "@/navigation";
+import { Link, usePathname, useRouter } from "@/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useUserStore } from "@/store/useUserStore";
 import {
@@ -38,9 +38,11 @@ export default function SidebarProfile() {
         { title: tProfile('support'), href: "/support", icon: HelpCircle },
     ];
 
+    const router = useRouter();
     const handleLogout = async () => {
-        logout(); // Clear local store
+        logout(); // Clear local store first
         await signOut({ callbackUrl: "/" });
+        router.refresh(); // Force re-render after logout
     };
 
     return (

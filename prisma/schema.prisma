@@ -127,6 +127,8 @@ model Order {
   paymentStatus     String        @default("PENDING")
   paymentId         String?
   paymentProvider   String?
+  paymeTransactionId String?   @unique
+  paymeCardNumber   String?
   shippingName      String?
   shippingPhone     String?
   shippingAddress   String?

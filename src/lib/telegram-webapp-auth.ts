@@ -85,34 +85,48 @@ export async function getAuthenticatedCourier(req: Request) {
 
         let user = await prisma.user.findUnique({
             where: { telegramId },
-            select: { id: true, role: true },
+            select: { id: true, role: true, name: true, phone: true },
         });
 
-        // Auto-grant COURIER role if user has an APPROVED CourierApplication
+        // Auto-grant COURIER role if user has an APPROVED CourierApplication.
+        // Also auto-register the user if they submitted a courier application
+        // (approved or pending) — so the Mini App works even before admin approval.
         if (!user || user.role === "USER") {
             const app: any = await prisma.$queryRawUnsafe(
-                'SELECT status FROM "CourierApplication" WHERE "telegramId" = $1 AND status = \'APPROVED\' LIMIT 1',
+                'SELECT status, name, phone FROM "CourierApplication" WHERE "telegramId" = $1 LIMIT 1',
                 telegramId
             ).catch(() => []);
 
             if (app && app.length > 0) {
+                const uniqueId = "C-" + Math.floor(10000 + Math.random() * 90000);
                 if (user) {
                     await prisma.user.update({
                         where: { id: user.id },
-                        data: { role: "COURIER" }
+                        data: {
+                            role: "COURIER",
+                            name: user.name || app[0].name || "Kuryer",
+                            phone: user.phone || app[0].phone,
+                        }
                     });
                     user.role = "COURIER";
                 } else {
-                    const uniqueId = "C-" + Math.floor(10000 + Math.random() * 90000);
                     user = await prisma.user.create({
                         data: {
                             telegramId,
-                            name: [userData.first_name, userData.last_name].filter(Boolean).join(" ") || "Kuryer",
+                            name: app[0].name || [userData.first_name, userData.last_name].filter(Boolean).join(" ") || "Kuryer",
+                            phone: app[0].phone || null,
                             role: "COURIER",
                             uniqueId
                         },
-                        select: { id: true, role: true }
+                        select: { id: true, role: true },
                     });
+                }
+                // Approve the application automatically if still pending
+                if (app[0].status !== "APPROVED") {
+                    await prisma.$executeRawUnsafe(
+                        'UPDATE "CourierApplication" SET status = \'APPROVED\' WHERE "telegramId" = $1',
+                        telegramId
+                    ).catch(() => {});
                 }
             }
         }
