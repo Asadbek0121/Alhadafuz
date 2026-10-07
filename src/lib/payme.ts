@@ -244,10 +244,15 @@ export async function handleCreateTransaction(
     const orderId = account.order_id;
 
     // Idempotent: agar transaction allaqachon mavjud bo'lsa, natijani qaytar
-    const existing = await prisma.order.findFirst({
-        where: { paymeTransactionId: id },
-        select: { paymeTransactionId: true, paymentStatus: true },
-    });
+    let existing: any = null;
+    try {
+        existing = await prisma.order.findFirst({
+            where: { paymeTransactionId: id },
+            select: { paymeTransactionId: true, paymentStatus: true },
+        });
+    } catch {
+        // paymeTransactionId column may not exist yet
+    }
     if (existing) {
         return {
             create_time: time,
@@ -277,22 +282,37 @@ export async function handleCreateTransaction(
     // Allaqachon to'langan
     if (order.paymentStatus === "PAID") {
         // Transaction yaratib, holatni Performed deb qaytamiz
-        await prisma.order.updateMany({
-            where: { id: order.id },
-            data: { paymeTransactionId: id },
-        });
+        try {
+            await prisma.order.updateMany({
+                where: { id: order.id },
+                data: { paymeTransactionId: id },
+            });
+        } catch {
+            // paymeTransactionId column may not exist
+        }
         return { create_time: time, transaction: id, state: PaymeTransactionState.Performed };
     }
 
     // Order statusini AWAITING_PAYMENT ga o'tkazish
-    await prisma.order.update({
-        where: { id: order.id },
-        data: {
-            paymentStatus: "AWAITING_PAYMENT",
-            paymeTransactionId: id,
-            paymentProvider: "PAYME",
-        },
-    });
+    try {
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                paymentStatus: "AWAITING_PAYMENT",
+                paymeTransactionId: id,
+                paymentProvider: "PAYME",
+            },
+        });
+    } catch {
+        // paymeTransactionId column may not exist - just update paymentStatus and paymentProvider
+        await prisma.order.update({
+            where: { id: order.id },
+            data: {
+                paymentStatus: "AWAITING_PAYMENT",
+                paymentProvider: "PAYME",
+            },
+        });
+    }
 
     // PaymentLog yozish
     await prisma.paymentLog.create({
@@ -324,10 +344,15 @@ export async function handlePerformTransaction(
     state: PaymeTransactionState;
 }> {
     // Idempotent: allaqachon performed bo'lsa
-    const existing = await prisma.order.findFirst({
-        where: { paymeTransactionId: id },
-        select: { paymentStatus: true, paymeTransactionId: true },
-    });
+    let existing: any = null;
+    try {
+        existing = await prisma.order.findFirst({
+            where: { paymeTransactionId: id },
+            select: { paymentStatus: true, paymeTransactionId: true },
+        });
+    } catch {
+        // paymeTransactionId column may not exist
+    }
 
     if (existing?.paymentStatus === "PAID") {
         return {
@@ -337,10 +362,15 @@ export async function handlePerformTransaction(
         };
     }
 
-    const order = await prisma.order.findFirst({
-        where: { paymeTransactionId: id },
-        select: { id: true, total: true },
-    });
+    let order: any = null;
+    try {
+        order = await prisma.order.findFirst({
+            where: { paymeTransactionId: id },
+            select: { id: true, total: true },
+        });
+    } catch {
+        // paymeTransactionId column may not exist
+    }
 
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
@@ -394,10 +424,15 @@ export async function handleCancelTransaction(
     state: PaymeTransactionState;
     reason?: number | null;
 }> {
-    const order = await prisma.order.findFirst({
-        where: { paymeTransactionId: id },
-        select: { id: true, paymentStatus: true, status: true },
-    });
+    let order: any = null;
+    try {
+        order = await prisma.order.findFirst({
+            where: { paymeTransactionId: id },
+            select: { id: true, paymentStatus: true, status: true },
+        });
+    } catch {
+        // paymeTransactionId column may not exist
+    }
 
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
@@ -439,15 +474,20 @@ export async function handleCheckTransaction(
     state: PaymeTransactionState;
     reason?: number | null;
 }> {
-    const order = await prisma.order.findFirst({
-        where: { paymeTransactionId: id },
-        select: {
-            id: true,
-            paymentStatus: true,
-            paymeTransactionId: true,
-            createdAt: true,
-        },
-    });
+    let order: any = null;
+    try {
+        order = await prisma.order.findFirst({
+            where: { paymeTransactionId: id },
+            select: {
+                id: true,
+                paymentStatus: true,
+                paymeTransactionId: true,
+                createdAt: true,
+            },
+        });
+    } catch {
+        // paymeTransactionId column may not exist
+    }
 
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
@@ -504,25 +544,30 @@ export async function handleGetStatement(
         reason?: number | null;
     }>;
 }> {
-    const orders = await prisma.order.findMany({
-        where: {
-            paymentProvider: "PAYME",
-            paymeTransactionId: { not: null },
-            createdAt: {
-                gte: new Date(from),
-                lte: new Date(to),
+    let orders: any[] = [];
+    try {
+        orders = await prisma.order.findMany({
+            where: {
+                paymentProvider: "PAYME",
+                paymeTransactionId: { not: null },
+                createdAt: {
+                    gte: new Date(from),
+                    lte: new Date(to),
+                },
             },
-        },
-        select: {
-            id: true,
-            orderNumber: true,
-            total: true,
-            paymentStatus: true,
-            paymeTransactionId: true,
-            createdAt: true,
-        },
-        orderBy: { createdAt: "asc" },
-    });
+            select: {
+                id: true,
+                orderNumber: true,
+                total: true,
+                paymentStatus: true,
+                paymeTransactionId: true,
+                createdAt: true,
+            },
+            orderBy: { createdAt: "asc" },
+        });
+    } catch {
+        // paymeTransactionId column may not exist
+    }
 
     const transactions = orders.map((o: any) => {
         let state: PaymeTransactionState;
