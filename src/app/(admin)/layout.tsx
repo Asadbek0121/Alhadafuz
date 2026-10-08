@@ -6,6 +6,7 @@ import SessionProviderWrapper from '@/components/SessionProviderWrapper';
 import QueryProvider from '@/components/QueryProvider';
 import { Toaster } from "@/components/ui/sonner";
 import { Metadata } from 'next';
+import { redirect } from 'next/navigation';
 
 import AdminSidebar from './admin/AdminSidebar';
 import AdminHeader from './admin/AdminHeader';
@@ -35,12 +36,8 @@ export default async function AdminLayout({
     const userRole = (session?.user as any)?.role;
     if (!session || (userRole !== 'ADMIN' && userRole !== 'VENDOR')) {
         // This is a safety check. Unauthorized users should be caught by middleware.
-        // But if they reach here, we show nothing or redirect.
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <h1 className="text-2xl font-bold">Unauthorized</h1>
-            </div>
-        );
+        // But if they reach here, redirect to login.
+        redirect('/uz/auth/login');
     }
 
     const resolvedParams = await params;

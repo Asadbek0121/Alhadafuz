@@ -17,13 +17,8 @@ export const authConfig = {
                 return false; // Redirect unauthenticated users to login page
             }
 
-            // Protect Admin Routes
-            if (isAdminPage) {
-                if (!isLoggedIn) return false;
-                // We will handle role redirection in middleware.ts or here if we had access to role,
-                // but for authorized(), 'auth' has the session.
-                // However, let's just ensure they are logged in here, and let middleware handle the specific redirect logic.
-            }
+            // Protect Admin Routes — redirect is handled in middleware (proxy.ts)
+            // to avoid SSR/client-side redirect mismatch (React hydration error).
             return true;
         },
         async jwt({ token, user, trigger, session }) {
