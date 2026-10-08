@@ -398,3 +398,8 @@ Avvalgi sessiyalardan:
 - **Fix**: Wrapped all numeric DB results with `Number()` in `src/app/(admin)/admin/page.tsx`
 - **Files changed**: `src/app/(admin)/admin/page.tsx` — 11 lines
 - **Commit**: `6ffe175`
+
+### Local Dev Server Fix (2026-10-08)
+- **Problem**: Local dev server had issues with stale `.freebuff` SQLite database
+- **Fix**: Removed `.freebuff/desktop-v2.db` and restarted dev server
+- **Status**: Dev server running at http://localhost:3000
