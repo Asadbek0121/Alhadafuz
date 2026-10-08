@@ -19,7 +19,14 @@ export const ratelimit = new Ratelimit({
 
 /**
  * Higher-order function to wrap API handlers with rate limiting
+ * Fallback: agar Redis yo'q bo'lsa, rate limit o'tkazib yuboriladi (success=true)
  */
 export async function checkRateLimit(identifier: string) {
-    return await ratelimit.limit(identifier);
+    try {
+        return await ratelimit.limit(identifier);
+    } catch (e) {
+        // Redis yo'q bo'lsa — rate limit o'tkazmaslik (fallback)
+        console.warn("[ratelimit] Redis not available, bypassing rate limit:", e);
+        return { success: true, limit: 9999, remaining: 9999, reset: Date.now() + 60000 };
+    }
 }
