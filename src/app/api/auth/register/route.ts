@@ -41,10 +41,17 @@ export async function POST(req: Request) {
         const { recaptchaToken } = body;
 
         // reCAPTCHA v3 — bot himoyasi
-        const captcha = recaptchaToken ? await (await import('@/lib/recaptcha')).verifyRecaptcha(recaptchaToken) : { success: false };
-        if (!captcha.success) {
-            return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
+        // Secret key + token 双条件满足时才验证；任一缺失则跳过（兼容 Vercel 未配置 SITE_KEY 的场景）
+        const captchaSecret = process.env.RECAPTCHA_SECRET_KEY || '';
+        const hasValidToken = recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
+        const captchaEnabled = captchaSecret !== '' && hasValidToken;
+        if (captchaEnabled) {
+            const captcha = await (await import('@/lib/recaptcha')).verifyRecaptcha(recaptchaToken);
+            if (!captcha.success) {
+                return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
+            }
         }
+        // 未启用 reCAPTCHA（secret 未配置 或 token 未提供）时不阻塞请求
 
         // Telefon berilgan bo'lsa formatini tekshirish
         if (phone) {
