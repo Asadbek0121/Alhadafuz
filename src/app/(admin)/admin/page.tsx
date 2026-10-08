@@ -226,7 +226,7 @@ async function getData(userRole: string, userId: string) {
                 topProducts = grouped
                     .map((g: any, i: number) => details[i] && {
                         ...details[i],
-                        sales: g._sum.quantity || 0
+                        sales: Number(g._sum.quantity || 0)
                     })
                     .filter(Boolean);
             }
