@@ -12,7 +12,7 @@ import { DotLottieReact, setWasmUrl } from '@lottiefiles/dotlottie-react';
 setWasmUrl('/dotlottie-player.wasm');
 
 export default function Admin2FAPage({ userId }: { userId: string }) {
-    const { update } = useSession();
+    useSession(); // We don't use update() — layout checks DB for 2FA status
     const [status, setStatus] = useState('PENDING'); // PENDING, APPROVED, REJECTED
     const [init, setInit] = useState(false);
     const [mounted, setMounted] = useState(false);
@@ -33,8 +33,8 @@ export default function Admin2FAPage({ userId }: { userId: string }) {
                         clearInterval(interval);
                         setStatus('APPROVED');
                         toast.success("Tasdiqlandi! Panelga o'tilmoqda...");
-                        setTimeout(async () => {
-                            await update({ admin2fa: true });
+                        setTimeout(() => {
+                            // update() is not needed — layout already checks DB for db2faApproved
                             window.location.reload();
                         }, 1500);
                     } else if (data.status === 'REJECTED') {
@@ -48,7 +48,7 @@ export default function Admin2FAPage({ userId }: { userId: string }) {
         }, 2000);
 
         return () => clearInterval(interval);
-    }, [init, update]);
+    }, [init]);
 
     if (!mounted) return <div className="min-h-screen bg-[#F8FAFC]" />;
 
