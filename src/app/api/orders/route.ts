@@ -468,13 +468,32 @@ export async function GET(req: Request) {
             orderBy: { createdAt: 'desc' }
         });
 
+        // Sanitize BigInt values before JSON serialization (PostgreSQL returns BigInt for count/aggregate)
+        const sanitizeOrder = (o: any) => {
+            if (!o) return o;
+            const result: any = { ...o };
+            if (result.id && typeof result.id === 'bigint') result.id = String(result.id);
+            if (result.total && typeof result.total === 'bigint') result.total = Number(result.total);
+            if (result.deliveryFee && typeof result.deliveryFee === 'bigint') result.deliveryFee = Number(result.deliveryFee);
+            if (result.items) {
+                result.items = (result.items as any[]).map((item: any) => {
+                    const i: any = { ...item };
+                    if (i.id && typeof i.id === 'bigint') i.id = String(i.id);
+                    if (i.price && typeof i.price === 'bigint') i.price = Number(i.price);
+                    if (i.quantity && typeof i.quantity === 'bigint') i.quantity = Number(i.quantity);
+                    return i;
+                });
+            }
+            return result;
+        };
+
         // Add paymentUrl to orders awaiting payment (config bir marta o'qiladi — N+1 oldini olish uchun)
         const ordersResolved = await Promise.all(orders.map(async (order: any) => {
             let paymentUrl = null;
             if (order.status === 'AWAITING_PAYMENT') {
                 paymentUrl = await buildPaymentUrl(order);
             }
-            return { ...order, paymentUrl };
+            return { ...sanitizeOrder(order), paymentUrl };
         }));
 
         return NextResponse.json({ orders: ordersResolved });
