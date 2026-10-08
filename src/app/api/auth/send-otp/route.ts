@@ -23,15 +23,17 @@ export async function POST(req: Request) {
         const body = await req.json();
         const { phone, recaptchaToken } = body;
 
-        // reCAPTCHA v3 — bot himoyasi (dev'da token yo'q bo'lsa bypass)
-        const hasToken = recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
+        // reCAPTCHA v3 — bot himoyasi
+        // Agar RECAPTCHA_SECRET_KEY o'rnatilmagan bo'lsa (Vercel env), bypass qilish
+        const captchaSecret = process.env.RECAPTCHA_SECRET_KEY || '';
+        const hasToken = captchaSecret !== '' && recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
         if (hasToken) {
             const captcha = await verifyRecaptcha(recaptchaToken);
             if (!captcha.success) {
                 return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
             }
-        }
-        if (!hasToken && process.env.NODE_ENV === "production") {
+        } else if (!hasToken && process.env.NODE_ENV === "production" && captchaSecret !== '') {
+            // Faqat secret o'rnatilgan bo'lsa va token yo'q bo'lsa rad qilish
             return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
         }
 
