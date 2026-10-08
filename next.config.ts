@@ -38,6 +38,8 @@ const cspHeader = [
     " https://telegram.org https://api-maps.yandex.ru" +
     " https://*.yandex.ru https://*.yandex.net https://yastatic.net https://unpkg.com" +
     " https://va.vercel-scripts.com https://*.vercel-scripts.com" +
+    // reCAPTCHA v3 — Google tomonidan inject qilinadi, bizning kodimizda emas.
+    " https://www.google.com https://www.gstatic.com" +
     // Vercel Toolbar (Preview Comments / feedback.js) — Vercel platformasi
     // tomonidan inject qilinadi, bizning kodimizda emas. Ruxsat berilmasa
     // har bir production sahifada CSP xatosi chiqardi.

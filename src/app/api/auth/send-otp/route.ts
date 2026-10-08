@@ -78,7 +78,9 @@ export async function POST(req: Request) {
                 `<b>🔒 HADAF Market OTP kodi</b>\n\n` +
                 `Kirish uchun kod: <code>${otp}</code>\n\n` +
                 `<i>Ushbu kod 10 daqiqalik muddatga amal qiladi.</i>`;
-            await sendTelegramMessage(user.telegramId, message);
+            await sendTelegramMessage(user.telegramId, message).catch((e: unknown) => {
+                console.error("[OTP] Telegram send failed:", e);
+            });
         }
 
         // Dev uchun log
