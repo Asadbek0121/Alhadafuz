@@ -468,13 +468,17 @@ export async function GET(req: Request) {
             orderBy: { createdAt: 'desc' }
         });
 
-        // Sanitize BigInt values before JSON serialization (PostgreSQL returns BigInt for count/aggregate)
+        // Sanitize BigInt values before JSON serialization (PostgreSQL returns BigInt)
         const sanitizeOrder = (o: any) => {
             if (!o) return o;
             const result: any = { ...o };
+            // Convert BigInt fields to safe JS types
             if (result.id && typeof result.id === 'bigint') result.id = String(result.id);
             if (result.total && typeof result.total === 'bigint') result.total = Number(result.total);
             if (result.deliveryFee && typeof result.deliveryFee === 'bigint') result.deliveryFee = Number(result.deliveryFee);
+            if (result.paymeTransactionTime && typeof result.paymeTransactionTime === 'bigint') {
+                result.paymeTransactionTime = String(result.paymeTransactionTime);
+            }
             if (result.items) {
                 result.items = (result.items as any[]).map((item: any) => {
                     const i: any = { ...item };
