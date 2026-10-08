@@ -24,18 +24,17 @@ export async function POST(req: Request) {
         const { phone, recaptchaToken } = body;
 
         // reCAPTCHA v3 — bot himoyasi
-        // Agar RECAPTCHA_SECRET_KEY o'rnatilmagan bo'lsa (Vercel env), bypass qilish
+        // Secret key + token 双条件满足时才验证；任一缺失则跳过（兼容 Vercel 未配置 SITE_KEY 的场景）
         const captchaSecret = process.env.RECAPTCHA_SECRET_KEY || '';
-        const hasToken = captchaSecret !== '' && recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
-        if (hasToken) {
+        const hasValidToken = recaptchaToken && recaptchaToken !== "undefined" && recaptchaToken !== "null";
+        const captchaEnabled = captchaSecret !== '' && hasValidToken;
+        if (captchaEnabled) {
             const captcha = await verifyRecaptcha(recaptchaToken);
             if (!captcha.success) {
                 return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
             }
-        } else if (!hasToken && process.env.NODE_ENV === "production" && captchaSecret !== '') {
-            // Faqat secret o'rnatilgan bo'lsa va token yo'q bo'lsa rad qilish
-            return NextResponse.json({ message: "Bot tekshiruvidan o'tmadi", code: "CAPTCHA_FAILED" }, { status: 400 });
         }
+        // 未启用 reCAPTCHA（secret 未配置 或 token 未提供）时不阻塞请求
 
         // Telefonni normalize qilish
         const normalizedPhone = normalizeUzPhone(phone || "");
