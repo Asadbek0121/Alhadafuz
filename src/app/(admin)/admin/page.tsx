@@ -58,8 +58,8 @@ async function getData(userRole: string, userId: string) {
                         WHERE p."vendorId" = $1 AND o.status != 'CANCELLED'
                     `, userId);
 
-                    stats.orderCount = counts[0]?.totalOrders || 0;
-                    stats.todayOrderCount = counts[0]?.todayOrders || 0;
+                    stats.orderCount = Number(counts[0]?.totalOrders || 0);
+                    stats.todayOrderCount = Number(counts[0]?.todayOrders || 0);
 
                     const revenues: any[] = await (prisma as any).$queryRawUnsafe(`
                         SELECT 
@@ -78,12 +78,12 @@ async function getData(userRole: string, userId: string) {
                 }
             }
 
-            stats.productCount = await (prisma as any).product.count({
+            stats.productCount = Number(await (prisma as any).product.count({
                 where: {
                     ...(hasVendorId ? { vendorId: userId } : { id: 'none' }),
                     isDeleted: false
                 }
-            }).catch(() => 0);
+            }).catch(() => 0));
 
         } else {
             // Admin stats
@@ -92,17 +92,17 @@ async function getData(userRole: string, userId: string) {
                     prisma.user.count(),
                     prisma.user.count({ where: { createdAt: { gte: today } } })
                 ]);
-                stats.userCount = userCount;
-                stats.todayUserCount = todayUserCount;
+                stats.userCount = Number(userCount);
+                stats.todayUserCount = Number(todayUserCount);
 
                 const [orderCount, todayOrderCount] = await Promise.all([
                     prisma.order.count({ where: { status: { not: 'CANCELLED' } } }),
                     prisma.order.count({ where: { createdAt: { gte: today }, status: { not: 'CANCELLED' } } })
                 ]);
-                stats.orderCount = orderCount;
-                stats.todayOrderCount = todayOrderCount;
+                stats.orderCount = Number(orderCount);
+                stats.todayOrderCount = Number(todayOrderCount);
 
-                stats.productCount = await (prisma as any).product.count({ where: { isDeleted: false } }).catch(() => 0);
+                stats.productCount = Number(await (prisma as any).product.count({ where: { isDeleted: false } }).catch(() => 0));
 
                 const [revenue, tRevenue] = await Promise.all([
                     prisma.order.aggregate({
@@ -114,8 +114,8 @@ async function getData(userRole: string, userId: string) {
                         _sum: { total: true }
                     })
                 ]);
-                stats.totalRevenue = revenue._sum.total || 0;
-                stats.todayRevenue = tRevenue._sum.total || 0;
+                stats.totalRevenue = Number(revenue._sum.total || 0);
+                stats.todayRevenue = Number(tRevenue._sum.total || 0);
             } catch (e) {
                 console.error("Admin stats error:", e);
             }
