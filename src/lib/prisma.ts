@@ -38,6 +38,11 @@ function withDbRetry<T>(fn: () => Promise<T>, retries = 2, baseDelayMs = 800): P
 const retried = (baseClient as any).$extends({
     query: {
         $allOperations({ model, operation, args, query }: any) {
+            // $transaction must NOT go through retry — the retry wrapper
+            // would re-invoke the transaction handler, which loses the
+            // inner `tx` context on retry and produces
+            // "Transaction not found. Transaction ID is invalid..."
+            if (operation === 'transaction') return query(args);
             return withDbRetry(() => query(args));
         },
     },
