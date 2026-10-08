@@ -208,6 +208,7 @@ async function getData(userRole: string, userId: string) {
                 const grouped = await (prisma as any).orderItem.groupBy({
                     by: ['productId'],
                     _sum: { quantity: true },
+                    _count: { id: true },
                     orderBy: { _sum: { quantity: 'desc' } },
                     take: 5
                 }).catch(() => []);
@@ -241,6 +242,7 @@ async function getData(userRole: string, userId: string) {
     return { stats, recentOrders, recentMessages, allOrders, topProducts };
 }
 import { auth } from "@/auth";
+import { sanitizeData } from "@/lib/utils";
 import { redirect } from "next/navigation";
 
 export default async function AdminDashboard() {
@@ -255,12 +257,12 @@ export default async function AdminDashboard() {
 
     const data = await getData(userRole, userId);
 
-    // Sanitize data
-    const stats = JSON.parse(JSON.stringify(data.stats));
-    const recentOrders = JSON.parse(JSON.stringify(data.recentOrders));
-    const recentMessages = JSON.parse(JSON.stringify(data.recentMessages));
-    const allOrders = JSON.parse(JSON.stringify(data.allOrders));
-    const topProducts = JSON.parse(JSON.stringify(data.topProducts));
+    // Sanitize data — convert PostgreSQL BigInt to JS numbers for RSC serialization
+    const stats = sanitizeData(data.stats);
+    const recentOrders = sanitizeData(data.recentOrders);
+    const recentMessages = sanitizeData(data.recentMessages);
+    const allOrders = sanitizeData(data.allOrders);
+    const topProducts = sanitizeData(data.topProducts);
 
     const statCards = [
         {

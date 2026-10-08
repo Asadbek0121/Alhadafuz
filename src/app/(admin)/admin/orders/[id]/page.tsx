@@ -8,6 +8,7 @@ import { ArrowLeft, MapPin, User, Package, Calendar, CreditCard, ChevronDown, Ta
 import OrderStatusSelect from "../OrderStatusSelect";
 import CourierSelector from "@/components/admin/CourierSelector";
 import { auth } from "@/auth";
+import { sanitizeData } from "@/lib/utils";
 import BulkLabelPrinter from "@/components/admin/BulkLabelPrinter";
 import type { Metadata } from "next";
 
@@ -86,7 +87,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         vendorSubtotal = (order as any).items.reduce((acc: any, item: any) => acc + (item.price * item.quantity), 0);
     }
 
-    const safeOrder = JSON.parse(JSON.stringify(order));
+    // Sanitize PostgreSQL BigInt values before RSC serialization
+    const safeOrder = sanitizeData(order);
 
     const statusMap: Record<string, { label: string, color: string }> = {
         'CREATED': { label: 'Kutilmoqda', color: 'bg-amber-50 text-amber-700 border-amber-100' },

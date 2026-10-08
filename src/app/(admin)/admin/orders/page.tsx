@@ -122,7 +122,25 @@ export default async function AdminOrdersPage({
     }
 
     const totalPages = Math.ceil(total / limit);
-    const safeOrders = JSON.parse(JSON.stringify(orders));
+    // Convert PostgreSQL BigInt to number (JSON.stringify can't handle BigInt)
+    const safeOrders = orders.map((o: any) => {
+        if (!o) return o;
+        const clone: any = { ...o };
+        // Convert BigInt fields to numbers/strings
+        if (clone.id && typeof clone.id === 'bigint') clone.id = String(clone.id);
+        if (clone.total && typeof clone.total === 'bigint') clone.total = Number(clone.total);
+        // Convert nested items (OrderItem)
+        if (clone.items) {
+            clone.items = (clone.items as any[]).map((item: any) => {
+                const i: any = { ...item };
+                if (i.id && typeof i.id === 'bigint') i.id = String(i.id);
+                if (i.price && typeof i.price === 'bigint') i.price = Number(i.price);
+                if (i.quantity && typeof i.quantity === 'bigint') i.quantity = Number(i.quantity);
+                return i;
+            });
+        }
+        return clone;
+    });
 
     const stats = [
         { label: "Barchasi", value: "ALL", count: allCount },
