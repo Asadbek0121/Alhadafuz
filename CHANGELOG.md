@@ -481,3 +481,15 @@ Audit o'tkazildi — kod o'zgartirilmadi. Xulosa:
 - create-next-app asosida boshlangan, PostgreSQL migratsiyasi.
 - Unified chat + Telegram bot integratsiyasi, parol reset (OTP), Resend email, Telegram deep-link login.
 - Auth UI qayta dizayni (login/register/auth modal).
+
+## 2026-10 (hozirgi sessiya)
+
+### Payment Flow & Notifications (2026-10-08)
+- **`src/app/(root)/[locale]/profile/orders/page.tsx`** — "Hoziroq to'lash" tugmasi bosilganda endi to'lov turi tanlash modali ochiladi (Click/Payme/Naqd). Foydalanuvchi tanlagan usul bo'yicha to'lov sahifasiga yo'naltiriladi.
+- **`src/app/api/orders/[id]/generate-payment-url/route.ts`** — Yangi API: session auth, payment method bo'yicha URL generatsiya qiladi (secret key'larni klientga yubormaydi).
+- **`src/lib/payment-notifications.ts`** — Yangi notification helper: Click/Payme to'lovi muvaffaqiyatli bo'lganda admin (Telegram) va foydalanuvchiga (agar telegram ID saqlangan bo'lsa) xabar yuboradi.
+- **`src/app/api/payment/click/route.ts`** — Click webhook ga notification qo'shildi.
+- **`src/lib/payme.ts`** — Payme webhook ga notification qo'shildi.
+- **`src/app/api/admin/payment-logs/route.ts`** — Audit jurnali boyitildi: orderNumber, orderTotal, orderCustomer, orderItemsCount ma'lumotlari qo'shildi.
+- **`src/app/(admin)/admin/payments/logs/page.tsx`** — Admin logs sahifasi yaxshilandi: "Buyurtma" ustuni qo'shildi, qidiruvda buyurtma raqami bo'yicha qidirish imkoniyati.
+- **Xavfsizlik**: Barcha secret kalitlar (Payme key, Click secret_key, Telegram token) faqat server tomonida ishlatiladi, klientga hech qachon yuborilmaydi.

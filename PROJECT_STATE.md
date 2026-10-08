@@ -230,7 +230,7 @@ Avvalgi sessiyalardan:
 
 ## In Progress
 
-- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi, Payme integratsiya tuzatishlari (URL format + CheckPerformTransaction error codes).
+- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi, Payme integratsiya tuzatishlari (URL format + CheckPerformTransaction error codes), Payment flow modal + Telegram notifications.
 
 ## Next Tasks
 
@@ -319,9 +319,32 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-07 (Payme integration fix — URL format + CheckPerformTransaction error codes)
+2026-10-08 (Payment flow modal, Telegram notifications, admin logs enhancement)
 
 ## Recent Changes (2026-10-06)
+
+### Payme Merchant API Complete Implementation (2026-10-08)
+- **`src/lib/payme.ts`** — Full rewrite with:
+  - AUTH LAYER: `verifyAuthorization()` checks Basic auth header against PaymentMethod config (-32504 for missing/wrong auth)
+  - State machine: Created(1) → Performed(2) or Cancelled(3) per official spec
+  - `handleCheckPerformTransaction`: Proper error codes (-31099 for account not found, -31001 for invalid amount/alreadypaid/busy)
+  - `handleCreateTransaction`: Idempotent, preserves cancelled transactions for re-payment
+  - `handleCancelTransaction`: Preserves `paymeTransactionId` so CheckTransaction works after cancel
+  - `handleCheckTransaction`: Returns full state with create_time, perform_time, cancel_time, reason
+  - `handleGetStatement`: Uses `account.order_id` format per spec
+  - `handleChangePassword` and `verifyPassword` functions
+- **`src/app/api/payment/payme/route.ts`** — Complete rewrite:
+  - Auth verification before ALL methods
+  - Proper JSON-RPC 2.0 error handling
+  - All 7 methods implemented (CheckPerformTransaction, CreateTransaction, PerformTransaction, CancelTransaction, CheckTransaction, GetStatement, ChangePassword)
+- **Verification**: 26/26 sandbox tests passing on production `https://www.alhadaf.uz/api/payment/payme`
+  - Auth tests: No auth → -32504, Wrong auth → -32504 ✅
+  - Create flow: state:1, idempotent ✅
+  - Perform flow: state:2, idempotent ✅
+  - Cancel flow: state:3, reason preserved, allows re-creation ✅
+  - Error cases: -31099/-31001/-31003 all correct ✅
+  - GetStatement: Returns proper array with account.order_id ✅
+- Deployment: Production alias `www.alhadaf.uz` → `uzm-brjljv7tk-asadbek0121s-projects.vercel.app`
 
 ### Payme Integration Fix (2026-10-07)
 - **`src/lib/payme.ts` — `buildPaymeRedirectUrl`**: `https://app.payme.uz/pay?...` (DNS no response) → `https://checkout.paycom.uz/<base64>` formatiga o'zgartirildi. Rasmiy hujjat: `https://developer.help.paycom.uz/initsializatsiya-platezhey/otpravka-cheka-po-metodu-get`. Parametr formati: `m={merchant};ac.order_id={id};a={tiyin};l={lang}`.
@@ -357,3 +380,14 @@ Avvalgi sessiyalardan:
 - `public/icons/click-01.png` crop qilingan (2250x2250 → 1708x714, logo faqat)
 - Checkout'da CLICK varianti logotipni ko'rsatadi (w-16 h-16)
 - `public/click_logo.png`, `public/click_logo_final.png` backup sifatida saqlanadi
+
+### Payment Flow Modal & Telegram Notifications (2026-10-08)
+- **`src/app/(root)/[locale]/profile/orders/page.tsx`** — "Hoziroq to'lash" tugmasi bosilganda to'lov turi tanlash modali ochiladi (Click/Payme/Naqd). Modal xavfsiz: secret key lar klientga yuborilmaydi.
+- **`src/app/api/orders/[id]/generate-payment-url/route.ts`** — Yangi API route: session auth bilan to'lov URL generatsiya qiladi (paymentMethod bo'yicha Click yoki Payme URL).
+- **`src/lib/payment-notifications.ts`** — Yangi notification helper: Click/Payme to'lov muvaffaqiyatli bo'lganda admin ga (Telegram) va foydalanuvchiga (agar telegramId saqlangan bo'lsa) xabar yuboradi.
+- **`src/app/api/payment/click/route.ts`** — Click webhook ga `notifyPayment()` qo'shildi.
+- **`src/lib/payme.ts`** — Payme webhook ga `notifyPayment()` qo'shildi.
+- **`src/app/api/admin/payment-logs/route.ts`** — Audit jurnali boyitildi: orderNumber, orderTotal, orderCustomer, orderItemsCount ma'lumotlari requestData dan o'qib topiladi va Orders jadvalidan qidiriladi.
+- **`src/app/(admin)/admin/payments/logs/page.tsx`** — "Buyurtma" ustuni qo'shildi, qidiruvda buyurtma raqami bo'yicha filter ishlaydi.
+- Xavfsizlik: barcha secrets (Payme key, Click secret_key, Telegram token) faqat server tomonida, klientga hech qachon yuborilmaydi.
+- Verification: tsc 0, lint 0, dev server ishlayapti (`localhost:3000`).

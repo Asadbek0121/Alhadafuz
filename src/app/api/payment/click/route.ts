@@ -192,6 +192,18 @@ export async function POST(req: NextRequest) {
                 });
             }).catch(() => {});
 
+            // Notification — async, don't block response. Secrets (keys, tokens) never logged.
+            import('@/lib/payment-notifications').then(({ notifyPayment }) => {
+                notifyPayment({
+                    orderNumber: order.orderNumber || order.id,
+                    userId: order.userId,
+                    amount: order.total,
+                    paymentMethod: 'CLICK',
+                    status: 'SUCCESS',
+                    ipAddress: ip,
+                }).catch(() => {});
+            }).catch(() => {});
+
             return NextResponse.json({
                 click_trans_id: clickTransId,
                 merchant_trans_id: merchantTransId,

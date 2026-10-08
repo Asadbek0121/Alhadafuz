@@ -1,6 +1,11 @@
 /**
  * Payme Merchant API integratsiyasi
  * Rasmiy hujjatlar: https://developer.help.paycom.uz/
+ *
+ * State Machine:
+ * 1 = Created (yaratilgan)
+ * 2 = Performed (bajarilgan/to'langan)
+ * 3 = Cancelled (bekor qilingan)
  */
 
 import { prisma } from "@/lib/prisma";
@@ -18,13 +23,14 @@ export type PaymeConfig = {
     key: string;
     /** Test kalit (sandbox) */
     testKey?: string;
+    /** Parol (auth uchun) */
+    password?: string;
 };
 
 export type PaymeMode = "production" | "test";
 
 /** Payme konfiguratsiyasini oladi */
 export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<PaymeConfig | null> {
-    // 1) DB dan olish
     try {
         const { prisma } = await import("@/lib/prisma");
         const method = await prisma.paymentMethod.findFirst({
@@ -33,13 +39,13 @@ export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<Pa
         });
         if (method?.config) {
             const cfg = JSON.parse(method.config);
-            // Support both snake_case and camelCase
             const login = cfg.login || cfg.Login;
             const merchant = cfg.merchant || cfg.Merchant || cfg.merchant_id;
             const key = mode === "test"
                 ? (cfg.test_key ?? cfg.testKey ?? cfg.key)
                 : (cfg.key ?? cfg.Key);
             const testKey = cfg.test_key ?? cfg.testKey;
+            const password = cfg.password;
 
             if (login && merchant && key) {
                 return {
@@ -47,6 +53,7 @@ export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<Pa
                     login: String(login),
                     key: String(key),
                     testKey: testKey ? String(testKey) : undefined,
+                    password,
                 };
             }
             console.warn("[payme] DB config to'liq emas — login/merchant/key yo'q.");
@@ -61,6 +68,7 @@ export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<Pa
     const envKey = mode === "test"
         ? (process.env.PAYME_TEST_KEY ?? process.env.PAYME_KEY)
         : process.env.PAYME_KEY;
+    const envPassword = process.env.PAYME_PASSWORD;
 
     if (envLogin && envMerchant && envKey) {
         return {
@@ -68,10 +76,52 @@ export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<Pa
             login: envLogin,
             key: envKey,
             testKey: process.env.PAYME_TEST_KEY,
+            password: envPassword,
         };
     }
 
     return null;
+}
+
+// ---------------------------------------------------------------------------
+// Auth Layer
+// ---------------------------------------------------------------------------
+
+/** Authorization header dan login/password ajratib oladi */
+export function parseAuthHeader(auth: string | null): { login?: string; password?: string } | null {
+    if (!auth || !auth.startsWith("Basic ")) return null;
+    try {
+        const decoded = Buffer.from(auth.replace("Basic ", ""), "base64").toString();
+        const [login, password] = decoded.split(":");
+        if (!login || !password) return null;
+        return { login, password };
+    } catch {
+        return null;
+    }
+}
+
+/** Authorization tekshirish — xato kodi -32504 */
+export async function verifyAuthorization(
+    authHeader: string | null,
+    config: PaymeConfig
+): Promise<void> {
+    const parsed = parseAuthHeader(authHeader);
+
+    // Missing auth
+    if (!parsed) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    // Wrong login
+    if (parsed.login !== config.login) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    // Wrong password
+    const expectedPassword = config.password || config.key;
+    if (parsed.password !== expectedPassword) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -164,12 +214,11 @@ export async function paymeRpc(
 // Transaction model (Payme side)
 // ---------------------------------------------------------------------------
 
-/** Payme transaction holati */
+/** Payme transaction holati (spec bo'yicha: 1=Created, 2=Performed, 3=Cancelled) */
 export enum PaymeTransactionState {
-    Created = 0,
-    Pending = 1,
+    Created = 1,
     Performed = 2,
-    Cancelled = -1,
+    Cancelled = 3,
 }
 
 /** Payme transaction — bizning tizimda saqlanadi */
@@ -196,7 +245,7 @@ export async function handleCheckPerformTransaction(
 ): Promise<{ allow: boolean }> {
     const orderId = account.order_id;
     if (!orderId) {
-        throw { code: -31000, message: "Invalid params: order_id required", data: [{ field: "account.order_id" }] };
+        throw { code: -31000, message: "Invalid params: account.order_id required", data: [{ field: "account.order_id" }] };
     }
 
     const order = await prisma.order.findFirst({
@@ -206,22 +255,28 @@ export async function handleCheckPerformTransaction(
                 { orderNumber: orderId },
             ],
         },
-        select: { id: true, total: true, paymentStatus: true, status: true },
+        select: { id: true, total: true, paymentStatus: true },
     });
 
+    // Nonexistent account -> -31099
     if (!order) {
-        throw { code: -31003, message: "Order not found", data: [{ field: "account.order_id" }] };
+        throw { code: -31099, message: "Account not found", data: [{ field: "account.order_id" }] };
     }
 
-    // Allaqachon to'langan
+    // Invalid amount -> -31001
+    const orderAmountTiyin = Math.round(order.total * 100);
+    if (Math.abs(amount - orderAmountTiyin) > 1) {
+        throw { code: -31001, message: "Invalid amount", data: [] };
+    }
+
+    // Blocked (PAID) -> -31001
     if (order.paymentStatus === "PAID") {
         throw { code: -31001, message: "Transaction already performed", data: [] };
     }
 
-    // To'lov summasi mosligini tekshirish (1 tiyin xato bilan)
-    const orderAmountTiyin = Math.round(order.total * 100);
-    if (Math.abs(amount - orderAmountTiyin) > 1) {
-        throw { code: -31001, message: "Invalid amount", data: [] };
+    // Processing (transaction ongoing) -> -31001
+    if (order.paymentStatus === "AWAITING_PAYMENT" && order.paymeTransactionId) {
+        throw { code: -31001, message: "Account is busy", data: [] };
     }
 
     return { allow: true };
@@ -248,16 +303,25 @@ export async function handleCreateTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymeTransactionId: true, paymentStatus: true },
+            select: { paymeTransactionId: true, paymentStatus: true, paymeTransactionTime: true },
         });
     } catch {
         // paymeTransactionId column may not exist yet
     }
     if (existing) {
+        // Agar transaction allaqachon performed bo'lsa -> state 2
+        if (existing.paymentStatus === "PAID") {
+            return {
+                create_time: existing.paymeTransactionTime ? Number(existing.paymeTransactionTime) : time,
+                transaction: id,
+                state: PaymeTransactionState.Performed,
+            };
+        }
+        // Agar cancelled bo'lsa -> qayta yaratish mumkin
         return {
             create_time: time,
             transaction: id,
-            state: existing.paymentStatus === "PAID" ? PaymeTransactionState.Performed : PaymeTransactionState.Created,
+            state: PaymeTransactionState.Created,
         };
     }
 
@@ -266,31 +330,35 @@ export async function handleCreateTransaction(
         where: {
             OR: [{ id: orderId }, { orderNumber: orderId }],
         },
-        select: { id: true, total: true, paymentStatus: true, status: true },
+        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true },
     });
 
+    // Account not found -> -31099
     if (!order) {
-        throw { code: -31003, message: "Order not found", data: [{ field: "account.order_id" }] };
+        throw { code: -31099, message: "Account not found", data: [{ field: "account.order_id" }] };
     }
 
-    // Summa tekshirish
+    // Amount check -> -31001
     const orderAmountTiyin = Math.round(order.total * 100);
     if (Math.abs(amount - orderAmountTiyin) > 1) {
         throw { code: -31001, message: "Invalid amount", data: [] };
     }
 
-    // Allaqachon to'langan
+    // Blocked (PAID) -> -31001
     if (order.paymentStatus === "PAID") {
-        // Transaction yaratib, holatni Performed deb qaytamiz
-        try {
-            await prisma.order.updateMany({
-                where: { id: order.id },
-                data: { paymeTransactionId: id },
-            });
-        } catch {
-            // paymeTransactionId column may not exist
+        throw { code: -31001, message: "Transaction already performed", data: [] };
+    }
+
+    // Processing (account busy with different transaction) -> -31001
+    // But allow if existing transaction is CANCELLED (order can be repaid)
+    if (order.paymeTransactionId && order.paymeTransactionId !== id) {
+        const existingOrder = await prisma.order.findFirst({
+            where: { paymeTransactionId: order.paymeTransactionId },
+            select: { paymentStatus: true },
+        });
+        if (existingOrder?.paymentStatus !== 'PAYMENT_CANCELLED' && existingOrder?.paymentStatus !== 'CANCELLED') {
+            throw { code: -31001, message: "Account is busy", data: [] };
         }
-        return { create_time: time, transaction: id, state: PaymeTransactionState.Performed };
     }
 
     // Order statusini AWAITING_PAYMENT ga o'tkazish
@@ -301,10 +369,14 @@ export async function handleCreateTransaction(
                 paymentStatus: "AWAITING_PAYMENT",
                 paymeTransactionId: id,
                 paymentProvider: "PAYME",
+                paymeTransactionTime: time,
             },
         });
-    } catch {
-        // paymeTransactionId column may not exist - just update paymentStatus and paymentProvider
+    } catch (e: any) {
+        // paymeTransactionId column may not exist
+        if (e.code !== "P2022") {
+            throw e;
+        }
         await prisma.order.update({
             where: { id: order.id },
             data: {
@@ -348,12 +420,13 @@ export async function handlePerformTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymentStatus: true, paymeTransactionId: true },
+            select: { paymentStatus: true, paymeTransactionId: true, id: true },
         });
     } catch {
         // paymeTransactionId column may not exist
     }
 
+    // Already performed
     if (existing?.paymentStatus === "PAID") {
         return {
             transaction: id,
@@ -362,6 +435,7 @@ export async function handlePerformTransaction(
         };
     }
 
+    // Find transaction
     let order: any = null;
     try {
         order = await prisma.order.findFirst({
@@ -372,11 +446,12 @@ export async function handlePerformTransaction(
         // paymeTransactionId column may not exist
     }
 
+    // Transaction not found -> -31003
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
     }
 
-    // To'lovni amalga oshirish
+    // Perform the transaction
     await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -396,11 +471,22 @@ export async function handlePerformTransaction(
         },
     });
 
-    // Invoice yaratish (async, xato bo'lsa log'ga yoziladi)
+    // Invoice yaratish
     import("@/lib/invoice/invoice-service").then(({ createInvoiceForOrder }) => {
         createInvoiceForOrder(order.id, { force: true }).catch((e: unknown) => {
             console.error("[payme] Invoice creation failed:", e);
         });
+    }).catch(() => {});
+
+    // Notification — async, don't block response. Secrets never logged.
+    import("@/lib/payment-notifications").then(({ notifyPayment }) => {
+        notifyPayment({
+            orderNumber: order.orderNumber || order.id,
+            userId: order.userId,
+            amount: order.total,
+            paymentMethod: 'PAYME',
+            status: 'SUCCESS',
+        }).catch(() => {});
     }).catch(() => {});
 
     return {
@@ -434,17 +520,18 @@ export async function handleCancelTransaction(
         // paymeTransactionId column may not exist
     }
 
+    // Transaction not found -> -31003
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
     }
 
-    // Allaqachon cancelled
+    // Already cancelled
     if (order.paymentStatus === "CANCELLED" || order.paymentStatus === "PAYMENT_CANCELLED") {
         return { cancel_time: time, transaction: id, state: PaymeTransactionState.Cancelled, reason };
     }
 
-    // Bajarilgan transactionni bekor qilish — Payme qoidasiga ko'ra refund kerak
-    // Hozircha faqat statusni yangilaymiz
+    // Cancel the transaction
+    // Keep paymeTransactionId to allow CheckTransaction to find it after cancellation
     await prisma.order.update({
         where: { id: order.id },
         data: {
@@ -482,6 +569,7 @@ export async function handleCheckTransaction(
                 id: true,
                 paymentStatus: true,
                 paymeTransactionId: true,
+                paymeTransactionTime: true,
                 createdAt: true,
             },
         });
@@ -489,8 +577,9 @@ export async function handleCheckTransaction(
         // paymeTransactionId column may not exist
     }
 
+    // Transaction not found -> -31099 (spec bo'yicha)
     if (!order) {
-        throw { code: -31003, message: "Transaction not found", data: [] };
+        throw { code: -31099, message: "Transaction not found", data: [] };
     }
 
     let state: PaymeTransactionState;
@@ -513,14 +602,15 @@ export async function handleCheckTransaction(
             state = PaymeTransactionState.Created;
     }
 
-    return {
-        create_time: order.createdAt.getTime(),
-        perform_time: performTime,
-        cancel_time: cancelTime,
+    const resp: any = {
+        create_time: Number(order.paymeTransactionTime) || order.createdAt.getTime(),
         transaction: id,
         state,
-        reason: txReason,
     };
+    if (performTime !== undefined) resp.perform_time = performTime;
+    if (cancelTime !== undefined) resp.cancel_time = cancelTime;
+    if (txReason !== null) resp.reason = txReason;
+    return resp;
 }
 
 // ---------------------------------------------------------------------------
@@ -561,6 +651,7 @@ export async function handleGetStatement(
                 total: true,
                 paymentStatus: true,
                 paymeTransactionId: true,
+                paymeTransactionTime: true,
                 createdAt: true,
             },
             orderBy: { createdAt: "asc" },
@@ -581,15 +672,62 @@ export async function handleGetStatement(
         return {
             id: o.paymeTransactionId!,
             time: o.createdAt.getTime(),
-            amount: Math.round(o.total * 100), // tiyin
-            account: { order_id: o.id },
-            create_time: o.createdAt.getTime(),
+            amount: Math.round(o.total * 100),
+            account: { order_id: o.orderNumber || o.id },
+            create_time: Number(o.paymeTransactionTime) || o.createdAt.getTime(),
             transaction: o.paymeTransactionId!,
             state,
         };
     });
 
     return { transactions };
+}
+
+// ---------------------------------------------------------------------------
+// ChangePassword
+// ---------------------------------------------------------------------------
+
+export async function handleChangePassword(
+    password: string
+): Promise<{ message: string }> {
+    try {
+        const { prisma } = await import("@/lib/prisma");
+        const method = await prisma.paymentMethod.findFirst({
+            where: { provider: "PAYME", isActive: true },
+        });
+        if (method?.config) {
+            const cfg = JSON.parse(method.config);
+            cfg.password = password;
+            await prisma.paymentMethod.update({
+                where: { id: method.id },
+                data: { config: JSON.stringify(cfg) },
+            });
+        }
+    } catch {
+        process.env.PAYME_PASSWORD = password;
+    }
+    return { message: "Password changed successfully" };
+}
+
+/** Verify password from Authorization header */
+export async function verifyPassword(
+    authHeader: string | null
+): Promise<boolean> {
+    if (!authHeader) return false;
+    const parsed = parseAuthHeader(authHeader);
+    if (!parsed) return false;
+
+    try {
+        const { prisma } = await import("@/lib/prisma");
+        const method = await prisma.paymentMethod.findFirst({
+            where: { provider: "PAYME", isActive: true },
+        });
+        if (method?.config) {
+            const cfg = JSON.parse(method.config);
+            return cfg.password === parsed.password;
+        }
+    } catch {}
+    return process.env.PAYME_PASSWORD === parsed.password;
 }
 
 // ---------------------------------------------------------------------------

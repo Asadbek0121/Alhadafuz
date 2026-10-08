@@ -134,3 +134,56 @@ O'zbekiston bozoriga mo'ljallangan onlayn savdo platformasi (HADAF). Asosiy mint
 4. Muhim o'zgarish bo'lsa (funksional, database, architecture, bug-fix, configuration) CHANGELOG.md ga yozuv qo'shing: sana, o'zgarish, sabab, muhim fayllar, verification.
 5. Tugallanmagan ishlar va muammolarni PROJECT_STATE.md ga yozing.
 6. Hujjatlarda mavjud kodga zid ma'lumot qoldirmang — dokumentatsiyani kod bilan sinxron saqlang.
+
+## HADAF MARKET DEVELOPMENT RULES
+
+### 1. GitHub — yagona source of truth
+- **Repository**: https://github.com/Asadbek0121/Alhadafuz
+- **Default branch**: main
+- **FAQQAT** shu repository'ga push qilinsin.
+- Yangi repo, yangi Vercel project, boshqa remote yaratish TAQiQLANgan.
+
+### 2. Vercel
+- Mavjud Vercel project dan foydalanish kerak.
+- `www.alhadaf.uz` domain mavjud project ga ulanganligini tekshirish kerak.
+- Yangi project yaratish TAQiQLANgan.
+
+### 3. Secrets — qat'iy taqiq
+Hech qachon commit qilinmaydigan fayllar:
+- `.env`, `.env.local`, `.env.production.local`
+- API keys, database passwords, Telegram bot tokens
+- Payme/Click keys, OAuth secrets, JWT/auth secrets
+- Cloudinary, Resend, FreeLLMAPI kalitlari
+
+Log, terminal output, screenshot, commit yoki hujjatlarga secrets chiqarish TAQiQLANgan.
+Commit/qilishdan oldin albatta: `git status`, `git diff`, `git diff --cached`.
+
+### 4. Git workflow
+- O'zgarishlardan oldin: `git status`, `git branch --show-current`, `git remote -v`.
+- Kod yozgandan keyin: `npm run typecheck`, `npm run lint`, `npm run build`.
+- Faqat testlar o'tgandan so'ng: `git add`, `git commit`, `git push origin main`.
+- Foydalanuvchi ruxsatsiz **avtomatik push qilinmasin**.
+
+### 5. Database xavfsizligi
+- `prisma migrate reset`, `db reset`, `db drop` amalga oshirish TAQiQLANgan.
+- Schema o'zgartirishdan oldin: schema, migration tarixi, production DB mosligini tekshirish.
+- Mavjud ma'lumotlarni saqlash kerak.
+
+### 6. Deploy xavfsizligi
+- Push dan keyin: GitHub Actions/Vercel deployment ni tekshirish.
+- Deployment mavjud Vercel project ga tegishli ekanligini, `www.alhadaf.uz` ulanganligini tasdiqlash.
+- Yangi project yaratish TAQiQLANgan.
+- Agar deployment xato bersa — mavjud project ni tuzatish kerak, yangi project ochish emas.
+
+### 7. 4 ta narsa — HECH QACHON o'zgartirmaslik
+1. **GitHub repo**: `Asadbek0121/Alhadafuz`
+2. **Git branch**: `main`
+3. **Mavjud Vercel project**
+4. **Production domain**: `www.alhadaf.uz`
+
+Push qilganda faqat shu repository'ga push qilish kerak.
+Yangi Vercel project, GitHub yoki domain mapping o'zboshimchalik bilan almashtirmaslik kerak.
+
+### 8. Agar noaniq bo'lsa
+- To'xtash va conflictni tushuntirish.
+- Yangi repository/project/domain avtomatik yaratmaslik kerak.

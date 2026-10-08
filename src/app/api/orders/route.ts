@@ -61,7 +61,14 @@ async function buildPaymentUrl(order: any): Promise<string | null> {
 
     if (pm === 'PAYME') {
         const paymeConfig = await getPaymeConfig('production');
-        if (paymeConfig) return buildPaymeRedirectUrl(paymeConfig, orderId, amount);
+        if (paymeConfig) {
+            // Agar test_key bo'lsa — test/rezhimi, aks holda production
+            const mode = paymeConfig.testKey ? 'test' : 'production';
+            const redirectConfig = mode === 'test'
+                ? { ...paymeConfig, key: paymeConfig.testKey ?? paymeConfig.key }
+                : paymeConfig;
+            return buildPaymeRedirectUrl(redirectConfig, orderId, amount);
+        }
     }
 
     return null;

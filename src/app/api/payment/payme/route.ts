@@ -1,9 +1,14 @@
 /**
  * Payme Merchant API JSON-RPC 2.0 endpoint
- * POST https://alhadaf.uz/api/payment/payme
+ * POST https://www.alhadaf.uz/api/payment/payme
  *
  * Barcha metodlar: CheckPerformTransaction, CreateTransaction, PerformTransaction,
- * CancelTransaction, CheckTransaction, GetStatement
+ * CancelTransaction, CheckTransaction, GetStatement, ChangePassword
+ *
+ * AUTH LAYER: Har qanday methoddan avval Authorization header tekshiriladi.
+ * - Missing auth -> -32504
+ * - Wrong auth -> -32504
+ * - Valid auth -> metod bajariladi
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -14,7 +19,9 @@ import {
     handleCancelTransaction,
     handleCheckTransaction,
     handleGetStatement,
-    PaymeTransactionState,
+    handleChangePassword,
+    getPaymeConfig,
+    verifyAuthorization,
 } from "@/lib/payme";
 
 export async function POST(req: NextRequest) {
@@ -44,7 +51,21 @@ export async function POST(req: NextRequest) {
     const { method, params } = body;
     const rpcId = body.id ?? null;
 
+    // AUTH LAYER: Har bir requestda authorization tekshiriladi
+    const authHeader = req.headers.get("authorization");
+    const config = await getPaymeConfig("test"); // Sandbox uchun test mode
+
+    if (!config) {
+        return NextResponse.json(
+            { jsonrpc: "2.0", error: { code: -32400, message: "Payme config not found", data: [] }, id: rpcId },
+            { status: 200 }
+        );
+    }
+
     try {
+        // Authorization tekshiruvi — barcha metodlar uchun
+        await verifyAuthorization(authHeader, config);
+
         let result: unknown;
 
         switch (method) {
@@ -114,6 +135,16 @@ export async function POST(req: NextRequest) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
                 const resp = await handleGetStatement(from, to);
+                result = resp;
+                break;
+            }
+
+            case "ChangePassword": {
+                const newPassword = String(params?.password ?? "");
+                if (!newPassword) {
+                    throw { code: -31000, message: "Password is required", data: [] };
+                }
+                const resp = await handleChangePassword(newPassword);
                 result = resp;
                 break;
             }

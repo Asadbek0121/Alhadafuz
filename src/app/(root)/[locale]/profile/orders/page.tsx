@@ -2,7 +2,7 @@
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
 import { useEffect, useState } from "react";
-import { Package, ChevronDown, ChevronUp, Search, Filter, ShoppingCart, ExternalLink, MapPin } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, Search, Filter, ShoppingCart, ExternalLink, MapPin, CreditCard, Banknote, Loader2, X } from "lucide-react";
 import { useCartStore } from "@/store/useCartStore";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,13 @@ interface Order {
     deliveryFee?: number;
 }
 
+interface PaymentMethod {
+    id: string;
+    name: string;
+    provider: string;
+    isActive: boolean;
+}
+
 import { useTranslations, useLocale } from "next-intl";
 import { useSession } from "next-auth/react";
 
@@ -48,6 +55,7 @@ export default function OrderHistoryPage() {
     const t = useTranslations('Profile');
     const tCart = useTranslations('Cart');
     const tHeader = useTranslations('Header');
+    const tCheckout = useTranslations('Checkout');
     const locale = useLocale();
     const [isLoading, setIsLoading] = useState(true);
     const [orders, setOrders] = useState<Order[]>([]);
@@ -56,10 +64,16 @@ export default function OrderHistoryPage() {
     const { addToCart } = useCartStore();
     const tChina = useTranslations('ChinaOrder');
 
+    // Payment modal state
+    const [payModalOpen, setPayModalOpen] = useState(false);
+    const [payModalOrder, setPayModalOrder] = useState<Order | null>(null);
+    const [selectedMethod, setSelectedMethod] = useState<string>('');
+    const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+    const [isMethodsLoading, setIsMethodsLoading] = useState(false);
+    const [isGenerating, setIsGenerating] = useState(false);
+
     useEffect(() => {
         const fetchOrders = async () => {
-            // NextAuth session (cookie) authoritative — useUserStore localStorage'dagi
-            // eski qiymatga bog'liq emas. Session bo'lsa doim chaqiramiz.
             if (status !== "authenticated") {
                 setIsLoading(false);
                 return;
@@ -80,9 +94,47 @@ export default function OrderHistoryPage() {
         };
 
         fetchOrders();
-        const interval = setInterval(fetchOrders, 10000); // 10 soniyada bir yangilash
+        const interval = setInterval(fetchOrders, 10000);
         return () => clearInterval(interval);
     }, [status]);
+
+    useEffect(() => {
+        if (!payModalOpen) return;
+
+        const fetchMethods = async () => {
+            setIsMethodsLoading(true);
+            try {
+                const res = await fetch('/api/payment-methods');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (Array.isArray(data) && data.length > 0) {
+                        setPaymentMethods(data);
+                        setSelectedMethod(data[0].provider);
+                    } else {
+                        setPaymentMethods([
+                            { id: 'cash', name: tCheckout('cash') || 'Naqd pul', provider: 'CASH', isActive: true },
+                        ]);
+                        setSelectedMethod('CASH');
+                    }
+                } else {
+                    setPaymentMethods([
+                        { id: 'cash', name: tCheckout('cash') || 'Naqd pul', provider: 'CASH', isActive: true },
+                    ]);
+                    setSelectedMethod('CASH');
+                }
+            } catch (err) {
+                console.error("Failed to fetch payment methods", err);
+                setPaymentMethods([
+                    { id: 'cash', name: tCheckout('cash') || 'Naqd pul', provider: 'CASH', isActive: true },
+                ]);
+                setSelectedMethod('CASH');
+            } finally {
+                setIsMethodsLoading(false);
+            }
+        };
+
+        fetchMethods();
+    }, [payModalOpen, tCheckout]);
 
     const handleReorder = (item: OrderItem) => {
         addToCart({
@@ -116,6 +168,56 @@ export default function OrderHistoryPage() {
             month: 'short',
             day: 'numeric'
         });
+    };
+
+    const openPaymentModal = (order: Order) => {
+        setPayModalOrder(order);
+        setPayModalOpen(true);
+        setSelectedMethod('');
+    };
+
+    const handleConfirmPayment = async () => {
+        if (!payModalOrder) return;
+
+        setIsGenerating(true);
+        try {
+            const res = await fetch(`/api/orders/${payModalOrder.id}/generate-payment-url`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ paymentMethod: selectedMethod }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || 'To\'lov URL olishda xatolik');
+            }
+
+            const data = await res.json();
+            if (data.paymentUrl) {
+                window.location.href = data.paymentUrl;
+            } else {
+                throw new Error('To\'lov URL mavjud emas');
+            }
+        } catch (error) {
+            console.error('Payment URL generation failed:', error);
+            toast.error(error instanceof Error ? error.message : 'Xatolik yuz berdi');
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
+    const closePaymentModal = () => {
+        setPayModalOpen(false);
+        setPayModalOrder(null);
+        setIsGenerating(false);
+    };
+
+    const getPaymentMethodDesc = (provider: string): string => {
+        const p = provider.toUpperCase();
+        if (p === 'CLICK') return tCheckout('pay_click') || 'Click orqali onlayn to\'lov';
+        if (p === 'PAYME') return tCheckout('pay_payme') || 'Payme orqali onlayn to\'lov';
+        if (p === 'CASH') return tCheckout('pay_cash') || 'Yetkazib berishda naqd pul';
+        return provider;
     };
 
     return (
@@ -162,13 +264,13 @@ export default function OrderHistoryPage() {
                                         <p className="text-[14px] md:text-lg font-black text-blue-600">{order.total.toLocaleString()} {tHeader('som')}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        {order.status === 'AWAITING_PAYMENT' && order.paymentUrl && (
+                                        {order.status === 'AWAITING_PAYMENT' && (
                                             <Button
                                                 size="sm"
                                                 className="bg-amber-500 hover:bg-amber-600 text-white font-black h-7 md:h-9 px-2.5 md:px-4 rounded-lg text-[10px] md:text-sm"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    window.location.href = order.paymentUrl!;
+                                                    openPaymentModal(order);
                                                 }}
                                             >
                                                 {t('pay_now').toUpperCase()}
@@ -275,6 +377,161 @@ export default function OrderHistoryPage() {
                     </div>
                 )}
             </div>
+
+            {/* Payment Method Selection Modal */}
+            {payModalOpen && payModalOrder && (
+                <div
+                    className="fixed inset-0 z-50 flex items-center justify-center p-4"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="payment-modal-title"
+                >
+                    {/* Backdrop */}
+                    <div
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={closePaymentModal}
+                    />
+
+                    {/* Modal */}
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-white border-b border-gray-100 px-5 py-4 flex items-center justify-between rounded-t-2xl z-10">
+                            <div>
+                                <h2 id="payment-modal-title" className="text-base font-black text-gray-900">{t('pay_now')}</h2>
+                                <p className="text-[11px] text-text-muted mt-0.5">
+                                    #{payModalOrder.orderNumber || payModalOrder.id.slice(-6)} • {payModalOrder.total.toLocaleString()} {tHeader('som')}
+                                </p>
+                            </div>
+                            <button
+                                onClick={closePaymentModal}
+                                className="p-2 hover:bg-gray-100 rounded-xl transition-colors text-gray-400 hover:text-gray-600"
+                                aria-label="Yopish"
+                            >
+                                <X size={18} />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-5 space-y-4">
+                            <p className="text-sm text-gray-500 font-medium">
+                                To'lov turini tanlang:
+                            </p>
+
+                            {isMethodsLoading ? (
+                                <div className="flex justify-center py-8">
+                                    <Loader2 className="animate-spin text-blue-600" size={24} />
+                                </div>
+                            ) : (
+                                <div className="space-y-2.5">
+                                    {paymentMethods.map((method) => {
+                                        const isSelected = selectedMethod === method.provider;
+                                        const providerUpper = method.provider.toUpperCase();
+
+                                        let Icon = CreditCard;
+                                        let iconColor = "text-blue-600";
+                                        let iconBg = "bg-blue-50";
+                                        let borderColor = isSelected ? "border-blue-600 bg-blue-50/50" : "border-gray-100 bg-white hover:border-gray-200";
+
+                                        switch (providerUpper) {
+                                            case 'CLICK':
+                                                Icon = CreditCard;
+                                                iconColor = "text-[#0085db]";
+                                                iconBg = "bg-[#0085db]/10";
+                                                borderColor = isSelected
+                                                    ? "border-[#0085db] bg-[#0085db]/5"
+                                                    : "border-gray-100 bg-white hover:border-gray-200";
+                                                break;
+                                            case 'PAYME':
+                                                Icon = CreditCard;
+                                                iconColor = "text-[#00c1af]";
+                                                iconBg = "bg-[#00c1af]/10";
+                                                borderColor = isSelected
+                                                    ? "border-[#00c1af] bg-[#00c1af]/5"
+                                                    : "border-gray-100 bg-white hover:border-gray-200";
+                                                break;
+                                            case 'CASH':
+                                                Icon = Banknote;
+                                                iconColor = "text-amber-500";
+                                                iconBg = "bg-amber-50";
+                                                borderColor = isSelected
+                                                    ? "border-amber-500 bg-amber-50"
+                                                    : "border-gray-100 bg-white hover:border-gray-200";
+                                                break;
+                                        }
+
+                                        return (
+                                            <button
+                                                key={method.id}
+                                                type="button"
+                                                onClick={() => setSelectedMethod(method.provider)}
+                                                className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left ${borderColor}`}
+                                            >
+                                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+                                                    <Icon size={20} className={iconColor} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="font-bold text-sm text-gray-900">{method.name}</p>
+                                                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
+                                                        {getPaymentMethodDesc(method.provider)}
+                                                    </p>
+                                                </div>
+                                                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                                    isSelected
+                                                        ? 'border-blue-600 bg-blue-600'
+                                                        : 'border-gray-200'
+                                                }`}>
+                                                    {isSelected && (
+                                                        <div className="w-2 h-2 rounded-full bg-white" />
+                                                    )}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            )}
+
+                            {/* Info */}
+                            <div className="bg-blue-50/50 border border-blue-100 rounded-xl p-3.5 space-y-1.5">
+                                <p className="text-[11px] font-black text-blue-700 uppercase tracking-wider">
+                                    {tCheckout('secure_payment') || 'Xavfsiz to\'lov'}
+                                </p>
+                                <p className="text-[11px] text-blue-600/80 leading-relaxed">
+                                    {selectedMethod.toUpperCase() === 'CASH'
+                                        ? 'Buyurtma yetkazilganda naqd pul orqali to\'laysiz.'
+                                        : 'Online to\'lov tizimi orqali xavfsiz to\'lash mumkin.'
+                                    }
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Footer */}
+                        <div className="sticky bottom-0 bg-white border-t border-gray-100 px-5 py-4 rounded-b-2xl flex gap-3">
+                            <Button
+                                variant="outline"
+                                onClick={closePaymentModal}
+                                className="flex-1 border-gray-200 text-gray-600 font-black h-11 rounded-xl"
+                                disabled={isGenerating}
+                            >
+                                Bekor qilish
+                            </Button>
+                            <Button
+                                onClick={handleConfirmPayment}
+                                disabled={!selectedMethod || isGenerating}
+                                className="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-black h-11 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 size={14} className="animate-spin mr-2" />
+                                        Yaratilmoqda...
+                                    </>
+                                ) : (
+                                    `To'lash — ${payModalOrder.total.toLocaleString()} ${tHeader('som')}`
+                                )}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

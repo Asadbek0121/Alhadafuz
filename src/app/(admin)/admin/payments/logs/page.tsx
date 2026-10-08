@@ -5,7 +5,7 @@ import { format } from "date-fns";
 import {
     ArrowLeft, RefreshCcw, ShieldAlert, CheckCircle, Clock,
     Calendar, Hash, Activity, Terminal, ShieldCheck,
-    Search, X, Copy, ChevronDown, PieChart, Zap
+    Search, X, Copy, ChevronDown, PieChart, Zap, User, ShoppingCart, DollarSign
 } from "lucide-react";
 import Link from "next/link";
 import { useState, useMemo } from "react";
@@ -22,6 +22,10 @@ interface PaymentLog {
     responseData: string | null;
     ipAddress: string | null;
     createdAt: string;
+    orderNumber: string | null;
+    orderTotal: number | null;
+    orderCustomer: string | null;
+    orderItemsCount: number | null;
 }
 
 export default function PaymentLogsPage() {
@@ -52,14 +56,16 @@ export default function PaymentLogsPage() {
     const getStatusConfig = (status: string) => {
         const s = status.toUpperCase();
         if (s === 'SUCCESS') return { color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100', icon: <ShieldCheck size={14} />, label: 'Muvaffaqiyatli' };
-        if (s === 'ERROR' || s === 'SIGNATURE_FAILED' || s === 'FAILED') return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', icon: <ShieldAlert size={14} />, label: 'Xatolik' };
+        if (s === 'ERROR' || s === 'FAILED' || s === 'SIGNATURE_FAILED') return { color: 'text-red-600', bg: 'bg-red-50', border: 'border-red-100', icon: <ShieldAlert size={14} />, label: 'Xatolik' };
         return { color: 'text-amber-600', bg: 'bg-amber-50', border: 'border-amber-100', icon: <Clock size={14} />, label: 'Kutilmoqda' };
     };
 
     const filteredLogs = logs?.filter(log => {
-        const matchesSearch = log.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        const matchesSearch =
+            log.provider.toLowerCase().includes(searchQuery.toLowerCase()) ||
             log.transactionId?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            log.status.toLowerCase().includes(searchQuery.toLowerCase());
+            log.status.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (log.orderNumber && log.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesStatus = statusFilter === 'ALL' || log.status.toUpperCase() === statusFilter;
         const matchesProvider = providerFilter === 'ALL' || log.provider.toUpperCase() === providerFilter;
         return matchesSearch && matchesStatus && matchesProvider;
@@ -124,7 +130,7 @@ export default function PaymentLogsPage() {
                         id="log-search"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="Tranzaksiya ID yoki status bo'yicha qidirish..."
+                        placeholder="Tranzaksiya ID, buyurtma raqami yoki status..."
                         className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-100 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 font-bold text-sm"
                     />
                 </div>
@@ -173,6 +179,7 @@ export default function PaymentLogsPage() {
                                 <tr className="bg-gray-50/50">
                                     <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Vaqt & Sana</th>
                                     <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Tizim</th>
+                                    <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Buyurtma</th>
                                     <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest">Status</th>
                                     <th className="px-4 py-2.5 text-[10px] uppercase font-black text-gray-400 tracking-widest text-right">Mablag'</th>
                                 </tr>
@@ -180,7 +187,7 @@ export default function PaymentLogsPage() {
                             <tbody className="divide-y divide-gray-50">
                                 {isLoading ? (
                                     <tr>
-                                        <td colSpan={4} className="px-4 py-16 text-center">
+                                        <td colSpan={5} className="px-4 py-16 text-center">
                                             <div className="flex flex-col items-center gap-3">
                                                 <RefreshCcw className="animate-spin text-blue-500 w-8 h-8" />
                                                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Ma'lumotlar olinmoqda...</p>
@@ -212,6 +219,23 @@ export default function PaymentLogsPage() {
                                                     <span className="text-sm font-black text-gray-700 tracking-tight uppercase">{log.provider}</span>
                                                 </td>
                                                 <td className="px-4 py-2.5">
+                                                    <div className="space-y-0.5">
+                                                        {log.orderNumber ? (
+                                                            <>
+                                                                <p className="text-sm font-black text-gray-900">#{log.orderNumber}</p>
+                                                                <p className="text-[10px] text-gray-400">
+                                                                    {log.orderItemsCount} mahsulot • {log.orderCustomer || '—'}
+                                                                </p>
+                                                            </>
+                                                        ) : (
+                                                            <span className="text-sm text-gray-400">—</span>
+                                                        )}
+                                                        {log.transactionId && (
+                                                            <p className="text-[10px] font-mono text-gray-400">{log.transactionId}</p>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-2.5">
                                                     <div className={`inline-flex items-center gap-2 px-2.5 py-1 rounded-lg border ${config.bg} ${config.color} ${config.border}`}>
                                                         {config.icon}
                                                         <span className="text-[10px] font-black uppercase tracking-tight">{config.label}</span>
@@ -219,7 +243,7 @@ export default function PaymentLogsPage() {
                                                 </td>
                                                 <td className="px-4 py-2.5 text-right">
                                                     <span className="text-sm font-black text-gray-900 tabular-nums">
-                                                        {log.amount?.toLocaleString() || '0'}
+                                                        {(log.orderTotal || log.amount || 0)?.toLocaleString() || '0'}
                                                     </span>
                                                     <span className="text-[10px] font-black text-gray-300 uppercase ml-1">uzs</span>
                                                 </td>
@@ -229,7 +253,7 @@ export default function PaymentLogsPage() {
                                 )}
                                 {filteredLogs?.length === 0 && !isLoading && (
                                     <tr>
-                                        <td colSpan={4} className="px-4 py-16 text-center">
+                                        <td colSpan={5} className="px-4 py-16 text-center">
                                             <div className="flex flex-col items-center gap-3 opacity-40">
                                                 <div className="w-14 h-14 rounded-full bg-gray-50 flex items-center justify-center text-gray-300 border-2 border-dashed border-gray-100">
                                                     <PieChart size={24} />
@@ -259,6 +283,7 @@ export default function PaymentLogsPage() {
                             </div>
 
                             <div className="space-y-4">
+                                {/* Order Info */}
                                 <div className="grid grid-cols-1 gap-3">
                                     <DetailItem
                                         icon={<Hash size={16} />}
@@ -267,6 +292,27 @@ export default function PaymentLogsPage() {
                                         canCopy={!!selectedLog.transactionId}
                                         onCopy={() => copyToClipboard(selectedLog.transactionId || '')}
                                     />
+                                    {selectedLog.orderNumber && (
+                                        <DetailItem
+                                            icon={<ShoppingCart size={16} />}
+                                            label="BUYURTMA RAQAMI"
+                                            value={`#${selectedLog.orderNumber}`}
+                                            canCopy
+                                            onCopy={() => copyToClipboard(selectedLog.orderNumber!)}
+                                        />
+                                    )}
+                                    {selectedLog.orderCustomer && (
+                                        <DetailItem
+                                            icon={<User size={16} />}
+                                            label="Mijoz"
+                                            value={selectedLog.orderCustomer}
+                                        />
+                                    )}
+                                    <DetailItem
+                                        icon={<DollarSign size={16} />}
+                                        label="SUMMA"
+                                        value={`${(selectedLog.orderTotal || selectedLog.amount || 0).toLocaleString()} so'm`}
+                                    />
                                     <DetailItem
                                         icon={<Activity size={16} />}
                                         label="IP MANZIL (CLIENT)"
@@ -274,32 +320,42 @@ export default function PaymentLogsPage() {
                                     />
                                 </div>
 
-                                <div className="space-y-2">
-                                    <div className="flex items-center justify-between ml-1">
-                                        <div className="flex items-center gap-2">
-                                            <Terminal size={14} className="text-emerald-500" />
-                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Server Payload</span>
-                                        </div>
-                                        {selectedLog.requestData && (
+                                {/* Request Payload */}
+                                {selectedLog.requestData && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between ml-1">
+                                            <div className="flex items-center gap-2">
+                                                <Terminal size={14} className="text-emerald-500" />
+                                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Server Payload</span>
+                                            </div>
                                             <button
                                                 onClick={() => copyToClipboard(selectedLog.requestData!)}
                                                 className="text-[9px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 bg-blue-50 px-2 py-1 rounded-lg"
                                             >
                                                 <Copy size={10} /> Nusxa olish
                                             </button>
-                                        )}
+                                        </div>
+                                        <pre className="bg-[#0f172a] p-4 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[250px] leading-relaxed">
+                                            {formatPayload(selectedLog.requestData)}
+                                        </pre>
                                     </div>
-                                    <pre className="bg-[#0f172a] p-4 rounded-xl text-[11px] font-mono text-emerald-400 overflow-x-auto max-h-[250px] leading-relaxed">
-                                        {formatPayload(selectedLog.requestData)}
-                                    </pre>
-                                </div>
+                                )}
 
+                                {/* Response Data */}
                                 {selectedLog.responseData && (
                                     <div className="space-y-2 bg-blue-50/30 p-4 rounded-xl border border-blue-100/50">
-                                        <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Tizim Metadata</span>
-                                        <div className="text-[11px] font-mono text-blue-700 break-all leading-relaxed">
-                                            {selectedLog.responseData}
+                                        <div className="flex items-center justify-between">
+                                            <span className="text-[10px] font-black text-blue-900 uppercase tracking-widest">Javob</span>
+                                            <button
+                                                onClick={() => copyToClipboard(selectedLog.responseData!)}
+                                                className="text-[9px] font-black text-blue-500 hover:text-blue-700 uppercase tracking-widest flex items-center gap-1 bg-blue-100/50 px-2 py-1 rounded-lg"
+                                            >
+                                                <Copy size={10} /> Nusxa olish
+                                            </button>
                                         </div>
+                                        <pre className="text-[11px] font-mono text-blue-700 break-all leading-relaxed">
+                                            {formatPayload(selectedLog.responseData)}
+                                        </pre>
                                     </div>
                                 )}
                             </div>
