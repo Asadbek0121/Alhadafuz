@@ -391,3 +391,10 @@ Avvalgi sessiyalardan:
 - **`src/app/(admin)/admin/payments/logs/page.tsx`** — "Buyurtma" ustuni qo'shildi, qidiruvda buyurtma raqami bo'yicha filter ishlaydi.
 - Xavfsizlik: barcha secrets (Payme key, Click secret_key, Telegram token) faqat server tomonida, klientga hech qachon yuborilmaydi.
 - Verification: tsc 0, lint 0, dev server ishlayapti (`localhost:3000`).
+
+### Admin Dashboard BigInt Fix (2026-10-08)
+- **Problem**: `GET /admin` returning 500 — `TypeError: Do not know how to serialize a BigInt`
+- **Root Cause**: PostgreSQL `count()` and `aggregate()._sum` return BigInt values; Next.js RSC JSON.stringify cannot serialize BigInt
+- **Fix**: Wrapped all numeric DB results with `Number()` in `src/app/(admin)/admin/page.tsx`
+- **Files changed**: `src/app/(admin)/admin/page.tsx` — 11 lines
+- **Commit**: `6ffe175`
