@@ -17,7 +17,8 @@
     "deploy": "bash scripts/wrap-deploy.sh",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
-    "preinstall": "bash scripts/preinstall-patch.sh"
+    "preinstall": "bash scripts/preinstall-patch.sh",
+    "cf:deploy": "bash scripts/wrap-deploy.sh"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
