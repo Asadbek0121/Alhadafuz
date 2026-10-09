@@ -319,9 +319,19 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-08 (Payment flow modal, Telegram notifications, admin logs enhancement)
+2026-10-09 (Payme test mode, payment logs fix, payment logos)
 
 ## Recent Changes (2026-10-06)
+
+### Payme Test Mode + Payment Logs Fix (2026-10-09)
+- **`src/lib/payme.ts` — `verifyAuthorization`**: 新增 `mode` 参数，test 模式用 `test_key` 作为密码验证（与 sandbox 签名一致）
+- **`src/app/api/payment/payme/route.ts`**: `PAYME_MODE` env 控制模式（`"test"` 默认 / `"production"` 线上）
+- **`src/app/api/orders/[id]/generate-payment-url/route.ts`**: PAYME URL 生成遵循 `PAYME_MODE` env
+- **`src/app/api/admin/payment-logs/route.ts`**: 修复 Payme JSON-RPC 格式 `params.account.order_id` 的订单号提取；新增 fallback 用 `transactionId` 列回退
+- **测试数据**: DB 创建 3 个 test order (`order_test_001/002/003`) + 3 个 test payment logs (`paylog_test_001/002/003`)
+- **Sandbox 测试通过**: CheckPerformTransaction (正常/不存在/金额错误), CreateTransaction (幂等), PerformTransaction (幂等), CancelTransaction (幂等), CheckTransaction (已取消)
+- **Payment Logos**: Checkout、Profile Orders、Admin Payments 三处添加 Click/Payme 原图 logo
+- **Admin Payments**: 移除 logo 容器 border，Naqd 改用 Banknote icon
 
 ### Payme Merchant API Complete Implementation (2026-10-08)
 - **`src/lib/payme.ts`** — Full rewrite with:

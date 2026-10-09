@@ -53,7 +53,9 @@ export async function POST(req: NextRequest) {
 
     // AUTH LAYER: Har bir requestda authorization tekshiriladi
     const authHeader = req.headers.get("authorization");
-    const config = await getPaymeConfig("test"); // Sandbox uchun test mode
+    // PAYME_MODE env: "test" (default dev/sandbox) yoki "production" (jonli to'lov)
+    const mode: "test" | "production" = process.env.PAYME_MODE === "production" ? "production" : "test";
+    const config = await getPaymeConfig(mode);
 
     if (!config) {
         return NextResponse.json(
@@ -64,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     try {
         // Authorization tekshiruvi — barcha metodlar uchun
-        await verifyAuthorization(authHeader, config);
+        await verifyAuthorization(authHeader, config, mode);
 
         let result: unknown;
 
