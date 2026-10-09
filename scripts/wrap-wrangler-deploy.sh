@@ -4,7 +4,8 @@ set -e
 echo "🔧 Patching brace-expansion for ESM compatibility..."
 bash scripts/patch-brace-expansion.sh
 
-echo "🚀 Deploying to Cloudflare Workers..."
-# Use opennextjs-cloudflare deploy to avoid wrangler's auto-migration
-# which triggers npm install and removes our patches
+echo "🚀 Building for Cloudflare..."
+npx opennextjs-cloudflare build
+
+echo "📦 Deploying to Cloudflare Workers..."
 npx opennextjs-cloudflare deploy
