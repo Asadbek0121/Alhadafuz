@@ -1,12 +1,15 @@
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"main": ".open-next/worker.js",
-	"name": "uzm",
+	"name": "alhadafuz",
 	"compatibility_date": "2026-10-08",
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"
 	],
+	"observability": {
+		"enabled": true
+	},
 	"assets": {
 		"directory": ".open-next/assets",
 		"binding": "ASSETS"
@@ -14,7 +17,7 @@
 	"services": [
 		{
 			"binding": "WORKER_SELF_REFERENCE",
-			"service": "uzm"
+			"service": "alhadafuz"
 		}
 	],
 	"images": {

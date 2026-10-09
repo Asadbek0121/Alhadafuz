@@ -12,6 +12,7 @@
     "bot": "node scripts/courier-bot-local.mjs",
     "bot:auth": "node scripts/auth-bot.mjs",
     "clean": "bash scripts/clean.sh",
+    "postinstall": "bash scripts/patch-opentelemetry.sh && bash scripts/patch-brace-expansion.sh",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
     "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
