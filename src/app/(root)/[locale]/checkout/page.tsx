@@ -985,9 +985,16 @@ export default function CheckoutPage() {
                                                 onClick={() => setPaymentMethod(method.provider)}
                                             >
                                                 {providerUpper === 'CLICK' ? (
-                                                    <div className={cn("w-20 h-20 shrink-0 rounded-xl flex items-center justify-center transition-colors bg-white border", isSelected ? "border-blue-200" : "border-slate-100")}>
-                                                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                                                        <img src="/icons/click-01.png" alt="Click" className="w-16 h-16 object-contain" />
+                                                    <div className={cn("w-20 h-12 shrink-0 flex items-center justify-center transition-colors overflow-hidden", isSelected ? "bg-blue-50" : "bg-white")}>
+                                                        <img src="/icons/click-01.png" alt="Click" width="96" height="48" className="w-full h-full object-contain" />
+                                                    </div>
+                                                ) : providerUpper === 'PAYME' ? (
+                                                    <div className={cn("w-20 h-12 shrink-0 flex items-center justify-center transition-colors overflow-hidden", isSelected ? "bg-teal-50" : "bg-white")}>
+                                                        <img src="/payme.svg" alt="Payme" width="96" height="48" className="w-full h-full object-contain" />
+                                                    </div>
+                                                ) : providerUpper === 'CASH' ? (
+                                                    <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors", isSelected ? `${iconBg} ${iconColor}` : "bg-slate-50 text-slate-400")}>
+                                                        <Icon size={24} className="transition-colors" />
                                                     </div>
                                                 ) : (
                                                     <div className={cn("w-12 h-12 shrink-0 rounded-xl flex items-center justify-center transition-colors", isSelected ? `${iconBg} ${iconColor}` : "bg-slate-50 text-slate-400")}>

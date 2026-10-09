@@ -84,7 +84,11 @@ export default function CourierDashboard() {
             } else {
                 setIsAuthorized(false);
             }
-        } catch (e) {
+        } catch (e: any) {
+            // Ignore AbortError from timeout — expected behavior
+            if (e?.name === 'AbortError' || e?.name === 'CanceledError') {
+                return;
+            }
             console.error("Courier dashboard fetch error", e);
             // Don't flip to false on transient network error if already authorized
             setIsAuthorized(prev => prev ?? false);
@@ -93,9 +97,12 @@ export default function CourierDashboard() {
 
     // Polling for orders and stats
     useEffect(() => {
+        const timer = setTimeout(() => fetchAll(), 0);
         const interval = setInterval(fetchAll, 5000);
-        fetchAll();
-        return () => clearInterval(interval);
+        return () => {
+            clearTimeout(timer);
+            clearInterval(interval);
+        };
     }, [fetchAll]);
 
     // Track geolocation

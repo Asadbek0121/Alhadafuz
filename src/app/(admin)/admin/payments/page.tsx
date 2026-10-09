@@ -229,9 +229,16 @@ export default function PaymentMethodsPage() {
                     <div key={method.id} className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
                         <div className="space-y-4">
                             <div className="flex items-start justify-between">
-                                <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-blue-500 border border-gray-100">
-                                    {method.provider === 'CASH' ? <Banknote size={20} /> :
-                                        method.provider === 'CARD' ? <Landmark size={20} /> : <CreditCard size={20} />}
+                                <div className="w-10 h-6 flex items-center justify-center overflow-hidden">
+                                    {method.provider === 'CLICK' ? (
+                                        <img src="/icons/click-01.png" alt="Click" className="w-full h-full object-contain" />
+                                    ) : method.provider === 'PAYME' ? (
+                                        <img src="/payme.svg" alt="Payme" className="w-full h-full object-contain" />
+                                    ) : method.provider === 'CASH' ? (
+                                        <img src="/cash-icon.jpg" alt="Cash" className="w-full h-full object-contain" />
+                                    ) : (
+                                        method.provider === 'CARD' ? <Landmark size={20} /> : <CreditCard size={20} />
+                                    )}
                                 </div>
                                 <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${method.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
                                     {method.isActive ? 'ONLINE' : 'OFFLINE'}

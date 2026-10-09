@@ -466,9 +466,19 @@ export default function OrderHistoryPage() {
                                                 onClick={() => setSelectedMethod(method.provider)}
                                                 className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all duration-200 text-left ${borderColor}`}
                                             >
-                                                <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
-                                                    <Icon size={20} className={iconColor} />
-                                                </div>
+                                                {providerUpper === 'CLICK' ? (
+                                                    <div className="w-24 h-12 shrink-0 flex items-center justify-center overflow-hidden">
+                                                        <img src="/icons/click-01.png" alt="Click" width="96" height="48" className="w-full h-full object-contain" />
+                                                    </div>
+                                                ) : providerUpper === 'PAYME' ? (
+                                                    <div className="w-24 h-12 shrink-0 flex items-center justify-center overflow-hidden">
+                                                        <img src="/payme.svg" alt="Payme" width="96" height="48" className="w-full h-full object-contain" />
+                                                    </div>
+                                                ) : (
+                                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${iconBg}`}>
+                                                        <Icon size={20} className={iconColor} />
+                                                    </div>
+                                                )}
                                                 <div className="flex-1 min-w-0">
                                                     <p className="font-bold text-sm text-gray-900">{method.name}</p>
                                                     <p className="text-[11px] text-gray-400 mt-0.5 truncate">
@@ -496,9 +506,11 @@ export default function OrderHistoryPage() {
                                     {tCheckout('secure_payment') || 'Xavfsiz to\'lov'}
                                 </p>
                                 <p className="text-[11px] text-blue-600/80 leading-relaxed">
-                                    {selectedMethod.toUpperCase() === 'CASH'
-                                        ? 'Buyurtma yetkazilganda naqd pul orqali to\'laysiz.'
-                                        : 'Online to\'lov tizimi orqali xavfsiz to\'lash mumkin.'
+                                    {selectedMethod === 'CLICK'
+                                        ? 'To\'lov Click orqali amalga oshiriladi.'
+                                        : selectedMethod === 'PAYME'
+                                            ? 'To\'lov Payme orqali amalga oshiriladi.'
+                                            : 'Buyurtma yetkazilganda naqd pul orqali to\'laysiz.'
                                     }
                                 </p>
                             </div>
