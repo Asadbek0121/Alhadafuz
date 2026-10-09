@@ -69,3 +69,11 @@ scripts/logs/
 # Supabase CLI temp files
 supabase/.temp/
 .env*
+
+# OpenNext
+.open-next
+
+# wrangler files
+.wrangler
+.dev.vars*
+!.dev.vars.example

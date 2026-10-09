@@ -159,3 +159,5 @@ export default withSentryConfig(withPWA(withNextIntl(nextConfig)), {
     },
   },
 });
+
+import('@opennextjs/cloudflare').then(m => m.initOpenNextCloudflareForDev());
