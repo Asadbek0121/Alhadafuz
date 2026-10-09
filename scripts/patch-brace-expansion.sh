@@ -20,7 +20,7 @@ find node_modules -name "package.json" -path "*/brace-expansion/package.json" 2>
     cat > "$dir/index.mjs" << 'ESM'
 // Auto-generated ESM wrapper for CJS brace-expansion
 import _mod from './index.js';
-export const { expand, balanced, concatMap } = _mod;
+export const { expand, balanced } = _mod;
 export default _mod;
 ESM
     
@@ -45,8 +45,8 @@ done
 if [ -f "node_modules/brace-expansion/dist/esm/index.js" ]; then
     # Check if default export already exists
     if ! grep -q "export default" "node_modules/brace-expansion/dist/esm/index.js"; then
-        # Add default export at the end
-        echo 'export default { expand, balanced, concatMap };' >> node_modules/brace-expansion/dist/esm/index.js
+        # Add default export at the end (only export 'expand' as default)
+        echo 'export default { expand };' >> node_modules/brace-expansion/dist/esm/index.js
         echo "  Patched: node_modules/brace-expansion (v5.x)"
         count=$((count + 1))
     fi
