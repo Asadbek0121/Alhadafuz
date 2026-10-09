@@ -100,10 +100,13 @@ export function parseAuthHeader(auth: string | null): { login?: string; password
     }
 }
 
-/** Authorization tekshirish — xato kodi -32504 */
+/** Authorization tekshirish — xato kodi -32504
+ * Test rejimida (sandbox) imzo test_key bilan qilingan bo'ladi, shuning uchun
+ * parol sifatida test_key ishlatiladi. */
 export async function verifyAuthorization(
     authHeader: string | null,
-    config: PaymeConfig
+    config: PaymeConfig,
+    mode: PaymeMode = "production"
 ): Promise<void> {
     const parsed = parseAuthHeader(authHeader);
 
@@ -118,7 +121,10 @@ export async function verifyAuthorization(
     }
 
     // Wrong password
-    const expectedPassword = config.password || config.key;
+    // Test rejimida sandbox test_key bilan imzolaydi
+    const expectedPassword = mode === "test"
+        ? (config.testKey ?? config.password ?? config.key)
+        : (config.password ?? config.key);
     if (parsed.password !== expectedPassword) {
         throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
     }

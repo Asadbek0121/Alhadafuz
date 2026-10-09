@@ -54,13 +54,11 @@ export async function POST(
         }
 
         if (paymentMethod === 'PAYME') {
-            const paymeConfig = await getPaymeConfig('production');
+            // PAYME_MODE env: "test" (default) yoki "production" (jonli to'lov)
+            const paymeMode: 'test' | 'production' = process.env.PAYME_MODE === 'production' ? 'production' : 'test';
+            const paymeConfig = await getPaymeConfig(paymeMode);
             if (paymeConfig) {
-                const mode = paymeConfig.testKey ? 'test' : 'production';
-                const redirectConfig = mode === 'test'
-                    ? { ...paymeConfig, key: paymeConfig.testKey ?? paymeConfig.key }
-                    : paymeConfig;
-                paymentUrl = buildPaymeRedirectUrl(redirectConfig, orderId, amount, { lang: 'uz' });
+                paymentUrl = buildPaymeRedirectUrl(paymeConfig, orderId, amount, { lang: 'uz' });
             }
         }
 

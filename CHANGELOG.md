@@ -493,3 +493,11 @@ Audit o'tkazildi — kod o'zgartirilmadi. Xulosa:
 - **`src/app/api/admin/payment-logs/route.ts`** — Audit jurnali boyitildi: orderNumber, orderTotal, orderCustomer, orderItemsCount ma'lumotlari qo'shildi.
 - **`src/app/(admin)/admin/payments/logs/page.tsx`** — Admin logs sahifasi yaxshilandi: "Buyurtma" ustuni qo'shildi, qidiruvda buyurtma raqami bo'yicha qidirish imkoniyati.
 - **Xavfsizlik**: Barcha secret kalitlar (Payme key, Click secret_key, Telegram token) faqat server tomonida ishlatiladi, klientga hech qachon yuborilmaydi.
+
+### Payme Test Mode & Payment Logs Fix (2026-10-09)
+- **`src/lib/payme.ts` — `verifyAuthorization`**: 新增 `mode` 参数，test 模式用 `test_key` 作为密码验证（与 sandbox 签名一致）
+- **`src/app/api/payment/payme/route.ts`**: `PAYME_MODE` env 控制模式（`"test"` 默认 / `"production"` 线上）；`getPaymeConfig(mode)` 传入 mode；`verifyAuthorization` 传入 mode
+- **`src/app/api/orders/[id]/generate-payment-url/route.ts`**: PAYME 生成 URL 时也遵循 `PAYME_MODE` env，不再硬编码 test/production
+- **`src/app/api/admin/payment-logs/route.ts`**: 修复 Payme JSON-RPC 格式 `params.account.order_id` 的订单号提取（之前只解析了顶层 `account` 字段）；新增 fallback：用 `transactionId` 列回退
+- **测试数据**: DB 中创建 3 个 test order (`order_test_001/002/003`) + 3 个 test payment logs (`paylog_test_001/002/003`)
+- **Sandbox 测试通过**: CheckPerformTransaction (正常/不存在/金额错误), CreateTransaction (幂等), PerformTransaction (幂等), CancelTransaction (幂等), CheckTransaction (已取消)
