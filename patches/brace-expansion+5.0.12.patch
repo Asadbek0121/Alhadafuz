@@ -1,0 +1,9 @@
+diff --git a/node_modules/brace-expansion/dist/esm/index.js b/node_modules/brace-expansion/dist/esm/index.js
+index 0e0cc96..b610d7c 100644
+--- a/node_modules/brace-expansion/dist/esm/index.js
++++ b/node_modules/brace-expansion/dist/esm/index.js
+@@ -327,3 +327,4 @@ function expand_(str, max, maxLength, maxDepth, depth, maxRewrites, isTop) {
+     return acc;
+ }
+ //# sourceMappingURL=index.js.map
++export default { expand };

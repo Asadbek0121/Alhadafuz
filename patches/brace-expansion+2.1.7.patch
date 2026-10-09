@@ -1,0 +1,18 @@
+diff --git a/node_modules/@opennextjs/aws/node_modules/brace-expansion/package.json b/node_modules/@opennextjs/aws/node_modules/brace-expansion/package.json
+index 1234567..abcdefg 100644
+--- a/node_modules/@opennextjs/aws/node_modules/brace-expansion/package.json
++++ b/node_modules/@opennextjs/aws/node_modules/brace-expansion/package.json
+@@ -35,6 +35,12 @@
+     "license": "MIT"
+   },
+   "main": "index.js",
++  "exports": {
++    ".": {
++      "import": "./index.mjs",
++      "require": "./index.js",
++      "default": "./index.js"
++    }
++  },
+   "module": "./index.mjs",
+   "files": [
+     "index.js",

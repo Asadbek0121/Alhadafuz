@@ -1,0 +1,6 @@
+--- a/node_modules/brace-expansion/dist/esm/index.js
++++ b/node_modules/brace-expansion/dist/esm/index.js
+@@ -50,3 +50,4 @@
+   return result;
+ }
++export default { expand };

@@ -1,0 +1,23 @@
+--- a/node_modules/@opennextjs/aws/node_modules/brace-expansion/package.json
++++ b/node_modules/@opennextjs/aws/node_modules/brace-expansion/package.json
+@@ -35,6 +35,12 @@
+     "license": "MIT"
+   },
+   "main": "index.js",
++  "exports": {
++    ".": {
++      "import": "./index.mjs",
++      "require": "./index.js",
++      "default": "./index.js"
++    }
++  },
+   "module": "./index.mjs",
+   "files": [
+     "index.js",
+--- /dev/null
++++ b/node_modules/@opennextjs/aws/node_modules/brace-expansion/index.mjs
+@@ -0,0 +1,4 @@
++// Auto-generated ESM wrapper for CJS brace-expansion v2.x
++import _mod from './index.js';
++export const { expand, balanced, concatMap } = _mod;
++export default _mod;
