@@ -28,13 +28,21 @@ export async function GET(req: NextRequest) {
             if (log.requestData) {
                 try {
                     const parsed = JSON.parse(log.requestData);
-                    // Payme: account field like "#1000001" or "1000001"
-                    if (parsed.account) {
+                    // Payme (JSON-RPC): params.account.order_id
+                    if (parsed.params?.account?.order_id) {
+                        orderNumber = String(parsed.params.account.order_id).replace(/^#/, '');
+                    }
+                    // Payme (legacy): top-level account field like "#1000001" or "1000001"
+                    else if (parsed.account) {
                         orderNumber = String(parsed.account).replace(/^#/, '');
                     }
                     // Click: merchant_trans_id
-                    if (parsed.merchant_trans_id) {
+                    else if (parsed.merchant_trans_id) {
                         orderNumber = String(parsed.merchant_trans_id).replace(/^#/, '');
+                    }
+                    // Fallback: transactionId column may store the order number directly
+                    if (!orderNumber && log.transactionId) {
+                        orderNumber = log.transactionId.replace(/^#/, '');
                     }
                 } catch {
                     // Ignore parse error

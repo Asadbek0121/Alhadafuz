@@ -229,15 +229,15 @@ export default function PaymentMethodsPage() {
                     <div key={method.id} className="bg-white rounded-2xl border border-gray-100 p-4 hover:shadow-md transition-shadow flex flex-col justify-between">
                         <div className="space-y-4">
                             <div className="flex items-start justify-between">
-                                <div className="w-10 h-6 flex items-center justify-center overflow-hidden">
+                                <div className="flex items-center gap-3">
                                     {method.provider === 'CLICK' ? (
-                                        <img src="/icons/click-01.png" alt="Click" className="w-full h-full object-contain" />
+                                        <img src="/icons/click-01.png" alt="Click" className="h-6 w-auto object-contain" />
                                     ) : method.provider === 'PAYME' ? (
-                                        <img src="/payme.svg" alt="Payme" className="w-full h-full object-contain" />
+                                        <img src="/payme.svg" alt="Payme" className="h-6 w-auto object-contain" />
                                     ) : method.provider === 'CASH' ? (
-                                        <img src="/cash-icon.jpg" alt="Cash" className="w-full h-full object-contain" />
+                                        <Banknote className="h-6 w-6 text-amber-500" />
                                     ) : (
-                                        method.provider === 'CARD' ? <Landmark size={20} /> : <CreditCard size={20} />
+                                        method.provider === 'CARD' ? <Landmark className="h-6 w-6 text-blue-500" /> : <CreditCard className="h-6 w-6 text-gray-500" />
                                     )}
                                 </div>
                                 <div className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${method.isActive ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-gray-50 text-gray-400 border-gray-100'}`}>
