@@ -101,7 +101,7 @@ function BottomNavIcon({ item, active }: { item: any; active: boolean }) {
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 className="relative flex items-center justify-center"
             >
-                <Icon size={24} style={item.iconColor ? { color: item.iconColor } : undefined} />
+                <Icon size={28} style={item.iconColor ? { color: item.iconColor } : undefined} />
                 {(item.badge || 0) > 0 && (
                     <span className={cn(
                         "absolute -top-1 -right-1 min-w-[15px] h-[15px] bg-red-600 text-white text-[8px] font-black flex items-center justify-center rounded-full border border-white",

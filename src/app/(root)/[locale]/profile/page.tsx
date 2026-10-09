@@ -145,15 +145,15 @@ export default function ProfileOverviewPage() {
                             <ChevronRight size={12} strokeWidth={3} />
                         </Link>
                     </div>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="flex gap-2">
                         {[
                             { count: statsData.ordersByStatus.pending, icon: Clock, color: "text-orange-500", bg: "bg-orange-50", label: tProfile('pending') },
                             { count: statsData.ordersByStatus.processing, icon: Package, color: "text-blue-500", bg: "bg-blue-50", label: tProfile('processing') },
                             { count: statsData.ordersByStatus.delivered, icon: CheckCircle2, color: "text-emerald-500", bg: "bg-emerald-50", label: tProfile('delivered') },
                             { count: statsData.ordersByStatus.cancelled, icon: LogOut, color: "text-rose-500", bg: "bg-rose-50", label: tProfile('cancelled') }
                         ].map((item, idx) => (
-                            <Link key={idx} href="/profile/orders" className="flex flex-col items-center justify-center gap-1.5 transition-all active:scale-90">
-                                <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center shadow-sm border border-white/50 relative`}>
+                            <Link key={idx} href="/profile/orders" className="flex-1 min-w-0 flex flex-col items-center justify-center gap-1 transition-all active:scale-90">
+                                <div className={`w-10 h-10 rounded-xl ${item.bg} ${item.color} flex items-center justify-center shadow-sm border border-white/50 relative shrink-0`}>
                                     <item.icon size={18} strokeWidth={2.2} />
                                     {item.count > 0 && (
                                         <span className={`absolute -top-1 -right-1 w-4.5 h-4.5 flex items-center justify-center rounded-full text-[9px] font-bold text-white shadow-sm border-2 border-white ${item.color.replace('text-', 'bg-')}`}>
@@ -161,7 +161,7 @@ export default function ProfileOverviewPage() {
                                         </span>
                                     )}
                                 </div>
-                                <span className="text-[9px] font-bold text-gray-500 text-center uppercase tracking-tight opacity-70">{item.label}</span>
+                                <span className="text-[8px] font-bold text-gray-500 text-center leading-tight uppercase tracking-tight opacity-70 break-words">{item.label}</span>
                             </Link>
                         ))}
                     </div>
