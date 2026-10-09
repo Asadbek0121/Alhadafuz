@@ -14,7 +14,7 @@
     "clean": "bash scripts/clean.sh",
     "postinstall": "bash scripts/patch-opentelemetry.sh && bash scripts/patch-brace-expansion.sh",
     "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "bash scripts/cloudflare-build.sh",
+    "deploy": "bash scripts/wrap-deploy.sh",
     "upload": "opennextjs-cloudflare build && opennextjs-cloudflare upload",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "preinstall": "bash scripts/preinstall-patch.sh"
