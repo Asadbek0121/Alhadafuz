@@ -11,12 +11,12 @@ count=0
 find node_modules -name "package.json" -path "*/brace-expansion/package.json" 2>/dev/null | while read -r pkg; do
     dir=$(dirname "$pkg")
     
-    # Skip if already has exports field
+    # Check if already patched
     if grep -q '"exports"' "$pkg" 2>/dev/null; then
         continue
     fi
     
-    # It's a CJS package. Create ESM wrapper.
+    # It's a CJS package (v2.x or below). Create ESM wrapper.
     cat > "$dir/index.mjs" << 'ESM'
 // Auto-generated ESM wrapper for CJS brace-expansion
 import _mod from './index.js';
@@ -40,5 +40,16 @@ fs.writeFileSync('$pkg', JSON.stringify(pkg, null, 2) + '\n');
     echo "  Patched: $dir"
     count=$((count + 1))
 done
+
+# Also patch root brace-expansion v5.x to add default export
+if [ -f "node_modules/brace-expansion/dist/esm/index.js" ]; then
+    # Check if default export already exists
+    if ! grep -q "export default" "node_modules/brace-expansion/dist/esm/index.js"; then
+        # Add default export at the end
+        echo 'export default { expand, balanced, concatMap };' >> node_modules/brace-expansion/dist/esm/index.js
+        echo "  Patched: node_modules/brace-expansion (v5.x)"
+        count=$((count + 1))
+    fi
+fi
 
 echo "✅ brace-expansion patching complete ($count packages)"
