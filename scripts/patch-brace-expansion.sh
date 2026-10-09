@@ -43,9 +43,12 @@ done
 
 # Also patch root brace-expansion v5.x to add default export
 if [ -f "node_modules/brace-expansion/dist/esm/index.js" ]; then
+    # Remove any existing bad patch first
+    sed -i '' '/^export default { expand };$/d' node_modules/brace-expansion/dist/esm/index.js 2>/dev/null || true
     # Check if default export already exists
-    if ! grep -q "export default" "node_modules/brace-expansion/dist/esm/index.js"; then
-        # Add default export at the end (only export 'expand' as default)
+    if ! grep -q "export default { expand }" "node_modules/brace-expansion/dist/esm/index.js"; then
+        # Add default export at the end with proper newline
+        echo "" >> node_modules/brace-expansion/dist/esm/index.js
         echo 'export default { expand };' >> node_modules/brace-expansion/dist/esm/index.js
         echo "  Patched: node_modules/brace-expansion (v5.x)"
         count=$((count + 1))
