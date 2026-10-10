@@ -60,8 +60,6 @@ export async function getAuthenticatedCourier(req: Request) {
             process.env.COURIER_BOT_TOKEN,
             process.env.TELEGRAM_BOT_TOKEN,
             process.env.ADMIN_BOT_TOKEN,
-            "8854922558:AAGcgShAEes4_jDaerWGCt4WQaQX_GI6Yyg",
-            "8162580458:AAGT9QOqmfpXyz--AZ3JlCNZiDJ0B-_7JOo"
         ].filter(Boolean) as string[];
 
         const isValid = tokens.some(token => verifyTelegramInitData(initData, token));
