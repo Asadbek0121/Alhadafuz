@@ -72,7 +72,7 @@ export async function POST(req: Request) {
             const { sendTelegramMessage } = await import('@/lib/telegram-bot');
             const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://www.alhadaf.uz';
 
-            await sendTelegramMessage(
+            const sendResult = await sendTelegramMessage(
                 targetUser.telegramId,
                 `📦 <b>Siz uchun yangi buyurtma yaratildi!</b>\n\n` +
                 `🆔 Buyurtma raqami: <b>#${order.id.slice(-8)}</b>\n` +
@@ -82,12 +82,16 @@ export async function POST(req: Request) {
                     reply_markup: {
                         inline_keyboard: [
                             [
-                                { text: "💳 To'lash va Ko'rish", web_app: { url: `${appUrl}/profile/orders` } } // Redirect to profile orders or specific order
+                                { text: "💳 To'lash va Ko'rish", web_app: { url: `${appUrl}/profile/orders` } }
                             ]
                         ]
                     }
-                }
+                },
+                process.env.TELEGRAM_BOT_TOKEN || undefined
             );
+            if (!sendResult.ok) {
+                console.error('[ORDER_CREATE] Telegram notify failed:', sendResult.error);
+            }
         }
 
         const { revalidatePath } = await import('next/cache');

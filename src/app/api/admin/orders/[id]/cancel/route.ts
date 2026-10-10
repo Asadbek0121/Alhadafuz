@@ -37,7 +37,10 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
                 try {
                     const { sendTelegramMessage } = await import('@/lib/telegram-bot');
                     const tgMessage = `❌ <b>Buyurtma bekor qilindi</b>\n\n🆔 Buyurtma: #${order.id.slice(-6).toUpperCase()}\n\n<i>Sizning buyurtmangiz bekor qilindi. Savollaringiz bo'lsa, qo'llab-quvvatlash xizmatiga murojaat qiling.</i>`;
-                    await sendTelegramMessage(order.user.telegramId, tgMessage);
+                    const tgResult = await sendTelegramMessage(order.user.telegramId, tgMessage, undefined, process.env.TELEGRAM_BOT_TOKEN || undefined);
+                    if (!tgResult.ok) {
+                        console.error("TG Cancel Notify Error:", tgResult.error);
+                    }
                 } catch (tgError) {
                     console.error("TG Cancel Notify Error:", tgError);
                 }

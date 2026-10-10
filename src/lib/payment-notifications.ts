@@ -53,11 +53,16 @@ export async function notifyPayment(data: PaymentNotificationData): Promise<void
             (itemSummary ? `<b>Turlari:</b> ${itemSummary}\n` : '') +
             `<b>IP:</b> ${ipMask}`;
 
-        // Send to admin Telegram
+        // Send to admin Telegram — ADMIN_BOT_TOKEN faqat, TELEGRAM_BOT_TOKEN ga fallback YO'Q
         if (ADMIN_CHAT_ID) {
-            const token = process.env.ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+            const token = process.env.ADMIN_BOT_TOKEN;
             if (token) {
-                sendTelegramMessage(ADMIN_CHAT_ID, adminMessage, {}, token).catch(() => {});
+                const result = await sendTelegramMessage(ADMIN_CHAT_ID, adminMessage, {}, token);
+                if (!result.ok) {
+                    console.error("[payment-notification] Admin Telegram notify failed:", result.error);
+                }
+            } else {
+                console.warn("[payment-notification] ADMIN_BOT_TOKEN is not configured");
             }
         }
 
@@ -79,16 +84,24 @@ export async function notifyPayment(data: PaymentNotificationData): Promise<void
             });
         }
 
-        // User notification (if they have Telegram)
-        if (user?.telegramId && status === 'SUCCESS') {
-            const userMessage = `✅ <b>Buyurtmangiz qabul qilindi!</b>\n\n` +
-                `<b>Buyurtma raqami:</b> #${orderNumber}\n` +
-                `<b>Summa:</b> ${amountText} so'm\n` +
-                `<b>To'lov turi:</b> ${paymentMethod}\n` +
-                `<b>Mahsulotlar:</b> ${itemCount} ta\n\n` +
-                `Tez orada yetkazib beramiz! 🚚`;
+        // User notification (if they have Telegram) — TELEGRAM_BOT_TOKEN ishlatiladi
+        if (user?.telegramId) {
+            const token = process.env.TELEGRAM_BOT_TOKEN;
+            if (token) {
+                const userMessage = `✅ <b>Buyurtmangiz qabul qilindi!</b>\n\n` +
+                    `<b>Buyurtma raqami:</b> #${orderNumber}\n` +
+                    `<b>Summa:</b> ${amountText} so'm\n` +
+                    `<b>To'lov turi:</b> ${paymentMethod}\n` +
+                    `<b>Mahsulotlar:</b> ${itemCount} ta\n\n` +
+                    `Tez orada yetkazib beramiz! 🚚`;
 
-            sendTelegramMessage(user.telegramId, userMessage).catch(() => {});
+                const result = await sendTelegramMessage(String(user.telegramId), userMessage, {}, token);
+                if (!result.ok) {
+                    console.error("[payment-notification] User Telegram notify failed:", result.error);
+                }
+            } else {
+                console.warn("[payment-notification] TELEGRAM_BOT_TOKEN is not configured");
+            }
         }
 
     } catch (error) {

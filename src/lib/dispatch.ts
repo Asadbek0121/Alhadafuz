@@ -64,7 +64,7 @@ export async function autoDispatchOrder(orderId: string) {
         const telegramId = courierResults[0]?.telegramId;
 
         if (telegramId) {
-            await sendTelegramMessage(telegramId,
+            const sendResult = await sendTelegramMessage(telegramId,
                 `🚀 <b>YANGI BUYURTMA BIRIKTIRILDI!</b>\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `🆔 <b>ID:</b> #${orderId.slice(-6).toUpperCase()}\n` +
@@ -77,8 +77,12 @@ export async function autoDispatchOrder(orderId: string) {
                             [{ text: "📦 Buyurtmani ko'rish", callback_data: `view_order:${orderId}` }]
                         ]
                     }
-                }
+                },
+                process.env.COURIER_BOT_TOKEN || undefined
             );
+            if (!sendResult.ok) {
+                console.error("Failed to notify courier:", sendResult.error);
+            }
         }
     } catch (e) {
         console.error("Failed to notify courier:", e);

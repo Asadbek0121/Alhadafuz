@@ -97,7 +97,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
                 try {
                     const { sendTelegramMessage } = await import('@/lib/telegram-bot');
                     const tgMessage = `📦 <b>Buyurtma holati yangilandi!</b>\n\n🆔 Buyurtma: #${order.id.slice(-6).toUpperCase()}\n🔄 Holat: <b>${statusLabel[status] || status}</b>\n\n<i>${message}</i>`;
-                    await sendTelegramMessage(order.user.telegramId, tgMessage);
+                    const tgResult = await sendTelegramMessage(order.user.telegramId, tgMessage, undefined, process.env.TELEGRAM_BOT_TOKEN || undefined);
+                    if (!tgResult.ok) {
+                        console.error("User TG Notify Error:", tgResult.error);
+                    }
                 } catch (tgError) {
                     console.error("User TG Notify Error:", tgError);
                 }

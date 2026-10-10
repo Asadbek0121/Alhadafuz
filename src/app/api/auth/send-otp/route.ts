@@ -48,7 +48,8 @@ export async function POST(req: Request) {
             select: { id: true, telegramId: true, name: true }
         });
 
-        // Yangi foydalanuvchi uchun (registratsiya) Telegram chat ID shart emas
+        // Yangi foydalanuvchi uchun (registratsiya) — Telegram ID yo'q bo'lsa,
+        // admin panelda qo'lda OTP taqsimlash kerak. Xato qaytaramiz.
         if (user && !user.telegramId) {
             return NextResponse.json(
                 { message: "Avval Telegram akkauntingiz bilan tizimga kiring yoki ro'yxatdan o'ting", code: "NO_TELEGRAM" },
@@ -56,9 +57,36 @@ export async function POST(req: Request) {
             );
         }
 
+        // Token config — TELEGRAM_BOT_TOKEN (support/auth bot)
+        const token = process.env.TELEGRAM_BOT_TOKEN;
+        if (!token) {
+            console.error("[OTP] TELEGRAM_BOT_TOKEN is not configured");
+            return NextResponse.json(
+                { message: "Server xatosi: Telegram bot sozlanmagan", code: "SERVER_CONFIG_ERROR" },
+                { status: 500 }
+            );
+        }
+
         // 6 xonali OTP generatsiya qilamiz
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expires = new Date(Date.now() + 10 * 60 * 1000); // 10 daqiqa
+
+        // OTP xabarini tayyorlash — chatId maxfiy emas (faqat oxirgi 6 raqam logda)
+        const chatId = String(user?.telegramId || '');
+        const message =
+            `<b>🔒 HADAF Market OTP kodi</b>\n\n` +
+            `Kirish uchun kod: <code>${otp}</code>\n\n` +
+            `<i>Ushbu kod 10 daqiqalik muddatga amal qiladi.</i>`;
+
+        // Telegram orqali yuborish — natijani tekshiramiz
+        const sendResult = await sendTelegramMessage(chatId, message, {}, token);
+        if (!sendResult.ok) {
+            console.error(`[OTP] Telegram send failed for ${chatId.slice(-6)}:`, sendResult.error);
+            return NextResponse.json(
+                { message: "OTP yuborishda xatolik yuz berdi", code: "OTP_SEND_FAILED" },
+                { status: 502 }
+            );
+        }
 
         // Eski tokenlar ni tozalaymiz
         await prisma.verificationToken.deleteMany({
@@ -73,19 +101,8 @@ export async function POST(req: Request) {
             }
         });
 
-        // Telegram orqali yuborish
-        if (user?.telegramId) {
-            const message =
-                `<b>🔒 HADAF Market OTP kodi</b>\n\n` +
-                `Kirish uchun kod: <code>${otp}</code>\n\n` +
-                `<i>Ushbu kod 10 daqiqalik muddatga amal qiladi.</i>`;
-            await sendTelegramMessage(user.telegramId, message).catch((e: unknown) => {
-                console.error("[OTP] Telegram send failed:", e);
-            });
-        }
-
-        // Dev uchun log
-        console.log(`[SMS OTP GENERATED] Phone: ${normalizedPhone}, OTP: ${otp}`);
+        // Log — OTP kodini KO'RSATMAYmiz (faqat telefon)
+        console.log(`[OTP] Kod yuborildi: ${normalizedPhone} → ${chatId.slice(-6)}`);
 
         return NextResponse.json(
             { message: "Tasdiqlash kodi Telegram orqali yuborildi", success: true },

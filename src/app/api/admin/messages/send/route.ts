@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
         // 2. If user is from Telegram, send notification to Telegram
         if (message.receiver?.telegramId) {
             const { sendTelegramMessage } = await import('@/lib/telegram-bot');
-            await sendTelegramMessage(message.receiver.telegramId, `<b>Admin:</b>\n\n${content}`);
+            await sendTelegramMessage(message.receiver.telegramId, `<b>Admin:</b>\n\n${content}`, undefined, process.env.TELEGRAM_BOT_TOKEN || undefined);
         }
 
         return NextResponse.json(message);

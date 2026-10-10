@@ -26,14 +26,17 @@ export async function notifyAdmins(title: string, message: string, type: 'ORDER'
 
         // 2. Telegram bildirishnoma — FAQAT yagona admin chat ID'ga, ADMIN_BOT_TOKEN (admin bot) orqali.
         //    Boshqa hech qanday chat'ga yuborilmaydi (maxfiylik).
-        try {
-            const tgMessage = `🔔 <b>${title}</b>\n\n${message}\n\n<i>#${type}</i>`;
-            if (ADMIN_CHAT_ID) {
-                const token = process.env.ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
-                await sendTelegramMessage(ADMIN_CHAT_ID, tgMessage, {}, token);
+        if (ADMIN_CHAT_ID) {
+            const token = process.env.ADMIN_BOT_TOKEN;
+            if (token) {
+                const tgMessage = `🔔 <b>${title}</b>\n\n${message}\n\n<i>#${type}</i>`;
+                const result = await sendTelegramMessage(ADMIN_CHAT_ID, tgMessage, {}, token);
+                if (!result.ok) {
+                    console.error("[notifyAdmins] Telegram notify failed:", result.error);
+                }
+            } else {
+                console.warn("[notifyAdmins] ADMIN_BOT_TOKEN is not configured");
             }
-        } catch (tgError) {
-            console.error("Telegram notify failed:", tgError);
         }
 
     } catch (error) {
