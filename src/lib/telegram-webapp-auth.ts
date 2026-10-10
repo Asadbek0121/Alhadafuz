@@ -8,16 +8,16 @@ import crypto from "crypto";
  */
 
 /** Hash format validatsiyasi — 64 ta hexadecimal belgi */
-const HASH_REGEX = /^[0-9a-f]{64}$/i;
+export const HASH_REGEX = /^[0-9a-f]{64}$/i;
 
 /**
  * initData dan auth_date ni olish
  * Telegram WebApp'da auth_date Unix timestamp (second) da saqlanadi.
  * Bizning siyosat: initData 1 soat ichida ishlatilishi kerak.
  */
-const INIT_DATA_MAX_AGE_SECONDS = 3600; // 1 soat
+export const INIT_DATA_MAX_AGE_SECONDS = 3600; // 1 soat
 
-function verifyTelegramInitData(initData: string, botToken: string): boolean {
+export function verifyTelegramInitData(initData: string, botToken: string): boolean {
     if (!initData || !botToken) return false;
 
     try {
@@ -60,7 +60,7 @@ function verifyTelegramInitData(initData: string, botToken: string): boolean {
 /**
  * initData dan foydalanuvchi va auth_date ni xavfsiz ajratib oladi
  */
-function parseInitDataPayload(initData: string): {
+export function parseInitDataPayload(initData: string): {
     user: { id: string };
     authDate: number;
     valid: boolean;
@@ -95,7 +95,7 @@ function parseInitDataPayload(initData: string): {
  * - 1 soatdan eski initData rad etiladi
  * - Bu replay hujumlarga qarshi himoya
  */
-function isInitDataFresh(authDate: number): boolean {
+export function isInitDataFresh(authDate: number): boolean {
     const now = Math.floor(Date.now() / 1000);
     const ageSeconds = now - authDate;
     return ageSeconds >= 0 && ageSeconds <= INIT_DATA_MAX_AGE_SECONDS;
