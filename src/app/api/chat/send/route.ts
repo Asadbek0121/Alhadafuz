@@ -78,7 +78,7 @@ export async function POST(req: Request) {
                 telegram.attempted = true;
                 try {
                     const { sendTelegramMessage } = await import('@/lib/telegram-bot');
-                    const result: any = await sendTelegramMessage(receiver.telegramId, `👨‍💻 Admin: ${content}`);
+                    const result: any = await sendTelegramMessage(receiver.telegramId, `👨‍💻 Admin: ${content}`, undefined, process.env.TELEGRAM_BOT_TOKEN || undefined);
                     if (result?.ok) {
                         telegram.delivered = true;
                     } else {

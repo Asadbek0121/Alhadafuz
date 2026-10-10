@@ -24,10 +24,13 @@ export async function POST(req: Request) {
 <i>HADAF Marketplace — Vendor Program</i>
         `;
 
-        // 3. Send to Telegram Admins
-        if (adminTelegramIds.length > 0) {
+        // 3. Send to Telegram Admins — ADMIN_BOT_TOKEN only
+        if (adminTelegramIds.length > 0 && process.env.ADMIN_BOT_TOKEN) {
             for (const chatId of adminTelegramIds) {
-                await sendTelegramMessage(chatId, telegramText);
+                const result = await sendTelegramMessage(chatId, telegramText, undefined, process.env.ADMIN_BOT_TOKEN);
+                if (!result.ok) {
+                    console.error(`[VENDOR] Failed to notify admin ${chatId}:`, result.error);
+                }
             }
         }
 

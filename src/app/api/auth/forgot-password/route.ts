@@ -77,7 +77,8 @@ export async function POST(req: Request) {
                 await sendTelegramMessage(
                     user.telegramId,
                     `🔐 <b>Hadaf Market — parolni tiklash</b>\n\nTasdiqlash kodingiz: <b>${otp}</b>\n\n<code>Kod 10 daqiqa davomida amal qiladi.</code>`,
-                    { parse_mode: 'HTML' }
+                    { parse_mode: 'HTML' },
+                    process.env.TELEGRAM_BOT_TOKEN || undefined
                 );
                 sentViaTelegram = true;
             } catch (tgError) {

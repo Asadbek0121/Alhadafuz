@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { sendTelegramMessage, ADMIN_CHAT_ID } from '@/lib/telegram-bot';
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -14,7 +15,7 @@ export async function POST(req: Request) {
         });
 
         let ip = req.headers.get("x-forwarded-for") || "Noma'lum";
-        if (ip === "::1" || ip === "127.0.0.1") ip = "127.0.0.1 (Localhost)";
+        if (ip === "::1" || ip === "127.0.0.1") ip = "127.0.0.1 (Lokal tarmoq)";
 
         // 2. Location Info
         const city = req.headers.get("x-vercel-ip-city");
@@ -31,28 +32,31 @@ export async function POST(req: Request) {
         else if (ua.includes("Linux")) device = "🐧 Linux";
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        
-        if (user?.telegramId) {
-            const token = process.env.ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
-            if (token) {
-                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: user.telegramId,
-                        text: `🚨 <b>Yangi kirishga urinish!</b>\n\nKimdir Admin panelga bostirib kirmoqchi yoki bu o'zingizmi?\n\n📍 <b>Manzil:</b> ${location}\n🌐 <b>IP Manzil:</b> <code>${ip}</code>\n📱 <b>Qurilma:</b> ${device}\n\nAgar bu siz bo'lsangiz tasdiqlang:`,
-                        parse_mode: 'HTML',
-                        reply_markup: {
-                            inline_keyboard: [
-                                [{ text: "✅ Ha, bu men", callback_data: `admin_2fa:approve:${userId}` }],
-                                [{ text: "🚫 BLOKLASH (Xaker)", callback_data: `admin_2fa:block:${userId}` }]
-                            ]
-                        }
-                    })
-                }).catch(e => console.error("Tg api xatosi:", e));
+
+        // ADMIN_BOT_TOKEN majburiy — TELEGRAM_BOT_TOKEN ga fallback YO'Q
+        const token = process.env.ADMIN_BOT_TOKEN;
+        if (!token) {
+            console.error("[2FA] ADMIN_BOT_TOKEN is not configured");
+            // Admin bot token bo'lmasa, ichki notification yaratishda davom etamiz
+        }
+
+        // Faqat ADMIN_CHAT_ID ga yuboramiz
+        if (user?.telegramId && ADMIN_CHAT_ID && token) {
+            const message = `🚨 <b>Yangi kirishga urinish!</b>\n\nKimdir Admin panelga bostirib kirmoqchi yoki bu o'zingizmi?\n\n📍 <b>Manzil:</b> ${location}\n🌐 <b>IP Manzil:</b> <code>${ip}</code>\n📱 <b>Qurilma:</b> ${device}\n\nAgar bu siz bo'lsangiz tasdiqlang:`;
+            const result = await sendTelegramMessage(ADMIN_CHAT_ID, message, {
+                reply_markup: {
+                    inline_keyboard: [
+                        [{ text: "✅ Ha, bu men", callback_data: `admin_2fa:approve:${userId}` }],
+                        [{ text: "🚫 BLOKLASH (Xaker)", callback_data: `admin_2fa:block:${userId}` }]
+                    ]
+                }
+            }, token);
+
+            if (!result.ok) {
+                console.error("[2FA] Telegram 2FA message send failed:", result.error);
             }
         }
-        
+
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("2fa request error:", e);
