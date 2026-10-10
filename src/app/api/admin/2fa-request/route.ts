@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         });
 
         let ip = req.headers.get("x-forwarded-for") || "Noma'lum";
-        if (ip === "::1" || ip === "127.0.0.1") ip = "127.0.0.1 (Localhost)";
+        if (ip === "::1" || ip === "127.0.0.1") ip = "127.0.0.1 (Lokal tarmoq)";
 
         // 2. Location Info
         const city = req.headers.get("x-vercel-ip-city");

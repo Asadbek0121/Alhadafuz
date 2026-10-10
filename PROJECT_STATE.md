@@ -230,7 +230,18 @@ Avvalgi sessiyalardan:
 
 ## In Progress
 
-- Hech qanday bloklangan ish yo'q. Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi, Payme integratsiya tuzatishlari (URL format + CheckPerformTransaction error codes), Payment flow modal + Telegram notifications.
+- Hech qanday bloklangan ish yo'q.
+
+## Completed Recently (2026-10-10)
+
+- **Telegram Token Routing & OTP Security Fix** (`fix/telegram-token-routing-otp-delivery`):
+  - `src/lib/telegram-bot.ts`: `sendTelegramMessage()` signature o'zgartirildi — token majburiy parametr (fallback yo'q), xato holatida `{ok, error}` qaytaradi, logda full chatId ko'rsatilmaydi (faqat oxirgi 6 raqam)
+  - `isAdminChat()`: hardcoded `7429925995` olib tashlandi, faqat `ADMIN_CHAT_ID` env orqali
+  - `src/app/api/auth/send-otp/route.ts`: TELEGRAM_BOT_TOKEN majburiy, Telegram API response tekshiriladi, OTP console log'dan olib tashlandi (faqat phone+masked chatId)
+  - `src/app/api/admin/2fa-request/route.ts`: ADMIN_BOT_TOKEN only, ADMIN_CHAT_ID ga yuboriladi, TELEGRAM_BOT_TOKEN ga fallback YO'Q
+  - `src/lib/notifications.ts` / `src/lib/payment-notifications.ts`: ADMIN_BOT_TOKEN faqat admin notification, TELEGRAM_BOT_TOKEN faqat user notification
+  - 15 ta route/lib fayl updating: barchasi token param majburiy qilib, fallback chain olib tashlandi
+  - typecheck ✅, build ✅ Yaqinda tugallangan: Neon → Supabase migratsiya, Phase A–I (master spec), Phase 1 stability, ProductCard, announcement bar, SEO/og-image, OTP/Login UX, variantli buyurtma E2E testi, Payme integratsiya tuzatishlari (URL format + CheckPerformTransaction error codes), Payment flow modal + Telegram notifications.
 
 ## Next Tasks
 
