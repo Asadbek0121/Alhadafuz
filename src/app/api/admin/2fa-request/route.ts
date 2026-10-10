@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+import { sendTelegramMessage, ADMIN_CHAT_ID } from '@/lib/telegram-bot';
 
 export async function POST(req: Request) {
     const session = await auth();
@@ -31,16 +32,15 @@ export async function POST(req: Request) {
         else if (ua.includes("Linux")) device = "🐧 Linux";
 
         const user = await prisma.user.findUnique({ where: { id: userId } });
-        
-        if (user?.telegramId) {
-            const token = process.env.ADMIN_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+
+        // 2FA消息发送至ADMIN_CHAT_ID（管理员专用群聊），与admin-webhook校验保持一致
+        if (ADMIN_CHAT_ID) {
+            const token = process.env.ADMIN_BOT_TOKEN;
             if (token) {
-                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: user.telegramId,
-                        text: `🚨 <b>Yangi kirishga urinish!</b>\n\nKimdir Admin panelga bostirib kirmoqchi yoki bu o'zingizmi?\n\n📍 <b>Manzil:</b> ${location}\n🌐 <b>IP Manzil:</b> <code>${ip}</code>\n📱 <b>Qurilma:</b> ${device}\n\nAgar bu siz bo'lsangiz tasdiqlang:`,
+                const result = await sendTelegramMessage(
+                    ADMIN_CHAT_ID,
+                    `🚨 <b>Yangi kirishga urinish!</b>\n\nAdmin: ${user?.name || userId.slice(0, 8)}\n📍 <b>Manzil:</b> ${location}\n🌐 <b>IP Manzil:</b> <code>${ip}</code>\n📱 <b>Qurilma:</b> ${device}\n\nAgar bu siz bo'lsangiz tasdiqlang:`,
+                    {
                         parse_mode: 'HTML',
                         reply_markup: {
                             inline_keyboard: [
@@ -48,11 +48,19 @@ export async function POST(req: Request) {
                                 [{ text: "🚫 BLOKLASH (Xaker)", callback_data: `admin_2fa:block:${userId}` }]
                             ]
                         }
-                    })
-                }).catch(e => console.error("Tg api xatosi:", e));
+                    },
+                    token
+                );
+                if (!result.ok) {
+                    console.error("[2FA] Telegram message send failed:", result.error);
+                }
+            } else {
+                console.error("[2FA] ADMIN_BOT_TOKEN is not configured");
             }
+        } else {
+            console.error("[2FA] ADMIN_CHAT_ID is not configured");
         }
-        
+
         return NextResponse.json({ success: true });
     } catch (e) {
         console.error("2fa request error:", e);
