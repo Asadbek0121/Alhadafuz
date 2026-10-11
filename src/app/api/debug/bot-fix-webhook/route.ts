@@ -1,7 +1,11 @@
-
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
+
+const BOTS = [
+    { name: 'Support/Auth', tokenKey: 'TELEGRAM_BOT_TOKEN',   webhookUrl: 'https://www.alhadaf.uz/api/telegram/webhook' },
+    { name: 'Admin',         tokenKey: 'ADMIN_BOT_TOKEN',      webhookUrl: 'https://www.alhadaf.uz/api/telegram/admin-webhook' },
+    { name: 'Courier',       tokenKey: 'COURIER_BOT_TOKEN',    webhookUrl: 'https://www.alhadaf.uz/api/telegram/courier' },
+];
 
 export async function POST() {
     const session = await auth();
@@ -9,41 +13,77 @@ export async function POST() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let token = process.env.COURIER_BOT_TOKEN || process.env.TELEGRAM_BOT_TOKEN;
+    const results = [];
 
-    if (!token) {
+    for (const bot of BOTS) {
+        const token = process.env[bot.tokenKey];
+        if (!token) {
+            results.push({ bot: bot.name, ok: false, message: 'Token not configured in environment' });
+            continue;
+        }
+
         try {
-            const settings: any = await prisma.$queryRawUnsafe('SELECT "telegramBotToken" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default');
-            token = settings[0]?.telegramBotToken;
-        } catch (e) {
-            return NextResponse.json({ ok: false, message: "DB'dan token olishda xatolik" });
+            const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    url: bot.webhookUrl,
+                    allowed_updates: ['message', 'callback_query'],
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                results.push({ bot: bot.name, ok: true, message: data.description || 'Webhook set successfully' });
+            } else {
+                results.push({ bot: bot.name, ok: false, message: `❌ ${data.description}` });
+            }
+        } catch (error: any) {
+            results.push({ bot: bot.name, ok: false, message: `Network error: ${error.message}` });
         }
     }
 
-    if (!token) {
-        return NextResponse.json({ ok: false, message: "Token topilmadi! .env yoki Admin Settingsni tekshiring" });
+    return NextResponse.json({ ok: true, results });
+}
+
+export async function GET() {
+    const session = await auth();
+    if (session?.user?.role !== 'ADMIN') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const WEBHOOK_URL = 'https://alhadafuz.vercel.app/api/telegram/courier';
+    const results = [];
 
-    try {
-        const response = await fetch(`https://api.telegram.org/bot${token}/setWebhook`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                url: WEBHOOK_URL,
-                allowed_updates: ["message", "callback_query", "photo"]
-            })
-        });
-
-        const data = await response.json();
-
-        if (data.ok) {
-            return NextResponse.json({ ok: true, message: `✅ Webhook muvaffaqiyatli saqlandi: ${data.description}` });
-        } else {
-            return NextResponse.json({ ok: false, message: `❌ Telegram API xatosi: ${data.description}` });
+    for (const bot of BOTS) {
+        const token = process.env[bot.tokenKey];
+        if (!token) {
+            results.push({ bot: bot.name, ok: false, message: 'Token not configured' });
+            continue;
         }
-    } catch (error: any) {
-        return NextResponse.json({ ok: false, message: `❌ Tarmoq xatosi: ${error.message}` });
+
+        try {
+            const [meRes, webhookRes] = await Promise.all([
+                fetch(`https://api.telegram.org/bot${token}/getMe`),
+                fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`),
+            ]);
+
+            const me = await meRes.json();
+            const webhook = await webhookRes.json();
+
+            results.push({
+                bot: bot.name,
+                ok: me.ok,
+                username: me.ok ? me.result?.username : null,
+                expectedWebhook: bot.webhookUrl,
+                actualWebhook: webhook.ok ? webhook.result?.url : null,
+                match: webhook.ok && webhook.result?.url === bot.webhookUrl,
+                error: me.ok ? null : webhook.error_code + ' ' + webhook.description,
+            });
+        } catch (error: any) {
+            results.push({ bot: bot.name, ok: false, message: `Error: ${error.message}` });
+        }
     }
+
+    return NextResponse.json({ results });
 }
