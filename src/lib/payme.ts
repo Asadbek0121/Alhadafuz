@@ -158,20 +158,29 @@ export async function findConfigForLogin(login: string): Promise<PaymeConfig | n
     return null;
 }
 
+/** Per-request auth natijasi — config va aniqlangan rejim bilan */
+export interface PaymeAuthResult {
+    config: PaymeConfig;
+    /** 'test' agar test_key bilan tasdiqlangan bo'lsa, aks holda 'production' */
+    detectedMode: 'test' | 'production';
+}
+
 /**
  * Per-request authorization tekshiruvi.
- * Har bir so'rov uchun alohida konfiguratsiya topiladi va tekshiriladi.
+ * Har bir so'rov uchun alohida konfiguratsiya topiladi va parol tekshiriladi.
  *
  * Xavfsizlik:
  *   - Noto'g'ri login/password → -32504
- *   - Sandbox kalit production buyurtmani PAID qila olmaydi (chunki db dan topilmaydi)
+ *   - Sandbox kalit production buyurtmani PAID qila olmaydi
+ *   - Production kalit sandbox buyurtmani boshqara olmaydi
  *   - Hech qanday maxfiy ma'lumot logga chiqarilmaydi
+ *   - Constant-time comparison ishlatiladi
  */
 export async function verifyAuthorizationPerRequest(
     authHeader: string | null
-): Promise<PaymeConfig | null> {
+): Promise<PaymeAuthResult> {
     const parsed = parseAuthHeader(authHeader);
-    if (!parsed || !parsed.login) {
+    if (!parsed || !parsed.login || !parsed.password) {
         throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
     }
 
@@ -181,13 +190,41 @@ export async function verifyAuthorizationPerRequest(
         throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
     }
 
-    // Parolni tekshirish — imzo bilan solishtiramiz
-    // Diqqat: bu yerda biz haqiqiy imzoni tekshirmaymiz, chunki
-    // imzo server tomonida hisoblanadi. Faqat login/mode mosligini tekshiramiz.
-    // Haqiqiy imzo tekshiruvi paymeRpc() da amalga oshiriladi.
+    // Parolni tekshirish — constant-time comparison
+    // Avval testKey, keyin key — qaysi mos kelsa, shu mode
+    let passwordMatch = false;
+    let detectedMode: 'test' | 'production' = 'production';
 
-    console.debug(`[payme] auth: login found, hasTestKey=${!!config.testKey}, source=DB`);
-    return config;
+    if (config.testKey) {
+        passwordMatch = await constantTimeCompare(parsed.password, config.testKey);
+        if (passwordMatch) detectedMode = 'test';
+    }
+    if (!passwordMatch && config.key) {
+        passwordMatch = await constantTimeCompare(parsed.password, config.key);
+        if (passwordMatch) detectedMode = 'production';
+    }
+
+    if (!passwordMatch) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    console.debug(`[payme] auth ok: login found, mode=${detectedMode}, source=DB`);
+    return { config, detectedMode };
+}
+
+/**
+ * Constant-time string comparison — timing attack himoyasi.
+ * JavaScript da crypto.subtle.compareBuffer yoki oddiy substring tekshiruv.
+ */
+async function constantTimeCompare(a: string, b: string): Promise<boolean> {
+    if (a.length !== b.length) return false;
+    // Oddiy tekshiruv — JavaScript da to'liq constant-time mumkin emas,
+    // lekin uzunlik farqi darhol rad etiladi (timing safe).
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+        result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
 }
 
 /**

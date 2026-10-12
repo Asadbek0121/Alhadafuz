@@ -56,13 +56,13 @@ export async function POST(req: NextRequest) {
     // Har bir so'rov Authorization header dan login ni o'qib, DB dan mos config topadi.
     // Bu yondashuv sandbox va production credentiallarni bir vaqtning o'zida qo'llab-quvvatlaydi.
     const authHeader = req.headers.get("authorization");
-    let config: Awaited<ReturnType<typeof getPaymeConfig>> | null = null;
+    let authResult: Awaited<ReturnType<typeof verifyAuthorizationPerRequest>> | null = null;
 
     try {
-        // Avval per-request tekshiruv
-        config = await verifyAuthorizationPerRequest(authHeader);
+        // Per-request auth — login + password tekshiruvi
+        authResult = await verifyAuthorizationPerRequest(authHeader);
 
-        if (!config) {
+        if (!authResult) {
             return NextResponse.json(
                 { jsonrpc: "2.0", error: { code: -32504, message: "Insufficient privileges for method execution", data: [] }, id: rpcId },
                 { status: 200 }
@@ -81,6 +81,8 @@ export async function POST(req: NextRequest) {
             { status: 200 }
         );
     }
+
+    const { config, detectedMode } = authResult;
 
     try {
         let result: unknown;

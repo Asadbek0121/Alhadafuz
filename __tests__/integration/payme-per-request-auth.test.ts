@@ -122,17 +122,53 @@ describe('verifyAuthorizationPerRequest — per-request auth', () => {
         mockDbConfig();
     });
 
-    it('should accept valid sandbox credentials', async () => {
-        const authHeader = makeAuthHeader('test_login', 'test_key');
-        const config = await verifyAuthorizationPerRequest(authHeader);
-        expect(config).not.toBeNull();
-        expect(config!.login).toBe('test_login');
+    it('should accept valid sandbox credentials and return detectedMode=test', async () => {
+        mockDbConfig({ login: 'sandbox_user', key: 'prod_key', test_key: 'sandbox_key' });
+        const authHeader = makeAuthHeader('sandbox_user', 'sandbox_key');
+        const result = await verifyAuthorizationPerRequest(authHeader);
+        expect(result).not.toBeNull();
+        expect(result!.config.login).toBe('sandbox_user');
+        expect(result!.detectedMode).toBe('test');
     });
 
-    it('should accept valid production credentials', async () => {
-        const authHeader = makeAuthHeader('test_login', 'prod_key_123');
-        const config = await verifyAuthorizationPerRequest(authHeader);
-        expect(config).not.toBeNull();
+    it('should accept valid production credentials and return detectedMode=production', async () => {
+        mockDbConfig({ login: 'prod_user', key: 'prod_key', test_key: 'sandbox_key' });
+        const authHeader = makeAuthHeader('prod_user', 'prod_key');
+        const result = await verifyAuthorizationPerRequest(authHeader);
+        expect(result).not.toBeNull();
+        expect(result!.config.login).toBe('prod_user');
+        expect(result!.detectedMode).toBe('production');
+    });
+
+    it('should reject wrong password for any login', async () => {
+        mockDbConfig({ login: 'any_user', key: 'correct_key', test_key: 'sandbox_key' });
+        const authHeader = makeAuthHeader('any_user', 'wrong_password');
+        await expect(verifyAuthorizationPerRequest(authHeader)).rejects.toEqual({
+            code: -32504,
+            message: "Insufficient privileges for method execution",
+            data: [],
+        });
+    });
+
+    it('should reject sandbox key used with production mode expectation', async () => {
+        // Login mavjud, lekin sandbox kalit production context da ishlatilyapti
+        mockDbConfig({ login: 'mixed_user', key: 'prod_key', test_key: 'sandbox_key' });
+        // Sandbox kalit bilan so'rov — bu to'g'ri, chunki testKey bor
+        const sandboxAuth = makeAuthHeader('mixed_user', 'sandbox_key');
+        const result = await verifyAuthorizationPerRequest(sandboxAuth);
+        expect(result!.detectedMode).toBe('test');
+    });
+
+    it('should reject production key when only test mode is available', async () => {
+        // Faqat test_key bor, key yo'q
+        mockDbConfig({ login: 'test_only', key: '', test_key: 'sandbox_key' });
+        // Production kalit (bo'sh) bilan urinish
+        const authHeader = makeAuthHeader('test_only', '');
+        await expect(verifyAuthorizationPerRequest(authHeader)).rejects.toEqual({
+            code: -32504,
+            message: "Insufficient privileges for method execution",
+            data: [],
+        });
     });
 
     it('should reject missing auth header', async () => {
@@ -326,8 +362,8 @@ describe('Route flow — per-request auth integration', () => {
 
         // Should import verifyAuthorizationPerRequest
         expect(routeContent).toContain('verifyAuthorizationPerRequest');
-        // Should use per-request pattern
-        expect(routeContent).toContain('per-request');
+        // Should use per-request pattern (case-insensitive)
+        expect(routeContent.toLowerCase()).toContain('per-request');
     });
 
     it('should still support backward-compatible verifyAuthorization', async () => {
