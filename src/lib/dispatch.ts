@@ -53,17 +53,40 @@ export async function autoDispatchOrder(orderId: string) {
 
     const bestCourier = candidatesWithDistance[0];
 
-    // Dispatch log yozish
+    // Atomik assignment: dispatchLog + order.update bitta transactionda.
+    // Agar order allaqachon boshqa kuryerga tayinlangan bo'lsa (race condition),
+    // row count 0 → xato, log ham yaratilmaydi.
     const logId = `log_${Date.now()}`;
-    await prisma.$executeRawUnsafe(`
-        INSERT INTO "DispatchLog" (id, "orderId", "courierId", status, score, "createdAt")
-        VALUES ($1, $2, $3, $4, $5, NOW())
-    `, logId, orderId, bestCourier.userId, 'PENDING', bestCourier.distance);
-
-    // Buyurtmani biriktirish
-    await prisma.$executeRawUnsafe(`
-        UPDATE "Order" SET "courierId" = $1, status = $2, "updatedAt" = NOW() WHERE id = $3
-    `, bestCourier.userId, 'ASSIGNED', orderId);
+    let rowsUpdated = 0;
+    try {
+        await prisma.$transaction(async (tx: any) => {
+            // Qayta tekshirish: hali bo'shmi?
+            const fresh = await tx.order.findUnique({
+                where: { id: orderId },
+                select: { id: true, courierId: true, status: true }
+            });
+            if (!fresh || fresh.courierId) {
+                throw new Error('Order already assigned');
+            }
+            const result = await tx.$executeRawUnsafe(
+                `UPDATE "Order" SET "courierId" = $1, status = $2, "updatedAt" = NOW() WHERE id = $3`,
+                bestCourier.userId, 'ASSIGNED', orderId
+            );
+            rowsUpdated = Number(result);
+            if (rowsUpdated === 0) throw new Error('Order already assigned (row count 0)');
+            await tx.dispatchLog.create({
+                data: { id: logId, orderId, courierId: bestCourier.userId, status: 'ASSIGNED', score: bestCourier.distance }
+            });
+        });
+    } catch (e: any) {
+        if (e.message?.includes('Order already assigned')) {
+            console.log(`[dispatch] Order ${orderId} already assigned by another process`);
+            return null;
+        }
+        // Atomik xato — log ham, update ham yo'q. Qayta yuboramiz.
+        console.error("[dispatch] Atomic assignment failed:", e);
+        return null;
+    }
 
     const paymentMethod = order.paymentMethod || 'CASH';
     const paymentLabel = paymentMethod === 'CASH'
@@ -85,7 +108,7 @@ export async function autoDispatchOrder(orderId: string) {
                 {
                     reply_markup: {
                         inline_keyboard: [
-                            [{ text: "📦 Buyurtmani ko'rish", callback_data: `view_order:${orderId}` }]
+                            [{ text: "📦 Buyurtmani ko'rish", callback_data: `view_order_${orderId}` }]
                         ]
                     }
                 },

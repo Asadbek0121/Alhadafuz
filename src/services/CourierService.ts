@@ -161,23 +161,34 @@ export class CourierService {
         const fee = await getCourierFee();
 
         const result = await prisma.$transaction(async (tx: any) => {
+            // FOR UPDATE lock — parallel so'rovlarni bloklash, race condition oldini oladi
             const order = await tx.order.findUnique({
                 where: { id: orderId },
                 select: { id: true, status: true, courierId: true, deliveryPhoto: true }
             });
-            if (!order) throw new Error(`Order ${orderId} not found`);
-            if (order.courierId !== courierUserId) {
+            // Lock ni faol ushlab turish uchun qayta update qilish (PostgreSQL FOR UPDATE equivalent)
+            await tx.$executeRawUnsafe(
+                `SELECT pg_advisory_xact_lock(hashtext($1))`,
+                `completeOrder:${orderId}`
+            );
+            // Qayta o'qish — lock ichida
+            const lockedOrder = await tx.order.findUnique({
+                where: { id: orderId },
+                select: { id: true, status: true, courierId: true, deliveryPhoto: true }
+            });
+            if (!lockedOrder) throw new Error(`Order ${orderId} not found`);
+            if (lockedOrder.courierId !== courierUserId) {
                 throw new Error('Order not assigned to this courier');
             }
-            if (!order.deliveryPhoto) {
+            if (!lockedOrder.deliveryPhoto) {
                 throw new Error(`Order ${orderId} requires a delivery photo before completion`);
             }
             // Idempotent: COMPLETED allaqachon bo'lsa — balans ikki marta oshmaysin
-            if (order.status === "COMPLETED") {
+            if (lockedOrder.status === "COMPLETED") {
                 return { orderId, status: "COMPLETED", fee, alreadyDone: true };
             }
-            if (order.status !== 'DELIVERED') {
-                throw new Error(`Expected DELIVERED status, got: ${order.status}`);
+            if (lockedOrder.status !== 'DELIVERED') {
+                throw new Error(`Expected DELIVERED status, got: ${lockedOrder.status}`);
             }
 
             await tx.order.update({
@@ -185,9 +196,9 @@ export class CourierService {
                 data: { status: "COMPLETED", finishedAt: new Date() }
             });
 
-            if (order.courierId) {
+            if (lockedOrder.courierId) {
                 await tx.courierProfile.update({
-                    where: { userId: order.courierId },
+                    where: { userId: lockedOrder.courierId },
                     data: {
                         totalDeliveries: { increment: 1 },
                         balance: { increment: fee }
@@ -203,14 +214,17 @@ export class CourierService {
 
     /**
      * To'lovni PAID deb belgilaydi.
-     * ⚠️ FAQAT admin yoki payment-provider webhook orqali chaqirilishi kerak.
+     * ⚠️ FAQAT admin (role === 'ADMIN') yoki payment-provider webhook orqali chaqirilishi kerak.
      * Kuryer webhook'dan bevosita chaqirish TAQiQLANGAN.
-     * @param _adminId — admin ID (authorization tekshiruvi caller tomonidan amalga oshiriladi)
+     * Admin ID majburiy — bo'sh bo'lsa xato qaytaradi.
      */
     async markOrderPaid(
         orderId: string,
-        _adminId?: string
+        adminId: string
     ): Promise<{ orderId: string; paymentStatus: string }> {
+        if (!adminId || adminId.trim() === '') {
+            throw new Error('markOrderPaid requires a valid adminId');
+        }
         await prisma.order.update({
             where: { id: orderId },
             data: { paymentStatus: "PAID" }

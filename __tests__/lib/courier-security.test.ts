@@ -211,24 +211,27 @@ describe('markOrderPaid — admin-only protection', () => {
 
 describe('completeOrder — idempotency', () => {
     it('should increment balance once; second call is no-op (alreadyDone=true)', async () => {
+        // First call: findUnique x2 (lock + re-read both DELIVERED), then update
+        // Second call: findUnique x2 (both COMPLETED → alreadyDone guard)
         p.order.findUnique
-            .mockResolvedValueOnce(makeOrder({ status: 'DELIVERED' }))  // first call
-            .mockResolvedValueOnce(makeOrder({ status: 'COMPLETED' })); // second call (idempotent)
+            .mockResolvedValueOnce(makeOrder({ status: 'DELIVERED' }))  // 1st findUnique (first call)
+            .mockResolvedValueOnce(makeOrder({ status: 'DELIVERED' }))  // 2nd findUnique after lock (first call)
+            .mockResolvedValueOnce(makeOrder({ status: 'COMPLETED' }))  // 1st findUnique (second call)
+            .mockResolvedValueOnce(makeOrder({ status: 'COMPLETED' })); // 2nd findUnique (second call)
         p.order.update.mockResolvedValue({});
         p.courierProfile.update.mockResolvedValue({});
+        p.$executeRawUnsafe.mockResolvedValue(0);
 
         const r1 = await service.completeOrder(ORDER_ID, COURIER_ID);
         expect(r1.status).toBe('COMPLETED');
         expect(r1.alreadyDone).toBe(false);
-        // Balance updated once
         expect(p.courierProfile.update).toHaveBeenCalledTimes(1);
         expect(p.order.update).toHaveBeenCalledTimes(1);
 
-        // Second call — idempotent
+        // Second call — idempotent: first findUnique returns COMPLETED → guard fires
         const r2 = await service.completeOrder(ORDER_ID, COURIER_ID);
         expect(r2.status).toBe('COMPLETED');
         expect(r2.alreadyDone).toBe(true);
-        // Balance must NOT be incremented again
         expect(p.courierProfile.update).toHaveBeenCalledTimes(1);
         expect(p.order.update).toHaveBeenCalledTimes(1);
     });

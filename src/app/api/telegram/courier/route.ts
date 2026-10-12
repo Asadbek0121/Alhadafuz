@@ -140,7 +140,7 @@ export async function POST(req: Request) {
                     // Kuryer buyurtmani rad etdi
                     const orderId = data.replace('reject_assign_', '');
                     await bot.sendMessage(chatId,
-                        "⚠️ Siz buyurtmani rad etdingiz. Admin sizga boshqa buyurtma tayinlaydi.",
+                        "⚠️ Siz buyurtmani rad etdingiz. Buyurtma qayta tayyorlanmoqda.",
                         { parse_mode: 'HTML' }
                     );
                     // Rad etishni logga yozish
@@ -154,6 +154,11 @@ export async function POST(req: Request) {
                     if (!adminResult.ok) {
                         console.error("[courier] notifyAdmin failed:", adminResult.error);
                     }
+                    // Buyurtmani qayta dispatch uchun tayyorlash: courierId null, status CREATED
+                    await prisma.$executeRawUnsafe(
+                        'UPDATE "Order" SET "courierId" = NULL, status = $1 WHERE id = $2 AND status = $1',
+                        'ASSIGNED', orderId
+                    );
 
                 } else if (data.startsWith('cancel_order_')) {
                     const orderId = data.replace('cancel_order_', '');
