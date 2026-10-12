@@ -3,8 +3,27 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
+import { ALLOWED_TRANSITIONS } from '@/services/CourierService';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * VENDOR uchun ruxsat etilgan status o'tishlari.
+ * ⚠️ VENDOR cannot set DELIVERED or COMPLETED directly — those require
+ *    CourierService guards (photo proof + courier ownership).
+ *    ADMIN har qanday ruxsat etilgan o'tishni amalga oshirishi mumkin.
+ */
+const VENDOR_ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    CREATED:      ['ASSIGNED'],
+    ASSIGNED:     ['PROCESSING', 'CANCELLED'],
+    PROCESSING:   ['CANCELLED'],
+    // DELIVERING → DELIVERED: BLOCKED — requires photo proof via CourierService
+    // DELIVERED → COMPLETED: BLOCKED — requires courier ownership via CourierService
+    CANCELLED:    [],
+    COMPLETED:    [],
+    DELIVERED:    [],
+    DELIVERING:   [],
+};
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -38,19 +57,67 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         const body = await req.json();
         const { status } = body;
 
-        const updateData: any = { status };
-        if (status === 'DELIVERED') {
-            updateData.paymentStatus = 'PAID';
+        // Status whitelist validatsiyasi
+        if (!status || typeof status !== 'string') {
+            return NextResponse.json({ error: 'Invalid or missing status field' }, { status: 400 });
         }
 
-        const order = await prisma.order.update({
+        const transitionMap = userRole === 'VENDOR' ? VENDOR_ALLOWED_TRANSITIONS : ALLOWED_TRANSITIONS;
+
+        // Order holatini oldindan o'qib, ruxsat etilgan o'tishni tekshirish
+        const currentOrder = await prisma.order.findUnique({
             where: { id },
-            data: updateData,
+            select: { id: true, status: true }
+        });
+
+        if (!currentOrder) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+
+        const allowedNext = transitionMap[currentOrder.status];
+        if (!allowedNext || !allowedNext.includes(status)) {
+            const adminAllowed = ALLOWED_TRANSITIONS[currentOrder.status] || [];
+            return NextResponse.json(
+                {
+                    error: userRole === 'VENDOR'
+                        ? `Forbidden: VENDOR cannot transition from ${currentOrder.status} to ${status}. Allowed: ${adminAllowed.join(' | ')}`
+                        : `Invalid transition: ${currentOrder.status} → ${status}. Allowed: ${allowedNext?.join(' | ') || 'none'}`
+                },
+                { status: 400 }
+            );
+        }
+
+        // ⚠️ To'lov statusini bu endpoint O'ZGAR TIRMASIN.
+        // paymentStatus faqat quyidagi joylarda o'zgaradi:
+        //   1. POST /api/admin/orders/[id]/confirm-payment  (faqat ADMIN session)
+        //   2. POST /api/payment/click  (HMAC imzo tekshirilgandan keyin)
+        //   3. POST /api/payment/payme  (HMAC imzo tekshirilgandan keyin)
+        // VENDOR ham, ADMIN ham bu endpoint orqali paymentStatus ni PAID ga o'tkaza olmaydi.
+
+        // Atomik yangilash: WHERE status = currentStatus — race condition himoyasi.
+        // Agar parallel so'rov oralig'ida status o'zgargan bo'lsa, update 0 qatorga ta'sir qiladi.
+        const rowsUpdated = await prisma.$executeRawUnsafe(
+            `UPDATE "Order" SET status = $1, "updatedAt" = NOW() WHERE id = $2 AND status = $3`,
+            status, id, currentOrder.status
+        );
+
+        if (rowsUpdated === 0) {
+            // Status allaqachon o'zgarib ketgan — kelayotgan so'rov eskirgan
+            const freshOrder = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+            return NextResponse.json(
+                { error: `Order status changed concurrently. Current: ${freshOrder?.status || 'unknown'}. Requested: ${status}` },
+                { status: 409 }
+            );
+        }
+
+        const order = await prisma.order.findUnique({
+            where: { id },
             include: { user: true }
         });
 
-        // Buyurtma DELIVERED/PAID bo'lsa — elektron chek yaratish va email yuborish
-        if (status === 'DELIVERED' || updateData.paymentStatus === 'PAID') {
+        // Buyurtma DELIVERED bo'lsa — elektron chek yaratish va email yuborish
+        // ⚠️ paymentStatus bu endpoint orqali o'zgarmaydi (faqat DELIVERED status uchun)
+        if (status === 'DELIVERED') {
             import('@/lib/invoice/invoice-service').then(({ createInvoiceForOrder }) => {
                 createInvoiceForOrder(id).then(({ invoice }) => {
                     if (invoice) {

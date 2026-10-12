@@ -239,6 +239,19 @@ Avvalgi sessiyalardan:
   - PR: https://github.com/Asadbek0121/Alhadafuz/pull/12
   - Main ga birlashtirilmagan (hali test qilish kerak)
 
+## Completed Recently (2026-10-12)
+
+- **Courier bot security audit (PR #12)** — `fix/courier-bot-security` branch, 7 issue fixed:
+  - `paid_` callback: `markOrderPaid()` chaqiruvi olib tashlandi (kuryer faqat "huquqingiz yo'q" xabarini oladi). Faqat admin/payment-provider to'lovni o'zgartirishi mumkin.
+  - `reject_assign_` callback: `notifyCourier(user.id)` → `notifyAdmin()`. Rad etish `dispatchLog` ga `REJECTED` sifatida yoziladi.
+  - `dLon` formula bug: `(lat2 - lat1)` → `(lon2 - lon1)`. `getDistance()` export qilindi, Haversine formula to'g'ri ishlaydi.
+  - `cancelOrder()`: `reason` parametri `dispatchLog` ga yoziladi, transaction ichida.
+  - `completeOrder()`: `alreadyDone` flag qo'shildi, COMPLETED guard `DELIVERED` tekshiruvidan oldinga ko'chirildi — idempotent, balans ikki marta oshmaydi.
+  - `view_order_` callback qo'shildi — dashboard URL ga yo'naltiradi.
+  - **31 ta test** yozildi (`__tests__/lib/courier-security.test.ts`): GPS masofa, status transitionlar, cross-courier access, payment auth, idempotent completion, photo requirement, cancel audit, reject flow, route source assertions.
+  - Verification: `tsc --noEmit` ✅ | `eslint` ✅ | `vitest 74/74` ✅
+  - Commit: `9052972`, PR: https://github.com/Asadbek0121/Alhadafuz/pull/12
+
 ## Completed Recently (2026-10-10)
 
 - **Telegram Token Routing & OTP Security Fix** (`fix/telegram-token-routing-otp-delivery`):
@@ -337,7 +350,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-09 (Payme test mode, payment logs fix, payment logos)
+2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
 
 ## Recent Changes (2026-10-06)
 
