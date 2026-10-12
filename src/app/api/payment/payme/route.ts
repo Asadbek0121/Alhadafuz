@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
                 if (isNaN(amount) || !account?.order_id) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleCheckPerformTransaction(amount, account);
+                const resp = await handleCheckPerformTransaction(amount, account, detectedMode);
                 result = resp;
                 break;
             }
@@ -109,7 +109,7 @@ export async function POST(req: NextRequest) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
 
-                const resp = await handleCreateTransaction(id, time, amount, account);
+                const resp = await handleCreateTransaction(id, time, amount, account, detectedMode);
                 result = resp;
                 break;
             }
@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
                 if (!id) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handlePerformTransaction(id);
+                const resp = await handlePerformTransaction(id, detectedMode);
                 result = resp;
                 break;
             }
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
                 if (!id || isNaN(time)) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleCancelTransaction(id, time, reason);
+                const resp = await handleCancelTransaction(id, time, reason, detectedMode);
                 result = resp;
                 break;
             }
@@ -142,7 +142,7 @@ export async function POST(req: NextRequest) {
                 if (!id) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleCheckTransaction(id);
+                const resp = await handleCheckTransaction(id, detectedMode);
                 result = resp;
                 break;
             }

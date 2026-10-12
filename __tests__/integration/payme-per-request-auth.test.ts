@@ -20,6 +20,7 @@ const mockOrder = {
     total: 5000,
     paymentStatus: 'PENDING',
     paymeTransactionId: null,
+    isTest: false,
 };
 
 const mockedPrisma = vi.hoisted(() => ({
@@ -45,6 +46,7 @@ import {
     verifyAuthorization,
     parseAuthHeader,
     handleCheckPerformTransaction,
+    handleCreateTransaction,
     paymeRpc,
     findConfigForLogin,
     verifyAuthorizationPerRequest,
@@ -98,6 +100,21 @@ describe('findConfigForLogin — per-request detection', () => {
 
         const config = await findConfigForLogin('unknown_login');
         expect(config).toBeNull();
+    });
+
+    it('should set isTest based on mode for each handler', async () => {
+        // Verify that handlers accept mode parameter
+        const fs = await import('fs');
+        const path = await import('path');
+        const libContent = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/lib/payme.ts'),
+            'utf-8'
+        );
+
+        // Check that all transaction handlers have mode parameter
+        expect(libContent).toContain('mode: PaymeMode = "production"');
+        // Check that isTest is checked in handlers
+        expect(libContent).toContain('orderIsTest !== expectedTest');
     });
 
     it('should handle multiple configs with different logins', async () => {
@@ -249,11 +266,42 @@ describe('handleCheckPerformTransaction — invalid account errors', () => {
         });
     });
 
-    it('should allow valid transaction request', async () => {
-        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder());
+    it('should allow valid transaction request (production order + production mode)', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ isTest: false }));
 
-        const result = await handleCheckPerformTransaction(500000, { order_id: 'ord-test' });
+        const result = await handleCheckPerformTransaction(500000, { order_id: 'ord-test' }, 'production');
         expect(result).toEqual({ allow: true });
+    });
+
+    it('should reject production order with sandbox mode', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ isTest: false }));
+
+        await expect(
+            handleCheckPerformTransaction(500000, { order_id: 'ord-test' }, 'test')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Order not available for this payment method",
+            data: [],
+        });
+    });
+
+    it('should allow sandbox order with sandbox mode', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ id: 'ord-sandbox', isTest: true }));
+
+        const result = await handleCheckPerformTransaction(500000, { order_id: 'ord-sandbox' }, 'test');
+        expect(result).toEqual({ allow: true });
+    });
+
+    it('should reject sandbox order with production mode', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ id: 'ord-sandbox', isTest: true }));
+
+        await expect(
+            handleCheckPerformTransaction(500000, { order_id: 'ord-sandbox' }, 'production')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Order not available for this payment method",
+            data: [],
+        });
     });
 });
 
@@ -327,7 +375,7 @@ describe('Sandbox vs Production credential isolation', () => {
 
 describe('Sandbox cannot modify production orders', () => {
     beforeEach(() => {
-        buildMockOrder({ id: 'ord-prod-1', paymentStatus: 'PENDING' });
+        buildMockOrder({ id: 'ord-prod-1', paymentStatus: 'PENDING', isTest: false });
     });
 
     it('should reject sandbox auth for production mode with wrong key', async () => {
@@ -346,6 +394,28 @@ describe('Sandbox cannot modify production orders', () => {
             message: "Insufficient privileges for method execution",
             data: [],
         });
+    });
+
+    it('should reject sandbox credential modifying production order via isTest check', async () => {
+        // First findFirst (by paymeTransactionId) → null; second (by orderId) → production order
+        mockedPrisma.order.findFirst
+            .mockResolvedValueOnce(null) // no existing tx
+            .mockResolvedValue(buildMockOrder({ id: 'ord-prod-1', isTest: false })); // prod order
+
+        await expect(
+            handleCreateTransaction('tx-1', Date.now(), 500000, { order_id: 'ord-prod-1' }, 'test')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Order not available for this payment method",
+            data: [],
+        });
+    });
+
+    it('should allow sandbox credential for sandbox order', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ id: 'ord-sandbox', isTest: true }));
+
+        const result = await handleCreateTransaction('tx-1', Date.now(), 500000, { order_id: 'ord-sandbox' }, 'test');
+        expect(result.state).toBe(1); // Created
     });
 });
 

@@ -380,7 +380,8 @@ export interface PaymeTransactionData {
 
 export async function handleCheckPerformTransaction(
     amount: number,
-    account: { order_id: string }
+    account: { order_id: string },
+    mode: PaymeMode = "production"
 ): Promise<{ allow: boolean }> {
     const orderId = account.order_id;
     if (!orderId) {
@@ -394,12 +395,19 @@ export async function handleCheckPerformTransaction(
                 { orderNumber: orderId },
             ],
         },
-        select: { id: true, total: true, paymentStatus: true },
+        select: { id: true, total: true, paymentStatus: true, isTest: true },
     });
 
     // Nonexistent account -> -31099
     if (!order) {
         throw { code: -31099, message: "Account not found", data: [{ field: "account.order_id" }] };
+    }
+
+    // Mode mismatch — sandbox credential bilan production buyurtma yoki aksincha
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Invalid amount -> -31001
@@ -429,7 +437,8 @@ export async function handleCreateTransaction(
     id: string,
     time: number,
     amount: number,
-    account: { order_id: string }
+    account: { order_id: string },
+    mode: PaymeMode = "production"
 ): Promise<{
     create_time: number;
     transaction: string;
@@ -469,12 +478,19 @@ export async function handleCreateTransaction(
         where: {
             OR: [{ id: orderId }, { orderNumber: orderId }],
         },
-        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true },
+        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true, isTest: true },
     });
 
     // Account not found -> -31099
     if (!order) {
         throw { code: -31099, message: "Account not found", data: [{ field: "account.order_id" }] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Amount check -> -31001
@@ -548,7 +564,8 @@ export async function handleCreateTransaction(
 // ---------------------------------------------------------------------------
 
 export async function handlePerformTransaction(
-    id: string
+    id: string,
+    mode: PaymeMode = "production"
 ): Promise<{
     transaction: string;
     perform_time: number;
@@ -559,7 +576,7 @@ export async function handlePerformTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymentStatus: true, paymeTransactionId: true, id: true },
+            select: { paymentStatus: true, paymeTransactionId: true, id: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist
@@ -579,7 +596,7 @@ export async function handlePerformTransaction(
     try {
         order = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { id: true, total: true },
+            select: { id: true, total: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist
@@ -588,6 +605,13 @@ export async function handlePerformTransaction(
     // Transaction not found -> -31003
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Perform the transaction
@@ -642,7 +666,8 @@ export async function handlePerformTransaction(
 export async function handleCancelTransaction(
     id: string,
     time: number,
-    reason?: number | null
+    reason?: number | null,
+    mode: PaymeMode = "production"
 ): Promise<{
     cancel_time: number;
     transaction: string;
@@ -653,7 +678,7 @@ export async function handleCancelTransaction(
     try {
         order = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { id: true, paymentStatus: true, status: true },
+            select: { id: true, paymentStatus: true, status: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist
@@ -662,6 +687,13 @@ export async function handleCancelTransaction(
     // Transaction not found -> -31003
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Already cancelled
@@ -691,7 +723,8 @@ export async function handleCancelTransaction(
 // ---------------------------------------------------------------------------
 
 export async function handleCheckTransaction(
-    id: string
+    id: string,
+    mode: PaymeMode = "production"
 ): Promise<{
     create_time: number;
     perform_time?: number;
@@ -710,6 +743,7 @@ export async function handleCheckTransaction(
                 paymeTransactionId: true,
                 paymeTransactionTime: true,
                 createdAt: true,
+                isTest: true,
             },
         });
     } catch {
@@ -719,6 +753,13 @@ export async function handleCheckTransaction(
     // Transaction not found -> -31099 (spec bo'yicha)
     if (!order) {
         throw { code: -31099, message: "Transaction not found", data: [] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     let state: PaymeTransactionState;
