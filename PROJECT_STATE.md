@@ -230,7 +230,14 @@ Avvalgi sessiyalardan:
 
 ## In Progress
 
-- Hech qanday bloklangan ish yo'q.
+- **Courier bot security audit (PR #12)**: `fix/courier-bot-security` branch'da 5 ta muhim xavfsizlik tuzatishlari:
+  1. Status machine validation — faqat ruxsat etilgan holat o'tishlari (ASSIGNED→PROCESSING→DELIVERING→DELIVERED→COMPLETED)
+  2. Callback authorization — har bir tugma kuryer ID va buyurtma egaligini tekshiradi
+  3. GPS-based dispatch — faqat 30 daqiqa ichida GPS yangilangan kuryerlar
+  4. Cancel order handler — ASSIGNED/PROCESSING holatdagi buyurtmalarni bekor qilish
+  5. Telegram notify error handling — xabar xatosi buyurtma tayinlashni to'xtatmaydi
+  - PR: https://github.com/Asadbek0121/Alhadafuz/pull/12
+  - Main ga birlashtirilmagan (hali test qilish kerak)
 
 ## Completed Recently (2026-10-10)
 
