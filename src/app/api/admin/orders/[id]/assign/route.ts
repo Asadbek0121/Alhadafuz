@@ -1,4 +1,3 @@
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
@@ -19,28 +18,30 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
             return NextResponse.json({ error: 'CourierId kiritilmadi' }, { status: 400 });
         }
 
-        // Update order status and courierId using raw SQL for safety
         await prisma.$executeRawUnsafe(
             'UPDATE "Order" SET "courierId" = $1, status = $2, "updatedAt" = $3 WHERE id = $4',
             courierId, 'ASSIGNED', new Date(), id
         );
 
-        // Fetch courier info for notification
         const courier: any = await prisma.user.findUnique({
             where: { id: courierId },
             select: { telegramId: true, name: true }
         });
 
-        // Fetch order info for notification message
         const order: any = await prisma.order.findUnique({
             where: { id },
-            select: { shippingAddress: true, total: true }
+            select: { shippingAddress: true, total: true, paymentMethod: true }
         });
+
+        const paymentMethod = order?.paymentMethod || 'CASH';
+        const paymentLabel = paymentMethod === 'CASH'
+            ? '💵 Naqd pul (kuryer qabul qiladi)'
+            : '💳 Online to\'lov';
 
         if (courier?.telegramId) {
             const botToken = process.env.COURIER_BOT_TOKEN;
             if (botToken) {
-                let botUsername = "hadaf_market_bot"; // Fallback
+                let botUsername = "hadaf_market_bot";
                 try {
                     const botRes = await fetch(`https://api.telegram.org/bot${botToken}/getMe`);
                     const botData = await botRes.json();
@@ -57,6 +58,7 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 🆔 <b>ID:</b> #${id.slice(-6).toUpperCase()}
 📍 <b>Manzil:</b> <code>${order?.shippingAddress || '---'}</code>
 💰 <b>Summa:</b> <code>${(order?.total || 0).toLocaleString()} SO'M</code>
+💳 <b>To'lov turi:</b> ${paymentLabel}
 ━━━━━━━━━━━━━━━━━━━━━━━━
 Buyurtmani qabul qilasizmi?
 `;
@@ -72,10 +74,10 @@ Buyurtmani qabul qilasizmi?
                             reply_markup: {
                                 inline_keyboard: [
                                     [
-                                        { text: "✅ Tasdiqlash", callback_data: `pick_up:${id}` },
-                                        { text: "❌ Rad etish", callback_data: `reject_assign:${id}` }
+                                        { text: "✅ Tasdiqlash", callback_data: `pick_up_${id}` },
+                                        { text: "❌ Rad etish", callback_data: `reject_assign_${id}` }
                                     ],
-                                    [{ text: "📦 Batafsil botda", url: `https://t.me/${botUsername}?start=${id}` }]
+                                    [{ text: "📦 Batafsil", url: `https://t.me/${botUsername}?start=${id}` }]
                                 ]
                             }
                         })

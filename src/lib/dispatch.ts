@@ -1,10 +1,9 @@
-
 import { prisma } from './prisma';
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const dLon = (lat2 - lat1) * Math.PI / 180;
     const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
@@ -14,18 +13,15 @@ function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
 }
 
 export async function autoDispatchOrder(orderId: string) {
-    // Use raw SQL to get settings
     const settings: any = await prisma.$queryRawUnsafe('SELECT "autoDispatchEnabled" FROM "StoreSettings" WHERE id = $1 LIMIT 1', 'default');
     if (!settings[0]?.autoDispatchEnabled) return null;
 
-    // Use raw SQL to get order
-    const orderResults: any = await prisma.$queryRawUnsafe('SELECT id, lat, lng, "courierId" FROM "Order" WHERE id = $1 LIMIT 1', orderId);
+    const orderResults: any = await prisma.$queryRawUnsafe('SELECT id, lat, lng, "courierId", "paymentMethod" FROM "Order" WHERE id = $1 LIMIT 1', orderId);
     if (!orderResults || orderResults.length === 0) return null;
     const order = orderResults[0];
 
     if (order.courierId || !order.lat || !order.lng) return null;
 
-    // 1. Find ONLINE couriers
     const candidates: any[] = await prisma.$queryRawUnsafe(`
         SELECT cp.*, u.name, u.id as "userId"
         FROM "CourierProfile" cp
@@ -35,7 +31,6 @@ export async function autoDispatchOrder(orderId: string) {
 
     if (candidates.length === 0) return null;
 
-    // 2. Sort by distance
     const candidatesWithDistance = candidates.map(c => ({
         ...c,
         distance: (c.currentLat && c.currentLng)
@@ -45,19 +40,21 @@ export async function autoDispatchOrder(orderId: string) {
 
     const bestCourier = candidatesWithDistance[0];
 
-    // 3. Record Dispatch Attempt (Raw SQL)
     const logId = `log_${Date.now()}`;
     await prisma.$executeRawUnsafe(`
         INSERT INTO "DispatchLog" (id, "orderId", "courierId", status, score, "createdAt")
         VALUES ($1, $2, $3, $4, $5, NOW())
     `, logId, orderId, bestCourier.userId, 'PENDING', bestCourier.distance);
 
-    // 4. Assign to order (Raw SQL)
     await prisma.$executeRawUnsafe(`
         UPDATE "Order" SET "courierId" = $1, status = $2, "updatedAt" = NOW() WHERE id = $3
     `, bestCourier.userId, 'ASSIGNED', orderId);
 
-    // 5. Notify Courier via Telegram
+    const paymentMethod = order.paymentMethod || 'CASH';
+    const paymentLabel = paymentMethod === 'CASH'
+        ? '💵 Naqd pul (kuryer qabul qiladi)'
+        : '💳 Online to\'lov';
+
     try {
         const { sendTelegramMessage } = await import('./telegram-bot');
         const courierResults: any = await prisma.$queryRawUnsafe('SELECT "telegramId" FROM "User" WHERE id = $1 LIMIT 1', bestCourier.userId);
@@ -68,8 +65,9 @@ export async function autoDispatchOrder(orderId: string) {
                 `🚀 <b>YANGI BUYURTMA BIRIKTIRILDI!</b>\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━━━\n` +
                 `🆔 <b>ID:</b> #${orderId.slice(-6).toUpperCase()}\n` +
+                `💳 <b>To'lov turi:</b> ${paymentLabel}\n` +
                 `📌 <b>Holat:</b> Sizga tayinlandi\n` +
-                `📦 <b>Tafsilotlar:</b> Ko'rish uchun quyidagi tugmani bosing.\n` +
+                `📦 <b>Tafsilotlar:</b> Ko'rish uchun tugmani bosing.\n` +
                 `━━━━━━━━━━━━━━━━━━━━━━━━`,
                 {
                     reply_markup: {

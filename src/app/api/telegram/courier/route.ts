@@ -5,6 +5,13 @@ import { CourierService } from '@/services/CourierService';
 
 export const dynamic = 'force-dynamic';
 
+function paymentMethodLabel(pm: string | null | undefined): string {
+    switch (pm) {
+        case 'CLICK': case 'PAYME': case 'ONLINE': return '💳 Online to\'lov';
+        case 'CASH': default: return '💵 Naqd pul (kuryer qabul qiladi)';
+    }
+}
+
 export async function POST(req: Request) {
     const token = process.env.COURIER_BOT_TOKEN;
     if (!token) {
@@ -19,7 +26,7 @@ export async function POST(req: Request) {
     try {
         const update = await req.json();
 
-        // 1. Photo handling
+        // ─── 1. Photo handling (delivery confirmation) ──────────────────────
         if (update.message?.photo) {
             const chatId = update.message.chat.id;
             const photos = update.message.photo;
@@ -28,8 +35,13 @@ export async function POST(req: Request) {
 
             const user = await prisma.user.findFirst({
                 where: { telegramId: String(chatId) },
-                select: { id: true, tempData: true }
+                select: { id: true, tempData: true, role: true }
             });
+
+            if (!user || user.role !== 'COURIER') {
+                await bot.sendMessage(chatId, "⛔ Ushbu buyurtmani faqat tasdiqlangan kuryerlar qabul qilishi mumkin.");
+                return NextResponse.json({ ok: true });
+            }
 
             if (user?.tempData?.startsWith('AWAITING_PHOTO_')) {
                 const orderId = user.tempData.replace('AWAITING_PHOTO_', '');
@@ -43,7 +55,7 @@ export async function POST(req: Request) {
                 await bot.sendMessage(chatId, "✅ Rasm qabul qilindi va buyurtma yetkazildi deb belgilandi! Rahmat.", {
                     reply_markup: {
                         keyboard: [
-                            [{ text: "🚀 Dashbord (Open Dashboard)", web_app: { url: dashboardUrl } }],
+                            [{ text: "🚀 Dashbord", web_app: { url: dashboardUrl } }],
                             [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
                             [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]
                         ],
@@ -54,7 +66,7 @@ export async function POST(req: Request) {
             }
         }
 
-        // 2. Callback Query
+        // ─── 2. Callback Query ─────────────────────────────────────────────
         if (update.callback_query) {
             const query = update.callback_query;
             const chatId = query.message?.chat?.id;
@@ -65,11 +77,12 @@ export async function POST(req: Request) {
             await bot.answerCallbackQuery(query.id);
 
             const user = await prisma.user.findFirst({
-                where: { telegramId: String(chatId) }
+                where: { telegramId: String(chatId) },
+                select: { id: true, role: true }
             });
 
-            if (!user) {
-                await bot.sendMessage(chatId, "❌ Profilingiz topilmadi. Qayta ariza topshiring.");
+            if (!user || user.role !== 'COURIER') {
+                await bot.sendMessage(chatId, "⛔ Ushbu buyurtmani faqat tasdiqlangan kuryerlar qabul qilishi mumkin.");
                 return NextResponse.json({ ok: true });
             }
 
@@ -101,66 +114,161 @@ export async function POST(req: Request) {
             return NextResponse.json({ ok: true });
         }
 
-        // 3. Message handling
+        // ─── 3. Message handling ──────────────────────────────────────────
         if (update.message?.text) {
             const chatId = update.message.chat.id;
-            const text = update.message.text;
+            const text = update.message.text.trim();
             const telegramId = String(chatId);
 
             let user = await prisma.user.findFirst({
-                where: { telegramId }
+                where: { telegramId },
+                select: { id: true, role: true, name: true, phone: true, botState: true, tempData: true }
             });
 
-            if (text === '/start') {
-                if (user) {
-                    const cp = await prisma.courierProfile.findUnique({ where: { userId: user.id } });
+            // ── Access control: faqat ADMIN yoki COURIER ──
+            if (user && user.role !== 'ADMIN' && user.role !== 'COURIER') {
+                await bot.sendMessage(chatId,
+                    "⛔ Ushbu bot faqat kuryerlar va adminlar uchun.\n\nSavolingiz bo'lsa @Hadaf_supportbot ga yozing.",
+                    { parse_mode: 'HTML' }
+                );
+                return NextResponse.json({ ok: true });
+            }
 
-                    if (cp && (!cp.vehicleType || !cp.vehicleNumber)) {
-                        await prisma.user.update({
-                            where: { id: user.id },
-                            data: { botState: 'WIZARD_NAME' }
-                        });
-                        await bot.sendMessage(chatId, "👋 Salom! Profilingizni to'ldirish uchun iltimos, ism va familiyangizni kiriting:");
-                        return NextResponse.json({ ok: true });
-                    }
+            // ── Admin yo'naltirish ──
+            if (user?.role === 'ADMIN') {
+                await bot.sendMessage(chatId, "👋 Admin panel — buyurtmalar va sozlamalarni boshqarish uchun veb-saytdan foydalaning.");
+                return NextResponse.json({ ok: true });
+            }
 
-                    if (cp) {
-                        const welcome = `👋 <b>Xush kelibsiz, ${user.name}!</b>\n\n💰 Balans: ${(cp?.balance || 0).toLocaleString()} SO'M\n🚚 Yetkazmalar: ${cp?.totalDeliveries || 0} ta\n🕒 Holat: ${cp?.status === 'ONLINE' ? 'Ishda ✅' : 'Tanaffusda 💤'}`;
-                        await bot.sendMessage(chatId, welcome, {
-                            parse_mode: 'HTML',
-                            reply_markup: {
-                                keyboard: [
-                                    [{ text: "🚀 Dashbord (Open Dashboard)", web_app: { url: dashboardUrl } }],
-                                    [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
-                                    [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]
-                                ],
-                                resize_keyboard: true
-                            }
-                        });
-                        return NextResponse.json({ ok: true });
-                    }
+            // ── Wizard bosqichlari ──
+            const currentState = user?.botState as string | null;
+            const tempData = (user?.tempData as string | null) || '';
+
+            const getStored = (key: string): string => {
+                const m = tempData.match(new RegExp(`\\b${key}:(\\S+)\\b`));
+                return m ? m[1] : '';
+            };
+            const setTempData = async (data: string) => {
+                await prisma.user.update({ where: { id: user!.id }, data: { tempData: data } });
+            };
+
+            // WIZARD_PHONE
+            if (currentState === 'WIZARD_PHONE') {
+                const phoneDigits = text.replace(/\D/g, '');
+                if (!phoneDigits || phoneDigits.length < 9) {
+                    await bot.sendMessage(chatId, "📱 Iltimos, telefon raqamingizni to'liq kiriting (masalan: +998901234567).");
+                    return NextResponse.json({ ok: true });
                 }
+                const cleanPhone = phoneDigits.startsWith('+') ? phoneDigits : '+' + phoneDigits;
+                const dupApp = await prisma.courierApplication.findFirst({ where: { phone: cleanPhone } });
+                const dupUser = await prisma.user.findFirst({ where: { phone: cleanPhone } });
+                if (dupApp || dupUser) {
+                    await bot.sendMessage(chatId, "⚠️ Bu raqam allaqachon ro'yxatdan o'tgan. Boshqa raqam kiriting yoki @Hadaf_supportbot ga yozing.");
+                    return NextResponse.json({ ok: true });
+                }
+                await prisma.user.update({ where: { id: user!.id }, data: { phone: cleanPhone, botState: 'WIZARD_VEHICLE_TYPE', tempData: '' } });
+                await bot.sendMessage(chatId,
+                    "🚗 Avtomobil turini tanlang:\n\nMavjud turlar:\n• Moto\n• Avto\n• Van\n• Bicycle\n\nYoki o'z avtoturingizni yozing:",
+                    { parse_mode: 'HTML' }
+                );
+                return NextResponse.json({ ok: true });
+            }
 
-                const app: any = await prisma.$queryRawUnsafe('SELECT status FROM "CourierApplication" WHERE "telegramId" = $1 LIMIT 1', telegramId);
-                const appStatus = app[0]?.status;
+            // WIZARD_VEHICLE_TYPE
+            if (currentState === 'WIZARD_VEHICLE_TYPE') {
+                const vt = text.trim();
+                if (!vt) {
+                    await bot.sendMessage(chatId, "🚗 Avtomobil turini kiriting:");
+                    return NextResponse.json({ ok: true });
+                }
+                await setTempData(`VT:${vt}`);
+                await prisma.user.update({ where: { id: user!.id }, data: { botState: 'WIZARD_VEHICLE_NUMBER' } });
+                await bot.sendMessage(chatId, "🔢 Davlat raqamini kiriting (masalan: A777AA77):");
+                return NextResponse.json({ ok: true });
+            }
 
-                if (appStatus === 'APPROVED' && user) {
-                    if (user?.role === 'USER') {
-                        await prisma.$executeRawUnsafe('UPDATE "User" SET role = $1 WHERE id = $2', 'COURIER', user.id);
-                    }
+            // WIZARD_VEHICLE_NUMBER
+            if (currentState === 'WIZARD_VEHICLE_NUMBER') {
+                const vn = text.trim();
+                if (!vn || vn.length < 3) {
+                    await bot.sendMessage(chatId, "🔢 Davlat raqamini to'liq kiriting:");
+                    return NextResponse.json({ ok: true });
+                }
+                await setTempData(`VT:${getStored('VT')}|VN:${vn}`);
+                await prisma.user.update({ where: { id: user!.id }, data: { botState: 'WIZARD_VEHICLE_COLOR' } });
+                await bot.sendMessage(chatId, "🎨 Avtomobil rangini kiriting:");
+                return NextResponse.json({ ok: true });
+            }
+
+            // WIZARD_VEHICLE_COLOR
+            if (currentState === 'WIZARD_VEHICLE_COLOR') {
+                const vc = text.trim();
+                if (!user) return NextResponse.json({ ok: true });
+                const vt = getStored('VT') || '';
+                const vn = getStored('VN') || '';
+                const wName = user.name || 'Noma\'lum';
+
+                const appData: any = {
+                    telegramId, name: wName, phone: user.phone || '',
+                    status: 'PENDING', vehicleType: vt, vehicleNumber: vn, vehicleColor: vc
+                };
+                const existingApp = await prisma.courierApplication.findFirst({ where: { telegramId } });
+                if (existingApp) {
+                    await prisma.courierApplication.update({ where: { id: existingApp.id }, data: appData });
+                } else {
+                    await prisma.courierApplication.create({ data: appData });
+                }
+                if (user.role === 'COURIER') {
                     await prisma.courierProfile.upsert({
                         where: { userId: user.id },
-                        update: {},
-                        create: { userId: user.id, status: 'OFFLINE', isVerified: true }
+                        update: { vehicleType: vt, vehicleNumber: vn, vehicleColor: vc },
+                        create: { userId: user.id, status: 'OFFLINE', isVerified: true, vehicleType: vt, vehicleNumber: vn, vehicleColor: vc }
                     });
+                }
+                await prisma.user.update({ where: { id: user.id }, data: { botState: null, tempData: null } });
+                await bot.sendMessage(chatId,
+                    `✅ Ma'lumotlaringiz saqlandi!\n\n` +
+                    `👤 Ism: ${wName}\n📱 Telefon: ${user.phone || 'Kiritilmagan'}\n` +
+                    `🚗 Avto turi: ${vt || 'Kiritilmagan'}\n🔢 Davlat raqami: ${vn || 'Kiritilmagan'}\n🎨 Rang: ${vc || 'Kiritilmagan'}\n\n` +
+                    `📋 Ariza holati: <b>Admin tasdiqini kutmoqda</b>.`,
+                    { parse_mode: 'HTML' }
+                );
+                return NextResponse.json({ ok: true });
+            }
 
-                    const cp = await prisma.courierProfile.findUnique({ where: { userId: user.id } });
-                    const welcome = `👋 <b>Xush kelibsiz, ${user.name}!</b>\n\n💰 Balans: ${(cp?.balance || 0).toLocaleString()} SO'M\n🚚 Yetkazmalar: ${cp?.totalDeliveries || 0} ta`;
+            // ── /start ──
+            if (text === '/start') {
+                if (!user) {
+                    const newUser = await prisma.user.create({ data: { telegramId, role: 'USER' } });
+                    user = { id: newUser.id, role: 'USER', name: null, phone: null, botState: null, tempData: null };
+                }
+
+                const cp = await prisma.courierProfile.findUnique({
+                    where: { userId: user.id },
+                    select: { id: true, vehicleType: true, vehicleNumber: true, vehicleColor: true, status: true, balance: true, totalDeliveries: true, isVerified: true }
+                });
+
+                const app: any = await prisma.$queryRawUnsafe(
+                    'SELECT status, name, phone, vehicleType, vehicleNumber, vehicleColor FROM "CourierApplication" WHERE "telegramId" = $1 LIMIT 1', telegramId
+                );
+                const appStatus = app[0]?.status;
+
+                if (user.role === 'ADMIN') {
+                    await bot.sendMessage(chatId, "👋 Admin panel — buyurtmalar va sozlamalarni boshqarish uchun veb-saytdan foydalaning.");
+                    return NextResponse.json({ ok: true });
+                }
+
+                if (user.role === 'COURIER' && cp) {
+                    const welcome = `👋 <b>Xush kelibsiz, ${user.name || 'Kuryer'}!</b>\n\n` +
+                        `💰 Balans: ${(cp.balance || 0).toLocaleString()} SO'M\n` +
+                        `🚚 Yetkazmalar: ${cp.totalDeliveries || 0} ta\n` +
+                        `🕒 Holat: ${cp.status === 'ONLINE' ? 'Ishda ✅' : 'Tanaffusda 💤'}` +
+                        (cp.vehicleType ? `\n🚗 ${cp.vehicleType} | ${cp.vehicleNumber || ''}` : '');
                     await bot.sendMessage(chatId, welcome, {
                         parse_mode: 'HTML',
                         reply_markup: {
                             keyboard: [
-                                [{ text: "🚀 Dashbord (Open Dashboard)", web_app: { url: dashboardUrl } }],
+                                [{ text: "🚀 Dashbord", web_app: { url: dashboardUrl } }],
                                 [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }],
                                 [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]
                             ],
@@ -170,20 +278,112 @@ export async function POST(req: Request) {
                     return NextResponse.json({ ok: true });
                 }
 
-                await bot.sendMessage(chatId, "👋 Xush kelibsiz! Kuryer bo'lish uchun arizangizni to'ldiring. Iltimos, ism va familiyangizni kiriting:");
+                if (appStatus === 'PENDING') {
+                    await bot.sendMessage(chatId, "📋 Arizangiz admin tomonidan ko'rib chiqilmoqda. Tasdiqlangandan so'ng xabar beramiz.");
+                    return NextResponse.json({ ok: true });
+                }
+
+                if (appStatus === 'REJECTED') {
+                    await bot.sendMessage(chatId, "❌ Arizangiz rad etildi. Qayta ariza topshirish uchun /start ni bosing.");
+                    return NextResponse.json({ ok: true });
+                }
+
+                if (appStatus === 'APPROVED' && user) {
+                    if (user.role === 'USER') {
+                        await prisma.$executeRawUnsafe('UPDATE "User" SET role = $1 WHERE id = $2', 'COURIER', user.id);
+                    }
+                    await prisma.courierProfile.upsert({
+                        where: { userId: user.id }, update: {}, create: { userId: user.id, status: 'OFFLINE', isVerified: true }
+                    });
+                    const updatedCp = await prisma.courierProfile.findUnique({ where: { userId: user.id }, select: { balance: true, totalDeliveries: true } });
+                    await bot.sendMessage(chatId,
+                        `👋 <b>Xush kelibsiz, ${user.name || 'Kuryer'}!</b>\n\n` +
+                        `💰 Balans: ${(updatedCp?.balance || 0).toLocaleString()} SO'M\n` +
+                        `🚚 Yetkazmalar: ${updatedCp?.totalDeliveries || 0} ta`,
+                        { parse_mode: 'HTML', reply_markup: { keyboard: [[{ text: "🚀 Dashbord", web_app: { url: dashboardUrl } }], [{ text: "💰 Hamyon" }, { text: "🔄 Holat" }], [{ text: "📦 Buyurtmalar" }, { text: "📊 Statistika" }]], resize_keyboard: true } }
+                    );
+                    return NextResponse.json({ ok: true });
+                }
+
+                // USER — kuryer bo'lish taklifi
+                if (user?.role === 'USER') {
+                    await prisma.user.update({ where: { id: user.id }, data: { botState: 'WIZARD_NAME', tempData: '' } });
+                    await bot.sendMessage(chatId,
+                        "🚛 <b>Kuryer bo'lishni xohlaysizmi?</b>\n\n" +
+                        "Ma'lumotlaringizni kiriting:\n" +
+                        "1️⃣ Ism va familiya\n2️⃣ Telefon raqam\n3️⃣ Avto turi\n4️⃣ Davlat raqami\n5️⃣ Avto rangi\n\n" +
+                        "Ism va familiyangizni yozing:",
+                        { parse_mode: 'HTML' }
+                    );
+                    return NextResponse.json({ ok: true });
+                }
                 return NextResponse.json({ ok: true });
             }
 
-            if (text === '🚀 Dashbord (Open Dashboard)') {
-                await bot.sendMessage(chatId, `🚀 Kuryer paneli (Dashboard)ni ochish uchun quyidagi tugmani bosing:`, {
-                    reply_markup: {
-                        inline_keyboard: [
-                            [{ text: "📱 Panelni ochish", web_app: { url: dashboardUrl } }]
-                        ]
-                    }
+            // ── Bot tugmalari ──
+            if (text === '🚀 Dashbord') {
+                await bot.sendMessage(chatId, "🚀 Panelni ochish uchun tugmani bosing:", {
+                    reply_markup: { inline_keyboard: [[{ text: "📱 Panelni ochish", web_app: { url: dashboardUrl } }]] }
                 });
                 return NextResponse.json({ ok: true });
             }
+
+            if (text === '💰 Hamyon') {
+                const cp = await prisma.courierProfile.findUnique({ where: { userId: user!.id }, select: { balance: true, totalDeliveries: true } });
+                await bot.sendMessage(chatId, `💰 <b>Balans:</b> ${(cp?.balance || 0).toLocaleString()} SO'M\nJami yetkazmalar: ${cp?.totalDeliveries || 0} ta`, { parse_mode: 'HTML' });
+                return NextResponse.json({ ok: true });
+            }
+
+            if (text === '📊 Statistika') {
+                const cp = await prisma.courierProfile.findUnique({ where: { userId: user!.id }, select: { totalDeliveries: true, rating: true, courierLevel: true, status: true } });
+                await bot.sendMessage(chatId,
+                    `📊 <b>Statistika:</b>\n\n` +
+                    `🚚 Jami yetkazmalar: ${cp?.totalDeliveries || 0} ta\n` +
+                    `⭐ Reyting: ${cp?.rating?.toFixed(1) || '5.0'}\n` +
+                    `🏅 Daraja: ${cp?.courierLevel || 'Bronze'}\n` +
+                    `📍 Holat: ${cp?.status === 'ONLINE' ? 'Ishda ✅' : 'Tanaffusda 💤'}`,
+                    { parse_mode: 'HTML' }
+                );
+                return NextResponse.json({ ok: true });
+            }
+
+            if (text === '🔄 Holat') {
+                const cp = await prisma.courierProfile.findUnique({ where: { userId: user!.id }, select: { status: true } });
+                const newStatus = (cp?.status || 'OFFLINE') === 'ONLINE' ? 'OFFLINE' : 'ONLINE';
+                await prisma.courierProfile.update({ where: { userId: user!.id }, data: { status: newStatus, lastOnlineAt: new Date() } });
+                await bot.sendMessage(chatId,
+                    newStatus === 'ONLINE'
+                        ? "✅ <b>Ishda</b> holatiga o'tdingiz! Buyurtmalar kelaveradi."
+                        : "💤 <b>Tanaffusda</b> holatiga o'tdingiz.",
+                    { parse_mode: 'HTML' }
+                );
+                return NextResponse.json({ ok: true });
+            }
+
+            if (text === '📦 Buyurtmalar') {
+                await bot.sendMessage(chatId, "📦 Buyurtmalarni veb-saytdan kuzating:", {
+                    reply_markup: { inline_keyboard: [[{ text: "📱 Ko'rish", web_app: { url: dashboardUrl } }]] }
+                });
+                return NextResponse.json({ ok: true });
+            }
+
+            // WIZARD_NAME
+            if (currentState === 'WIZARD_NAME') {
+                const name = text.trim();
+                if (!name || name.length < 2) {
+                    await bot.sendMessage(chatId, "⚠️ Iltimos, ism va familiyangizni to'liq kiriting (kamida 2 ta so'z):");
+                    return NextResponse.json({ ok: true });
+                }
+                await prisma.user.update({ where: { id: user!.id }, data: { name, botState: 'WIZARD_PHONE' } });
+                await bot.sendMessage(chatId, `✅ Rahmat, <b>${name}</b>! Endi telefon raqamingizni kiriting (+998...).`, { parse_mode: 'HTML' });
+                return NextResponse.json({ ok: true });
+            }
+
+            // Default
+            await bot.sendMessage(chatId,
+                "💬 Xabaringiz qabul qilindi. Savolingiz bo'lsa @Hadaf_supportbot ga yozing yoki /start bosing.",
+                { parse_mode: 'HTML' }
+            );
         }
 
         return NextResponse.json({ ok: true });
