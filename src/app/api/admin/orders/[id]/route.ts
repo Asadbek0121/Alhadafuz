@@ -8,17 +8,21 @@ import { ALLOWED_TRANSITIONS } from '@/services/CourierService';
 export const dynamic = 'force-dynamic';
 
 /**
- * VENDOR uchun ruxsat etilgan status o'tishlari (DELIVERED/COMPLETED taqiqlangan).
- * ADMIN har qanday ruxsat etilgan o'tishni amalga oshirishi mumkin.
+ * VENDOR uchun ruxsat etilgan status o'tishlari.
+ * ⚠️ VENDOR cannot set DELIVERED or COMPLETED directly — those require
+ *    CourierService guards (photo proof + courier ownership).
+ *    ADMIN har qanday ruxsat etilgan o'tishni amalga oshirishi mumkin.
  */
 const VENDOR_ALLOWED_TRANSITIONS: Record<string, string[]> = {
     CREATED:      ['ASSIGNED'],
     ASSIGNED:     ['PROCESSING', 'CANCELLED'],
-    PROCESSING:   ['DELIVERING', 'CANCELLED'],
-    DELIVERING:   ['DELIVERED'],
-    DELIVERED:    ['COMPLETED'],
+    PROCESSING:   ['CANCELLED'],
+    // DELIVERING → DELIVERED: BLOCKED — requires photo proof via CourierService
+    // DELIVERED → COMPLETED: BLOCKED — requires courier ownership via CourierService
     CANCELLED:    [],
     COMPLETED:    [],
+    DELIVERED:    [],
+    DELIVERING:   [],
 };
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {

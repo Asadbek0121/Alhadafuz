@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 /**
  * To'lovni tasdiqlash endpointi.
  * ⚠️ Faqat ADMIN (haqiqiy session) tomonidan chaqirilishi mumkin.
- * Click/Payme webhooklari to'lovni o'z route'ida (payment/click, payment/payme)
+ * Click/Payme webhooklari to'lovni o'z route'ida (api/payment/click, api/payment/payme)
  * HMAC imzo tekshiruvidan o'tgach to'g'ridan-to'g'ri prisma.order.update() qiladi —
  * bu endpoint orqali emas.
  *
@@ -60,10 +60,17 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
             );
         }
 
-        // paymentMethod tekshirish — CASH/P2P bo'lsa admin tasdiqlashi mantiqiy
-        // Click/Payme bo'lsa, webhook allaqachon to'lovni PAID qilgan bo'lishi kerak
-        // Bu endpoint faqat admin panelida ko'rsatish yoki qo'shimcha tasdiqlash uchun
+        // paymentMethod cheklovi — server-side enforcement.
+        // Click/Payme to'lovlar webhook orqali PAID bo'ladi — admin bu endpoint
+        // orqali qo'lda tasdiqlay olmaydi. Faqat CASH/P2P ruxsat etilgan.
         const paymentMethod = existingOrder.paymentMethod || 'CASH';
+        const ALLOWED_MANUAL_METHODS = ['CASH', 'P2P'];
+        if (!ALLOWED_MANUAL_METHODS.includes(paymentMethod)) {
+            return NextResponse.json(
+                { error: `Manual payment confirmation not allowed for payment method: ${paymentMethod}. Use the verified ${paymentMethod.toUpperCase()} webhook instead.` },
+                { status: 403 }
+            );
+        }
 
         // Update order with payment verification audit fields
         const order = await prisma.order.update({
