@@ -6,7 +6,7 @@ const DEFAULT_COURIER_FEE = 12000;
  * Buyurtma statuslarining ruxsat etilgan o'tishlari.
  * Har bir statusdan qaysi keyingi statusga o'tish mumkinligi belgilangan.
  */
-const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+export const ALLOWED_TRANSITIONS: Record<string, string[]> = {
     CREATED:       ["ASSIGNED"],
     ASSIGNED:      ["PROCESSING", "CANCELLED"],
     PROCESSING:    ["DELIVERING", "CANCELLED"],

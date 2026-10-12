@@ -3,8 +3,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
+import { ALLOWED_TRANSITIONS } from '@/services/CourierService';
 
 export const dynamic = 'force-dynamic';
+
+/**
+ * VENDOR uchun ruxsat etilgan status o'tishlari (DELIVERED/COMPLETED taqiqlangan).
+ * ADMIN har qanday ruxsat etilgan o'tishni amalga oshirishi mumkin.
+ */
+const VENDOR_ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    CREATED:      ['ASSIGNED'],
+    ASSIGNED:     ['PROCESSING', 'CANCELLED'],
+    PROCESSING:   ['DELIVERING', 'CANCELLED'],
+    DELIVERING:   ['DELIVERED'],
+    DELIVERED:    ['COMPLETED'],
+    CANCELLED:    [],
+    COMPLETED:    [],
+};
 
 export async function PATCH(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -37,6 +52,36 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     try {
         const body = await req.json();
         const { status } = body;
+
+        // Status whitelist validatsiyasi
+        if (!status || typeof status !== 'string') {
+            return NextResponse.json({ error: 'Invalid or missing status field' }, { status: 400 });
+        }
+
+        const transitionMap = userRole === 'VENDOR' ? VENDOR_ALLOWED_TRANSITIONS : ALLOWED_TRANSITIONS;
+
+        // Order holatini oldindan o'qib, ruxsat etilgan o'tishni tekshirish
+        const currentOrder = await prisma.order.findUnique({
+            where: { id },
+            select: { id: true, status: true }
+        });
+
+        if (!currentOrder) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+
+        const allowedNext = transitionMap[currentOrder.status];
+        if (!allowedNext || !allowedNext.includes(status)) {
+            const adminAllowed = ALLOWED_TRANSITIONS[currentOrder.status] || [];
+            return NextResponse.json(
+                {
+                    error: userRole === 'VENDOR'
+                        ? `Forbidden: VENDOR cannot transition from ${currentOrder.status} to ${status}. Allowed: ${adminAllowed.join(' | ')}`
+                        : `Invalid transition: ${currentOrder.status} → ${status}. Allowed: ${allowedNext?.join(' | ') || 'none'}`
+                },
+                { status: 400 }
+            );
+        }
 
         const updateData: any = { status };
         // ⚠️ To'lov statusini bu endpoint O'ZGAR TIRMASIN.

@@ -15,8 +15,10 @@ export const dynamic = 'force-dynamic';
  * Naqd pul (CASH): admin tasdiqlash kerak — "pul qabul qilindi" degan ma'no.
  * Online (CLICK/PAYME): webhook allaqachon PAID qilib yuborgan — bu faqat
  *       admin panelida ko'rsatish/yangi holatni tasdiqlash uchun.
+ * P2P: admin qo'lda tasdiqlaydi — o'tkazma kelgani tasdiqlanganidan keyin.
  *
  * @param source — qaysi tizim tasdiqlamoqda: 'admin' | 'click' | 'payme' | 'p2p'
+ *                 Bu maydon autentifikatsiya emas — faqat ma'lumot (audit uchun).
  */
 export async function POST(req: Request, context: { params: Promise<{ id: string }> }) {
     const session = await auth();
@@ -25,11 +27,13 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }
 
     const { id } = await context.params;
-    const { source } = await req.json();
+    const body = await req.json();
+    const source = body?.source;
 
-    // Source validation — faqat ruxsat etilgan tizimlar
+    // Source validation — ruxsat etilgan tizimlar
+    // ⚠️ Source bu ma'lumot, autentifikatsiya emas. Admin sessiya allaqachon tekshirilgan.
     const ALLOWED_SOURCES = ['admin', 'click', 'payme', 'p2p'] as const;
-    if (!source || !(ALLOWED_SOURCES as readonly string[]).includes(source)) {
+    if (!source || !(ALLOWED_SOURCES as readonly string[]).includes(source as string)) {
         return NextResponse.json(
             { error: `Invalid source "${source}". Allowed: ${ALLOWED_SOURCES.join(', ')}` },
             { status: 400 }
@@ -37,25 +41,61 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
     }
 
     try {
+        // Order mavjudligini va hozirgi paymentStatus'ni tekshirish
+        const existingOrder = await prisma.order.findUnique({
+            where: { id },
+            select: { id: true, paymentStatus: true, paymentMethod: true }
+        });
+
+        if (!existingOrder) {
+            return NextResponse.json({ error: 'Order not found' }, { status: 404 });
+        }
+
+        // Zarracha tekshirish: agar order allaqachon PAID bo'lsa — redundant
+        // Lekin xato emas, shunchaki ogohlantirish
+        if (existingOrder.paymentStatus === 'PAID') {
+            return NextResponse.json(
+                { error: 'Order is already marked as PAID', orderId: id, paymentStatus: 'PAID' },
+                { status: 409 }
+            );
+        }
+
+        // paymentMethod tekshirish — CASH/P2P bo'lsa admin tasdiqlashi mantiqiy
+        // Click/Payme bo'lsa, webhook allaqachon to'lovni PAID qilgan bo'lishi kerak
+        // Bu endpoint faqat admin panelida ko'rsatish yoki qo'shimcha tasdiqlash uchun
+        const paymentMethod = existingOrder.paymentMethod || 'CASH';
+
+        // Update order with payment verification audit fields
         const order = await prisma.order.update({
             where: { id },
-            data: { paymentStatus: 'PAID' },
+            data: {
+                paymentStatus: 'PAID',
+                paymentVerifiedAt: new Date(),
+                paymentVerifiedBy: session.user.id,
+            },
             select: { id: true, paymentStatus: true, status: true },
         });
 
-        // Audit log
+        // Audit log — kim, qachon, qaysi manba orqali tasdiqladi
         await prisma.activityLog.create({
             data: {
                 userId: session.user.id,
                 action: 'CONFIRM_PAYMENT',
-                details: `Order ${id} payment confirmed as PAID (source: ${source})`,
+                details: `Order ${id} payment confirmed as PAID (source: ${source}, method: ${paymentMethod}) by admin ${session.user.id}`,
             },
         });
 
         revalidatePath('/admin/orders');
         revalidatePath(`/admin/orders/${id}`);
 
-        return NextResponse.json({ orderId: order.id, paymentStatus: order.paymentStatus, source });
+        return NextResponse.json({
+            orderId: order.id,
+            paymentStatus: order.paymentStatus,
+            source,
+            paymentMethod,
+            paymentVerifiedAt: new Date(),
+            paymentVerifiedBy: session.user.id,
+        });
     } catch (error) {
         console.error('[confirmPayment] Error:', error);
         return NextResponse.json({ error: 'Failed to confirm payment' }, { status: 500 });
