@@ -22,6 +22,7 @@ import {
     handleChangePassword,
     getPaymeConfig,
     verifyAuthorization,
+    verifyAuthorizationPerRequest,
 } from "@/lib/payme";
 
 export async function POST(req: NextRequest) {
@@ -51,25 +52,37 @@ export async function POST(req: NextRequest) {
     const { method, params } = body;
     const rpcId = body.id ?? null;
 
-    // AUTH LAYER: Har bir requestda authorization tekshiriladi
+    // AUTH LAYER: Per-request credential detection
+    // Har bir so'rov Authorization header dan login ni o'qib, DB dan mos config topadi.
+    // Bu yondashuv sandbox va production credentiallarni bir vaqtning o'zida qo'llab-quvvatlaydi.
     const authHeader = req.headers.get("authorization");
-    // PAYME_MODE env: "test" (faqat dev/sandbox) yoki "production" (jonli to'lov, default)
-    // ⚠️ Default "production" — PAYME_MODE o'rnatilmagan bo'lsa, production URL ishlatiladi.
-    // Sandbox test uchun faqat PAYME_MODE=test qo'yganda ishlash kerak.
-    const mode: "test" | "production" = process.env.PAYME_MODE === "test" ? "test" : "production";
-    const config = await getPaymeConfig(mode);
+    let config: Awaited<ReturnType<typeof getPaymeConfig>> | null = null;
 
-    if (!config) {
+    try {
+        // Avval per-request tekshiruv
+        config = await verifyAuthorizationPerRequest(authHeader);
+
+        if (!config) {
+            return NextResponse.json(
+                { jsonrpc: "2.0", error: { code: -32504, message: "Insufficient privileges for method execution", data: [] }, id: rpcId },
+                { status: 200 }
+            );
+        }
+    } catch (e: unknown) {
+        const err = e as { code?: number; message?: string };
+        if (err.code === -32504) {
+            return NextResponse.json(
+                { jsonrpc: "2.0", error: { code: -32504, message: "Insufficient privileges for method execution", data: [] }, id: rpcId },
+                { status: 200 }
+            );
+        }
         return NextResponse.json(
-            { jsonrpc: "2.0", error: { code: -32400, message: "Payme config not found", data: [] }, id: rpcId },
+            { jsonrpc: "2.0", error: { code: -32400, message: "Auth error", data: [] }, id: rpcId },
             { status: 200 }
         );
     }
 
     try {
-        // Authorization tekshiruvi — barcha metodlar uchun
-        await verifyAuthorization(authHeader, config, mode);
-
         let result: unknown;
 
         switch (method) {

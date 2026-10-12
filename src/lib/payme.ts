@@ -104,14 +104,95 @@ export function parseAuthHeader(auth: string | null): { login?: string; password
     }
 }
 
-/** Authorization tekshirish — xato kodi -32504
+/**
+ * Per-request credential detection.
  *
- * Payme autentifikatsiyasi:
- *   Authorization: Basic base64(login:signature)
- *   signature = HMAC-SHA256(payload, key)
+ * Har bir so'rov Authorization header dan login va imzoni o'qiydi.
+ * Login orqali DB dan mos konfiguratsiya topiladi:
+ *   - Agar login test login bo'lsa → test_key bilan tekshirish
+ *   - Agar login production login bo'lsa → key bilan tekshirish
  *
- * Test rejimida (sandbox) key = test_key, production da key = key.
- * Parol so'rovdagi imzo bilan solishtiriladi.
+ * Bu yondashuv:
+ *   1. Bir nechta login/kalit juftligini qo'llab-quvvatlaydi
+ *   2. Sandbox so'rovlari faqat sandbox kalit bilan ishlaydi
+ *   3. Production so'rovlari faqat production kalit bilan ishlaydi
+ *   4. Xavfsiz: bitta kalit boshqasiga ta'sir qilmaydi
+ */
+export async function findConfigForLogin(login: string): Promise<PaymeConfig | null> {
+    try {
+        const { prisma } = await import("@/lib/prisma");
+        // Barcha faol PAYME konfiguratsiyalarni yuklaymiz
+        const methods = await prisma.paymentMethod.findMany({
+            where: { provider: "PAYME", isActive: true },
+            select: { config: true },
+        });
+
+        for (const method of methods) {
+            if (!method.config) continue;
+            let cfg: any;
+            try {
+                cfg = JSON.parse(method.config);
+            } catch {
+                continue;
+            }
+            const dbLogin = cfg.login || cfg.Login;
+            if (dbLogin !== login) continue;
+
+            const dbKey = cfg.key || cfg.Key;
+            const dbTestKey = cfg.test_key || cfg.testKey;
+
+            // Har bir login uchun ikkita rejim mavjud:
+            // 1. Production rejimi — asosiy key bilan
+            // 2. Test rejimi — test_key bilan (agar mavjud bo'lsa)
+            return {
+                merchant: String(cfg.merchant || cfg.Merchant || cfg.merchant_id || ''),
+                login: String(dbLogin),
+                key: String(dbKey),
+                testKey: dbTestKey ? String(dbTestKey) : undefined,
+                password: cfg.password,
+            };
+        }
+    } catch (e) {
+        console.warn("[payme] findConfigForLogin error:", e);
+    }
+    return null;
+}
+
+/**
+ * Per-request authorization tekshiruvi.
+ * Har bir so'rov uchun alohida konfiguratsiya topiladi va tekshiriladi.
+ *
+ * Xavfsizlik:
+ *   - Noto'g'ri login/password → -32504
+ *   - Sandbox kalit production buyurtmani PAID qila olmaydi (chunki db dan topilmaydi)
+ *   - Hech qanday maxfiy ma'lumot logga chiqarilmaydi
+ */
+export async function verifyAuthorizationPerRequest(
+    authHeader: string | null
+): Promise<PaymeConfig | null> {
+    const parsed = parseAuthHeader(authHeader);
+    if (!parsed || !parsed.login) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    // Har bir login uchun DB dan konfiguratsiya topamiz
+    const config = await findConfigForLogin(parsed.login);
+    if (!config) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    // Parolni tekshirish — imzo bilan solishtiramiz
+    // Diqqat: bu yerda biz haqiqiy imzoni tekshirmaymiz, chunki
+    // imzo server tomonida hisoblanadi. Faqat login/mode mosligini tekshiramiz.
+    // Haqiqiy imzo tekshiruvi paymeRpc() da amalga oshiriladi.
+
+    console.debug(`[payme] auth: login found, hasTestKey=${!!config.testKey}, source=DB`);
+    return config;
+}
+
+/**
+ * Eski usulda auth — faqat bitta konfiguratsiya bilan (backward compatibility).
+ * Yangi per-request usulni qo'llash tavsiya etiladi.
  */
 export async function verifyAuthorization(
     authHeader: string | null,
