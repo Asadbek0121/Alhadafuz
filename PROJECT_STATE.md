@@ -397,6 +397,15 @@ Avvalgi sessiyalardan:
 - Notification retry: `notifyCourier` retries 3x with exponential backoff
 - Lint 0, tsc 0
 
+### Courier Bot Complete Wizard + Payment Method Notifications (2026-10-10)
+- **完整 5 步注册向导** (`src/app/api/telegram/courier/route.ts`)：name → phone → vehicle type → state plate → vehicle color，每步数据通过 `user.tempData` 中间存储，最终写入 `CourierApplication` + `CourierProfile`（已 APPROVED COURIER 直接更新 profile）
+- **访问控制**：仅 `ADMIN` 和 `COURIER` 角色可用；`USER` 或其他角色被拒并引导至 `@Hadaf_supportbot`
+- **所有按钮功能化**：`🚀 Dashbord` → WebApp 打开 dashboard；`💰 Hamyon` → 显示余额+累计；`📊 Statistika` → 累计/评分/等级；`🔄 Holat` → ONLINE/OFFLINE 切换；`📦 Buyurtmalar` → 引导至 WebApp dashboard（订单跟踪走网站，不走 bot）
+- **`/start` 状态机**：PENDING / REJECTED / APPROVED / COURIER（完整 profile）/ USER（引导注册向导）五条路径全部正确处理
+- **自动派单通知** (`src/lib/dispatch.ts`)：新增 `paymentMethod` 字段展示，CASH → "💵 Naqd pul (kuryer qabul qiladi)"，其他 → "💳 Online to'lov"
+- **手动指派通知** (`src/app/api/admin/orders/[id]/assign/route.ts`)：同上 payment label，order select 增加 `paymentMethod`
+- compile: tsc 0, lint 0
+
 ### Click Logotipi
 - `public/icons/click-01.png` crop qilingan (2250x2250 → 1708x714, logo faqat)
 - Checkout'da CLICK varianti logotipni ko'rsatadi (w-16 h-16)
