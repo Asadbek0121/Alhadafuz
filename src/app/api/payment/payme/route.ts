@@ -53,8 +53,10 @@ export async function POST(req: NextRequest) {
 
     // AUTH LAYER: Har bir requestda authorization tekshiriladi
     const authHeader = req.headers.get("authorization");
-    // PAYME_MODE env: "test" (default dev/sandbox) yoki "production" (jonli to'lov)
-    const mode: "test" | "production" = process.env.PAYME_MODE === "production" ? "production" : "test";
+    // PAYME_MODE env: "test" (faqat dev/sandbox) yoki "production" (jonli to'lov, default)
+    // ⚠️ Default "production" — PAYME_MODE o'rnatilmagan bo'lsa, production URL ishlatiladi.
+    // Sandbox test uchun faqat PAYME_MODE=test qo'yganda ishlash kerak.
+    const mode: "test" | "production" = process.env.PAYME_MODE === "test" ? "test" : "production";
     const config = await getPaymeConfig(mode);
 
     if (!config) {

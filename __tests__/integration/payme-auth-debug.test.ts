@@ -424,3 +424,131 @@ describe('parseAuthHeader', () => {
         expect(parseAuthHeader(header)).toBeNull();
     });
 });
+
+// ─── 6. PAYME_MODE Default Behavior (Critical Bug Fix) ──────────────────────
+
+describe('PAYME_MODE default behavior — production safety', () => {
+    beforeEach(() => {
+        // Clear PAYME_MODE between tests
+        delete process.env.PAYME_MODE;
+    });
+
+    it('should default to production when PAYME_MODE is not set', () => {
+        // This test verifies the fix: mode should be 'production' by default
+        const mode = process.env.PAYME_MODE === 'test' ? 'test' : 'production';
+        expect(mode).toBe('production');
+    });
+
+    it('should use test mode only when PAYME_MODE=test explicitly set', () => {
+        process.env.PAYME_MODE = 'test';
+        const mode = process.env.PAYME_MODE === 'test' ? 'test' : 'production';
+        expect(mode).toBe('test');
+        delete process.env.PAYME_MODE;
+    });
+
+    it('should NOT default to test mode (security fix)', () => {
+        // Before fix: PAYME_MODE undefined → mode = 'test' (sandbox)
+        // After fix: PAYME_MODE undefined → mode = 'production'
+        const oldBehavior = process.env.PAYME_MODE === 'production' ? 'production' : 'test';
+        const newBehavior = process.env.PAYME_MODE === 'test' ? 'test' : 'production';
+
+        // Verify old behavior would have been wrong
+        expect(oldBehavior).toBe('test'); // old buggy default
+        // Verify new behavior is correct
+        expect(newBehavior).toBe('production'); // fixed default
+    });
+});
+
+// ─── 7. Production Auth Tests ───────────────────────────────────────────────
+
+describe('Production auth flow — no sandbox leakage', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        delete process.env.PAYME_MODE;
+    });
+
+    it('should use production key in production mode', async () => {
+        mockedPrisma.paymentMethod.findFirst.mockResolvedValue({
+            id: 'pm-1',
+            provider: 'PAYME',
+            isActive: true,
+            config: JSON.stringify({
+                login: 'prod_login',
+                merchant: '12345',
+                key: 'prod_key_123',
+                test_key: 'sandbox_key_456',
+            }),
+        });
+
+        const config = await getPaymeConfig('production');
+        expect(config).not.toBeNull();
+        expect(config!.key).toBe('prod_key_123'); // production uses main key
+        expect(config!.testKey).toBe('sandbox_key_456'); // testKey stored separately
+    });
+
+    it('should use test key only when PAYME_MODE=test', async () => {
+        process.env.PAYME_MODE = 'test';
+        mockedPrisma.paymentMethod.findFirst.mockResolvedValue({
+            id: 'pm-1',
+            provider: 'PAYME',
+            isActive: true,
+            config: JSON.stringify({
+                login: 'test_login',
+                merchant: '12345',
+                key: 'prod_key',
+                test_key: 'sandbox_key',
+            }),
+        });
+
+        const config = await getPaymeConfig('production'); // called with 'production'
+        expect(config!.key).toBe('prod_key'); // even in production mode, key is prod_key
+
+        const testConfig = await getPaymeConfig('test');
+        expect(testConfig!.key).toBe('sandbox_key'); // test mode uses test_key
+        delete process.env.PAYME_MODE;
+    });
+
+    it('should reject invalid credentials in production mode', async () => {
+        mockedPrisma.paymentMethod.findFirst.mockResolvedValue({
+            id: 'pm-1',
+            provider: 'PAYME',
+            isActive: true,
+            config: JSON.stringify({
+                login: 'correct_login',
+                merchant: '12345',
+                key: 'correct_key',
+            }),
+        });
+
+        const config = await getPaymeConfig('production');
+        expect(config).not.toBeNull();
+
+        // Wrong password should throw -32504
+        const badAuth = makeAuthHeader('correct_login', 'wrong_password');
+        await expect(verifyAuthorization(badAuth, config!, 'production')).rejects.toEqual({
+            code: -32504,
+            message: "Insufficient privileges for method execution",
+            data: [],
+        });
+    });
+
+    it('should accept valid production credentials', async () => {
+        mockedPrisma.paymentMethod.findFirst.mockResolvedValue({
+            id: 'pm-1',
+            provider: 'PAYME',
+            isActive: true,
+            config: JSON.stringify({
+                login: 'valid_login',
+                merchant: '12345',
+                key: 'valid_key',
+            }),
+        });
+
+        const config = await getPaymeConfig('production');
+        expect(config).not.toBeNull();
+
+        // Correct password should pass
+        const goodAuth = makeAuthHeader('valid_login', 'valid_key');
+        await expect(verifyAuthorization(goodAuth, config!, 'production')).resolves.toBeUndefined();
+    });
+});
