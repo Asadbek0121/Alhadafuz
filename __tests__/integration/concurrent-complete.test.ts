@@ -214,29 +214,33 @@ describe('markOrderPaid — source validation', () => {
 // ─── 6. Admin route — VENDOR payment protection ───────────────────────────
 
 describe('admin order route — VENDOR paymentStatus protection', () => {
-    it('must require userRole === ADMIN to set paymentStatus=PAID', async () => {
+    it('must NOT set paymentStatus=PAID when status=DELIVERED (separate confirm-payment endpoint)', async () => {
         const fs = await import('fs');
         const path = await import('path');
         const content = fs.readFileSync(
             path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/route.ts'),
             'utf-8'
         );
-        // The condition must check role === ADMIN, not just status === DELIVERED
-        expect(content).toContain("userRole === 'ADMIN'");
-        // Must NOT unconditionally set paymentStatus on DELIVERED
-        const lines = content.split('\n');
-        let foundDeliveredBlock = false;
-        let foundUnconditionalPaymentSet = false;
-        for (let i = 0; i < lines.length; i++) {
-            if (lines[i].includes("status === 'DELIVERED'")) {
-                foundDeliveredBlock = true;
-                // Check next few lines for unconditional paymentStatus set
-                const nextLines = lines.slice(i, i + 5).join('');
-                if (nextLines.includes("paymentStatus = 'PAID'") && !nextLines.includes("userRole === 'ADMIN'")) {
-                    foundUnconditionalPaymentSet = true;
-                }
-            }
-        }
-        expect(foundUnconditionalPaymentSet).toBe(false);
+        // PATCH route must NOT set paymentStatus automatically on DELIVERED
+        // It should only update `status` field, nothing else
+        expect(content).not.toContain("paymentStatus = 'PAID'");
+        // Payment confirmation must go through separate endpoint
+        expect(content).toContain('/api/admin/orders/[id]/confirm-payment');
+    });
+
+    it('confirm-payment endpoint must require ADMIN session and validate source', async () => {
+        const fs = await import('fs');
+        const path = await import('path');
+        const confirmRoute = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/confirm-payment/route.ts'),
+            'utf-8'
+        );
+        // Must check ADMIN session
+        expect(confirmRoute).toContain("session.user.role !== 'ADMIN'");
+        // Must validate source
+        expect(confirmRoute).toContain("ALLOWED_SOURCES");
+        expect(confirmRoute).toContain("Invalid source");
+        // Must NOT accept courier or other non-authorized sources
+        expect(confirmRoute).not.toContain("'courier'");
     });
 });

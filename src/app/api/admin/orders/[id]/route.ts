@@ -39,12 +39,12 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         const { status } = body;
 
         const updateData: any = { status };
-        // ⚠️ To'lov statusini faqat ADMIN o'zgartira oladi.
-        // VENDOR statusni DELIVERED ga o'tkazsa ham paymentStatus = PAID bo'lmasligi kerak.
-        // To'lovni faqat admin dashboard yoki ishonchli payment-provider webhook yangilaydi.
-        if (status === 'DELIVERED' && userRole === 'ADMIN') {
-            updateData.paymentStatus = 'PAID';
-        }
+        // ⚠️ To'lov statusini bu endpoint O'ZGAR TIRMASIN.
+        // paymentStatus faqat quyidagi joylarda o'zgaradi:
+        //   1. POST /api/admin/orders/[id]/confirm-payment  (faqat ADMIN session)
+        //   2. POST /api/payment/click  (HMAC imzo tekshirilgandan keyin)
+        //   3. POST /api/payment/payme  (HMAC imzo tekshirilgandan keyin)
+        // VENDOR ham, ADMIN ham bu endpoint orqali paymentStatus ni PAID ga o'tkaza olmaydi.
 
         const order = await prisma.order.update({
             where: { id },
