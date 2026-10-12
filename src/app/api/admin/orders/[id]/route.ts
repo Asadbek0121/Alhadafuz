@@ -87,7 +87,6 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
             );
         }
 
-        const updateData: any = { status };
         // ⚠️ To'lov statusini bu endpoint O'ZGAR TIRMASIN.
         // paymentStatus faqat quyidagi joylarda o'zgaradi:
         //   1. POST /api/admin/orders/[id]/confirm-payment  (faqat ADMIN session)
@@ -95,14 +94,30 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         //   3. POST /api/payment/payme  (HMAC imzo tekshirilgandan keyin)
         // VENDOR ham, ADMIN ham bu endpoint orqali paymentStatus ni PAID ga o'tkaza olmaydi.
 
-        const order = await prisma.order.update({
+        // Atomik yangilash: WHERE status = currentStatus — race condition himoyasi.
+        // Agar parallel so'rov oralig'ida status o'zgargan bo'lsa, update 0 qatorga ta'sir qiladi.
+        const rowsUpdated = await prisma.$executeRawUnsafe(
+            `UPDATE "Order" SET status = $1, "updatedAt" = NOW() WHERE id = $2 AND status = $3`,
+            status, id, currentOrder.status
+        );
+
+        if (rowsUpdated === 0) {
+            // Status allaqachon o'zgarib ketgan — kelayotgan so'rov eskirgan
+            const freshOrder = await prisma.order.findUnique({ where: { id }, select: { status: true } });
+            return NextResponse.json(
+                { error: `Order status changed concurrently. Current: ${freshOrder?.status || 'unknown'}. Requested: ${status}` },
+                { status: 409 }
+            );
+        }
+
+        const order = await prisma.order.findUnique({
             where: { id },
-            data: updateData,
             include: { user: true }
         });
 
-        // Buyurtma DELIVERED/PAID bo'lsa — elektron chek yaratish va email yuborish
-        if (status === 'DELIVERED' || updateData.paymentStatus === 'PAID') {
+        // Buyurtma DELIVERED bo'lsa — elektron chek yaratish va email yuborish
+        // ⚠️ paymentStatus bu endpoint orqali o'zgarmaydi (faqat DELIVERED status uchun)
+        if (status === 'DELIVERED') {
             import('@/lib/invoice/invoice-service').then(({ createInvoiceForOrder }) => {
                 createInvoiceForOrder(id).then(({ invoice }) => {
                     if (invoice) {

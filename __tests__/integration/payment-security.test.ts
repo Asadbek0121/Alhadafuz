@@ -78,6 +78,12 @@ describe('Payment confirmation security', () => {
         expect(content).toContain('session.user.id');
     });
 
+    it('must be idempotent — parallel calls return 409 for duplicate PAID', () => {
+        // First call sets PAID, second call should get 409
+        expect(content).toContain('already marked as PAID');
+        expect(content).toContain('{ status: 409 }');
+    });
+
     it('must create activity log for audit trail', () => {
         expect(content).toContain('activityLog.create');
         expect(content).toContain('CONFIRM_PAYMENT');

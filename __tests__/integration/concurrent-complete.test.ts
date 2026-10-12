@@ -244,3 +244,102 @@ describe('admin order route — VENDOR paymentStatus protection', () => {
         expect(confirmRoute).not.toContain("'courier'");
     });
 });
+
+// ─── 7. Atomic PATCH — concurrent status change protection ──────────────────
+
+describe('admin order route — atomic PATCH with concurrency guard', () => {
+    it('must use $executeRawUnsafe with WHERE status guard for atomic update', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/route.ts'),
+            'utf-8'
+        );
+        // Must use raw SQL with status guard
+        expect(content).toContain('$executeRawUnsafe');
+        expect(content).toContain('WHERE id = $2 AND status = $3');
+        // Must check rowsUpdated
+        expect(content).toContain('rowsUpdated');
+        expect(content).toContain('status: 409');
+    });
+
+    it('must NOT reference updateData for paymentStatus check', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/route.ts'),
+            'utf-8'
+        );
+        // updateData should not exist (removed in atomic refactor)
+        expect(content).not.toContain('updateData.paymentStatus');
+    });
+});
+
+// ─── 8. Override status endpoint ────────────────────────────────────────────
+
+describe('override-status endpoint — emergency admin override', () => {
+    it('must exist as a separate endpoint', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const overridePath = path.resolve(
+            process.cwd(),
+            'src/app/api/admin/orders/[id]/override-status/route.ts'
+        );
+        expect(fs.existsSync(overridePath)).toBe(true);
+    });
+
+    it('must require ADMIN session', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/override-status/route.ts'),
+            'utf-8'
+        );
+        expect(content).toContain("session.user.role !== 'ADMIN'");
+        expect(content).toContain('{ status: 401 }');
+    });
+
+    it('must require reason field', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/override-status/route.ts'),
+            'utf-8'
+        );
+        expect(content).toContain('reason');
+        expect(content).toContain('targetStatus');
+    });
+
+    it('must validate ALLOWED_TRANSITIONS before override', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/override-status/route.ts'),
+            'utf-8'
+        );
+        expect(content).toContain('ALLOWED_TRANSITIONS');
+        expect(content).toContain('Invalid override target');
+    });
+
+    it('must create OVERRIDE_STATUS activity log', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/override-status/route.ts'),
+            'utf-8'
+        );
+        expect(content).toContain('OVERRIDE_STATUS');
+        expect(content).toContain('activityLog.create');
+    });
+
+    it('must use atomic UPDATE with WHERE status guard', () => {
+        const fs = require('fs');
+        const path = require('path');
+        const content = fs.readFileSync(
+            path.resolve(process.cwd(), 'src/app/api/admin/orders/[id]/override-status/route.ts'),
+            'utf-8'
+        );
+        expect(content).toContain('$executeRawUnsafe');
+        expect(content).toContain('WHERE id = $2 AND status = $3');
+    });
+});

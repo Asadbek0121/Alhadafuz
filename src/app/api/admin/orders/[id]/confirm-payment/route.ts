@@ -51,8 +51,8 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
             return NextResponse.json({ error: 'Order not found' }, { status: 404 });
         }
 
-        // Zarracha tekshirish: agar order allaqachon PAID bo'lsa — redundant
-        // Lekin xato emas, shunchaki ogohlantirish
+        // Idempotency guard: agar order allaqachon PAID bo'lsa — 409 qaytarish.
+        // Parallel so'rovlarda ikkinchi so'rov 409 oladi, birinchi so'rov muvaffaqiyatli.
         if (existingOrder.paymentStatus === 'PAID') {
             return NextResponse.json(
                 { error: 'Order is already marked as PAID', orderId: id, paymentStatus: 'PAID' },
