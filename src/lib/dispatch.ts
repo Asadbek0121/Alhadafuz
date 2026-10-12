@@ -68,10 +68,10 @@ export async function autoDispatchOrder(orderId: string) {
             if (!fresh || fresh.courierId) {
                 throw new Error('Order already assigned');
             }
-            // courierId IS NULL — faqat hali tayinlanmagan buyurtmalarga biriktirish
+            // courierId IS NULL + ruxsat etilgan statuslar — faqat tayinlanmagan CREATED/ASSIGNED buyurtmalarga biriktirish
             const result = await tx.$executeRawUnsafe(
                 `UPDATE "Order" SET "courierId" = $1, status = $2, "updatedAt" = NOW() ` +
-                `WHERE id = $3 AND "courierId" IS NULL`,
+                `WHERE id = $3 AND "courierId" IS NULL AND status IN ('CREATED', 'ASSIGNED')`,
                 bestCourier.userId, 'ASSIGNED', orderId
             );
             rowsUpdated = Number(result);

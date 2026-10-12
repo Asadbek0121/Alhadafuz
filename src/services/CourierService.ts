@@ -161,9 +161,9 @@ export class CourierService {
         const fee = await getCourierFee();
 
         const result = await prisma.$transaction(async (tx: any) => {
-            // FOR UPDATE — row lock orqali parallel chaqiruvlar bloklanadi
-            // Bu PostgreSQL'da "SELECT ... FOR UPDATE" ga ekvivalent
-            await tx.$executeRawUnsafe(
+            // FOR UPDATE — qatorni lock qilish, boshqa transaction'lar kutadi.
+            // $queryRawUnsafe ishlatamiz (SELECT RETURNING, natija yutiladi).
+            await tx.$queryRawUnsafe(
                 `SELECT * FROM "Order" WHERE id = $1 FOR UPDATE`,
                 orderId
             );

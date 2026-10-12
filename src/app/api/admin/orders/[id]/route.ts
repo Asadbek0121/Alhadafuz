@@ -39,7 +39,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
         const { status } = body;
 
         const updateData: any = { status };
-        if (status === 'DELIVERED') {
+        // ⚠️ To'lov statusini faqat ADMIN o'zgartira oladi.
+        // VENDOR statusni DELIVERED ga o'tkazsa ham paymentStatus = PAID bo'lmasligi kerak.
+        // To'lovni faqat admin dashboard yoki ishonchli payment-provider webhook yangilaydi.
+        if (status === 'DELIVERED' && userRole === 'ADMIN') {
             updateData.paymentStatus = 'PAID';
         }
 
