@@ -161,34 +161,29 @@ export class CourierService {
         const fee = await getCourierFee();
 
         const result = await prisma.$transaction(async (tx: any) => {
-            // FOR UPDATE lock — parallel so'rovlarni bloklash, race condition oldini oladi
+            // FOR UPDATE — row lock orqali parallel chaqiruvlar bloklanadi
+            // Bu PostgreSQL'da "SELECT ... FOR UPDATE" ga ekvivalent
+            await tx.$executeRawUnsafe(
+                `SELECT * FROM "Order" WHERE id = $1 FOR UPDATE`,
+                orderId
+            );
             const order = await tx.order.findUnique({
                 where: { id: orderId },
                 select: { id: true, status: true, courierId: true, deliveryPhoto: true }
             });
-            // Lock ni faol ushlab turish uchun qayta update qilish (PostgreSQL FOR UPDATE equivalent)
-            await tx.$executeRawUnsafe(
-                `SELECT pg_advisory_xact_lock(hashtext($1))`,
-                `completeOrder:${orderId}`
-            );
-            // Qayta o'qish — lock ichida
-            const lockedOrder = await tx.order.findUnique({
-                where: { id: orderId },
-                select: { id: true, status: true, courierId: true, deliveryPhoto: true }
-            });
-            if (!lockedOrder) throw new Error(`Order ${orderId} not found`);
-            if (lockedOrder.courierId !== courierUserId) {
+            if (!order) throw new Error(`Order ${orderId} not found`);
+            if (order.courierId !== courierUserId) {
                 throw new Error('Order not assigned to this courier');
             }
-            if (!lockedOrder.deliveryPhoto) {
+            if (!order.deliveryPhoto) {
                 throw new Error(`Order ${orderId} requires a delivery photo before completion`);
             }
             // Idempotent: COMPLETED allaqachon bo'lsa — balans ikki marta oshmaysin
-            if (lockedOrder.status === "COMPLETED") {
+            if (order.status === "COMPLETED") {
                 return { orderId, status: "COMPLETED", fee, alreadyDone: true };
             }
-            if (lockedOrder.status !== 'DELIVERED') {
-                throw new Error(`Expected DELIVERED status, got: ${lockedOrder.status}`);
+            if (order.status !== 'DELIVERED') {
+                throw new Error(`Expected DELIVERED status, got: ${order.status}`);
             }
 
             await tx.order.update({
@@ -196,9 +191,9 @@ export class CourierService {
                 data: { status: "COMPLETED", finishedAt: new Date() }
             });
 
-            if (lockedOrder.courierId) {
+            if (order.courierId) {
                 await tx.courierProfile.update({
-                    where: { userId: lockedOrder.courierId },
+                    where: { userId: order.courierId },
                     data: {
                         totalDeliveries: { increment: 1 },
                         balance: { increment: fee }
@@ -214,16 +209,28 @@ export class CourierService {
 
     /**
      * To'lovni PAID deb belgilaydi.
-     * ⚠️ FAQAT admin (role === 'ADMIN') yoki payment-provider webhook orqali chaqirilishi kerak.
+     * ⚠️ FAQAT admin (role === 'ADMIN') yoki ishonchli payment-provider webhook orqali chaqirilishi kerak.
      * Kuryer webhook'dan bevosita chaqirish TAQiQLANGAN.
-     * Admin ID majburiy — bo'sh bo'lsa xato qaytaradi.
+     *
+     * Caller tomondan authorization tekshiruvi talab qilinadi:
+     *   - Admin: session.user.role === 'ADMIN' ✅
+     *   - Payment provider: signed webhook (HMAC MD5 / SHA256) ✅
+     *   - Kuryer: ⛔ TAQiQLANGAN
+     *
+     * @param source — qaysi tizimdan kelgani (auth context ma'lumoti).
+     *   'admin' | 'click' | 'payme' | 'p2p' — boshqa qiymatda xato.
      */
     async markOrderPaid(
         orderId: string,
-        adminId: string
+        source: 'admin' | 'click' | 'payme' | 'p2p'
     ): Promise<{ orderId: string; paymentStatus: string }> {
-        if (!adminId || adminId.trim() === '') {
-            throw new Error('markOrderPaid requires a valid adminId');
+        const ALLOWED_SOURCES = ['admin', 'click', 'payme', 'p2p'];
+        if (!source || !ALLOWED_SOURCES.includes(source)) {
+            throw new Error(
+                `markOrderPaid: forbidden source "${source}". ` +
+                `Allowed: ${ALLOWED_SOURCES.join(', ')}. ` +
+                `Only admin dashboard or verified payment-provider webhooks may set PAID.`
+            );
         }
         await prisma.order.update({
             where: { id: orderId },

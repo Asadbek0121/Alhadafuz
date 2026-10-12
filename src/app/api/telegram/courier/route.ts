@@ -139,13 +139,25 @@ export async function POST(req: Request) {
                 } else if (data.startsWith('reject_assign_')) {
                     // Kuryer buyurtmani rad etdi
                     const orderId = data.replace('reject_assign_', '');
+                    // Ownership tekshirish — faqat o'ziga tayinlangan buyurtmani rad eta oladi
+                    const ownOrder = await prisma.order.findFirst({
+                        where: { id: orderId, courierId: user.id },
+                        select: { id: true, status: true }
+                    });
+                    if (!ownOrder) {
+                        await bot.sendMessage(chatId,
+                            "⛔ Sizda ushbu buyurtmani rad etish huquqi yo'q.",
+                            { parse_mode: 'HTML' }
+                        );
+                        return NextResponse.json({ ok: true });
+                    }
                     await bot.sendMessage(chatId,
                         "⚠️ Siz buyurtmani rad etdingiz. Buyurtma qayta tayyorlanmoqda.",
                         { parse_mode: 'HTML' }
                     );
                     // Rad etishni logga yozish
                     await courierService.logCourierReject(orderId, user.id, "Kuryer rad etdi");
-                    // Admin'ga xabar yuborish (not courier!)
+                    // Admin'ga xabar yuborish
                     const adminResult = await courierService.notifyAdmin(
                         process.env.ADMIN_CHAT_ID || '',
                         "🚫 Kuryer rad etdi",
@@ -154,11 +166,16 @@ export async function POST(req: Request) {
                     if (!adminResult.ok) {
                         console.error("[courier] notifyAdmin failed:", adminResult.error);
                     }
-                    // Buyurtmani qayta dispatch uchun tayyorlash: courierId null, status CREATED
-                    await prisma.$executeRawUnsafe(
-                        'UPDATE "Order" SET "courierId" = NULL, status = $1 WHERE id = $2 AND status = $1',
-                        'ASSIGNED', orderId
+                    // Buyurtmani qayta dispatch uchun bo'shatish:
+                    // faqat shu kuryerga tegishli va ASSIGNED statusdagi buyurtmani
+                    const released = await prisma.$executeRawUnsafe(
+                        `UPDATE "Order" SET "courierId" = NULL, status = $1 ` +
+                        `WHERE id = $2 AND "courierId" = $3 AND status = 'ASSIGNED'`,
+                        'CREATED', orderId, user.id
                     );
+                    if (released === 0) {
+                        console.warn(`[reject] Order ${orderId} already reassigned or not in ASSIGNED state`);
+                    }
 
                 } else if (data.startsWith('cancel_order_')) {
                     const orderId = data.replace('cancel_order_', '');

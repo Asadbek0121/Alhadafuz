@@ -188,12 +188,34 @@ describe('Cross-courier access — assertOrderAccessible', () => {
 // ─── 4. Unauthorized Payment Change ───────────────────────────────────────
 
 describe('markOrderPaid — admin-only protection', () => {
-    it('service should set PAID when called with admin id', async () => {
-        const result = await service.markOrderPaid(ORDER_ID, 'admin-1');
+    it('service should set PAID when called with valid source (admin)', async () => {
+        const result = await service.markOrderPaid(ORDER_ID, 'admin');
         expect(result.paymentStatus).toBe('PAID');
         expect(p.order.update).toHaveBeenCalledWith(
             expect.objectContaining({ data: expect.objectContaining({ paymentStatus: 'PAID' }) })
         );
+    });
+
+    it('service should set PAID when called with valid source (click / payme)', async () => {
+        for (const src of ['click' as const, 'payme' as const, 'p2p' as const]) {
+            vi.clearAllMocks();
+            p.order.update.mockClear();
+            p.$queryRawUnsafe.mockResolvedValue([{ courierFeePerOrder: 12000 }]);
+            const result = await service.markOrderPaid(ORDER_ID, src);
+            expect(result.paymentStatus).toBe('PAID');
+            expect(p.order.update).toHaveBeenCalledOnce();
+        }
+    });
+
+    it('service should reject PAID when called with invalid/empty source', async () => {
+        // Invalid source — not in allowed list
+        await expect(service.markOrderPaid(ORDER_ID, 'courier' as any)).rejects.toThrow(/forbidden source/);
+        await expect(service.markOrderPaid(ORDER_ID, 'random' as any)).rejects.toThrow(/forbidden source/);
+        // Empty source
+        await expect(service.markOrderPaid(ORDER_ID, '')).rejects.toThrow(/forbidden source|valid source/);
+        // Null/undefined
+        await expect(service.markOrderPaid(ORDER_ID, null as any)).rejects.toThrow(/forbidden source|valid source/);
+        await expect(service.markOrderPaid(ORDER_ID, undefined as any)).rejects.toThrow(/forbidden source|valid source/);
     });
 
     it('route.ts must NOT call markOrderPaid for paid_ callback (source assertion)', async () => {
@@ -211,13 +233,12 @@ describe('markOrderPaid — admin-only protection', () => {
 
 describe('completeOrder — idempotency', () => {
     it('should increment balance once; second call is no-op (alreadyDone=true)', async () => {
-        // First call: findUnique x2 (lock + re-read both DELIVERED), then update
-        // Second call: findUnique x2 (both COMPLETED → alreadyDone guard)
+        // completeOrder: FOR UPDATE (1 raw) + findUnique (1 call), then update
+        // First call: 1 findUnique returning DELIVERED
+        // Second call: 1 findUnique returning COMPLETED (guard fires)
         p.order.findUnique
-            .mockResolvedValueOnce(makeOrder({ status: 'DELIVERED' }))  // 1st findUnique (first call)
-            .mockResolvedValueOnce(makeOrder({ status: 'DELIVERED' }))  // 2nd findUnique after lock (first call)
-            .mockResolvedValueOnce(makeOrder({ status: 'COMPLETED' }))  // 1st findUnique (second call)
-            .mockResolvedValueOnce(makeOrder({ status: 'COMPLETED' })); // 2nd findUnique (second call)
+            .mockResolvedValueOnce(makeOrder({ status: 'DELIVERED' }))  // first call
+            .mockResolvedValueOnce(makeOrder({ status: 'COMPLETED' })); // second call (alreadyDone guard)
         p.order.update.mockResolvedValue({});
         p.courierProfile.update.mockResolvedValue({});
         p.$executeRawUnsafe.mockResolvedValue(0);
