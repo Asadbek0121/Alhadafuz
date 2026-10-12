@@ -18,7 +18,6 @@ export async function POST(req: Request) {
 
     /**
      * Foydalanuvchini telegramId orqali topadi va rol tekshiradi.
-     * Adminlar ham kuryer botidan foydalana oladi.
      */
     async function getUser(chatId: number) {
         return prisma.user.findFirst({
@@ -115,35 +114,67 @@ export async function POST(req: Request) {
                 } else if (data.startsWith('completed_')) {
                     const orderId = data.replace('completed_', '');
                     const result = await courierService.completeOrder(orderId, user.id);
+                    if (result.alreadyDone) {
+                        await bot.sendMessage(chatId,
+                            "ℹ️ Buyurtma allaqachon yakunlangan.\n\n💰 Haq: ${result.fee.toLocaleString()} SO'M",
+                            { parse_mode: 'HTML' }
+                        );
+                    } else {
+                        await bot.sendMessage(chatId,
+                            `🎉 Buyurtma muvaffaqiyatli yakunlandi!\n\n` +
+                            `💰 Sizning haqingiz: ${result.fee.toLocaleString()} SO'M qo'shildi.`,
+                            { parse_mode: 'HTML' }
+                        );
+                    }
+
+                } else if (data.startsWith('paid_')) {
+                    // ⚠️ TO'LOVNI FAQAT ADMIN VA PAYMENT PROVIDER O'ZGARTIRA OLADI
+                    // Kuryer bu tugmani bosolmaydi — xavfsizlik uchun olib tashlandi
                     await bot.sendMessage(chatId,
-                        `🎉 Buyurtma muvaffaqiyatli yakunlandi!\n\n` +
-                        `💰 Sizning haqingiz: ${result.fee.toLocaleString()} SO'M qo'shildi.`,
+                        "⛔ To'lov statusini o'zgartirish huquqingiz yo'q. " +
+                        "To'lov admin yoki to'lov tizimi tomonidan amalga oshiriladi.",
                         { parse_mode: 'HTML' }
                     );
 
-                } else if (data.startsWith('paid_')) {
-                    const orderId = data.replace('paid_', '');
-                    await courierService.markOrderPaid(orderId);
-                    await bot.sendMessage(chatId, "💳 To'lov statusi YANGILANDI → PAID");
-
                 } else if (data.startsWith('reject_assign_')) {
-                    // Kuryer buyurtmani rad etdi — admin'ga xabar berish kerak
+                    // Kuryer buyurtmani rad etdi
                     const orderId = data.replace('reject_assign_', '');
                     await bot.sendMessage(chatId,
                         "⚠️ Siz buyurtmani rad etdingiz. Admin sizga boshqa buyurtma tayinlaydi.",
                         { parse_mode: 'HTML' }
                     );
-                    // Admin'ga notify
-                    await courierService.notifyCourier(
-                        user.id,
-                        "Kuryer rad etdi",
+                    // Rad etishni logga yozish
+                    await courierService.logCourierReject(orderId, user.id, "Kuryer rad etdi");
+                    // Admin'ga xabar yuborish (not courier!)
+                    const adminResult = await courierService.notifyAdmin(
+                        process.env.ADMIN_CHAT_ID || '',
+                        "🚫 Kuryer rad etdi",
                         `Buyurtma #${orderId.slice(-6).toUpperCase()} kuryer tomonidan rad etildi.`
                     );
+                    if (!adminResult.ok) {
+                        console.error("[courier] notifyAdmin failed:", adminResult.error);
+                    }
 
                 } else if (data.startsWith('cancel_order_')) {
                     const orderId = data.replace('cancel_order_', '');
                     await courierService.cancelOrder(orderId, user.id, "Kuryer tomonidan bekor qilindi");
                     await bot.sendMessage(chatId, "🚫 Buyurtma bekor qilindi.");
+
+                } else if (data.startsWith('view_order_')) {
+                    // Dashboard ga yo'naltirish
+                    const orderId = data.replace('view_order_', '');
+                    await bot.sendMessage(chatId,
+                        `📦 Buyurtma #${orderId.slice(-6).toUpperCase()} haqida ma'lumot:\n\n` +
+                        `Bot orqali emas, veb-saytdan batafsil ko'ring.`,
+                        {
+                            parse_mode: 'HTML',
+                            reply_markup: {
+                                inline_keyboard: [
+                                    [{ text: "📱 Dashboard", web_app: { url: dashboardUrl } }]
+                                ]
+                            }
+                        }
+                    );
                 }
             } catch (e: any) {
                 console.error("[courier] callback error:", e.message);

@@ -46,7 +46,6 @@ async function assertOrderAccessible(
 
     if (!order) return { order: { id: orderId, status: '', courierId: null }, allowed: false, error: 'Order not found' };
 
-    // Kuryer faqat o'ziga tayinlangan buyurtmani boshqara oladi
     if (order.courierId !== courierUserId) {
         return { order, allowed: false, error: 'Order not assigned to this courier' };
     }
@@ -87,7 +86,7 @@ export class CourierService {
             });
 
             await tx.dispatchLog.create({
-                data: { orderId, courierId, status: "ASSIGNED" }
+                data: { orderId, courierId, status: "ASSIGNED", reason }
             });
 
             return { orderId, courierId, status: "ASSIGNED", fee };
@@ -99,8 +98,6 @@ export class CourierService {
     /**
      * Status o'tishini validatsiya bilan bajaradi.
      * Faqat ruxsat etilgan tranziatsiyalar amalga oshiriladi.
-     *
-     * @throws Error agar status o'tishi ruxsat etilmagan bo'lsa yoki buyurtma kuryerga tegishli bo'lmasa
      */
     async updateOrderStatus(
         orderId: string,
@@ -155,11 +152,12 @@ export class CourierService {
      * Buyurtmani COMPLETED qiladi: rasm majburiy, kuryer balansiga haq yoziladi,
      * totalDeliveries oshadi — barchasi bir transactionda.
      * Status: DELIVERED → COMPLETED
+     * Idempotent: agar COMPLETED bo'lsa, balans ikki marta oshmaydi.
      */
     async completeOrder(
         orderId: string,
         courierUserId: string
-    ): Promise<{ orderId: string; status: string; fee: number }> {
+    ): Promise<{ orderId: string; status: string; fee: number; alreadyDone: boolean }> {
         const fee = await getCourierFee();
 
         const result = await prisma.$transaction(async (tx: any) => {
@@ -174,12 +172,12 @@ export class CourierService {
             if (!order.deliveryPhoto) {
                 throw new Error(`Order ${orderId} requires a delivery photo before completion`);
             }
-            if (order.status !== 'DELIVERED') {
-                throw new Error(`Expected DELIVERED status, got: ${order.status}`);
-            }
-            // Ikki marta completed qilishdan himoya
+            // Idempotent: COMPLETED allaqachon bo'lsa — balans ikki marta oshmaysin
             if (order.status === "COMPLETED") {
                 return { orderId, status: "COMPLETED", fee, alreadyDone: true };
+            }
+            if (order.status !== 'DELIVERED') {
+                throw new Error(`Expected DELIVERED status, got: ${order.status}`);
             }
 
             await tx.order.update({
@@ -200,17 +198,18 @@ export class CourierService {
             return { orderId, status: "COMPLETED", fee, alreadyDone: false };
         });
 
-        return { orderId: result.orderId, status: result.status, fee: result.fee };
+        return { orderId: result.orderId, status: result.status, fee: result.fee, alreadyDone: result.alreadyDone };
     }
 
     /**
      * To'lovni PAID deb belgilaydi.
-     * Faqat ADMIN yoki to'lov provayderi webhook'dan chaqirishi mumkin.
-     * Bu methodda status validatsiyasi yo'q — to'lov statusi alohida.
+     * ⚠️ FAQAT admin yoki payment-provider webhook orqali chaqirilishi kerak.
+     * Kuryer webhook'dan bevosita chaqirish TAQiQLANGAN.
+     * @param _adminId — admin ID (authorization tekshiruvi caller tomonidan amalga oshiriladi)
      */
     async markOrderPaid(
         orderId: string,
-        courierUserId?: string
+        _adminId?: string
     ): Promise<{ orderId: string; paymentStatus: string }> {
         await prisma.order.update({
             where: { id: orderId },
@@ -221,8 +220,8 @@ export class CourierService {
 
     /**
      * Buyurtmani bekor qiladi (CANCELLED).
-     * Faqat ASSIGNED yoki PROCESSING holatdagi buyurtmalarni bekor qilish mumkin.
      * Admin yoki kuryer tomonidan chaqirilishi mumkin.
+     * Reason audit log ga yoziladi.
      */
     async cancelOrder(
         orderId: string,
@@ -235,20 +234,34 @@ export class CourierService {
             throw new Error(`Cannot cancel order in ${order.status} status`);
         }
 
-        await prisma.order.update({
-            where: { id: orderId },
-            data: { status: "CANCELLED" }
+        await prisma.$transaction(async (tx: any) => {
+            await tx.order.update({
+                where: { id: orderId },
+                data: { status: "CANCELLED" }
+            });
+            // Audit log — qayerdan bekor qilingani va sababi
+            await tx.dispatchLog.create({
+                data: { orderId, courierId: userId, status: "CANCELLED", reason }
+            });
         });
+
         return { orderId, status: "CANCELLED" };
     }
 
     /**
-     * Mijozga bildirishnoma (DB notification).
+     * Kuryer rad etgan buyurtmani logga yozadi (admin ko'radi).
      */
-    async notifyCustomer(
+    async logCourierReject(
         orderId: string,
-        message: string
+        courierId: string,
+        reason: string = "Courier rejected"
     ): Promise<void> {
+        await prisma.dispatchLog.create({
+            data: { orderId, courierId, status: "REJECTED", reason }
+        });
+    }
+
+    async notifyCustomer(orderId: string, message: string): Promise<void> {
         const order = await prisma.order.findUnique({
             where: { id: orderId },
             include: { user: { select: { id: true, phone: true, notificationsEnabled: true } } }
@@ -265,6 +278,36 @@ export class CourierService {
                     type: "ORDER"
                 }
             });
+        }
+    }
+
+    /**
+     * Admin chatga xabar yuborish — admin notification (feedback yo'q).
+     */
+    async notifyAdmin(
+        adminTelegramId: string,
+        title: string,
+        message: string
+    ): Promise<{ ok: boolean; error?: string }> {
+        const botToken = process.env.COURIER_BOT_TOKEN;
+        if (!botToken) return { ok: false, error: 'COURIER_BOT_TOKEN not configured' };
+
+        try {
+            const res = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    chat_id: adminTelegramId,
+                    text: `<b>${title}</b>\n${message}`,
+                    parse_mode: "HTML"
+                }),
+                signal: AbortSignal.timeout(10000)
+            });
+            if (res.ok) return { ok: true };
+            return { ok: false, error: `Telegram API ${res.status}` };
+        } catch (err) {
+            console.error("[notifyAdmin] failed:", err);
+            return { ok: false, error: String(err) };
         }
     }
 
