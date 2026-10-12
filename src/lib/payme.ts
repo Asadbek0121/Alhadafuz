@@ -41,10 +41,14 @@ export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<Pa
             const cfg = JSON.parse(method.config);
             const login = cfg.login || cfg.Login;
             const merchant = cfg.merchant || cfg.Merchant || cfg.merchant_id;
+            // Config'dan kalitlarni ajratib olish
+            // Test rejimida test_key ustuvor, yo'q bo'lsa key ishlatiladi
+            const dbKey = cfg.key ?? cfg.Key;
+            const dbTestKey = cfg.test_key ?? cfg.testKey;
             const key = mode === "test"
-                ? (cfg.test_key ?? cfg.testKey ?? cfg.key)
-                : (cfg.key ?? cfg.Key);
-            const testKey = cfg.test_key ?? cfg.testKey;
+                ? (dbTestKey || dbKey)  // test rejimida test_key, yo'q bo'lsa key
+                : dbKey;
+            const testKey = dbTestKey || undefined;
             const password = cfg.password;
 
             if (login && merchant && key) {
@@ -101,8 +105,14 @@ export function parseAuthHeader(auth: string | null): { login?: string; password
 }
 
 /** Authorization tekshirish — xato kodi -32504
- * Test rejimida (sandbox) imzo test_key bilan qilingan bo'ladi, shuning uchun
- * parol sifatida test_key ishlatiladi. */
+ *
+ * Payme autentifikatsiyasi:
+ *   Authorization: Basic base64(login:signature)
+ *   signature = HMAC-SHA256(payload, key)
+ *
+ * Test rejimida (sandbox) key = test_key, production da key = key.
+ * Parol so'rovdagi imzo bilan solishtiriladi.
+ */
 export async function verifyAuthorization(
     authHeader: string | null,
     config: PaymeConfig,
@@ -120,11 +130,16 @@ export async function verifyAuthorization(
         throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
     }
 
-    // Wrong password
-    // Test rejimida sandbox test_key bilan imzolaydi
+    // Wrong password — imzo tekshiruvi
+    // Test rejimida sandbox test_key bilan imzolaydi, production da key bilan
     const expectedPassword = mode === "test"
-        ? (config.testKey ?? config.password ?? config.key)
-        : (config.password ?? config.key);
+        ? (config.testKey ?? config.key)
+        : config.key;
+
+    // Debug only — secrets NOT logged
+    const authSource = config.password ? 'DB' : 'ENV';
+    console.debug(`[payme] auth check: login match=${parsed.login === config.login}, source=${authSource}, mode=${mode}`);
+
     if (parsed.password !== expectedPassword) {
         throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
     }
