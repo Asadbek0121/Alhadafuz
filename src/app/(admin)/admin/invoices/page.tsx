@@ -114,27 +114,33 @@ export default async function AdminInvoicesPage({
         }));
 
     } else {
-        // Admin view can use standard Prisma calls
+        // Admin view: query Invoice table directly
         const where: any = {};
         if (search) {
             where.OR = [
-                { id: { contains: search, mode: 'insensitive' } },
-                { user: { name: { contains: search, mode: 'insensitive' } } },
-                { shippingPhone: { contains: search, mode: 'insensitive' } },
+                { invoiceNumber: { contains: search, mode: 'insensitive' } },
+                { orderId: { contains: search } },
             ];
         }
         if (statusFilter && statusFilter !== 'ALL') {
-            where.status = statusFilter;
+            if (['RECEIPT', 'INVOICE'].includes(statusFilter)) {
+                where.invoiceType = statusFilter;
+            } else {
+                where.status = statusFilter;
+            }
         }
 
         [totalCount, shippingCount, deliveredCount, pendingCount, invoices] = await Promise.all([
-            prisma.order.count({ where: {} }),
-            prisma.order.count({ where: { status: 'SHIPPING' } }),
-            prisma.order.count({ where: { status: 'DELIVERED' } }),
-            prisma.order.count({ where: { status: 'PENDING' } }),
-            prisma.order.findMany({
+            prisma.invoice.count({ where: {} }),
+            prisma.invoice.count({ where: { status: 'ISSUED' } }),
+            prisma.invoice.count({ where: { status: 'CANCELLED' } }),
+            prisma.invoice.count({ where: { status: 'REFUNDED' } }),
+            prisma.invoice.findMany({
                 where,
-                include: { user: { select: { name: true, email: true, image: true, phone: true } } },
+                include: { 
+                    user: { select: { name: true, email: true, image: true, phone: true } },
+                    order: { select: { id: true, orderNumber: true, total: true, status: true } }
+                },
                 orderBy: { createdAt: 'desc' },
                 take: 100
             })
@@ -179,7 +185,8 @@ export default async function AdminInvoicesPage({
                     <table className="w-full text-left">
                         <thead className="bg-gray-50/50 border-b border-gray-100">
                             <tr>
-                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">ID</th>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Chek/Invoys raqami</th>
+                                <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Buyurtma</th>
                                 <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Mijoz</th>
                                 <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Summa</th>
                                 <th className="px-6 py-4 text-[10px] uppercase font-bold text-gray-400 tracking-wider">Holat</th>
@@ -192,31 +199,46 @@ export default async function AdminInvoicesPage({
                                 <tr key={inv.id} className="hover:bg-gray-50/50 transition-colors group">
                                     <td className="px-6 py-4">
                                         <span className="font-mono text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                                            #{inv.id.slice(-6).toUpperCase()}
+                                            {inv.invoiceNumber}
+                                        </span>
+                                        <div className="text-[10px] text-gray-400 mt-0.5">
+                                            {inv.invoiceType === 'INVOICE' ? 'Invoys' : 'Chek'}
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                        <span className="font-mono text-xs text-gray-600">
+                                            #{(inv.order?.orderNumber || inv.orderId || inv.id).slice(-6).toUpperCase()}
                                         </span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-600 font-bold text-xs shadow-sm overflow-hidden text-center truncate">
-                                                {inv.user.image ? <img src={inv.user.image} alt={inv.user.name || 'Mijoz'} className="w-full h-full object-cover" /> : inv.user.name?.[0] || 'U'}
+                                                {inv.user?.image ? <img src={inv.user.image} alt={inv.user.name || 'Mijoz'} className="w-full h-full object-cover" /> : inv.user?.name?.[0] || 'U'}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-bold text-gray-900">{inv.user.name || "Mehmon"}</div>
-                                                <div className="text-[11px] text-gray-400 font-medium">{inv.user.email}</div>
+                                                <div className="text-sm font-bold text-gray-900">{inv.user?.name || "Mehmon"}</div>
+                                                <div className="text-[11px] text-gray-400 font-medium">{inv.user?.email}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-sm font-black text-gray-900">
-                                            {inv.total.toLocaleString()} <span className="text-[10px] text-gray-400 font-bold uppercase ml-0.5">so'm</span>
+                                            {inv.totalAmount?.toLocaleString() || inv.order?.total?.toLocaleString() || '0'} <span className="text-[10px] text-gray-400 font-bold uppercase ml-0.5">so'm</span>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">
-                                        <StatusBadge status={inv.status} />
+                                        <div className="flex flex-col gap-1">
+                                            <StatusBadge status={inv.status} />
+                                            {inv.paymentStatus && inv.paymentStatus !== 'PAID' && (
+                                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${inv.paymentStatus === 'UNPAID' ? 'bg-red-50 text-red-700' : 'bg-green-50 text-green-700'}`}>
+                                                    {inv.paymentStatus === 'UNPAID' ? 'To\'lanmagan' : 'To\'langan'}
+                                                </span>
+                                            )}
+                                        </div>
                                     </td>
                                     <td className="px-6 py-4">
                                         <div className="text-xs text-gray-500 font-medium">
-                                            {new Date(inv.createdAt).toLocaleDateString()}
+                                            {new Date(inv.issueDate || inv.createdAt).toLocaleDateString()}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4">

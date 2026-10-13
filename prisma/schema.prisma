@@ -822,10 +822,17 @@ model PaymentLog {
   transactionId String?
   amount        Float?
   status        String
+  method        String?  // CheckPerformTransaction, CreateTransaction, PerformTransaction, CheckTransaction
+  errorCode     String?  // JSON-RPC error code (-31001, -31003, etc.)
+  orderId       String?  // Related order ID
   requestData   String?
   responseData  String?
   ipAddress     String?
   createdAt     DateTime @default(now())
+
+  @@index([orderId])
+  @@index([provider])
+  @@index([createdAt])
 }
 
 model ShippingZone {
