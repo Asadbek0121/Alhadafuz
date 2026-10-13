@@ -41,11 +41,6 @@ const createOrderSchema = z.object({
     idempotencyKey: z.string().max(100).optional(),
 });
 
-/** PAYME_MODE env ga qarab server-side rejimni aniqlaydi. */
-function getPaymeMode(): 'test' | 'production' {
-    return process.env.PAYME_MODE === 'production' ? 'production' : 'test';
-}
-
 /**
  * To'lov URL — to'lov turi bo'yicha qaytaradi.
  * Allaqachon PAID yoki CANCELLED bo'lgan order uchun qayta payment yaratilmaydi.
@@ -87,7 +82,7 @@ async function buildOrderResponse(order: any): Promise<{ success: boolean; order
 import { checkRateLimit } from '@/lib/ratelimit';
 import { autoDispatchOrder } from '@/lib/dispatch';
 import { getClickConfig, buildClickPayUrl } from '@/lib/click';
-import { getPaymeConfig, buildPaymeRedirectUrl } from '@/lib/payme';
+import { getPaymeConfig, buildPaymeRedirectUrl, getPaymeMode } from '@/lib/payme';
 
 export async function POST(req: Request) {
     // 1. RATE LIMITING (Security Layer)
@@ -330,7 +325,7 @@ export async function POST(req: Request) {
                         "deliveryMethod", "storeId", "shippingCity", "shippingDistrict",
                         "shippingAddress", "comment", "shippingPhone", "shippingName",
                         "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "isTest", "updatedAt"
-                    ) VALUES ($1, $21, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
+                    ) VALUES ($1, $20, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $21, NOW())
                 `,
                     orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
                     deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',

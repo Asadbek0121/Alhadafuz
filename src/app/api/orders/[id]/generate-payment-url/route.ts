@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/auth";
 import { getClickConfig, buildClickPayUrl } from "@/lib/click";
-import { getPaymeConfig, buildPaymeRedirectUrl } from "@/lib/payme";
+import { getPaymeConfig, buildPaymeRedirectUrl, getPaymeMode } from "@/lib/payme";
 
 export async function POST(
     req: Request,
@@ -54,8 +54,7 @@ export async function POST(
         }
 
         if (paymentMethod === 'PAYME') {
-            // PAYME_MODE env: "test" (default) yoki "production" (jonli to'lov)
-            const paymeMode: 'test' | 'production' = process.env.PAYME_MODE === 'production' ? 'production' : 'test';
+            const paymeMode = getPaymeMode();
             const paymeConfig = await getPaymeConfig(paymeMode);
             if (paymeConfig) {
                 paymentUrl = buildPaymeRedirectUrl(paymeConfig, orderId, amount, { lang: 'uz' });

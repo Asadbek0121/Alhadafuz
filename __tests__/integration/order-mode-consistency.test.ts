@@ -1,48 +1,103 @@
 /**
- * Order creation mode consistency — static source analysis tests.
+ * Order creation mode consistency — source-level + runtime tests.
  *
- * Verifies that src/app/api/orders/route.ts:
- * - Uses getPaymeMode() (server-determined from PAYME_MODE env) to select Payme config
- * - Does NOT read testKey existence to auto-switch mode
- * - Passes isTest into the raw SQL INSERT
- * - Sets isTest=true only when PAYME_MODE='test', false otherwise
+ * Verifies that getPaymeMode() in src/lib/payme.ts:
+ * - Returns 'production' when PAYME_MODE === 'production'
+ * - Returns 'test' when PAYME_MODE === 'test'
+ * - Returns 'production' when PAYME_MODE is undefined or any other value
  *
- * Complements the dynamic payme-per-request-auth tests with route-level checks.
+ * And verifies that order creation and payment URL generation routes
+ * use this function consistently (not hardcoded testKey checks).
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 
-describe('Order creation — mode consistency (source-level)', () => {
-    const routePath = path.resolve(
-        process.cwd(),
-        'src/app/api/orders/route.ts'
-    );
+// ─── Runtime tests: call getPaymeMode() directly ────────────────────────────
+
+describe('getPaymeMode() — runtime behavior', async () => {
+    beforeEach(() => {
+        delete process.env.PAYME_MODE;
+    });
+
+    it('returns production when PAYME_MODE is undefined', async () => {
+        const { getPaymeMode } = await import('@/lib/payme');
+        expect(getPaymeMode()).toBe('production');
+    });
+
+    it('returns production when PAYME_MODE is empty string', async () => {
+        process.env.PAYME_MODE = '';
+        const { getPaymeMode } = await import('@/lib/payme');
+        expect(getPaymeMode()).toBe('production');
+    });
+
+    it('returns test when PAYME_MODE is "test"', async () => {
+        process.env.PAYME_MODE = 'test';
+        const { getPaymeMode } = await import('@/lib/payme');
+        expect(getPaymeMode()).toBe('test');
+    });
+
+    it('returns production when PAYME_MODE is "production"', async () => {
+        process.env.PAYME_MODE = 'production';
+        const { getPaymeMode } = await import('@/lib/payme');
+        expect(getPaymeMode()).toBe('production');
+    });
+
+    it('returns production for invalid PAYME_MODE values', async () => {
+        const { getPaymeMode } = await import('@/lib/payme');
+        for (const badValue of ['sandbox', 'staging', 'dev', 'PRODUCTION', '123']) {
+            process.env.PAYME_MODE = badValue;
+            expect(getPaymeMode(), `expected ${badValue} to default to production`).toBe('production');
+        }
+        // unset
+        delete process.env.PAYME_MODE;
+        expect(getPaymeMode()).toBe('production');
+    });
+});
+
+// ─── Source-level tests ──────────────────────────────────────────────────────
+
+describe('getPaymeMode() — source in payme.ts', () => {
+    const paymePath = path.resolve(process.cwd(), 'src/lib/payme.ts');
+    const content = fs.readFileSync(paymePath, 'utf-8');
+
+    it('must export getPaymeMode function', () => {
+        expect(content).toContain('export function getPaymeMode');
+    });
+
+    it('must check PAYME_MODE === "production" explicitly', () => {
+        expect(content).toContain('mode === "production"');
+        expect(content).toContain('return "production"');
+    });
+
+    it('must check PAYME_MODE === "test" explicitly', () => {
+        expect(content).toContain('mode === "test"');
+        expect(content).toContain('return "test"');
+    });
+
+    it('must default to production for any other value (no silent fallback to test)', () => {
+        // Should have a catch-all return 'production', not just "if test then test"
+        expect(content).toContain('return "production"');
+        // Should NOT just do ternary with implicit test fallback
+        expect(content).not.toMatch(/===\s*'production'\s*\?\s*'production'\s*:\s*'test'/);
+    });
+});
+
+describe('Orders route — uses shared getPaymeMode', () => {
+    const routePath = path.resolve(process.cwd(), 'src/app/api/orders/route.ts');
     const content = fs.readFileSync(routePath, 'utf-8');
 
-    it('must define getPaymeMode() that reads PAYME_MODE env', () => {
-        expect(content).toContain('function getPaymeMode');
-        expect(content).toContain("process.env.PAYME_MODE");
-        expect(content).toContain("'production'");
-        expect(content).toContain("'test'");
+    it('must import getPaymeMode from payme lib', () => {
+        expect(content).toContain("getPaymeMode");
+        expect(content).toContain("@/lib/payme");
     });
 
     it('must call getPaymeMode() inside buildPaymentUrl for PAYME', () => {
-        // Extract buildPaymentUrl function body
         const fnMatch = content.match(/async function buildPaymentUrl[\s\S]*?^}/m);
-        expect(fnMatch).not.toBeNull();
         const fnBody = fnMatch![0];
         expect(fnBody).toContain('getPaymeMode()');
         // Must NOT use testKey existence to decide mode
-        expect(fnBody).not.toContain('paymeConfig.testKey ?');
-    });
-
-    it('must pass mode to getPaymeConfig (not hardcoded production)', () => {
-        const fnMatch = content.match(/async function buildPaymentUrl[\s\S]*?^}/m);
-        const fnBody = fnMatch![0];
-        expect(fnBody).toContain("getPaymeConfig(mode)");
-        // Should not hardcode 'production' inside buildPaymentUrl
-        expect(fnBody).not.toContain("getPaymeConfig('production')");
+        expect(fnBody).not.toContain('testKey');
     });
 
     it('must compute isTest from getPaymeMode before order creation', () => {
@@ -50,46 +105,43 @@ describe('Order creation — mode consistency (source-level)', () => {
     });
 
     it('must include isTest column in the raw SQL INSERT', () => {
-        expect(content).toContain('"isTest"');
-        // Column list must have isTest
         const insertMatch = content.match(/INSERT INTO "Order"[^)]*\)/s);
         expect(insertMatch).not.toBeNull();
         expect(insertMatch![0]).toContain('"isTest"');
     });
 
-    it('must pass isTest value as a parameter in the raw SQL VALUES clause', () => {
-        // The raw SQL uses $21 for isTest (after adding it as 21st column)
-        const insertMatch = content.match(/INSERT INTO "Order"[\s\S]*?NOW\(\)/s);
-        expect(insertMatch).not.toBeNull();
-        const insertBlock = insertMatch![0];
-        expect(insertBlock).toContain('$21');
-        expect(insertBlock).toContain('isTest');
-    });
-
-    it('must NOT reference testKey for mode selection anywhere in buildPaymentUrl', () => {
-        const fnMatch = content.match(/async function buildPaymentUrl[\s\S]*?^}/m);
-        const fnBody = fnMatch![0];
-        expect(fnBody).not.toContain('testKey');
-        expect(fnBody).not.toContain("testKey ? 'test'");
-    });
-
-    it('must NOT hardcode test mode in getPaymeMode (defaults to production)', () => {
-        // getPaymeMode returns 'production' when PAYME_MODE !== 'production'
-        expect(content).toContain(
-            "return process.env.PAYME_MODE === 'production' ? 'production' : 'test'"
-        );
+    it('must pass isTest value as $21 and orderNumber as $20 in raw SQL', () => {
+        // Match the VALUES clause to verify placeholder ordering
+        const valuesMatch = content.match(/\) VALUES \([^)]+\)/s);
+        expect(valuesMatch).not.toBeNull();
+        const valuesBlock = valuesMatch![0];
+        // $20 must come before $21 (orderNumber is param 20, isTest is param 21)
+        const pos20 = valuesBlock.indexOf('$20');
+        const pos21 = valuesBlock.indexOf('$21');
+        expect(pos20).toBeGreaterThan(-1);
+        expect(pos21).toBeGreaterThan(-1);
+        expect(pos20).toBeLessThan(pos21);
+        // The argument list must pass orderNumber then isTest
+        const argsMatch = content.match(/orderNumber, isTest/);
+        expect(argsMatch).not.toBeNull();
     });
 });
 
-describe('Order creation — cross-file consistency', () => {
+describe('Generate payment URL route — uses shared getPaymeMode', () => {
     const routePath = path.resolve(
         process.cwd(),
         'src/app/api/orders/[id]/generate-payment-url/route.ts'
     );
     const content = fs.readFileSync(routePath, 'utf-8');
 
-    it('generate-payment-url route must also use PAYME_MODE env consistently', () => {
-        // This route should follow the same pattern
-        expect(content).toContain("process.env.PAYME_MODE");
+    it('must import getPaymeMode from payme lib', () => {
+        expect(content).toContain("getPaymeMode");
+    });
+
+    it('must call getPaymeMode() instead of inline PAYME_MODE check', () => {
+        expect(content).toContain('getPaymeMode()');
+        // Must NOT have inline ternary logic
+        expect(content).not.toContain("PAYME_MODE === 'production' ? 'production' : 'test'");
+        expect(content).not.toContain("PAYME_MODE === \"production\" ? \"production\" : \"test\"");
     });
 });

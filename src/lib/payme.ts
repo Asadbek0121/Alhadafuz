@@ -31,6 +31,18 @@ export type PaymeConfig = {
 
 export type PaymeMode = "production" | "test";
 
+/** PAYME_MODE env ga qarab server-side rejimni aniqlaydi.
+ * - 'production' → production
+ * - 'test'       → test (sandbox)
+ * - unset / boshqa → production (default)
+ */
+export function getPaymeMode(): PaymeMode {
+    const mode = process.env.PAYME_MODE;
+    if (mode === "production") return "production";
+    if (mode === "test") return "test";
+    return "production";
+}
+
 /** Payme konfiguratsiyasini oladi */
 export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<PaymeConfig | null> {
     try {
