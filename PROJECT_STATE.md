@@ -364,7 +364,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-12 (PR #13 — final: isTest isolation + ChangePassword ID-bound)
+2026-10-12 (PR #13 — final: ambiguous login rejection + all fixes)
 
 ## Recent Changes (2026-10-06)
 
