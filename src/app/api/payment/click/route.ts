@@ -40,9 +40,11 @@ export async function POST(req: NextRequest) {
     let signTime = "";
     let signString = "";
 
+    let logData: any = {};
     try {
         const formData = await req.formData();
         const data = Object.fromEntries(formData.entries());
+        logData = { ...data };
 
         clickTransId = data.click_trans_id as string;
         serviceId = data.service_id as string;
@@ -61,14 +63,15 @@ export async function POST(req: NextRequest) {
         }
 
         // 0. Logging (sensitive ma'lumotlarni redakt qilish)
-        const logData = { ...data };
-        delete logData.sign_string; // imzo log'da yo'q
+        if (logData && logData.sign_string !== undefined) delete logData.sign_string; // imzo log'da yo'q
         await prisma.paymentLog.create({
             data: {
                 provider: "CLICK",
                 transactionId: clickTransId,
                 amount,
                 status: "REQUEST_RECEIVED",
+                method: "Prepare",
+                orderId: merchantTransId,
                 requestData: JSON.stringify(logData),
                 ipAddress: ip,
             },
@@ -98,7 +101,14 @@ export async function POST(req: NextRequest) {
         if (requestSignBuffer.length !== mySignBuffer.length || !crypto.timingSafeEqual(requestSignBuffer, mySignBuffer)) {
             console.warn(`[click] signature mismatch for ${clickTransId}`);
             await prisma.paymentLog.create({
-                data: { provider: "CLICK", transactionId: clickTransId, status: "SIGNATURE_FAILED", ipAddress: ip },
+                data: {
+                    provider: "CLICK",
+                    transactionId: clickTransId,
+                    status: "SIGNATURE_FAILED",
+                    method: "Prepare",
+                    errorCode: "-1",
+                    ipAddress: ip,
+                },
             });
             return NextResponse.json({ error: ERROR_SIGN_CHECK_FAILED, error_note: "Signature mismatch" });
         }
@@ -124,6 +134,9 @@ export async function POST(req: NextRequest) {
                     provider: "CLICK",
                     transactionId: clickTransId,
                     status: "ERROR",
+                    method: "Complete",
+                    errorCode: "-2",
+                    orderId: order.id,
                     responseData: `Amount mismatch: ${order.total} vs ${amount}`,
                     ipAddress: ip,
                 },
@@ -179,7 +192,10 @@ export async function POST(req: NextRequest) {
                 data: {
                     provider: "CLICK",
                     transactionId: clickTransId,
+                    amount: order.total,
                     status: "SUCCESS",
+                    method: "Complete",
+                    orderId: order.id,
                     responseData: "PAID",
                     ipAddress: ip,
                 },
@@ -222,6 +238,9 @@ export async function POST(req: NextRequest) {
                 provider: "CLICK",
                 transactionId: clickTransId || "UNKNOWN",
                 status: "CRITICAL_ERROR",
+                method: "Unknown",
+                errorCode: "-1",
+                requestData: JSON.stringify(logData),
                 responseData: String(error),
                 ipAddress: ip,
             },

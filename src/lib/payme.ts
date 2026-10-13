@@ -616,7 +616,9 @@ export async function handleCreateTransaction(
             transactionId: id,
             amount: order.total,
             status: "REQUEST_RECEIVED",
-            requestData: JSON.stringify({ method: "CreateTransaction", account: orderId, amount }),
+            method: "CreateTransaction",
+            orderId: orderId,
+            requestData: JSON.stringify({ account: orderId, amount }),
         },
     });
 
@@ -703,7 +705,9 @@ export async function handlePerformTransaction(
             transactionId: id,
             amount: order.total,
             status: "SUCCESS",
-            responseData: JSON.stringify({ method: "PerformTransaction", state: PaymeTransactionState.Performed }),
+            method: "PerformTransaction",
+            orderId: order.id,
+            responseData: JSON.stringify({ state: PaymeTransactionState.Performed }),
         },
     });
 
