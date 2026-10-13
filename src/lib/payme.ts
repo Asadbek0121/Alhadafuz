@@ -15,6 +15,8 @@ import { prisma } from "@/lib/prisma";
 // ---------------------------------------------------------------------------
 
 export type PaymeConfig = {
+    /** PaymentMethod.id — DB'dagi konfiguratsiya identifikatori */
+    id?: string;
     /** Web-cassa ID (merchant_id) */
     merchant: string;
     /** LK login */
@@ -28,6 +30,24 @@ export type PaymeConfig = {
 };
 
 export type PaymeMode = "production" | "test";
+
+/** PAYME_MODE env ga qarab server-side rejimni aniqlaydi.
+ * - 'production' → production
+ * - 'test'       → test (sandbox)
+ * - unset / bo'sh  → production (default)
+ * - boshqa qiymat → xato (INVALID_PAYME_MODE_CONFIG)
+ */
+export function getPaymeMode(): PaymeMode {
+    const mode = process.env.PAYME_MODE;
+    if (mode === "production") return "production";
+    if (mode === "test") return "test";
+    if (mode !== undefined && mode !== "") {
+        throw new Error(
+            `INVALID_PAYME_MODE_CONFIG: PAYME_MODE="${mode}" — faqat "test" yoki "production" qabul qilinadi.`
+        );
+    }
+    return "production";
+}
 
 /** Payme konfiguratsiyasini oladi */
 export async function getPaymeConfig(mode: PaymeMode = "production"): Promise<PaymeConfig | null> {
@@ -104,14 +124,137 @@ export function parseAuthHeader(auth: string | null): { login?: string; password
     }
 }
 
-/** Authorization tekshirish — xato kodi -32504
+/**
+ * Per-request credential detection.
  *
- * Payme autentifikatsiyasi:
- *   Authorization: Basic base64(login:signature)
- *   signature = HMAC-SHA256(payload, key)
+ * Har bir so'rov Authorization header dan login va imzoni o'qiydi.
+ * Login orqali DB dan mos konfiguratsiya topiladi:
+ *   - Agar login test login bo'lsa → test_key bilan tekshirish
+ *   - Agar login production login bo'lsa → key bilan tekshirish
  *
- * Test rejimida (sandbox) key = test_key, production da key = key.
- * Parol so'rovdagi imzo bilan solishtiriladi.
+ * Bu yondashuv:
+ *   1. Bir nechta login/kalit juftligini qo'llab-quvvatlaydi
+ *   2. Sandbox so'rovlari faqat sandbox kalit bilan ishlaydi
+ *   3. Production so'rovlari faqat production kalit bilan ishlaydi
+ *   4. Xavfsiz: bitta kalit boshqasiga ta'sir qilmaydi
+ */
+export async function findConfigForLogin(login: string): Promise<PaymeConfig | null> {
+    try {
+        const { prisma } = await import("@/lib/prisma");
+        const methods = await prisma.paymentMethod.findMany({
+            where: { provider: "PAYME", isActive: true },
+            select: { id: true, config: true },
+        });
+
+        // Find ALL configs matching this login — ambiguity must be rejected.
+        const matches: PaymeConfig[] = [];
+        for (const method of methods) {
+            if (!method.config) continue;
+            let cfg: any;
+            try { cfg = JSON.parse(method.config); } catch { continue; }
+            const dbLogin = cfg.login || cfg.Login;
+            if (dbLogin !== login) continue;
+
+            const dbKey = cfg.key || cfg.Key;
+            const dbTestKey = cfg.test_key || cfg.testKey;
+
+            matches.push({
+                id: method.id,
+                merchant: String(cfg.merchant || cfg.Merchant || cfg.merchant_id || ''),
+                login: String(dbLogin),
+                key: String(dbKey),
+                testKey: dbTestKey ? String(dbTestKey) : undefined,
+                password: cfg.password,
+            });
+        }
+
+        if (matches.length === 0) return null;
+        if (matches.length > 1) {
+            // Ambiguous: multiple configs share the same login — reject to prevent
+            // the wrong config from being updated or authenticated.
+            return null;
+        }
+        return matches[0];
+    } catch (e) {
+        console.warn("[payme] findConfigForLogin error:", e);
+    }
+    return null;
+}
+
+/** Per-request auth natijasi — config va aniqlangan rejim bilan */
+export interface PaymeAuthResult {
+    config: PaymeConfig;
+    /** 'test' agar test_key bilan tasdiqlangan bo'lsa, aks holda 'production' */
+    detectedMode: 'test' | 'production';
+    /** PaymentMethod.id — autentifikatsiya qilingan konfiguratsiyaning identifikatori */
+    paymentMethodId?: string;
+}
+
+/**
+ * Per-request authorization tekshiruvi.
+ * Har bir so'rov uchun alohida konfiguratsiya topiladi va parol tekshiriladi.
+ *
+ * Xavfsizlik:
+ *   - Noto'g'ri login/password → -32504
+ *   - Sandbox kalit production buyurtmani PAID qila olmaydi
+ *   - Production kalit sandbox buyurtmani boshqara olmaydi
+ *   - Hech qanday maxfiy ma'lumot logga chiqarilmaydi
+ *   - Constant-time comparison ishlatiladi
+ */
+export async function verifyAuthorizationPerRequest(
+    authHeader: string | null
+): Promise<PaymeAuthResult> {
+    const parsed = parseAuthHeader(authHeader);
+    if (!parsed || !parsed.login || !parsed.password) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    // Har bir login uchun DB dan konfiguratsiya topamiz
+    const config = await findConfigForLogin(parsed.login);
+    if (!config) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    // Parolni tekshirish — constant-time comparison
+    // Avval testKey, keyin key — qaysi mos kelsa, shu mode
+    let passwordMatch = false;
+    let detectedMode: 'test' | 'production' = 'production';
+
+    if (config.testKey) {
+        passwordMatch = await constantTimeCompare(parsed.password, config.testKey);
+        if (passwordMatch) detectedMode = 'test';
+    }
+    if (!passwordMatch && config.key) {
+        passwordMatch = await constantTimeCompare(parsed.password, config.key);
+        if (passwordMatch) detectedMode = 'production';
+    }
+
+    if (!passwordMatch) {
+        throw { code: -32504, message: "Insufficient privileges for method execution", data: [] };
+    }
+
+    console.debug(`[payme] auth ok: login found, mode=${detectedMode}, source=DB`);
+    return { config, detectedMode, paymentMethodId: config.id };
+}
+
+/**
+ * Constant-time string comparison — timing attack himoyasi.
+ * JavaScript da crypto.subtle.compareBuffer yoki oddiy substring tekshiruv.
+ */
+async function constantTimeCompare(a: string, b: string): Promise<boolean> {
+    if (a.length !== b.length) return false;
+    // Oddiy tekshiruv — JavaScript da to'liq constant-time mumkin emas,
+    // lekin uzunlik farqi darhol rad etiladi (timing safe).
+    let result = 0;
+    for (let i = 0; i < a.length; i++) {
+        result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+    }
+    return result === 0;
+}
+
+/**
+ * Eski usulda auth — faqat bitta konfiguratsiya bilan (backward compatibility).
+ * Yangi per-request usulni qo'llash tavsiya etiladi.
  */
 export async function verifyAuthorization(
     authHeader: string | null,
@@ -262,7 +405,8 @@ export interface PaymeTransactionData {
 
 export async function handleCheckPerformTransaction(
     amount: number,
-    account: { order_id: string }
+    account: { order_id: string },
+    mode: PaymeMode = "production"
 ): Promise<{ allow: boolean }> {
     const orderId = account.order_id;
     if (!orderId) {
@@ -276,12 +420,19 @@ export async function handleCheckPerformTransaction(
                 { orderNumber: orderId },
             ],
         },
-        select: { id: true, total: true, paymentStatus: true },
+        select: { id: true, total: true, paymentStatus: true, isTest: true },
     });
 
     // Nonexistent account -> -31099
     if (!order) {
         throw { code: -31099, message: "Account not found", data: [{ field: "account.order_id" }] };
+    }
+
+    // Mode mismatch — sandbox credential bilan production buyurtma yoki aksincha
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Invalid amount -> -31001
@@ -311,7 +462,8 @@ export async function handleCreateTransaction(
     id: string,
     time: number,
     amount: number,
-    account: { order_id: string }
+    account: { order_id: string },
+    mode: PaymeMode = "production"
 ): Promise<{
     create_time: number;
     transaction: string;
@@ -324,12 +476,18 @@ export async function handleCreateTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymeTransactionId: true, paymentStatus: true, paymeTransactionTime: true },
+            select: { paymeTransactionId: true, paymentStatus: true, paymeTransactionTime: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist yet
     }
     if (existing) {
+        // Mode mismatch — sandbox/production ajratish
+        const existingIsTest = existing.isTest ?? false;
+        const expectedTest = mode === "test";
+        if (existingIsTest !== expectedTest) {
+            throw { code: -31001, message: "Order not available for this payment method", data: [] };
+        }
         // Agar transaction allaqachon performed bo'lsa -> state 2
         if (existing.paymentStatus === "PAID") {
             return {
@@ -351,12 +509,19 @@ export async function handleCreateTransaction(
         where: {
             OR: [{ id: orderId }, { orderNumber: orderId }],
         },
-        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true },
+        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true, isTest: true },
     });
 
     // Account not found -> -31099
     if (!order) {
         throw { code: -31099, message: "Account not found", data: [{ field: "account.order_id" }] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Amount check -> -31001
@@ -430,7 +595,8 @@ export async function handleCreateTransaction(
 // ---------------------------------------------------------------------------
 
 export async function handlePerformTransaction(
-    id: string
+    id: string,
+    mode: PaymeMode = "production"
 ): Promise<{
     transaction: string;
     perform_time: number;
@@ -441,14 +607,19 @@ export async function handlePerformTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymentStatus: true, paymeTransactionId: true, id: true },
+            select: { paymentStatus: true, paymeTransactionId: true, id: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist
     }
 
-    // Already performed
+    // Already performed — mode mismatch check first
     if (existing?.paymentStatus === "PAID") {
+        const existingIsTest = existing.isTest ?? false;
+        const expectedTest = mode === "test";
+        if (existingIsTest !== expectedTest) {
+            throw { code: -31001, message: "Order not available for this payment method", data: [] };
+        }
         return {
             transaction: id,
             perform_time: nowMs(),
@@ -461,7 +632,7 @@ export async function handlePerformTransaction(
     try {
         order = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { id: true, total: true },
+            select: { id: true, total: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist
@@ -470,6 +641,13 @@ export async function handlePerformTransaction(
     // Transaction not found -> -31003
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Perform the transaction
@@ -524,7 +702,8 @@ export async function handlePerformTransaction(
 export async function handleCancelTransaction(
     id: string,
     time: number,
-    reason?: number | null
+    reason?: number | null,
+    mode: PaymeMode = "production"
 ): Promise<{
     cancel_time: number;
     transaction: string;
@@ -535,7 +714,7 @@ export async function handleCancelTransaction(
     try {
         order = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { id: true, paymentStatus: true, status: true },
+            select: { id: true, paymentStatus: true, status: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist
@@ -544,6 +723,13 @@ export async function handleCancelTransaction(
     // Transaction not found -> -31003
     if (!order) {
         throw { code: -31003, message: "Transaction not found", data: [] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     // Already cancelled
@@ -573,7 +759,8 @@ export async function handleCancelTransaction(
 // ---------------------------------------------------------------------------
 
 export async function handleCheckTransaction(
-    id: string
+    id: string,
+    mode: PaymeMode = "production"
 ): Promise<{
     create_time: number;
     perform_time?: number;
@@ -592,6 +779,7 @@ export async function handleCheckTransaction(
                 paymeTransactionId: true,
                 paymeTransactionTime: true,
                 createdAt: true,
+                isTest: true,
             },
         });
     } catch {
@@ -601,6 +789,13 @@ export async function handleCheckTransaction(
     // Transaction not found -> -31099 (spec bo'yicha)
     if (!order) {
         throw { code: -31099, message: "Transaction not found", data: [] };
+    }
+
+    // Mode mismatch — sandbox/production ajratish
+    const orderIsTest = order.isTest ?? false;
+    const expectedTest = mode === "test";
+    if (orderIsTest !== expectedTest) {
+        throw { code: -31001, message: "Order not available for this payment method", data: [] };
     }
 
     let state: PaymeTransactionState;
@@ -640,7 +835,8 @@ export async function handleCheckTransaction(
 
 export async function handleGetStatement(
     from: number,
-    to: number
+    to: number,
+    mode: PaymeMode = "production"
 ): Promise<{
     transactions: Array<{
         id: string;
@@ -655,12 +851,14 @@ export async function handleGetStatement(
         reason?: number | null;
     }>;
 }> {
+    const isTestMode = mode === "test";
     let orders: any[] = [];
     try {
         orders = await prisma.order.findMany({
             where: {
                 paymentProvider: "PAYME",
                 paymeTransactionId: { not: null },
+                isTest: isTestMode,
                 createdAt: {
                     gte: new Date(from),
                     lte: new Date(to),
@@ -674,6 +872,7 @@ export async function handleGetStatement(
                 paymeTransactionId: true,
                 paymeTransactionTime: true,
                 createdAt: true,
+                isTest: true,
             },
             orderBy: { createdAt: "asc" },
         });
@@ -708,24 +907,68 @@ export async function handleGetStatement(
 // ChangePassword
 // ---------------------------------------------------------------------------
 
+/**
+ * Change the auth key for the authenticated Payme config.
+ *
+ * - Uses paymentMethodId for exact-match update — never touches other configs.
+ * - In test mode: updates `test_key` (or `testKey` alias)
+ * - In production mode: updates `key` (or `Key` alias)
+ * - Throws -31000 if paymentMethodId is missing or the config can't be found.
+ */
 export async function handleChangePassword(
-    password: string
+    password: string,
+    mode: PaymeMode = "production",
+    paymentMethodId?: string
 ): Promise<{ message: string }> {
+    if (!paymentMethodId) {
+        throw { code: -31000, message: "Payment method ID is required", data: [] };
+    }
+
     try {
         const { prisma } = await import("@/lib/prisma");
-        const method = await prisma.paymentMethod.findFirst({
-            where: { provider: "PAYME", isActive: true },
+        const method = await prisma.paymentMethod.findUnique({
+            where: { id: paymentMethodId, provider: "PAYME", isActive: true },
+            select: { id: true, config: true },
         });
-        if (method?.config) {
-            const cfg = JSON.parse(method.config);
-            cfg.password = password;
-            await prisma.paymentMethod.update({
-                where: { id: method.id },
-                data: { config: JSON.stringify(cfg) },
-            });
+
+        if (!method) {
+            throw { code: -31000, message: "PAYME configuration not found", data: [] };
         }
-    } catch {
-        process.env.PAYME_PASSWORD = password;
+
+        if (!method.config) {
+            throw { code: -31000, message: "PAYME config is empty", data: [] };
+        }
+
+        let cfg: any;
+        try {
+            cfg = JSON.parse(method.config);
+        } catch {
+            throw { code: -31000, message: "PAYME config is invalid JSON", data: [] };
+        }
+
+        // Update only the field matching the authenticated mode.
+        // Support both lowercase and PascalCase field names from legacy configs.
+        const targetField = mode === "test" ? "test_key" : "key";
+        const legacyField = mode === "test" ? "testKey" : "Key";
+
+        // Only update if the field exists (preserve config structure)
+        if (cfg[targetField] === undefined && cfg[legacyField] === undefined) {
+            throw { code: -31000, message: `PAYME config missing ${targetField} field`, data: [] };
+        }
+
+        // Always update both canonical and legacy field names so the config
+        // stays consistent regardless of which casing Prisma returns.
+        cfg[targetField] = password;
+        cfg[legacyField] = password;
+
+        await prisma.paymentMethod.update({
+            where: { id: method.id },
+            data: { config: JSON.stringify(cfg) },
+        });
+    } catch (e: unknown) {
+        const err = e as { code?: number; message?: string };
+        if (err.code) throw e;
+        throw { code: -31000, message: "Failed to update password", data: [] };
     }
     return { message: "Password changed successfully" };
 }

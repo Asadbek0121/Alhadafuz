@@ -60,14 +60,16 @@ async function buildPaymentUrl(order: any): Promise<string | null> {
     }
 
     if (pm === 'PAYME') {
-        const paymeConfig = await getPaymeConfig('production');
+        const mode = getPaymeMode();
+        const serverIsTest = mode === 'test';
+        const orderIsTest = order.isTest ?? false;
+        // Agar order rejimi (isTest) server rejimiga mos kelmasa — URL yaratmaslik.
+        // Bu idempotent so'rovlar orqali noto'g'ri rejimdagi eski buyurtmalarga
+        // ham to'g'ri URL qaytarilishining oldini oladi.
+        if (orderIsTest !== serverIsTest) return null;
+        const paymeConfig = await getPaymeConfig(mode);
         if (paymeConfig) {
-            // Agar test_key bo'lsa — test/rezhimi, aks holda production
-            const mode = paymeConfig.testKey ? 'test' : 'production';
-            const redirectConfig = mode === 'test'
-                ? { ...paymeConfig, key: paymeConfig.testKey ?? paymeConfig.key }
-                : paymeConfig;
-            return buildPaymeRedirectUrl(redirectConfig, orderId, amount);
+            return buildPaymeRedirectUrl(paymeConfig, orderId, amount);
         }
     }
 
@@ -86,7 +88,7 @@ async function buildOrderResponse(order: any): Promise<{ success: boolean; order
 import { checkRateLimit } from '@/lib/ratelimit';
 import { autoDispatchOrder } from '@/lib/dispatch';
 import { getClickConfig, buildClickPayUrl } from '@/lib/click';
-import { getPaymeConfig, buildPaymeRedirectUrl } from '@/lib/payme';
+import { getPaymeConfig, buildPaymeRedirectUrl, getPaymeMode } from '@/lib/payme';
 
 export async function POST(req: Request) {
     // 1. RATE LIMITING (Security Layer)
@@ -300,6 +302,7 @@ export async function POST(req: Request) {
         // Determine initial status based on payment method
         const method = paymentMethod.toLowerCase();
         const initialStatus = ['click', 'payme'].includes(method) ? 'AWAITING_PAYMENT' : 'PENDING';
+        const isTest = getPaymeMode() === 'test';
 
         // 4. Create Order using Raw SQL for the main table to avoid "Unknown argument lat" errors
         // but keeping it inside a transaction for data integrity.
@@ -327,15 +330,15 @@ export async function POST(req: Request) {
                         "id", "orderNumber", "userId", "total", "deliveryFee", "status", "paymentMethod",
                         "deliveryMethod", "storeId", "shippingCity", "shippingDistrict",
                         "shippingAddress", "comment", "shippingPhone", "shippingName",
-                        "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "updatedAt"
-                    ) VALUES ($1, $20, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+                        "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "isTest", "updatedAt"
+                    ) VALUES ($1, $20, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $21, NOW())
                 `,
                     orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
                     deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',
                     deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
                     deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
                     lat || null, lng || null, validatedCoupon?.code || null, discountAmount, idempotencyKey || null,
-                    orderNumber
+                    orderNumber, isTest
                 );
 
             // Create items and decrease stock

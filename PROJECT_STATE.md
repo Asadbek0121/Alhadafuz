@@ -254,6 +254,30 @@ Avvalgi sessiyalardan:
 
 ## Completed Recently (2026-10-10)
 
+## Completed Recently (2026-10-12)
+
+- **Payme Sandbox/Production Isolation (PR #13)** — `fix/payme-per-request-auth` branch, commits `8104a4a` → `ccaf6d6` → `991a04e`:
+  - Order model: `isTest Boolean @default(false)` field added, migration `20261012000000_add_order_is_test`
+  - All 5 transaction handlers check `isTest` mismatch → `-31001` for cross-mode operations
+  - **`handleGetStatement`**: `mode` param added, Prisma query filtered by `isTest` at DB level (no client-side post-filtering)
+  - **Idempotent paths**: `handleCreateTransaction` and `handlePerformTransaction` now check `isTest` BEFORE returning cached PAID results
+  - **`handleChangePassword`**: accepts `paymentMethodId` for exact-match DB update; updates `test_key`/`key` (not `password`); supports legacy `Key`/`testKey` aliases; rejects missing ID with -31000
+  - **`PaymeAuthResult`**: gains `paymentMethodId?: string` for idempotent config targeting
+  - Route passes `detectedMode` + `authResult.paymentMethodId` to all handlers
+  - Tests: 46 in `payme-per-request-auth.test.ts`, 198 total across all test files
+  - Verification: tsc 0, ESLint 0, vitest 198/198 ✅
+  - PR: https://github.com/Asadbek0121/Alhadafuz/pull/13
+
+## Completed Recently (2026-10-13)
+
+- **PR #13 — PAYME_MODE strict validation + shared helper** (`dc69d71`, `fix/payme-per-request-auth`):
+  - `src/lib/payme.ts`: `getPaymeMode()` extracted as shared export — strict validation (only "test"/"production", defaults to production)
+  - `src/app/api/orders/route.ts`: uses shared `getPaymeMode()`, raw SQL fixed (`$20=orderNumber`, `$21=isTest`)
+  - `src/app/api/orders/[id]/generate-payment-url/route.ts`: now uses shared `getPaymeMode()` instead of inline ternary
+  - `__tests__/integration/order-mode-consistency.test.ts`: 5 runtime tests (direct function calls) + 11 source-level tests
+  - Verification: `npx vitest run` 216 passed, `npx tsc --noEmit` clean, `npm run lint` clean
+  - **Constraint**: migration NOT applied to production DB; branch not merged to main
+
 - **Telegram Token Routing & OTP Security Fix** (`fix/telegram-token-routing-otp-delivery`):
   - `src/lib/telegram-bot.ts`: `sendTelegramMessage()` signature o'zgartirildi — token majburiy parametr (fallback yo'q), xato holatida `{ok, error}` qaytaradi, logda full chatId ko'rsatilmaydi (faqat oxirgi 6 raqam)
   - `isAdminChat()`: hardcoded `7429925995` olib tashlandi, faqat `ADMIN_CHAT_ID` env orqali
@@ -351,6 +375,8 @@ Avvalgi sessiyalardan:
 ## Last Updated
 
 2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
+
+2026-10-13 (PR #13 — cross-mode isTest guard)
 
 ## Recent Changes (2026-10-06)
 

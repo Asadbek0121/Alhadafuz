@@ -22,6 +22,7 @@ import {
     handleChangePassword,
     getPaymeConfig,
     verifyAuthorization,
+    verifyAuthorizationPerRequest,
 } from "@/lib/payme";
 
 export async function POST(req: NextRequest) {
@@ -51,23 +52,39 @@ export async function POST(req: NextRequest) {
     const { method, params } = body;
     const rpcId = body.id ?? null;
 
-    // AUTH LAYER: Har bir requestda authorization tekshiriladi
+    // AUTH LAYER: Per-request credential detection
+    // Har bir so'rov Authorization header dan login ni o'qib, DB dan mos config topadi.
+    // Bu yondashuv sandbox va production credentiallarni bir vaqtning o'zida qo'llab-quvvatlaydi.
     const authHeader = req.headers.get("authorization");
-    // PAYME_MODE env: "test" (default dev/sandbox) yoki "production" (jonli to'lov)
-    const mode: "test" | "production" = process.env.PAYME_MODE === "production" ? "production" : "test";
-    const config = await getPaymeConfig(mode);
+    let authResult: Awaited<ReturnType<typeof verifyAuthorizationPerRequest>> | null = null;
 
-    if (!config) {
+    try {
+        // Per-request auth — login + password tekshiruvi
+        authResult = await verifyAuthorizationPerRequest(authHeader);
+
+        if (!authResult) {
+            return NextResponse.json(
+                { jsonrpc: "2.0", error: { code: -32504, message: "Insufficient privileges for method execution", data: [] }, id: rpcId },
+                { status: 200 }
+            );
+        }
+    } catch (e: unknown) {
+        const err = e as { code?: number; message?: string };
+        if (err.code === -32504) {
+            return NextResponse.json(
+                { jsonrpc: "2.0", error: { code: -32504, message: "Insufficient privileges for method execution", data: [] }, id: rpcId },
+                { status: 200 }
+            );
+        }
         return NextResponse.json(
-            { jsonrpc: "2.0", error: { code: -32400, message: "Payme config not found", data: [] }, id: rpcId },
+            { jsonrpc: "2.0", error: { code: -32400, message: "Auth error", data: [] }, id: rpcId },
             { status: 200 }
         );
     }
 
-    try {
-        // Authorization tekshiruvi — barcha metodlar uchun
-        await verifyAuthorization(authHeader, config, mode);
+    const { config, detectedMode } = authResult;
 
+    try {
         let result: unknown;
 
         switch (method) {
@@ -77,7 +94,7 @@ export async function POST(req: NextRequest) {
                 if (isNaN(amount) || !account?.order_id) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleCheckPerformTransaction(amount, account);
+                const resp = await handleCheckPerformTransaction(amount, account, detectedMode);
                 result = resp;
                 break;
             }
@@ -92,7 +109,7 @@ export async function POST(req: NextRequest) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
 
-                const resp = await handleCreateTransaction(id, time, amount, account);
+                const resp = await handleCreateTransaction(id, time, amount, account, detectedMode);
                 result = resp;
                 break;
             }
@@ -102,7 +119,7 @@ export async function POST(req: NextRequest) {
                 if (!id) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handlePerformTransaction(id);
+                const resp = await handlePerformTransaction(id, detectedMode);
                 result = resp;
                 break;
             }
@@ -115,7 +132,7 @@ export async function POST(req: NextRequest) {
                 if (!id || isNaN(time)) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleCancelTransaction(id, time, reason);
+                const resp = await handleCancelTransaction(id, time, reason, detectedMode);
                 result = resp;
                 break;
             }
@@ -125,7 +142,7 @@ export async function POST(req: NextRequest) {
                 if (!id) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleCheckTransaction(id);
+                const resp = await handleCheckTransaction(id, detectedMode);
                 result = resp;
                 break;
             }
@@ -136,7 +153,7 @@ export async function POST(req: NextRequest) {
                 if (isNaN(from) || isNaN(to)) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleGetStatement(from, to);
+                const resp = await handleGetStatement(from, to, detectedMode);
                 result = resp;
                 break;
             }
@@ -146,7 +163,7 @@ export async function POST(req: NextRequest) {
                 if (!newPassword) {
                     throw { code: -31000, message: "Password is required", data: [] };
                 }
-                const resp = await handleChangePassword(newPassword);
+                const resp = await handleChangePassword(newPassword, detectedMode, authResult.paymentMethodId);
                 result = resp;
                 break;
             }

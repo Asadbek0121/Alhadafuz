@@ -129,6 +129,7 @@ model Order {
   paymentProvider   String?
   paymeTransactionId   String?   @unique
   paymeTransactionTime BigInt?
+  isTest               Boolean   @default(false)
   clickTransactionId   String?   @unique
   paymeCardNumber      String?
   shippingName      String?
