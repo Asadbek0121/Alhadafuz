@@ -298,15 +298,27 @@ export async function verifyAuthorization(
  *
  * When the database is missing `isTest`, `paymeTransactionId`, or
  * `paymeTransactionTime` columns, Prisma throws P2022.  This helper
- * catches that and returns null so callers can fall back to the old
- * behaviour without exposing internal schema errors to Payme.
+ * logs a structured warning (without leaking secrets) and returns null
+ * so the caller treats it as "not found".
+ *
+ * ⚠️  NOTE: P2022 here means a migration has NOT been applied to the
+ *     current database.  If this log appears in production, run
+ *     `npx prisma migrate deploy` to bring the schema in sync.
  */
 async function safeOrderQuery(queryFn: () => Promise<any>): Promise<any | null> {
     try {
         return await queryFn();
     } catch (e: any) {
         if (e?.code === "P2022") {
-            // Column not found — return null so caller treats as "not found"
+            // Log a structured warning with table/column info — no secrets.
+            const tableMatch = String(e).match(/relation "([^"]+)"/);
+            const columnMatch = String(e).match(/column "([^"]+)" of/);
+            console.warn(
+                "[payme] safeOrderQuery: DB column missing — " +
+                `table=${tableMatch ? tableMatch[1] : "?"}, ` +
+                `column=${columnMatch ? columnMatch[1] : "?"}. ` +
+                "Run `npx prisma migrate deploy` to apply pending migrations."
+            );
             return null;
         }
         throw e;
