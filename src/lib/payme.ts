@@ -292,6 +292,27 @@ export async function verifyAuthorization(
 // RPC helper
 // ---------------------------------------------------------------------------
 
+
+/**
+ * Safe order query wrapper — handles missing columns (P2022) gracefully.
+ *
+ * When the database is missing `isTest`, `paymeTransactionId`, or
+ * `paymeTransactionTime` columns, Prisma throws P2022.  This helper
+ * catches that and returns null so callers can fall back to the old
+ * behaviour without exposing internal schema errors to Payme.
+ */
+async function safeOrderQuery(queryFn: () => Promise<any>): Promise<any | null> {
+    try {
+        return await queryFn();
+    } catch (e: any) {
+        if (e?.code === "P2022") {
+            // Column not found — return null so caller treats as "not found"
+            return null;
+        }
+        throw e;
+    }
+}
+
 const PAYME_BASE_URL = "https://payment.paycomjoint.uz";
 const PAYME_TEST_URL = "https://test.paycom.uz";
 
@@ -413,15 +434,17 @@ export async function handleCheckPerformTransaction(
         throw { code: -31000, message: "Invalid params: account.order_id required", data: [{ field: "account.order_id" }] };
     }
 
-    const order = await prisma.order.findFirst({
-        where: {
-            OR: [
-                { id: orderId },
-                { orderNumber: orderId },
-            ],
-        },
-        select: { id: true, total: true, paymentStatus: true, isTest: true },
-    });
+    const order = await safeOrderQuery(async () =>
+        prisma.order.findFirst({
+            where: {
+                OR: [
+                    { id: orderId },
+                    { orderNumber: orderId },
+                ],
+            },
+            select: { id: true, total: true, paymentStatus: true, isTest: true },
+        })
+    );
 
     // Nonexistent account -> -31099
     if (!order) {
@@ -505,12 +528,14 @@ export async function handleCreateTransaction(
     }
 
     // Order topish
-    const order = await prisma.order.findFirst({
-        where: {
-            OR: [{ id: orderId }, { orderNumber: orderId }],
-        },
-        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true, isTest: true },
-    });
+    const order = await safeOrderQuery(async () =>
+        prisma.order.findFirst({
+            where: {
+                OR: [{ id: orderId }, { orderNumber: orderId }],
+            },
+            select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true, isTest: true },
+        })
+    );
 
     // Account not found -> -31099
     if (!order) {
