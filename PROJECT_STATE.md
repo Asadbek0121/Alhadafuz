@@ -266,7 +266,15 @@ Avvalgi sessiyalardan:
   - Verification: tsc 0, ESLint 0, vitest 198/198 ✅
   - PR: https://github.com/Asadbek0121/Alhadafuz/pull/13
 
-## Completed Recently (2026-10-10)
+## Completed Recently (2026-10-13)
+
+- **PR #13 — Payme checkout mode consistency** (`06514d8`, `fix/payme-per-request-auth`):
+  - `src/app/api/orders/route.ts`: `getPaymeMode()` helper added — reads `PAYME_MODE` env (defaults to `production`); `buildPaymentUrl()` now uses `getPaymeMode()` instead of checking `testKey` existence
+  - Raw SQL INSERT: `"isTest"` column added to column list and `$21` placeholder; `isTest` value passed as 21st parameter
+  - `const isTest = getPaymeMode() === 'test'` computed before transaction — production orders → `isTest=false`, sandbox → `isTest=true`
+  - `__tests__/integration/order-mode-consistency.test.ts`: 8 source-level tests covering all requirements
+  - Verification: `npx vitest run` 209 passed, `npx tsc --noEmit` clean, `npm run lint` clean, `npm run build` success
+  - **Constraint**: migration NOT applied to production DB; branch not merged to main
 
 - **Telegram Token Routing & OTP Security Fix** (`fix/telegram-token-routing-otp-delivery`):
   - `src/lib/telegram-bot.ts`: `sendTelegramMessage()` signature o'zgartirildi — token majburiy parametr (fallback yo'q), xato holatida `{ok, error}` qaytaradi, logda full chatId ko'rsatilmaydi (faqat oxirgi 6 raqam)
@@ -364,7 +372,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-12 (PR #13 — final: ambiguous login rejection + all fixes)
+2026-10-13 (PR #13 — PAYME_MODE order creation mode consistency)
 
 ## Recent Changes (2026-10-06)
 
