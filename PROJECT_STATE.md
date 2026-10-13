@@ -372,7 +372,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-13 (PR #13 — strict getPaymeMode + shared helper)
+2026-10-13 (PR #13 — cross-mode isTest guard)
 
 ## Recent Changes (2026-10-06)
 
