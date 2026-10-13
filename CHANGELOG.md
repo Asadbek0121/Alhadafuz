@@ -18,6 +18,18 @@ Qoida: har bir muhim funksional, database, architecture, bug-fix yoki configurat
     - Redirectlar tekshirildi: `/`→`/uz` (307) va trailing slash 308 — `localePrefix: 'always'` (SEO), o'zgartirilmadi.
   - Verification: `npm run build` ✅, `npx tsc --noEmit` 0, lint 8 xato (eski, tegmagan fayllar), asosiy sahifalar 200 (product keshda 0.21s, search 0.35s, admin/users 0.24s), 404 sahifa ishlaydi.
 
+
+
+### Added
+- **Payme P2022 防御处理** (`9718e32`, 2026-10-13):
+  - **Sabab**: Production DB 缺少 `isTest`、`paymeTransactionId`、`paymeTransactionTime` 列，Prisma 抛出 P2022 错误
+  - **O'zgarishlar**:
+    - `src/lib/payme.ts` — 新增 `safeOrderQuery` 辅助函数，捕获 P2022 并返回 null
+    - `handleCheckPerformTransaction` 和 `handleCreateTransaction` 的订单查询包裹 `safeOrderQuery`
+    - 新增迁移 `prisma/migrations/20261013000000_add_payme_transaction_columns/migration.sql`
+    - 新增测试 `__tests__/integration/payme-p2022-guard.test.ts`（16 测试）
+  - **Verification**: `npx vitest run` 150 passed ✓, `npx tsc --noEmit` 0 errors ✓
+
 ### Changed
 - **Admin performance** (`41e31b1`, 2026-10-03):
   - **Sabab**: DB Supabase Tokiyoda (TCP RTT ~303ms, oddiy query ham 1.2–3.5s) — admin sahifalari sekin; chat/header 3s/5s/15s polling DB'ni doim urib turardi.

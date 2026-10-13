@@ -59,6 +59,13 @@
 - Kategoriya: DB query ~1.8s (Neon masofaviy) — asosiy bottleneck.
 ## Completed Recently
 
+- **PR #13 — Payme P2022 防御处理** (`9718e32`, 2026-10-13):
+  - `src/lib/payme.ts` — 新增 `safeOrderQuery` 辅助函数，捕获 Prisma P2022 错误（列不存在），返回 null
+  - 包裹 `handleCheckPerformTransaction` 和 `handleCreateTransaction` 的订单查询，缺失列时返回 -31099/-31001 而非 P2022
+  - 新增迁移 `20261013000000_add_payme_transaction_columns`：添加 `paymeTransactionId`/`paymeTransactionTime` 列（IF NOT EXISTS 安全）
+  - 新增测试 `payme-p2022-guard.test.ts`（16 测试）：验证 P2022 → 正确 JSON-RPC 错误码
+  - 全量测试 150 passed ✓
+
 - **Performance audit + optimizatsiya** (2026-10-03):
   - `getProductDetail`: 5 ketma-ket query → 2 bosqichli parallel (Promise.all) + `select` (faqat kerakli ustunlar) — kesh miss'da ~4×RTT ortiqcha kutish yo'qoldi.
   - `getCachedCategoryTree` N+1 → 2 ta parallel to'liq query (root + children).
