@@ -25,6 +25,7 @@ export async function POST(
                 status: true,
                 paymentMethod: true,
                 paymentStatus: true,
+                isTest: true,
                 items: true,
             }
         });
@@ -55,6 +56,18 @@ export async function POST(
 
         if (paymentMethod === 'PAYME') {
             const paymeMode = getPaymeMode();
+            // Order rejimi (isTest) bilan server rejim mosligini tekshirish.
+            // Agar order sandbox (`isTest=true`) bo'lsa, lekin server production rejimda ishlasa
+            // — aksincha: server test rejimda, lekin order production — xato qaytarish kerak.
+            // Bu cross-mode token滥用ni oldini oladi.
+            const orderIsTest = order.isTest ?? false;
+            const serverIsTest = paymeMode === 'test';
+            if (orderIsTest !== serverIsTest) {
+                return NextResponse.json(
+                    { error: `Payment URL mode mismatch: order isTest=${orderIsTest} but server mode=${paymeMode}` },
+                    { status: 400 }
+                );
+            }
             const paymeConfig = await getPaymeConfig(paymeMode);
             if (paymeConfig) {
                 paymentUrl = buildPaymeRedirectUrl(paymeConfig, orderId, amount, { lang: 'uz' });

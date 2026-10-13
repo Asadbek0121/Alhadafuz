@@ -43,13 +43,16 @@ describe('getPaymeMode() — runtime behavior', async () => {
         expect(getPaymeMode()).toBe('production');
     });
 
-    it('returns production for invalid PAYME_MODE values', async () => {
+    it('throws for invalid PAYME_MODE values (empty string allowed)', async () => {
         const { getPaymeMode } = await import('@/lib/payme');
         for (const badValue of ['sandbox', 'staging', 'dev', 'PRODUCTION', '123']) {
             process.env.PAYME_MODE = badValue;
-            expect(getPaymeMode(), `expected ${badValue} to default to production`).toBe('production');
+            expect(() => getPaymeMode()).toThrow('INVALID_PAYME_MODE_CONFIG');
         }
-        // unset
+        // empty string is allowed — treated as unset → production
+        process.env.PAYME_MODE = '';
+        expect(getPaymeMode()).toBe('production');
+        // unset is also allowed
         delete process.env.PAYME_MODE;
         expect(getPaymeMode()).toBe('production');
     });
@@ -143,5 +146,12 @@ describe('Generate payment URL route — uses shared getPaymeMode', () => {
         // Must NOT have inline ternary logic
         expect(content).not.toContain("PAYME_MODE === 'production' ? 'production' : 'test'");
         expect(content).not.toContain("PAYME_MODE === \"production\" ? \"production\" : \"test\"");
+    });
+
+    it('must check order.isTest against server mode before generating PAYME URL', () => {
+        // Must verify order.isTest matches paymeMode to prevent cross-mode leaks
+        expect(content).toContain('order.isTest');
+        expect(content).toContain('serverIsTest');
+        expect(content).toContain('orderIsTest !== serverIsTest');
     });
 });

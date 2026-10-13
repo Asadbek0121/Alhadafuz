@@ -61,6 +61,12 @@ async function buildPaymentUrl(order: any): Promise<string | null> {
 
     if (pm === 'PAYME') {
         const mode = getPaymeMode();
+        const serverIsTest = mode === 'test';
+        const orderIsTest = order.isTest ?? false;
+        // Agar order rejimi (isTest) server rejimiga mos kelmasa — URL yaratmaslik.
+        // Bu idempotent so'rovlar orqali noto'g'ri rejimdagi eski buyurtmalarga
+        // ham to'g'ri URL qaytarilishining oldini oladi.
+        if (orderIsTest !== serverIsTest) return null;
         const paymeConfig = await getPaymeConfig(mode);
         if (paymeConfig) {
             return buildPaymeRedirectUrl(paymeConfig, orderId, amount);

@@ -34,12 +34,18 @@ export type PaymeMode = "production" | "test";
 /** PAYME_MODE env ga qarab server-side rejimni aniqlaydi.
  * - 'production' → production
  * - 'test'       → test (sandbox)
- * - unset / boshqa → production (default)
+ * - unset / bo'sh  → production (default)
+ * - boshqa qiymat → xato (INVALID_PAYME_MODE_CONFIG)
  */
 export function getPaymeMode(): PaymeMode {
     const mode = process.env.PAYME_MODE;
     if (mode === "production") return "production";
     if (mode === "test") return "test";
+    if (mode !== undefined && mode !== "") {
+        throw new Error(
+            `INVALID_PAYME_MODE_CONFIG: PAYME_MODE="${mode}" — faqat "test" yoki "production" qabul qilinadi.`
+        );
+    }
     return "production";
 }
 
