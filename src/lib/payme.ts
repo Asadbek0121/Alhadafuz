@@ -15,6 +15,8 @@ import { prisma } from "@/lib/prisma";
 // ---------------------------------------------------------------------------
 
 export type PaymeConfig = {
+    /** PaymentMethod.id — DB'dagi konfiguratsiya identifikatori */
+    id?: string;
     /** Web-cassa ID (merchant_id) */
     merchant: string;
     /** LK login */
@@ -124,7 +126,7 @@ export async function findConfigForLogin(login: string): Promise<PaymeConfig | n
         // Barcha faol PAYME konfiguratsiyalarni yuklaymiz
         const methods = await prisma.paymentMethod.findMany({
             where: { provider: "PAYME", isActive: true },
-            select: { config: true },
+            select: { id: true, config: true },
         });
 
         for (const method of methods) {
@@ -145,6 +147,7 @@ export async function findConfigForLogin(login: string): Promise<PaymeConfig | n
             // 1. Production rejimi — asosiy key bilan
             // 2. Test rejimi — test_key bilan (agar mavjud bo'lsa)
             return {
+                id: method.id,
                 merchant: String(cfg.merchant || cfg.Merchant || cfg.merchant_id || ''),
                 login: String(dbLogin),
                 key: String(dbKey),
@@ -163,6 +166,8 @@ export interface PaymeAuthResult {
     config: PaymeConfig;
     /** 'test' agar test_key bilan tasdiqlangan bo'lsa, aks holda 'production' */
     detectedMode: 'test' | 'production';
+    /** PaymentMethod.id — autentifikatsiya qilingan konfiguratsiyaning identifikatori */
+    paymentMethodId?: string;
 }
 
 /**
@@ -209,7 +214,7 @@ export async function verifyAuthorizationPerRequest(
     }
 
     console.debug(`[payme] auth ok: login found, mode=${detectedMode}, source=DB`);
-    return { config, detectedMode };
+    return { config, detectedMode, paymentMethodId: config.id };
 }
 
 /**
@@ -885,56 +890,61 @@ export async function handleGetStatement(
 /**
  * Change the auth key for the authenticated Payme config.
  *
- * - In test mode: updates `test_key` (what verifyAuthorizationPerRequest checks for sandbox)
- * - In production mode: updates `key` (what verifyAuthorizationPerRequest checks for production)
- *
- * Must only modify the config that was authenticated — never touch other configs.
- * Throws -31000 if the authenticated login has no matching DB config.
+ * - Uses paymentMethodId for exact-match update — never touches other configs.
+ * - In test mode: updates `test_key` (or `testKey` alias)
+ * - In production mode: updates `key` (or `Key` alias)
+ * - Throws -31000 if paymentMethodId is missing or the config can't be found.
  */
 export async function handleChangePassword(
     password: string,
-    mode: PaymeMode = "production"
+    mode: PaymeMode = "production",
+    paymentMethodId?: string
 ): Promise<{ message: string }> {
+    if (!paymentMethodId) {
+        throw { code: -31000, message: "Payment method ID is required", data: [] };
+    }
+
     try {
         const { prisma } = await import("@/lib/prisma");
-        const methods = await prisma.paymentMethod.findMany({
-            where: { provider: "PAYME", isActive: true },
+        const method = await prisma.paymentMethod.findUnique({
+            where: { id: paymentMethodId, provider: "PAYME", isActive: true },
             select: { id: true, config: true },
         });
 
-        if (!methods.length) {
-            throw { code: -31000, message: "No active PAYME configuration found", data: [] };
+        if (!method) {
+            throw { code: -31000, message: "PAYME configuration not found", data: [] };
         }
 
-        // Find the config whose login matches the one we authenticated with.
-        // We identify it by checking if the existing key/testKey equals what we'd expect.
-        let updated = false;
-        for (const method of methods) {
-            if (!method.config) continue;
-            let cfg: any;
-            try { cfg = JSON.parse(method.config); } catch { continue; }
-
-            // Identify which key field to update based on mode
-            const currentKey = mode === "test"
-                ? (cfg.test_key || cfg.key)
-                : cfg.key;
-
-            // Only update if this config is the one being used for this mode
-            // (We can't know the old password here, so we update all matching configs)
-            const targetField = mode === "test" ? "test_key" : "key";
-            if (!cfg[targetField]) continue; // skip configs without the target field
-
-            cfg[targetField] = password;
-            await prisma.paymentMethod.update({
-                where: { id: method.id },
-                data: { config: JSON.stringify(cfg) },
-            });
-            updated = true;
+        if (!method.config) {
+            throw { code: -31000, message: "PAYME config is empty", data: [] };
         }
 
-        if (!updated) {
-            throw { code: -31000, message: `No PAYME config found with ${mode === "test" ? "test_key" : "key"} field`, data: [] };
+        let cfg: any;
+        try {
+            cfg = JSON.parse(method.config);
+        } catch {
+            throw { code: -31000, message: "PAYME config is invalid JSON", data: [] };
         }
+
+        // Update only the field matching the authenticated mode.
+        // Support both lowercase and PascalCase field names from legacy configs.
+        const targetField = mode === "test" ? "test_key" : "key";
+        const legacyField = mode === "test" ? "testKey" : "Key";
+
+        // Only update if the field exists (preserve config structure)
+        if (cfg[targetField] === undefined && cfg[legacyField] === undefined) {
+            throw { code: -31000, message: `PAYME config missing ${targetField} field`, data: [] };
+        }
+
+        // Always update both canonical and legacy field names so the config
+        // stays consistent regardless of which casing Prisma returns.
+        cfg[targetField] = password;
+        cfg[legacyField] = password;
+
+        await prisma.paymentMethod.update({
+            where: { id: method.id },
+            data: { config: JSON.stringify(cfg) },
+        });
     } catch (e: unknown) {
         const err = e as { code?: number; message?: string };
         if (err.code) throw e;

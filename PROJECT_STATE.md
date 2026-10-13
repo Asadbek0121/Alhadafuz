@@ -252,6 +252,18 @@ Avvalgi sessiyalardan:
   - Verification: `tsc --noEmit` ✅ | `eslint` ✅ | `vitest 74/74` ✅
   - Commit: `9052972`, PR: https://github.com/Asadbek0121/Alhadafuz/pull/12
 
+## Completed Recently (2026-10-12)
+
+- **Payme Sandbox/Production Isolation (PR #13)** — `fix/payme-per-request-auth` branch, commits `8104a4a` → `7b340ae`:
+  - Order model: `isTest Boolean @default(false)` field added, migration `20261012000000_add_order_is_test`
+  - All 5 transaction handlers check `isTest` mismatch → `-31001` for cross-mode operations
+  - **`handleGetStatement`**: `mode` param added, Prisma query filtered by `isTest` at DB level (no client-side post-filtering)
+  - **Idempotent paths**: `handleCreateTransaction` and `handlePerformTransaction` now check `isTest` BEFORE returning cached PAID results
+  - Route passes `detectedMode` to all handlers including `GetStatement`
+  - Tests: 39 in `payme-per-request-auth.test.ts`, 191 total across all test files
+  - Verification: tsc 0, ESLint 0, vitest 191/191 ✅
+  - PR: https://github.com/Asadbek0121/Alhadafuz/pull/13
+
 ## Completed Recently (2026-10-10)
 
 - **Telegram Token Routing & OTP Security Fix** (`fix/telegram-token-routing-otp-delivery`):
@@ -350,7 +362,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
+2026-10-12 (PR #13: ChangePassword + GetStatement + idempotent path fixes)
 
 ## Recent Changes (2026-10-06)
 

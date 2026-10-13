@@ -33,7 +33,12 @@ const mockedPrisma = vi.hoisted(() => ({
         findMany: vi.fn(),
     },
     paymentLog: { create: vi.fn() },
-    paymentMethod: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn().mockResolvedValue({}) },
+    paymentMethod: {
+        findMany: vi.fn(),
+        findFirst: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn().mockResolvedValue({}),
+    },
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -595,70 +600,99 @@ describe('handleChangePassword — mode isolation', () => {
     });
 
     it('should update test_key in test mode', async () => {
-        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
-            { id: 'pm-1', config: JSON.stringify({ login: 'sb_user', key: 'prod_s', test_key: 'old_sandbox_key' }) },
-        ]);
+        mockedPrisma.paymentMethod.findUnique.mockResolvedValue({
+            id: 'pm-1',
+            config: JSON.stringify({ login: 'sb_user', key: 'prod_s', test_key: 'old_sandbox_key' }),
+        });
 
-        const result = await handleChangePassword('new_sandbox_key', 'test');
+        const result = await handleChangePassword('new_sandbox_key', 'test', 'pm-1');
         expect(result.message).toBe('Password changed successfully');
-        // Verify test_key was updated, not key
         const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
         const updatedConfig = JSON.parse(updateCall.data.config);
         expect(updatedConfig.test_key).toBe('new_sandbox_key');
+        expect(updatedConfig.testKey).toBe('new_sandbox_key'); // legacy alias also updated
         expect(updatedConfig.key).toBe('prod_s'); // key unchanged
     });
 
     it('should update key in production mode', async () => {
-        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
-            { id: 'pm-1', config: JSON.stringify({ login: 'prod_user', key: 'old_prod_key', test_key: 'sb_key' }) },
-        ]);
+        mockedPrisma.paymentMethod.findUnique.mockResolvedValue({
+            id: 'pm-1',
+            config: JSON.stringify({ login: 'prod_user', key: 'old_prod_key', test_key: 'sb_key' }),
+        });
 
-        const result = await handleChangePassword('new_prod_key', 'production');
+        const result = await handleChangePassword('new_prod_key', 'production', 'pm-1');
         expect(result.message).toBe('Password changed successfully');
         const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
         const updatedConfig = JSON.parse(updateCall.data.config);
         expect(updatedConfig.key).toBe('new_prod_key');
+        expect(updatedConfig.Key).toBe('new_prod_key'); // legacy alias also updated
         expect(updatedConfig.test_key).toBe('sb_key'); // test_key unchanged
     });
 
-    it('should not change other configs when updating', async () => {
-        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
-            { id: 'pm-sb', config: JSON.stringify({ login: 'sb_user', key: 'prod_s', test_key: 'old_sb_key' }), },
-            { id: 'pm-prod', config: JSON.stringify({ login: 'prod_user', key: 'old_prod_key' }) }, // no test_key
-        ]);
+    it('should only update the authenticated config, not others', async () => {
+        // Two configs exist; only pm-sb should be touched
+        mockedPrisma.paymentMethod.findUnique.mockResolvedValue({
+            id: 'pm-sb',
+            config: JSON.stringify({ login: 'sb_user', key: 'prod_s', test_key: 'old_sb_key' }),
+        });
 
-        await handleChangePassword('new_sb_key', 'test');
+        await handleChangePassword('new_sb_key', 'test', 'pm-sb');
 
-        // Only one update call (for the test config with test_key)
         expect(mockedPrisma.paymentMethod.update).toHaveBeenCalledTimes(1);
         const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
         expect(updateCall.where.id).toBe('pm-sb');
     });
 
-    it('should throw when no active PAYME configs exist', async () => {
-        mockedPrisma.paymentMethod.findMany.mockResolvedValue([]);
-
+    it('should throw when paymentMethodId is missing', async () => {
         await expect(
             handleChangePassword('new_key', 'production')
         ).rejects.toEqual({
             code: -31000,
-            message: "No active PAYME configuration found",
+            message: "Payment method ID is required",
             data: [],
         });
     });
 
-    it('should skip configs missing the target field', async () => {
-        // Config without test_key — should be skipped in test mode
-        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
-            { id: 'pm-no-test', config: JSON.stringify({ login: 'no_test', key: 'some_key' }) },
-            { id: 'pm-with-test', config: JSON.stringify({ login: 'with_test', key: 'prod_k', test_key: 'old_sb' }) },
-        ]);
+    it('should throw when the authenticated config is not found', async () => {
+        mockedPrisma.paymentMethod.findUnique.mockResolvedValue(null);
 
-        const result = await handleChangePassword('new_sb', 'test');
-        expect(result.message).toBe('Password changed successfully');
-        // Only pm-with-test should be updated
-        expect(mockedPrisma.paymentMethod.update).toHaveBeenCalledTimes(1);
-        const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
-        expect(updateCall.where.id).toBe('pm-with-test');
+        await expect(
+            handleChangePassword('new_key', 'production', 'pm-nonexistent')
+        ).rejects.toEqual({
+            code: -31000,
+            message: "PAYME configuration not found",
+            data: [],
+        });
+    });
+
+    it('should throw when config has no target field', async () => {
+        // Config without test_key in test mode
+        mockedPrisma.paymentMethod.findUnique.mockResolvedValue({
+            id: 'pm-no-test',
+            config: JSON.stringify({ login: 'no_test', key: 'some_key' }),
+        });
+
+        await expect(
+            handleChangePassword('new_key', 'test', 'pm-no-test')
+        ).rejects.toEqual({
+            code: -31000,
+            message: "PAYME config missing test_key field",
+            data: [],
+        });
+    });
+
+    it('should handle invalid JSON config gracefully', async () => {
+        mockedPrisma.paymentMethod.findUnique.mockResolvedValue({
+            id: 'pm-bad',
+            config: 'not-valid-json',
+        });
+
+        await expect(
+            handleChangePassword('new_key', 'production', 'pm-bad')
+        ).rejects.toEqual({
+            code: -31000,
+            message: "PAYME config is invalid JSON",
+            data: [],
+        });
     });
 });
