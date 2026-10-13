@@ -292,6 +292,39 @@ export async function verifyAuthorization(
 // RPC helper
 // ---------------------------------------------------------------------------
 
+
+/**
+ * Safe order query wrapper — handles missing columns (P2022) gracefully.
+ *
+ * When the database is missing `isTest`, `paymeTransactionId`, or
+ * `paymeTransactionTime` columns, Prisma throws P2022.  This helper
+ * logs a structured warning (without leaking secrets) and returns null
+ * so the caller treats it as "not found".
+ *
+ * ⚠️  NOTE: P2022 here means a migration has NOT been applied to the
+ *     current database.  If this log appears in production, run
+ *     `npx prisma migrate deploy` to bring the schema in sync.
+ */
+async function safeOrderQuery(queryFn: () => Promise<any>): Promise<any | null> {
+    try {
+        return await queryFn();
+    } catch (e: any) {
+        if (e?.code === "P2022") {
+            // Log a structured warning with table/column info — no secrets.
+            const tableMatch = String(e).match(/relation "([^"]+)"/);
+            const columnMatch = String(e).match(/column "([^"]+)" of/);
+            console.warn(
+                "[payme] safeOrderQuery: DB column missing — " +
+                `table=${tableMatch ? tableMatch[1] : "?"}, ` +
+                `column=${columnMatch ? columnMatch[1] : "?"}. ` +
+                "Run `npx prisma migrate deploy` to apply pending migrations."
+            );
+            return null;
+        }
+        throw e;
+    }
+}
+
 const PAYME_BASE_URL = "https://payment.paycomjoint.uz";
 const PAYME_TEST_URL = "https://test.paycom.uz";
 
@@ -413,15 +446,17 @@ export async function handleCheckPerformTransaction(
         throw { code: -31000, message: "Invalid params: account.order_id required", data: [{ field: "account.order_id" }] };
     }
 
-    const order = await prisma.order.findFirst({
-        where: {
-            OR: [
-                { id: orderId },
-                { orderNumber: orderId },
-            ],
-        },
-        select: { id: true, total: true, paymentStatus: true, isTest: true },
-    });
+    const order = await safeOrderQuery(async () =>
+        prisma.order.findFirst({
+            where: {
+                OR: [
+                    { id: orderId },
+                    { orderNumber: orderId },
+                ],
+            },
+            select: { id: true, total: true, paymentStatus: true, isTest: true },
+        })
+    );
 
     // Nonexistent account -> -31099
     if (!order) {
@@ -505,12 +540,14 @@ export async function handleCreateTransaction(
     }
 
     // Order topish
-    const order = await prisma.order.findFirst({
-        where: {
-            OR: [{ id: orderId }, { orderNumber: orderId }],
-        },
-        select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true, isTest: true },
-    });
+    const order = await safeOrderQuery(async () =>
+        prisma.order.findFirst({
+            where: {
+                OR: [{ id: orderId }, { orderNumber: orderId }],
+            },
+            select: { id: true, total: true, paymentStatus: true, status: true, paymeTransactionId: true, isTest: true },
+        })
+    );
 
     // Account not found -> -31099
     if (!order) {
