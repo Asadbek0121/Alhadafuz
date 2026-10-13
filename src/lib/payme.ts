@@ -123,38 +123,40 @@ export function parseAuthHeader(auth: string | null): { login?: string; password
 export async function findConfigForLogin(login: string): Promise<PaymeConfig | null> {
     try {
         const { prisma } = await import("@/lib/prisma");
-        // Barcha faol PAYME konfiguratsiyalarni yuklaymiz
         const methods = await prisma.paymentMethod.findMany({
             where: { provider: "PAYME", isActive: true },
             select: { id: true, config: true },
         });
 
+        // Find ALL configs matching this login — ambiguity must be rejected.
+        const matches: PaymeConfig[] = [];
         for (const method of methods) {
             if (!method.config) continue;
             let cfg: any;
-            try {
-                cfg = JSON.parse(method.config);
-            } catch {
-                continue;
-            }
+            try { cfg = JSON.parse(method.config); } catch { continue; }
             const dbLogin = cfg.login || cfg.Login;
             if (dbLogin !== login) continue;
 
             const dbKey = cfg.key || cfg.Key;
             const dbTestKey = cfg.test_key || cfg.testKey;
 
-            // Har bir login uchun ikkita rejim mavjud:
-            // 1. Production rejimi — asosiy key bilan
-            // 2. Test rejimi — test_key bilan (agar mavjud bo'lsa)
-            return {
+            matches.push({
                 id: method.id,
                 merchant: String(cfg.merchant || cfg.Merchant || cfg.merchant_id || ''),
                 login: String(dbLogin),
                 key: String(dbKey),
                 testKey: dbTestKey ? String(dbTestKey) : undefined,
                 password: cfg.password,
-            };
+            });
         }
+
+        if (matches.length === 0) return null;
+        if (matches.length > 1) {
+            // Ambiguous: multiple configs share the same login — reject to prevent
+            // the wrong config from being updated or authenticated.
+            return null;
+        }
+        return matches[0];
     } catch (e) {
         console.warn("[payme] findConfigForLogin error:", e);
     }

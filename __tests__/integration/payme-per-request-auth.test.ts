@@ -77,8 +77,9 @@ function mockDbConfig(overrides: Record<string, any> = {}) {
         test_key: 'sandbox_key_456',
         ...overrides,
     };
-    mockedPrisma.paymentMethod.findMany.mockResolvedValue([{ config: JSON.stringify(config) }]);
-    mockedPrisma.paymentMethod.findFirst.mockResolvedValue({ config: JSON.stringify(config) });
+    const id = overrides.id ?? 'pm-test-1';
+    mockedPrisma.paymentMethod.findMany.mockResolvedValue([{ id, config: JSON.stringify(config) }]);
+    mockedPrisma.paymentMethod.findFirst.mockResolvedValue({ id, config: JSON.stringify(config) });
     return config;
 }
 
@@ -129,16 +130,29 @@ describe('findConfigForLogin — per-request detection', () => {
 
     it('should handle multiple configs with different logins', async () => {
         mockedPrisma.paymentMethod.findMany.mockResolvedValue([
-            { config: JSON.stringify({ login: 'sandbox_user', key: 'prod_s', test_key: 'test_s' }) },
-            { config: JSON.stringify({ login: 'prod_user', key: 'prod_main', test_key: 'test_p' }) },
+            { id: 'pm-sb', config: JSON.stringify({ login: 'sandbox_user', key: 'prod_s', test_key: 'test_s' }) },
+            { id: 'pm-prod', config: JSON.stringify({ login: 'prod_user', key: 'prod_main', test_key: 'test_p' }) },
         ]);
 
         const sandboxConfig = await findConfigForLogin('sandbox_user');
         const prodConfig = await findConfigForLogin('prod_user');
 
         expect(sandboxConfig?.login).toBe('sandbox_user');
+        expect(sandboxConfig?.id).toBe('pm-sb');
         expect(prodConfig?.login).toBe('prod_user');
+        expect(prodConfig?.id).toBe('pm-prod');
         expect(sandboxConfig).not.toEqual(prodConfig);
+    });
+
+    it('should reject ambiguous login — multiple configs with same login', async () => {
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
+            { id: 'pm-a', config: JSON.stringify({ login: 'shared_login', key: 'key_a', test_key: 'test_a' }) },
+            { id: 'pm-b', config: JSON.stringify({ login: 'shared_login', key: 'key_b', test_key: 'test_b' }) },
+        ]);
+
+        // Ambiguous login → null (safer than picking first)
+        const config = await findConfigForLogin('shared_login');
+        expect(config).toBeNull();
     });
 });
 
@@ -225,6 +239,21 @@ describe('verifyAuthorizationPerRequest — per-request auth', () => {
 
     it('should reject unknown login even with correct-looking password', async () => {
         const authHeader = makeAuthHeader('unknown_user', 'some_key');
+        await expect(verifyAuthorizationPerRequest(authHeader)).rejects.toEqual({
+            code: -32504,
+            message: "Insufficient privileges for method execution",
+            data: [],
+        });
+    });
+
+    it('should reject ambiguous login — multiple configs with same login', async () => {
+        // Two configs share the same login — this must be rejected for safety
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
+            { id: 'pm-a', config: JSON.stringify({ login: 'shared_login', key: 'key_a', test_key: 'test_a' }) },
+            { id: 'pm-b', config: JSON.stringify({ login: 'shared_login', key: 'key_b', test_key: 'test_b' }) },
+        ]);
+
+        const authHeader = makeAuthHeader('shared_login', 'key_a');
         await expect(verifyAuthorizationPerRequest(authHeader)).rejects.toEqual({
             code: -32504,
             message: "Insufficient privileges for method execution",
