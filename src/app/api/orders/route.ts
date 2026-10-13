@@ -41,6 +41,11 @@ const createOrderSchema = z.object({
     idempotencyKey: z.string().max(100).optional(),
 });
 
+/** PAYME_MODE env ga qarab server-side rejimni aniqlaydi. */
+function getPaymeMode(): 'test' | 'production' {
+    return process.env.PAYME_MODE === 'production' ? 'production' : 'test';
+}
+
 /**
  * To'lov URL — to'lov turi bo'yicha qaytaradi.
  * Allaqachon PAID yoki CANCELLED bo'lgan order uchun qayta payment yaratilmaydi.
@@ -60,14 +65,10 @@ async function buildPaymentUrl(order: any): Promise<string | null> {
     }
 
     if (pm === 'PAYME') {
-        const paymeConfig = await getPaymeConfig('production');
+        const mode = getPaymeMode();
+        const paymeConfig = await getPaymeConfig(mode);
         if (paymeConfig) {
-            // Agar test_key bo'lsa — test/rezhimi, aks holda production
-            const mode = paymeConfig.testKey ? 'test' : 'production';
-            const redirectConfig = mode === 'test'
-                ? { ...paymeConfig, key: paymeConfig.testKey ?? paymeConfig.key }
-                : paymeConfig;
-            return buildPaymeRedirectUrl(redirectConfig, orderId, amount);
+            return buildPaymeRedirectUrl(paymeConfig, orderId, amount);
         }
     }
 
@@ -300,6 +301,7 @@ export async function POST(req: Request) {
         // Determine initial status based on payment method
         const method = paymentMethod.toLowerCase();
         const initialStatus = ['click', 'payme'].includes(method) ? 'AWAITING_PAYMENT' : 'PENDING';
+        const isTest = getPaymeMode() === 'test';
 
         // 4. Create Order using Raw SQL for the main table to avoid "Unknown argument lat" errors
         // but keeping it inside a transaction for data integrity.
@@ -327,15 +329,15 @@ export async function POST(req: Request) {
                         "id", "orderNumber", "userId", "total", "deliveryFee", "status", "paymentMethod",
                         "deliveryMethod", "storeId", "shippingCity", "shippingDistrict",
                         "shippingAddress", "comment", "shippingPhone", "shippingName",
-                        "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "updatedAt"
-                    ) VALUES ($1, $20, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, NOW())
+                        "lat", "lng", "couponCode", "discountAmount", "idempotencyKey", "isTest", "updatedAt"
+                    ) VALUES ($1, $21, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, NOW())
                 `,
                     orderId, session.user.id, finalTotal, deliveryFee, initialStatus, paymentMethod,
                     deliveryMethod || 'COURIER', storeId || null, deliveryAddress?.city || 'Termiz',
                     deliveryAddress?.district || '', deliveryAddress?.address || '', deliveryAddress?.comment || '',
                     deliveryAddress?.phone || session.user?.phone || '', deliveryAddress?.name || session.user?.name || '',
                     lat || null, lng || null, validatedCoupon?.code || null, discountAmount, idempotencyKey || null,
-                    orderNumber
+                    orderNumber, isTest
                 );
 
             // Create items and decrease stock
