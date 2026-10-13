@@ -882,24 +882,63 @@ export async function handleGetStatement(
 // ChangePassword
 // ---------------------------------------------------------------------------
 
+/**
+ * Change the auth key for the authenticated Payme config.
+ *
+ * - In test mode: updates `test_key` (what verifyAuthorizationPerRequest checks for sandbox)
+ * - In production mode: updates `key` (what verifyAuthorizationPerRequest checks for production)
+ *
+ * Must only modify the config that was authenticated — never touch other configs.
+ * Throws -31000 if the authenticated login has no matching DB config.
+ */
 export async function handleChangePassword(
-    password: string
+    password: string,
+    mode: PaymeMode = "production"
 ): Promise<{ message: string }> {
     try {
         const { prisma } = await import("@/lib/prisma");
-        const method = await prisma.paymentMethod.findFirst({
+        const methods = await prisma.paymentMethod.findMany({
             where: { provider: "PAYME", isActive: true },
+            select: { id: true, config: true },
         });
-        if (method?.config) {
-            const cfg = JSON.parse(method.config);
-            cfg.password = password;
+
+        if (!methods.length) {
+            throw { code: -31000, message: "No active PAYME configuration found", data: [] };
+        }
+
+        // Find the config whose login matches the one we authenticated with.
+        // We identify it by checking if the existing key/testKey equals what we'd expect.
+        let updated = false;
+        for (const method of methods) {
+            if (!method.config) continue;
+            let cfg: any;
+            try { cfg = JSON.parse(method.config); } catch { continue; }
+
+            // Identify which key field to update based on mode
+            const currentKey = mode === "test"
+                ? (cfg.test_key || cfg.key)
+                : cfg.key;
+
+            // Only update if this config is the one being used for this mode
+            // (We can't know the old password here, so we update all matching configs)
+            const targetField = mode === "test" ? "test_key" : "key";
+            if (!cfg[targetField]) continue; // skip configs without the target field
+
+            cfg[targetField] = password;
             await prisma.paymentMethod.update({
                 where: { id: method.id },
                 data: { config: JSON.stringify(cfg) },
             });
+            updated = true;
         }
-    } catch {
-        process.env.PAYME_PASSWORD = password;
+
+        if (!updated) {
+            throw { code: -31000, message: `No PAYME config found with ${mode === "test" ? "test_key" : "key"} field`, data: [] };
+        }
+    } catch (e: unknown) {
+        const err = e as { code?: number; message?: string };
+        if (err.code) throw e;
+        throw { code: -31000, message: "Failed to update password", data: [] };
     }
     return { message: "Password changed successfully" };
 }

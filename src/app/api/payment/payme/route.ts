@@ -163,7 +163,7 @@ export async function POST(req: NextRequest) {
                 if (!newPassword) {
                     throw { code: -31000, message: "Password is required", data: [] };
                 }
-                const resp = await handleChangePassword(newPassword);
+                const resp = await handleChangePassword(newPassword, detectedMode);
                 result = resp;
                 break;
             }

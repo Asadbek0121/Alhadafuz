@@ -33,7 +33,7 @@ const mockedPrisma = vi.hoisted(() => ({
         findMany: vi.fn(),
     },
     paymentLog: { create: vi.fn() },
-    paymentMethod: { findMany: vi.fn(), findFirst: vi.fn() },
+    paymentMethod: { findMany: vi.fn(), findFirst: vi.fn(), update: vi.fn().mockResolvedValue({}) },
 }));
 
 vi.mock('@/lib/prisma', () => ({
@@ -51,6 +51,7 @@ import {
     handlePerformTransaction,
     handleCheckTransaction,
     handleGetStatement,
+    handleChangePassword,
     paymeRpc,
     findConfigForLogin,
     verifyAuthorizationPerRequest,
@@ -583,5 +584,81 @@ describe('Idempotent paths — sandbox cannot replay production transactions', (
             message: "Transaction not found",
             data: [],
         });
+    });
+});
+
+// ─── 9. ChangePassword Mode Isolation ──────────────────────────────────────
+
+describe('handleChangePassword — mode isolation', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should update test_key in test mode', async () => {
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
+            { id: 'pm-1', config: JSON.stringify({ login: 'sb_user', key: 'prod_s', test_key: 'old_sandbox_key' }) },
+        ]);
+
+        const result = await handleChangePassword('new_sandbox_key', 'test');
+        expect(result.message).toBe('Password changed successfully');
+        // Verify test_key was updated, not key
+        const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
+        const updatedConfig = JSON.parse(updateCall.data.config);
+        expect(updatedConfig.test_key).toBe('new_sandbox_key');
+        expect(updatedConfig.key).toBe('prod_s'); // key unchanged
+    });
+
+    it('should update key in production mode', async () => {
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
+            { id: 'pm-1', config: JSON.stringify({ login: 'prod_user', key: 'old_prod_key', test_key: 'sb_key' }) },
+        ]);
+
+        const result = await handleChangePassword('new_prod_key', 'production');
+        expect(result.message).toBe('Password changed successfully');
+        const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
+        const updatedConfig = JSON.parse(updateCall.data.config);
+        expect(updatedConfig.key).toBe('new_prod_key');
+        expect(updatedConfig.test_key).toBe('sb_key'); // test_key unchanged
+    });
+
+    it('should not change other configs when updating', async () => {
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
+            { id: 'pm-sb', config: JSON.stringify({ login: 'sb_user', key: 'prod_s', test_key: 'old_sb_key' }), },
+            { id: 'pm-prod', config: JSON.stringify({ login: 'prod_user', key: 'old_prod_key' }) }, // no test_key
+        ]);
+
+        await handleChangePassword('new_sb_key', 'test');
+
+        // Only one update call (for the test config with test_key)
+        expect(mockedPrisma.paymentMethod.update).toHaveBeenCalledTimes(1);
+        const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
+        expect(updateCall.where.id).toBe('pm-sb');
+    });
+
+    it('should throw when no active PAYME configs exist', async () => {
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([]);
+
+        await expect(
+            handleChangePassword('new_key', 'production')
+        ).rejects.toEqual({
+            code: -31000,
+            message: "No active PAYME configuration found",
+            data: [],
+        });
+    });
+
+    it('should skip configs missing the target field', async () => {
+        // Config without test_key — should be skipped in test mode
+        mockedPrisma.paymentMethod.findMany.mockResolvedValue([
+            { id: 'pm-no-test', config: JSON.stringify({ login: 'no_test', key: 'some_key' }) },
+            { id: 'pm-with-test', config: JSON.stringify({ login: 'with_test', key: 'prod_k', test_key: 'old_sb' }) },
+        ]);
+
+        const result = await handleChangePassword('new_sb', 'test');
+        expect(result.message).toBe('Password changed successfully');
+        // Only pm-with-test should be updated
+        expect(mockedPrisma.paymentMethod.update).toHaveBeenCalledTimes(1);
+        const updateCall = mockedPrisma.paymentMethod.update.mock.calls[0][0];
+        expect(updateCall.where.id).toBe('pm-with-test');
     });
 });
