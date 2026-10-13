@@ -153,7 +153,7 @@ export async function POST(req: NextRequest) {
                 if (isNaN(from) || isNaN(to)) {
                     throw { code: -31000, message: "Invalid params", data: [] };
                 }
-                const resp = await handleGetStatement(from, to);
+                const resp = await handleGetStatement(from, to, detectedMode);
                 result = resp;
                 break;
             }

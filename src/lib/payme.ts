@@ -451,12 +451,18 @@ export async function handleCreateTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymeTransactionId: true, paymentStatus: true, paymeTransactionTime: true },
+            select: { paymeTransactionId: true, paymentStatus: true, paymeTransactionTime: true, isTest: true },
         });
     } catch {
         // paymeTransactionId column may not exist yet
     }
     if (existing) {
+        // Mode mismatch — sandbox/production ajratish
+        const existingIsTest = existing.isTest ?? false;
+        const expectedTest = mode === "test";
+        if (existingIsTest !== expectedTest) {
+            throw { code: -31001, message: "Order not available for this payment method", data: [] };
+        }
         // Agar transaction allaqachon performed bo'lsa -> state 2
         if (existing.paymentStatus === "PAID") {
             return {
@@ -582,8 +588,13 @@ export async function handlePerformTransaction(
         // paymeTransactionId column may not exist
     }
 
-    // Already performed
+    // Already performed — mode mismatch check first
     if (existing?.paymentStatus === "PAID") {
+        const existingIsTest = existing.isTest ?? false;
+        const expectedTest = mode === "test";
+        if (existingIsTest !== expectedTest) {
+            throw { code: -31001, message: "Order not available for this payment method", data: [] };
+        }
         return {
             transaction: id,
             perform_time: nowMs(),
@@ -799,7 +810,8 @@ export async function handleCheckTransaction(
 
 export async function handleGetStatement(
     from: number,
-    to: number
+    to: number,
+    mode: PaymeMode = "production"
 ): Promise<{
     transactions: Array<{
         id: string;
@@ -814,12 +826,14 @@ export async function handleGetStatement(
         reason?: number | null;
     }>;
 }> {
+    const isTestMode = mode === "test";
     let orders: any[] = [];
     try {
         orders = await prisma.order.findMany({
             where: {
                 paymentProvider: "PAYME",
                 paymeTransactionId: { not: null },
+                isTest: isTestMode,
                 createdAt: {
                     gte: new Date(from),
                     lte: new Date(to),
@@ -833,6 +847,7 @@ export async function handleGetStatement(
                 paymeTransactionId: true,
                 paymeTransactionTime: true,
                 createdAt: true,
+                isTest: true,
             },
             orderBy: { createdAt: "asc" },
         });

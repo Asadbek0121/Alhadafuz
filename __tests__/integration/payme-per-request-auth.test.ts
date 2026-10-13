@@ -30,6 +30,7 @@ const mockedPrisma = vi.hoisted(() => ({
         update: vi.fn(),
         create: vi.fn(),
         deleteMany: vi.fn(),
+        findMany: vi.fn(),
     },
     paymentLog: { create: vi.fn() },
     paymentMethod: { findMany: vi.fn(), findFirst: vi.fn() },
@@ -47,6 +48,9 @@ import {
     parseAuthHeader,
     handleCheckPerformTransaction,
     handleCreateTransaction,
+    handlePerformTransaction,
+    handleCheckTransaction,
+    handleGetStatement,
     paymeRpc,
     findConfigForLogin,
     verifyAuthorizationPerRequest,
@@ -446,5 +450,138 @@ describe('Route flow — per-request auth integration', () => {
 
         expect(libContent).toContain('verifyAuthorization(');
         expect(libContent).toContain('verifyAuthorizationPerRequest(');
+    });
+});
+
+// ─── 7. GetStatement Mode Isolation ────────────────────────────────────────
+
+describe('handleGetStatement — mode isolation', () => {
+    it('should only return test orders in test mode', async () => {
+        mockedPrisma.order.findMany.mockImplementation(({ where }: any) => {
+            const all = [
+                { id: 'ord-sb-1', orderNumber: 'SB001', total: 50, paymentStatus: 'PAID', paymeTransactionId: 'tx-sb', paymeTransactionTime: 1700000000000n, createdAt: new Date('2024-01-15'), isTest: true },
+                { id: 'ord-prod-1', orderNumber: 'PRD001', total: 100, paymentStatus: 'PAID', paymeTransactionId: 'tx-prod', paymeTransactionTime: 1700000000000n, createdAt: new Date('2024-01-15'), isTest: false },
+            ];
+            return Promise.resolve(all.filter((o: any) => o.isTest === where.isTest));
+        });
+
+        const result = await handleGetStatement(0, Date.now(), 'test');
+        expect(result.transactions).toHaveLength(1);
+        expect(result.transactions[0].transaction).toBe('tx-sb');
+    });
+
+    it('should not include production orders when query filters for test', async () => {
+        mockedPrisma.order.findMany.mockImplementation(({ where }: any) => {
+            // Only sandbox orders in DB
+            const all = [
+                { id: 'ord-sb-1', orderNumber: 'SB001', total: 50, paymentStatus: 'PAID', paymeTransactionId: 'tx-sb', paymeTransactionTime: 1700000000000n, createdAt: new Date('2024-01-15'), isTest: true },
+            ];
+            return Promise.resolve(all.filter((o: any) => o.isTest === where.isTest));
+        });
+
+        const result = await handleGetStatement(0, Date.now(), 'test');
+        expect(result.transactions).toHaveLength(1);
+        // Verify no production transaction slipped in
+        expect(result.transactions.every((t: any) => t.transaction !== 'tx-prod')).toBe(true);
+    });
+
+    it('should only return production orders in production mode', async () => {
+        mockedPrisma.order.findMany.mockImplementation(({ where }: any) => {
+            const all = [
+                { id: 'ord-sb-1', orderNumber: 'SB001', total: 50, paymentStatus: 'PAID', paymeTransactionId: 'tx-sb', paymeTransactionTime: 1700000000000n, createdAt: new Date('2024-01-15'), isTest: true },
+                { id: 'ord-prod-1', orderNumber: 'PRD001', total: 100, paymentStatus: 'PAID', paymeTransactionId: 'tx-prod', paymeTransactionTime: 1700000000000n, createdAt: new Date('2024-01-15'), isTest: false },
+            ];
+            return Promise.resolve(all.filter((o: any) => o.isTest === where.isTest));
+        });
+
+        const result = await handleGetStatement(0, Date.now(), 'production');
+        expect(result.transactions).toHaveLength(1);
+        expect(result.transactions[0].transaction).toBe('tx-prod');
+    });
+
+    it('should not include test orders when query filters for production', async () => {
+        mockedPrisma.order.findMany.mockImplementation(({ where }: any) => {
+            // Only production orders in DB
+            const all = [
+                { id: 'ord-prod-1', orderNumber: 'PRD001', total: 100, paymentStatus: 'PAID', paymeTransactionId: 'tx-prod', paymeTransactionTime: 1700000000000n, createdAt: new Date('2024-01-15'), isTest: false },
+            ];
+            return Promise.resolve(all.filter((o: any) => o.isTest === where.isTest));
+        });
+
+        const result = await handleGetStatement(0, Date.now(), 'production');
+        expect(result.transactions).toHaveLength(1);
+        // Verify no sandbox transaction slipped in
+        expect(result.transactions.every((t: any) => t.transaction !== 'tx-sb')).toBe(true);
+    });
+});
+
+// ─── 8. Idempotent Transaction Paths with Mode Check ───────────────────────
+
+describe('Idempotent paths — sandbox cannot replay production transactions', () => {
+    it('should reject sandbox CreateTransaction for existing production PAID transaction', async () => {
+        mockedPrisma.order.findFirst
+            .mockResolvedValueOnce({ paymeTransactionId: 'tx-prod', paymentStatus: 'PAID', paymeTransactionTime: 1700000000000n, isTest: false });
+
+        await expect(
+            handleCreateTransaction('tx-prod', Date.now(), 500000, { order_id: 'ord-prod' }, 'test')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Order not available for this payment method",
+            data: [],
+        });
+    });
+
+    it('should reject production PerformTransaction for existing sandbox PAID transaction', async () => {
+        mockedPrisma.order.findFirst
+            .mockResolvedValueOnce({ paymentStatus: 'PAID', paymeTransactionId: 'tx-sb', id: 'ord-sb', isTest: true });
+
+        await expect(
+            handlePerformTransaction('tx-sb', 'production')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Order not available for this payment method",
+            data: [],
+        });
+    });
+
+    it('should allow sandbox CreateTransaction idempotent for sandbox PAID transaction', async () => {
+        mockedPrisma.order.findFirst
+            .mockResolvedValueOnce({ paymeTransactionId: 'tx-sb', paymentStatus: 'PAID', paymeTransactionTime: 1700000000000n, isTest: true });
+
+        const result = await handleCreateTransaction('tx-sb', Date.now(), 500000, { order_id: 'ord-sb' }, 'test');
+        expect(result.state).toBe(2); // Performed
+    });
+
+    it('should allow production PerformTransaction idempotent for production PAID transaction', async () => {
+        mockedPrisma.order.findFirst
+            .mockResolvedValueOnce({ paymentStatus: 'PAID', paymeTransactionId: 'tx-prod', id: 'ord-prod', isTest: false });
+
+        const result = await handlePerformTransaction('tx-prod', 'production');
+        expect(result.state).toBe(2); // Performed
+    });
+
+    it('should return correct error codes for wrong key and missing account', async () => {
+        // Missing auth tested elsewhere; here verify handler error codes
+        mockedPrisma.order.findFirst.mockResolvedValue(null);
+
+        await expect(
+            handleCheckPerformTransaction(500000, { order_id: 'nonexistent' }, 'production')
+        ).rejects.toEqual({
+            code: -31099,
+            message: "Account not found",
+            data: [{ field: "account.order_id" }],
+        });
+    });
+
+    it('should return -31003 for nonexistent transaction in PerformTransaction', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(null);
+
+        await expect(
+            handlePerformTransaction('tx-nonexistent', 'production')
+        ).rejects.toEqual({
+            code: -31003,
+            message: "Transaction not found",
+            data: [],
+        });
     });
 });
