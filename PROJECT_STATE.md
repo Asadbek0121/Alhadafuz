@@ -252,6 +252,8 @@ Avvalgi sessiyalardan:
   - Verification: `tsc --noEmit` ✅ | `eslint` ✅ | `vitest 74/74` ✅
   - Commit: `9052972`, PR: https://github.com/Asadbek0121/Alhadafuz/pull/12
 
+## Completed Recently (2026-10-10)
+
 ## Completed Recently (2026-10-12)
 
 - **Payme Sandbox/Production Isolation (PR #13)** — `fix/payme-per-request-auth` branch, commits `8104a4a` → `ccaf6d6` → `991a04e`:
@@ -371,6 +373,8 @@ Avvalgi sessiyalardan:
 - `DIRECT_URL` hozir **pooler**ga (6543) ishora qilyapti; Supabase'da direct host `db.zzxcnoronqpexxcxfsmd.supabase.co:5432` bo'lishi kerak (migratsiyalar uchun).
 
 ## Last Updated
+
+2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
 
 2026-10-13 (PR #13 — cross-mode isTest guard)
 
