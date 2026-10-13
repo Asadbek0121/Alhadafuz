@@ -372,7 +372,7 @@ Avvalgi sessiyalardan:
 
 ## Last Updated
 
-2026-10-13 (PR #13 — PAYME_MODE order creation mode consistency)
+2026-10-13 (PR #13 — strict getPaymeMode + shared helper)
 
 ## Recent Changes (2026-10-06)
 
