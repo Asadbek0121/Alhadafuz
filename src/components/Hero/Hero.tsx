@@ -162,10 +162,16 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
 
     // Fallback products carousel auto-scroll
     useEffect(() => {
-        if (carouselProducts.length <= 1 || carouselProducts.length <= 2 || paused || reduceMotion) return;
+        if (carouselProducts.length <= 1 || paused || reduceMotion) return;
         const scrollInterval = setInterval(() => {
             if (trackRef.current) {
-                trackRef.current.scrollLeft += 15;
+                const currentScroll = trackRef.current.scrollLeft;
+                const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
+                if (currentScroll < maxScroll) {
+                    trackRef.current.scrollLeft += 15;
+                } else {
+                    trackRef.current.scrollLeft = 0;
+                }
             }
         }, 3000);
         return () => clearInterval(scrollInterval);
