@@ -197,7 +197,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                             </div>
                             <div ref={trackRef} className="flex gap-4 overflow-x-auto pb-4 scroll-snap-x-mandatory scroll-snap-type-x">
                                 {carouselProducts.slice(0, 12).map((p: any) => (
-                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className="flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 w-[260px] h-[430px] relative">
+                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className="flex flex-col bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow duration-200 relative" style={{ width: 276, height: 455, flexShrink: 0, boxSizing: 'border-box', minWidth: 0 }}>
                                         {/* Chegirma badge */}
                                         {p.oldPrice && p.oldPrice > p.price && (
                                             <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-{(Math.round((p.oldPrice - p.price) / p.price) * 100)}%</div>
@@ -223,8 +223,8 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                             </svg>
                                         </button>
 
-                                        {/* Rasim */}
-                                        <div className="flex-1 aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden mb-3">
+                                        {/* Rasim — aniq 270px, flex-shrink: 0 */}
+                                        <div className="bg-gray-50 rounded-xl overflow-hidden flex-shrink-0" style={{ height: 270, width: '100%', position: 'relative' }}>
                                             <Image
                                                 src={p.image || "https://placehold.co/400"}
                                                 alt={p.title}
@@ -239,29 +239,30 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                         </div>
 
                                         {/* Mahsulot nomi */}
-                                        <div className="text-gray-800 font-medium text-sm line-clamp-2 mb-1">
+                                        <div className="text-gray-800 font-medium text-sm line-clamp-2" style={{ minHeight: '2.6em', marginTop: 10, marginBottom: 0 }}>
                                             {p.title}
                                         </div>
 
-                                        {/* Narxlar */}
-                                        <div className="flex items-end gap-1">
-                                            {p.oldPrice && p.oldPrice > p.price && (
-                                                <div className="text-gray-400 text-xs line-through">
-                                                    {p.oldPrice.toLocaleString()} {tCommon('som')}
+                                        {/* Narxlar + Savat — pastda, margin-top: auto bilan */}
+                                        <div className="mt-auto flex items-end justify-between gap-1 pt-2">
+                                            <div className="flex flex-col">
+                                                {p.oldPrice && p.oldPrice > p.price && (
+                                                    <div className="text-gray-400 text-xs line-through">
+                                                        {p.oldPrice.toLocaleString()} {tCommon('som')}
+                                                    </div>
+                                                )}
+                                                <div className="text-blue-600 font-bold text-sm">
+                                                    {p.price.toLocaleString()} {tCommon('som')}
                                                 </div>
-                                            )}
-                                            <div className="text-blue-600 font-bold text-lg">
-                                                {p.price.toLocaleString()} {tCommon('som')}
                                             </div>
+                                            {/* Savat tugmasi */}
+                                            <button
+                                                className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex-shrink-0"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                Savatga qo'shish
+                                            </button>
                                         </div>
-
-                                        {/* Savat tugmasi */}
-                                        <button
-                                            className="absolute bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            Savatga qo'shish
-                                        </button>
                                     </Link>
                                 ))}
                             </div>
@@ -343,8 +344,8 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                     {loading ? (
                          <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
                     ) : (
-                        <div className="w-full h-full flex flex-col">
-                            <div className={styles.hotDealContent}>
+                        <div className="w-full flex flex-col" style={{ minHeight: 0, flex: '0 0 auto' }}>
+                            <div className={styles.hotDealContent} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                                 <Link
                                     href={hotDealHref}
                                     className={styles.hotDealImageLink}

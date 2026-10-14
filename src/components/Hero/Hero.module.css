@@ -275,32 +275,15 @@
     text-decoration: line-through;
 }
 
-/* Fallback karta — PC va tablet: rasm kattaroq (karta enini to'ldiradi), matn/narx eng pastda, hover qimirlamaydi */
+/* Fallback karta — PC va tablet: hover faqat soya */
 @media (min-width: 641px) {
-    .fallbackCard {
-        flex: 0 0 180px;
-        padding: 8px;
-        gap: 6px;
-    }
-
     .fallbackTrackCentered .fallbackCard {
         flex: 0 0 220px;
     }
 
     .fallbackCard:hover {
-        transform: none;
-    }
-
-    .fallbackImageWrap {
-        width: 100%;
-        flex: 1;
-        min-height: 0;
-        max-height: none;
-        aspect-ratio: auto;
-    }
-
-    .fallbackName {
-        margin-top: auto;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
     }
 }
 
