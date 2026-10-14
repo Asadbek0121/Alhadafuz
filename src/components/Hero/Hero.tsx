@@ -263,7 +263,8 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                             Savatga qo'shish
                                         </button>
                                     </Link>
-                                ))
+                                </Link>
+                            </div>
                         </div>
                     ) : (
                         <div className="w-full h-full relative">
