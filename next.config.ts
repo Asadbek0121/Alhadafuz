@@ -79,9 +79,8 @@ const nextConfig: NextConfig = {
   // Pin the Turbopack workspace root: a stray package-lock.json in the home
   // directory makes Next.js infer the wrong root, hanging page compilation.
   // Turbopack ni o'chirish
-  experimental: {
-    turbopack: false,
-  },
+  // Turbopack ni o'chirish
+  experimental: {},
   // Native modullarni server-side bundle'dan chiqarish — argon2 (parol hash)
   // va sharp (icon/og-image generatsiya) build vaqtida tizim kutubxonalariga
   // bog'liq. Turbopack bilan `serverExternalPackages` ularni to'g'ri tashqarida
