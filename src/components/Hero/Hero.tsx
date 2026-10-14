@@ -165,13 +165,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         if (carouselProducts.length <= 1 || paused || reduceMotion) return;
         const scrollInterval = setInterval(() => {
             if (trackRef.current) {
-                const currentScroll = trackRef.current.scrollLeft;
-                const maxScroll = trackRef.current.scrollWidth - trackRef.current.clientWidth;
-                if (currentScroll < maxScroll) {
-                    trackRef.current.scrollLeft += 15;
-                } else {
-                    trackRef.current.scrollLeft = 0;
-                }
+                trackRef.current.scrollLeft += 15;
             }
         }, 3000);
         return () => clearInterval(scrollInterval);
