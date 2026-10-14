@@ -232,6 +232,25 @@
     color: rgba(255, 255, 255, 0.75);
 }
 
+/* Carousel viewport — overflow:hidden, slide container */
+.carouselViewport {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Carousel track — slides horizontally via translateX */
+.carouselTrack {
+    display: flex;
+    gap: 16px;
+    will-change: transform;
+    transition: transform 0.5s ease;
+    height: 100%;
+    align-items: stretch;
+}
+
+/* Scroll-based fallback for browsers without transform support */
 .fallbackTrack {
     flex: 1;
     min-height: 0;
@@ -249,9 +268,8 @@
 }
 
 .productCard {
-    scroll-snap-align: start;
-    flex: 0 0 260px;
-    width: 260px;
+    flex: 0 0 calc((100% - 48px) / 4);
+    min-width: 0;
     height: 100%;
     background: white;
     border-radius: 18px;
@@ -689,6 +707,82 @@
         padding: 4px 8px;
         font-size: 10px;
     }
+}
+
+/* Carousel wrapper / arrows / dots — global */
+.carouselWrapper {
+    flex: 1;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.carouselArrows {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: -12px;
+    right: -12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.carouselArrow {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.92);
+    border: none;
+    border-radius: 50%;
+    color: #1e40af;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    padding: 0;
+    pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.carouselArrow:hover {
+    background: white;
+    transform: scale(1.08);
+}
+
+.carouselArrow:active {
+    transform: scale(0.95);
+}
+
+.carouselDots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 0 2px;
+}
+
+.carouselDots .dot {
+    width: 7px;
+    height: 7px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, transform 0.15s;
+}
+
+.carouselDots .dot:hover {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.carouselDots .dot.active {
+    background: white;
+    transform: scale(1.2);
 }
 
 /* Desktop card widths for ~5 cards visible */

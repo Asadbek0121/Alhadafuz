@@ -41,6 +41,8 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [paused, setPaused] = useState(false);
+    const [carouselPaused, setCarouselPaused] = useState(false);
+    const [carouselPage, setCarouselPage] = useState(0);
     // Foydalanuvchi motion kamaytirishni so'ragan bo'lsa autoplay ishlamaydi
     const reduceMotion = useReducedMotion();
     const [timeLeft, setTimeLeft] = useState(DEFAULT_COUNTDOWN);
@@ -49,11 +51,21 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     const [isMounted, setIsMounted] = useState(false);
     const [imageError, setImageError] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const trackRef = useRef<HTMLDivElement>(null);
+    // Carousel refs
+    const carouselTrackRef = useRef<HTMLDivElement>(null);
+    const carouselTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [visibleCards, setVisibleCards] = useState(4);
 
     // Mount Logic (faqat countdown kabi client-ga bog'liq qismlar uchun)
     useEffect(() => {
         setIsMounted(true);
+        const updateVisible = () => {
+            const w = window.innerWidth;
+            setVisibleCards(w >= 1440 ? 4 : w >= 1024 ? 3 : 2);
+        };
+        updateVisible();
+        window.addEventListener('resize', updateVisible);
+        return () => window.removeEventListener('resize', updateVisible);
     }, []);
 
     const fetchData = useCallback(async () => {
@@ -160,16 +172,38 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         return () => clearInterval(timer);
     }, [mainBanners.length, paused, reduceMotion]);
 
-    // Fallback products carousel auto-scroll
+    const totalCarouselPages = Math.ceil(carouselProducts.length / visibleCards);
+    const carouselOffset = isMounted ? carouselPage * visibleCards * 100 : 0;
+
+    const goPage = useCallback((delta: number) => {
+        setCarouselPage(prev => Math.max(0, Math.min(totalCarouselPages - 1, prev + delta)));
+    }, [totalCarouselPages]);
+
+    // Autoplay for fallback carousel
     useEffect(() => {
-        if (carouselProducts.length <= 1 || paused || reduceMotion) return;
-        const scrollInterval = setInterval(() => {
-            if (trackRef.current) {
-                trackRef.current.scrollLeft += 15;
+        if (carouselProducts.length <= 1 || carouselPaused || reduceMotion || totalCarouselPages <= 1 || !isMounted) return;
+        const tick = () => {
+            setCarouselPage(prev => (prev + 1) % totalCarouselPages);
+        };
+        carouselTimerRef.current = setInterval(tick, 6000);
+        return () => { if (carouselTimerRef.current) clearInterval(carouselTimerRef.current); };
+    }, [carouselProducts.length, carouselPaused, reduceMotion, totalCarouselPages, isMounted]);
+
+    // Pause on visibility change
+    useEffect(() => {
+        const onChange = () => {
+            if (document.hidden && carouselTimerRef.current) {
+                clearInterval(carouselTimerRef.current);
+                carouselTimerRef.current = null;
+            } else if (!document.hidden && !carouselPaused && !reduceMotion && !carouselTimerRef.current && carouselProducts.length > 1 && totalCarouselPages > 1 && isMounted) {
+                carouselTimerRef.current = setInterval(() => {
+                    setCarouselPage(prev => (prev + 1) % totalCarouselPages);
+                }, 6000);
             }
-        }, 3000);
-        return () => clearInterval(scrollInterval);
-    }, [carouselProducts.length, paused, reduceMotion]);
+        };
+        document.addEventListener('visibilitychange', onChange);
+        return () => document.removeEventListener('visibilitychange', onChange);
+    }, [carouselPaused, reduceMotion, carouselProducts.length, totalCarouselPages, isMounted]);
 
     const { h, m, s } = formatTime(timeLeft);
 
@@ -189,64 +223,101 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                     Barchasini ko'rish →
                                 </Link>
                             </div>
-                            <div ref={trackRef} className={styles.fallbackTrack}>
-                                {carouselProducts.slice(0, 12).map((p: any) => (
-                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className={styles.productCard}>
-                                        {/* Chegirma badge */}
-                                        {p.oldPrice && p.oldPrice > p.price && (
-                                            <div className={styles.discountBadgeCard}>
-                                                -{Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)}%
-                                            </div>
-                                        )}
-
-                                        {/* Sevimlilar yurakchasi */}
-                                        <button
-                                            type="button"
-                                            className={`${styles.favBtn} hover:text-red-500 transition-colors`}
-                                            aria-label="Sevimlilarga qo'shish"
-                                        >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                            </svg>
-                                        </button>
-
-                                        {/* Rasim */}
-                                        <div className={styles.productImageWrap}>
-                                            <Image
-                                                src={p.image || "https://placehold.co/400"}
-                                                alt={p.title}
-                                                fill
-                                                className="object-contain"
-                                                onError={(e) => {
-                                                    const target = e.target as HTMLImageElement;
-                                                    target.srcset = "";
-                                                    target.src = "https://placehold.co/400?text=No+Image";
-                                                }}
-                                            />
-                                        </div>
-
-                                        {/* Mahsulot nomi */}
-                                        <div className={styles.productName}>{p.title}</div>
-
-                                        {/* Narxlar + savat — pastki qism, bir qator */}
-                                        <div className={styles.productPriceRow}>
-                                            <div className={styles.productPriceCell}>
+                            <div className={styles.carouselWrapper}>
+                                <div className={styles.carouselArrows}>
+                                    <button
+                                        type="button"
+                                        className={styles.carouselArrow}
+                                        onClick={() => goPage(-1)}
+                                        aria-label="Oldingi"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.carouselArrow}
+                                        onClick={() => goPage(1)}
+                                        aria-label="Keyingi"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                                <div
+                                    ref={carouselTrackRef}
+                                    className={styles.carouselViewport}
+                                    onMouseEnter={() => setCarouselPaused(true)}
+                                    onMouseLeave={() => setCarouselPaused(false)}
+                                    onFocus={() => setCarouselPaused(true)}
+                                    onBlur={() => setCarouselPaused(false)}
+                                    tabIndex={0}
+                                >
+                                    <div
+                                        className={styles.carouselTrack}
+                                        style={{ transform: `translateX(-${carouselOffset}%)` }}
+                                    >
+                                        {carouselProducts.slice(0, 12).map((p: any) => (
+                                            <Link key={p.id} href={`/product/${p.slug || p.id}`} className={styles.productCard}>
                                                 {p.oldPrice && p.oldPrice > p.price && (
-                                                    <div className={styles.productOldPrice}>{p.oldPrice.toLocaleString()} {tCommon('som')}</div>
+                                                    <div className={styles.discountBadgeCard}>
+                                                        -{Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)}%
+                                                    </div>
                                                 )}
-                                                <div className={styles.productPrice}>{p.price.toLocaleString()} {tCommon('som')}</div>
-                                            </div>
+                                                <button
+                                                    type="button"
+                                                    className={`${styles.favBtn} hover:text-red-500 transition-colors`}
+                                                    aria-label="Sevimlilarga qo'shish"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                                    </svg>
+                                                </button>
+                                                <div className={styles.productImageWrap}>
+                                                    <Image
+                                                        src={p.image || "https://placehold.co/400"}
+                                                        alt={p.title}
+                                                        fill
+                                                        className="object-contain"
+                                                        onError={(e) => {
+                                                            const target = e.target as HTMLImageElement;
+                                                            target.srcset = "";
+                                                            target.src = "https://placehold.co/400?text=No+Image";
+                                                        }}
+                                                    />
+                                                </div>
+                                                <div className={styles.productName}>{p.title}</div>
+                                                <div className={styles.productPriceRow}>
+                                                    <div className={styles.productPriceCell}>
+                                                        {p.oldPrice && p.oldPrice > p.price && (
+                                                            <div className={styles.productOldPrice}>{p.oldPrice.toLocaleString()} {tCommon('som')}</div>
+                                                        )}
+                                                        <div className={styles.productPrice}>{p.price.toLocaleString()} {tCommon('som')}</div>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        className={styles.cartBtn}
+                                                        onClick={(e) => e.stopPropagation()}
+                                                        aria-label="Savatga qo'shish"
+                                                    >
+                                                        <ShoppingCart size={18} />
+                                                    </button>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                </div>
+                                {isMounted && totalCarouselPages > 1 && (
+                                    <div className={styles.carouselDots}>
+                                        {Array.from({ length: totalCarouselPages }).map((_, i) => (
                                             <button
+                                                key={i}
                                                 type="button"
-                                                className={styles.cartBtn}
-                                                onClick={(e) => e.stopPropagation()}
-                                                aria-label="Savatga qo'shish"
-                                            >
-                                                <ShoppingCart size={18} />
-                                            </button>
-                                        </div>
-                                    </Link>
-                                ))}
+                                                className={`${styles.dot} ${i === carouselPage ? styles.activeDot : ''}`}
+                                                onClick={() => setCarouselPage(i)}
+                                                aria-label={`${i + 1}-sahifaga o'tish`}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (

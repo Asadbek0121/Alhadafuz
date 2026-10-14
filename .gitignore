@@ -51,6 +51,9 @@ next-env.d.ts
 *.db
 *.db-journal
 
+# IDE
+.idea/
+
 # Sentry Config File
 .env.sentry-build-plugin
 .npm-cache
