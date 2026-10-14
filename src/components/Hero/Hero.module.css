@@ -165,17 +165,18 @@
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-    padding: 18px 20px;
+    padding: 24px;
+    border-radius: 16px;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 16px;
 }
 
 .fallbackHeader {
-    flex-shrink: 0;
     display: flex;
-    align-items: center;
     justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
 }
 
 .fallbackHint {
@@ -196,11 +197,12 @@
     flex: 1;
     min-height: 0;
     display: flex;
-    gap: 12px;
+    gap: 16px;
     overflow-x: auto;
     scroll-snap-type: x mandatory;
-    padding-bottom: 4px;
+    padding-bottom: 16px;
     scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
 }
 
 .fallbackTrack::-webkit-scrollbar {
@@ -209,48 +211,50 @@
 
 .fallbackCard {
     scroll-snap-align: start;
-    flex: 0 0 150px;
+    flex: 0 0 260px;
     background: white;
-    border-radius: 14px;
-    padding: 10px;
+    border-radius: 16px;
+    padding: 16px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 12px;
     text-decoration: none;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 /* Kam mahsulot (1-2) bo'lganda — markazga tushib, kattaroq ko'rinadi */
 .fallbackTrackCentered {
     justify-content: center;
+    gap: 20px;
 }
 
 @media (min-width: 641px) {
     .fallbackTrackCentered .fallbackCard {
-        flex: 0 0 190px;
+        flex: 0 0 240px;
     }
 }
 
 .fallbackCard:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
 .fallbackImageWrap {
     position: relative;
     flex: none;
     aspect-ratio: 4 / 5;
-    max-height: 170px;
-    border-radius: 10px;
+    max-height: 200px;
+    border-radius: 12px;
     overflow: hidden;
     background: #f8fafc;
 }
 
 .fallbackName {
-    font-size: 11px;
+    font-size: 14px;
     font-weight: 600;
-    color: #334155;
+    color: #14213D;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -260,13 +264,13 @@
 }
 
 .fallbackPrice {
-    font-size: 14px;
+    font-size: 18px;
     font-weight: 800;
     color: #2563eb;
 }
 
 .fallbackOldPrice {
-    font-size: 10px;
+    font-size: 12px;
     color: #94a3b8;
     text-decoration: line-through;
 }
@@ -304,19 +308,20 @@
 .hotDealCard {
     background: white;
     border-radius: 24px;
-    border: 1px solid #f1f5f9;
-    padding: 24px 20px;
+    border: 1px solid #e2e8f0;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
-    box-shadow: 0 15px 45px rgba(0,0,0,0.07);
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.08);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     height: 100%;
+    position: relative;
 }
 
 .hotDealCard:hover {
-    box-shadow: 0 25px 60px rgba(0,0,0,0.12);
-    border-color: #e2e8f0;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+    border-color: #d1d5db;
 }
 
 .countdownHead {
@@ -394,6 +399,7 @@
     text-decoration: none;
     color: inherit;
     flex-shrink: 0;
+    position: relative;
 }
 
 .hotDealImageWrapper {
@@ -411,15 +417,15 @@
 
 .discountBadge {
     position: absolute;
-    top: 10px;
-    right: 10px;
-    background: #e11d48;
+    top: 16px;
+    right: 16px;
+    background: #f43f5e;
     color: white;
-    padding: 5px 9px;
-    border-radius: 10px;
-    font-size: 11px;
+    padding: 6px 10px;
+    border-radius: 12px;
+    font-size: 12px;
     font-weight: 900;
-    box-shadow: 0 4px 10px rgba(225, 29, 72, 0.35);
+    box-shadow: 0 4px 12px rgba(244, 63, 94, 0.3);
     z-index: 10;
 }
 
@@ -436,26 +442,27 @@
 }
 
 .hotDealTitle {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 800;
-    color: #0f172a;
+    color: #14213D;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-bottom: 8px;
 }
 
 .promoPrice {
-    font-size: 22px;
+    font-size: 24px;
     font-weight: 900;
-    color: #e11d48;
-    line-height: 1;
+    color: #f43f5e;
+    line-height: 1.1;
 }
 
 .oldPrice {
-    font-size: 12px;
+    font-size: 14px;
     text-decoration: line-through;
     color: #94a3b8;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
 }
 
 .currency {
@@ -466,21 +473,23 @@
 }
 
 .hotDealBtn {
-    background: #2563eb;
+    background: linear-gradient(90deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
     border: none;
-    padding: 12px;
-    border-radius: 14px;
+    padding: 14px;
+    border-radius: 16px;
     font-weight: 700;
-    font-size: 14px;
+    font-size: 16px;
     cursor: pointer;
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    margin-top: 8px;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-top: 12px;
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
     width: 100%;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .expiredBadge {
@@ -496,14 +505,14 @@
 }
 
 .hotDealBtn:hover {
-    background: #1d4ed8;
+    background: linear-gradient(90deg, #1d4ed8 0%, #1e40af 100%);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+    box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
 }
 
 .hotDealBtn:active {
-    transform: scale(0.96);
-    background: #1e40af;
+    transform: scale(0.98);
+    background: linear-gradient(90deg, #1e40af 0%, #1e3a8a 100%);
 }
 
 /* RESPONSIVE - FULL WIDTH STACK FOR TABLET & MOBILE */

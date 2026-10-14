@@ -182,20 +182,53 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                         <div className="animate-pulse bg-gray-100 w-full h-full"></div>
                     ) : mainBanners.length === 0 && fallbackProducts.length > 0 ? (
                         /* Empty slider fallback: products carousel when no HOME_TOP banners exist */
-                        <div className={styles.fallbackCarousel}>
-                            <div className={styles.fallbackHeader}>
-                                <h3 className={styles.fallbackTitle}>{carouselBanner?.title || t('ommabop')}</h3>
-                                <span className={styles.fallbackHint}>suring →</span>
+                        <div className="relative">
+                            <div className="flex justify-between items-start mb-4">
+                                <div className="flex flex-col gap-2">
+                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">MAXSUS TAKLIFLAR</div>
+                                    <h3 className="text-2xl font-bold text-gray-900">Bugungi takliflar</h3>
+                                </div>
+                                <button
+                                    className="bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/90 transition-all"
+                                    onClick={() => {}}
+                                >
+                                    Barchasini ko'rish →
+                                </button>
                             </div>
-                            <div ref={trackRef} className={`${styles.fallbackTrack} ${carouselProducts.length <= 2 ? styles.fallbackTrackCentered : ''}`}>
+                            <div ref={trackRef} className="flex gap-4 overflow-x-auto pb-4 scroll-snap-x-mandatory scroll-snap-type-x">
                                 {carouselProducts.slice(0, 12).map((p: any) => (
-                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className={styles.fallbackCard}>
-                                        <div className={styles.fallbackImageWrap}>
+                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className="flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 w-[260px] h-[430px] relative">
+                                        {/* Chegirma badge */}
+                                        {p.oldPrice && p.oldPrice > p.price && (
+                                            <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-{(Math.round((p.oldPrice - p.price) / p.price) * 100)}%</div>
+                                        )}
+
+                                        {/* Sevimlilar yurakchasi */}
+                                        <button
+                                            className="absolute top-3 right-16 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
+                                            aria-label="Savodga qo'shish"
+                                        >
+                                            <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="16"
+                                                height="16"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="2"
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                            >
+                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                            </svg>
+                                        </button>
+
+                                        {/* Rasim */}
+                                        <div className="flex-1 aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden mb-3">
                                             <Image
                                                 src={p.image || "https://placehold.co/400"}
                                                 alt={p.title}
                                                 fill
-                                                sizes="150px"
                                                 className="object-contain"
                                                 onError={(e) => {
                                                     const target = e.target as HTMLImageElement;
@@ -204,15 +237,33 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                                 }}
                                             />
                                         </div>
-                                        <div className={styles.fallbackName}>{p.title}</div>
-                                        <div>
-                                            {p.oldPrice && p.oldPrice > p.price && (
-                                                <div className={styles.fallbackOldPrice}>{p.oldPrice.toLocaleString()} {tCommon('som')}</div>
-                                            )}
-                                            <div className={styles.fallbackPrice}>{p.price.toLocaleString()} {tCommon('som')}</div>
+
+                                        {/* Mahsulot nomi */}
+                                        <div className="text-gray-800 font-medium text-sm line-clamp-2 mb-1">
+                                            {p.title}
                                         </div>
+
+                                        {/* Narxlar */}
+                                        <div className="flex items-end gap-1">
+                                            {p.oldPrice && p.oldPrice > p.price && (
+                                                <div className="text-gray-400 text-xs line-through">
+                                                    {p.oldPrice.toLocaleString()} {tCommon('som')}
+                                                </div>
+                                            )}
+                                            <div className="text-blue-600 font-bold text-lg">
+                                                {p.price.toLocaleString()} {tCommon('som')}
+                                            </div>
+                                        </div>
+
+                                        {/* Savat tugmasi */}
+                                        <button
+                                            className="absolute bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            Savatga qo'shish
+                                        </button>
                                     </Link>
-                                ))}
+                                ))
                             </div>
                         </div>
                     ) : (
