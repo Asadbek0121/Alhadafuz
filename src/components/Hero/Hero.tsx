@@ -264,7 +264,6 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                         </button>
                                     </Link>
                                 ))
-                            </div>
                         </div>
                     ) : (
                         <div className="w-full h-full relative">
