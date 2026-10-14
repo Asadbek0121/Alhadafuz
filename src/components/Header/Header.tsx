@@ -417,8 +417,7 @@ export default function Header({ firstRootSlug }: { firstRootSlug?: string | nul
                             Container max-width 1400 (>=1440vw), 1280 (1280-1440), 100% (<1280).
                             pl = container left padding + margin. */}
                         <div
-                            className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity w-[300px] flex-none h-[34px]"
-                            style={{ paddingLeft: `max(24px, calc((100vw - 1400px) / 2 + 24px))` }}
+                            className="flex items-center gap-2 cursor-pointer group hover:opacity-80 transition-opacity w-[300px] flex-none h-[34px] ml-6"
                             onClick={openMap}
                         >
                             <div className="flex items-center justify-center text-blue-600 shrink-0">

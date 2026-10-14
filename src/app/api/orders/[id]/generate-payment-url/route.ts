@@ -46,7 +46,12 @@ export async function POST(
 
         const orderId = order.orderNumber || order.id;
         const amount = order.total;
-        const paymentMethod = String(order.paymentMethod || '').toUpperCase();
+
+        // Client tanlagan paymentMethod ustunlik qiladi (agar yuborilgan bo'lsa)
+        // Bu hoziroq to'lash tugmasida Click tanlanganda Click URL, Payme tanlanganda Payme URL beradi
+        const body = await req.json().catch(() => ({}));
+        const clientPaymentMethod = String(body?.paymentMethod || '').toUpperCase();
+        const paymentMethod = clientPaymentMethod || String(order.paymentMethod || '').toUpperCase();
         let paymentUrl: string | null = null;
 
         if (paymentMethod === 'CLICK') {

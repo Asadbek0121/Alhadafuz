@@ -49,6 +49,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     const [isMounted, setIsMounted] = useState(false);
     const [imageError, setImageError] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const trackRef = useRef<HTMLDivElement>(null);
 
     // Mount Logic (faqat countdown kabi client-ga bog'liq qismlar uchun)
     useEffect(() => {
@@ -159,6 +160,17 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         return () => clearInterval(timer);
     }, [mainBanners.length, paused, reduceMotion]);
 
+    // Fallback products carousel auto-scroll
+    useEffect(() => {
+        if (carouselProducts.length <= 1 || carouselProducts.length <= 2 || paused || reduceMotion) return;
+        const scrollInterval = setInterval(() => {
+            if (trackRef.current) {
+                trackRef.current.scrollLeft += 15;
+            }
+        }, 3000);
+        return () => clearInterval(scrollInterval);
+    }, [carouselProducts.length, paused, reduceMotion]);
+
     const { h, m, s } = formatTime(timeLeft);
 
     return (
@@ -175,7 +187,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                 <h3 className={styles.fallbackTitle}>{carouselBanner?.title || t('ommabop')}</h3>
                                 <span className={styles.fallbackHint}>suring →</span>
                             </div>
-                            <div className={`${styles.fallbackTrack} ${carouselProducts.length <= 2 ? styles.fallbackTrackCentered : ''}`}>
+                            <div ref={trackRef} className={`${styles.fallbackTrack} ${carouselProducts.length <= 2 ? styles.fallbackTrackCentered : ''}`}>
                                 {carouselProducts.slice(0, 12).map((p: any) => (
                                     <Link key={p.id} href={`/product/${p.slug || p.id}`} className={styles.fallbackCard}>
                                         <div className={styles.fallbackImageWrap}>
