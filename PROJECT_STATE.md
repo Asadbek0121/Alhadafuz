@@ -254,6 +254,19 @@ Avvalgi sessiyalardan:
 
 ## Completed Recently (2026-10-10)
 
+## Completed Recently (2026-10-14)
+
+- **Hero终版重构** (`feature/hero-redesign`):
+  - **移除大标题"Bugungi takliflar"**：仅保留顶部12px小标签"MAXSUS TAKLIFLAR"，去掉了32px `<h3>` 元素及其占用的全部空间
+  - **渐变更新**：`#1456C8→#12358F` → `#1558CA→#15378F`，padding 28px，border-radius 26px
+  - **布局压缩**：header与carousel gap 18px，carousel与track gap 12px（原22px）
+  - **产品卡片**：260px宽（1440px→250px, 1920px→240px），content-sized无固定高度，gap:0
+  - **图片**：260px高，object-contain，圆角12px
+  - **名称**：13px，line-clamp-2，margin-top:8px
+  - **价格行**：flex row，margin-top:12px（非auto），cartBtn 48×48px内联排列
+  - **右侧促销卡**：padding 20px，gap 12px，hotDealInfo margin-top:0，cta用 `margin-top: auto` 固定在底部
+  - **验证**：tsc 0, lint 0, build SUCCESS (114/114 pages)
+
 ## Completed Recently (2026-10-12)
 
 - **Payme Sandbox/Production Isolation (PR #13)** — `fix/payme-per-request-auth` branch, commits `8104a4a` → `ccaf6d6` → `991a04e`:
@@ -373,6 +386,8 @@ Avvalgi sessiyalardan:
 - `DIRECT_URL` hozir **pooler**ga (6543) ishora qilyapti; Supabase'da direct host `db.zzxcnoronqpexxcxfsmd.supabase.co:5432` bo'lishi kerak (migratsiyalar uchun).
 
 ## Last Updated
+
+2026-10-14 (Hero紧凑化重构 — 移除大标题、软化渐变、右侧卡片高度对齐、图片uniform、价格行对齐、CTA贴底)
 
 2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
 

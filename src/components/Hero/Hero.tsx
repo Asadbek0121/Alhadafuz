@@ -182,49 +182,36 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                         <div className="animate-pulse bg-gray-100 w-full h-full"></div>
                     ) : mainBanners.length === 0 && fallbackProducts.length > 0 ? (
                         /* Empty slider fallback: products carousel when no HOME_TOP banners exist */
-                        <div className="relative">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex flex-col gap-2">
-                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">MAXSUS TAKLIFLAR</div>
-                                    <h3 className="text-2xl font-bold text-gray-900">Bugungi takliflar</h3>
-                                </div>
-                                <button
-                                    className="bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/90 transition-all"
-                                    onClick={() => {}}
-                                >
+                        <div className={styles.fallbackCarousel}>
+                            <div className={styles.fallbackHeader}>
+                                <div className={styles.fallbackSubTitle}>MAXSUS TAKLIFLAR</div>
+                                <Link href="/search" className={styles.viewAllBtn}>
                                     Barchasini ko'rish →
-                                </button>
+                                </Link>
                             </div>
-                            <div ref={trackRef} className="flex gap-4 overflow-x-auto pb-4 scroll-snap-x-mandatory scroll-snap-type-x">
+                            <div ref={trackRef} className={styles.fallbackTrack}>
                                 {carouselProducts.slice(0, 12).map((p: any) => (
-                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className="flex flex-col bg-white rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow duration-200 relative" style={{ width: 276, height: 455, flexShrink: 0, boxSizing: 'border-box', minWidth: 0 }}>
+                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className={styles.productCard}>
                                         {/* Chegirma badge */}
                                         {p.oldPrice && p.oldPrice > p.price && (
-                                            <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-{(Math.round((p.oldPrice - p.price) / p.price) * 100)}%</div>
+                                            <div className={styles.discountBadgeCard}>
+                                                -{Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)}%
+                                            </div>
                                         )}
 
                                         {/* Sevimlilar yurakchasi */}
                                         <button
-                                            className="absolute top-3 right-16 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
-                                            aria-label="Savodga qo'shish"
+                                            type="button"
+                                            className={`${styles.favBtn} hover:text-red-500 transition-colors`}
+                                            aria-label="Sevimlilarga qo'shish"
                                         >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                                             </svg>
                                         </button>
 
-                                        {/* Rasim — aniq 270px, flex-shrink: 0 */}
-                                        <div className="bg-gray-50 rounded-xl overflow-hidden flex-shrink-0" style={{ height: 270, width: '100%', position: 'relative' }}>
+                                        {/* Rasim */}
+                                        <div className={styles.productImageWrap}>
                                             <Image
                                                 src={p.image || "https://placehold.co/400"}
                                                 alt={p.title}
@@ -239,28 +226,23 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                         </div>
 
                                         {/* Mahsulot nomi */}
-                                        <div className="text-gray-800 font-medium text-sm line-clamp-2" style={{ minHeight: '2.6em', marginTop: 10, marginBottom: 0 }}>
-                                            {p.title}
-                                        </div>
+                                        <div className={styles.productName}>{p.title}</div>
 
-                                        {/* Narxlar + Savat — pastda, margin-top: auto bilan */}
-                                        <div className="mt-auto flex items-end justify-between gap-1 pt-2">
-                                            <div className="flex flex-col">
+                                        {/* Narxlar + savat — pastki qism, bir qator */}
+                                        <div className={styles.productPriceRow}>
+                                            <div className={styles.productPriceCell}>
                                                 {p.oldPrice && p.oldPrice > p.price && (
-                                                    <div className="text-gray-400 text-xs line-through">
-                                                        {p.oldPrice.toLocaleString()} {tCommon('som')}
-                                                    </div>
+                                                    <div className={styles.productOldPrice}>{p.oldPrice.toLocaleString()} {tCommon('som')}</div>
                                                 )}
-                                                <div className="text-blue-600 font-bold text-sm">
-                                                    {p.price.toLocaleString()} {tCommon('som')}
-                                                </div>
+                                                <div className={styles.productPrice}>{p.price.toLocaleString()} {tCommon('som')}</div>
                                             </div>
-                                            {/* Savat tugmasi */}
                                             <button
-                                                className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors flex-shrink-0"
+                                                type="button"
+                                                className={styles.cartBtn}
                                                 onClick={(e) => e.stopPropagation()}
+                                                aria-label="Savatga qo'shish"
                                             >
-                                                Savatga qo'shish
+                                                <ShoppingCart size={18} />
                                             </button>
                                         </div>
                                     </Link>
@@ -344,8 +326,8 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                     {loading ? (
                          <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
                     ) : (
-                        <div className="w-full flex flex-col" style={{ minHeight: 0, flex: '0 0 auto' }}>
-                            <div className={styles.hotDealContent} style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                        <div className="w-full flex flex-col" style={{ minHeight: 0 }}>
+                            <div className={styles.hotDealContent} style={{ display: 'flex', flexDirection: 'column' }}>
                                 <Link
                                     href={hotDealHref}
                                     className={styles.hotDealImageLink}
