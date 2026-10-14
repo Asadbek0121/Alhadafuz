@@ -78,8 +78,9 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   // Pin the Turbopack workspace root: a stray package-lock.json in the home
   // directory makes Next.js infer the wrong root, hanging page compilation.
-  turbopack: {
-    root: __dirname,
+  // Turbopack ni o'chirish
+  experimental: {
+    turbopack: false,
   },
   // Native modullarni server-side bundle'dan chiqarish — argon2 (parol hash)
   // va sharp (icon/og-image generatsiya) build vaqtida tizim kutubxonalariga
