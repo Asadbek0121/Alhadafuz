@@ -635,7 +635,6 @@
         text-align: center;
         align-items: center;
     }
-
     /* Hot Deal card — tablet: horizontal grid, full-height columns */
     .hotDealCard {
         display: grid !important;
