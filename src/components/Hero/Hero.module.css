@@ -596,6 +596,13 @@
 
 /* Fallback (bannersiz) rejimida tablet'da ham hot deal o'ng ustunda — mockup bilan bir xil */
 @media (min-width: 641px) and (max-width: 1024px) {
+    /* Hero grid: slider chapda, hot deal o'ngda kengaytirilgan (500px min) */
+    .heroContent {
+        grid-template-columns: 1fr 500px !important;
+        gap: 16px !important;
+        min-height: 300px !important;
+    }
+
     .heroContent.fallbackLayout {
         grid-template-columns: minmax(0, 1fr) 260px;
         gap: 16px;
@@ -642,6 +649,7 @@
         column-gap: 32px !important;
         align-items: stretch !important;
         padding: 24px !important;
+        width: 100% !important;
     }
 
     /* Make wrapper span all grid columns */
