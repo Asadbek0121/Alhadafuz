@@ -6,18 +6,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { Link } from '@/navigation';
 import Image from 'next/image';
+import useEmblaCarousel from 'embla-carousel-react';
+import AutoPlay from 'embla-carousel-autoplay';
 import styles from './Hero.module.css';
 
 const DEFAULT_COUNTDOWN = 24 * 60 * 60 * 1000; // 24h fallback
 
 /**
  * Yon banner tugash vaqtini banner ro'yxatidan ajratib oladi.
- *
- * Server ham, klient ham bir xil props'dan bir xil natija chiqaradi, shu
- * sababli countdown bloki birinchi render'dan boshlab joyida bo'ladi.
- * Ilgari bu qiymat faqat klient tomonidagi /api/banners javobidan keyin
- * o'rnatilardi — natijada blok keyinroq paydo bo'lib, pastdagi butun
- * kontentni surib yuborardi (CLS'ning asosiy sababi).
  */
 function findCountdownEnd(list: any[]): number | null {
     const side = list.find((b: any) => b.position === 'HOME_SIDE' && b.isActive !== false);
@@ -41,29 +37,144 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
 
     const [currentIndex, setCurrentIndex] = useState(0);
     const [paused, setPaused] = useState(false);
-    // Foydalanuvchi motion kamaytirishni so'ragan bo'lsa autoplay ishlamaydi
+    const [carouselPaused, setCarouselPaused] = useState(false);
     const reduceMotion = useReducedMotion();
     const [timeLeft, setTimeLeft] = useState(DEFAULT_COUNTDOWN);
-    // Serverdan kelgan banner'lardan darhol hisoblanadi — fetch'ni kutmaydi
     const [countdownEnd, setCountdownEnd] = useState<number | null>(() => findCountdownEnd(initialBanners));
     const [isMounted, setIsMounted] = useState(false);
     const [imageError, setImageError] = useState(false);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const trackRef = useRef<HTMLDivElement>(null);
 
-    // Mount Logic (faqat countdown kabi client-ga bog'liq qismlar uchun)
+    // ── Embla Carousel (Maxsus Takliflar) ──────────────────────────────
+    const emblaRef = useRef<HTMLDivElement>(null);
+    const [scrollSnaps, setScrollSnaps] = useState<number[]>([]);
+    const [emblaSelectedIndex, setEmblaSelectedIndex] = useState(0);
+    const emblaAutoplayRef = useRef<any>(null);
+
+    const EMBLA_OPTIONS = useCallback(() => ({
+        align: 'start' as const,
+        axis: 'x' as const,
+        active: true,
+        loop: true,
+        skipSnaps: false,
+        dragFree: false,
+        duration: 500,
+        startIndex: 0,
+        dragThreshold: 10,
+        inViewThreshold: 0.2,
+        containScroll: 'trimSnaps' as const,
+        watchDrag: true,
+        watchResize: true,
+        watchSlides: true,
+        watchFocus: false,
+    }), []);
+
+    const [emblaNode, embla] = useEmblaCarousel(
+        EMBLA_OPTIONS(),
+        [
+            AutoPlay({
+                delay: 4000,
+                stopOnInteraction: false,
+                stopOnMouseEnter: true,
+                rootNode: (emblaRoot) => emblaRef.current,
+            }),
+        ]
+    );
+
+    // Restart autoplay after user interaction (touch/mouse release)
+    useEffect(() => {
+        if (!embla) return;
+        const handlePointerUp = () => {
+            if (!carouselPaused && !reduceMotion && emblaAutoplayRef.current) {
+                emblaAutoplayRef.current.play();
+            }
+        };
+        embla.on('pointerUp', handlePointerUp);
+        embla.on('settle', handlePointerUp);
+        return () => {
+            embla.off('pointerUp', handlePointerUp);
+            embla.off('settle', handlePointerUp);
+        };
+    }, [embla, carouselPaused, reduceMotion]);
+
+    // Keep dots in sync with current slide
+    useEffect(() => {
+        if (!embla) return;
+        const onSelect = () => setEmblaSelectedIndex(embla.selectedScrollSnap());
+        embla.on('select', onSelect);
+        return () => { embla.off('select', onSelect); };
+    }, [embla]);
+
+    // Mount + resize → recalculate snap points
     useEffect(() => {
         setIsMounted(true);
-    }, []);
+        if (!embla) return;
+        const updateSnaps = () => {
+            const snaps = embla.scrollSnapList();
+            console.log('[Embla debug]', { snaps: snaps.length, canNext: embla.canScrollNext(), canPrev: embla.canScrollPrev(), selected: embla.selectedScrollSnap() });
+            setScrollSnaps(snaps);
+            setEmblaSelectedIndex(embla.selectedScrollSnap());
+        };
+        embla.on('init', updateSnaps);
+        embla.on('reInit', updateSnaps);
+        updateSnaps();
+    }, [embla]);
 
+    // Pause autoplay on hover / focus
+    useEffect(() => {
+        const el = emblaRef.current;
+        if (!el || !embla || !emblaAutoplayRef) return;
+        emblaAutoplayRef.current = embla.plugins().autoplay;
+        const pause = () => { if (emblaAutoplayRef.current) emblaAutoplayRef.current.stop(); };
+        const resume = () => { if (!carouselPaused && !reduceMotion && emblaAutoplayRef.current) emblaAutoplayRef.current.play(); };
+        el.addEventListener('mouseenter', pause);
+        el.addEventListener('mouseleave', resume);
+        el.addEventListener('focusin', pause);
+        el.addEventListener('blur', resume);
+        return () => {
+            el.removeEventListener('mouseenter', pause);
+            el.removeEventListener('mouseleave', resume);
+            el.removeEventListener('focusin', pause);
+            el.removeEventListener('blur', resume);
+        };
+    }, [carouselPaused, reduceMotion]);
+
+    // Pause autoplay when page is hidden
+    useEffect(() => {
+        const onChange = () => {
+            if (document.hidden) {
+                if (emblaAutoplayRef.current) emblaAutoplayRef.current.stop();
+            } else if (!carouselPaused && !reduceMotion && emblaAutoplayRef.current) {
+                emblaAutoplayRef.current.play();
+            }
+        };
+        document.addEventListener('visibilitychange', onChange);
+        return () => document.removeEventListener('visibilitychange', onChange);
+    }, [carouselPaused, reduceMotion]);
+
+    // Autoplay respects reduced-motion & global pause
+    useEffect(() => {
+        if (reduceMotion || carouselPaused) {
+            if (emblaAutoplayRef.current) emblaAutoplayRef.current.stop();
+        } else {
+            if (emblaAutoplayRef.current && embla) emblaAutoplayRef.current.play();
+        }
+    }, [reduceMotion, carouselPaused, embla]);
+
+    const emblaPrev = useCallback(() => embla && embla.scrollPrev(), [embla]);
+    const emblaNext = useCallback(() => embla && embla.scrollNext(), [embla]);
+    const emblaScrollTo = useCallback((i: number) => embla && embla.scrollTo(i), [embla]);
+
+    const totalCarouselPages = scrollSnaps.length;
+    const fallbackProductsSlice = fallbackProducts.slice(0, 12);
+
+    // ── Data ────────────────────────────────────────────────────────────
     const fetchData = useCallback(async () => {
         try {
             const res = await fetch('/api/banners');
             if (res.ok) {
                 const data = await res.json();
                 setBanners(data);
-
-                // Identify side banner for countdown
                 const target = findCountdownEnd(data);
                 if (target !== null) {
                     const diff = target - new Date().getTime();
@@ -80,16 +191,11 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         }
     }, []);
 
-    // Server allaqachon getCachedBanners() orqali banner'larni bergan bo'lsa,
-    // /api/banners aynan shu funksiyani va shu keshni (revalidate: 3600)
-    // chaqiradi — ya'ni bir xil ma'lumot. Shu sababli so'rov faqat server
-    // bo'sh qaytargan holatda (masalan DB xatosi) zaxira sifatida yuboriladi.
     useEffect(() => {
         if (initialBanners.length > 0) return;
         fetchData();
     }, [fetchData, initialBanners.length]);
 
-    // Countdown Ticker (runs only while a side banner with an end date is active)
     useEffect(() => {
         if (countdownEnd === null) return;
         timerRef.current = setInterval(() => {
@@ -103,10 +209,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         let h = Math.floor(ms / (1000 * 60 * 60));
         const m = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
         const s = Math.floor((ms % (1000 * 60)) / 1000);
-
-        // Cap hours to 99 for clean UI if it's too large
         if (h > 99) h = 99;
-
         return { h, m, s };
     };
 
@@ -115,9 +218,6 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
 
     const mainBanners = banners.filter(b => b.position === 'HOME_TOP' && b.isActive !== false && !(b.products && b.products.length > 0));
     const sideBanner = banners.find(b => b.position === 'HOME_SIDE' && b.isActive !== false);
-    // HOME_TOP "Bugungi takliflar" carouseli: mahsulotlari bor banner slider
-    // o'rniga carousel sifatida chiqadi. Sayt dizayni o'zgarmaydi — faqat
-    // mahsulotlar manbai banner'dan keladi (admin boshqaradi).
     const carouselBanner = banners.find(b => b.position === 'HOME_TOP' && b.isActive !== false && b.products && b.products.length > 0);
     const carouselProducts = carouselBanner?.products && carouselBanner.products.length > 0
         ? carouselBanner.products
@@ -131,16 +231,13 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
     const hotDealHref = sideBanner?.productId ? `/product/${sideBanner.productId}` : (sideBanner?.link || '/');
     const visibleBannerId = mainBanners[currentIndex]?.id;
 
-    // Track impressions of the visible main banner (once per slide view)
+    // Track impressions of the visible main banner
     useEffect(() => {
         if (!isMounted || loading || !visibleBannerId) return;
         fetch(`/api/admin/banners/${visibleBannerId}/impression`, { method: 'POST' }).catch(() => { });
     }, [currentIndex, isMounted, loading, visibleBannerId]);
 
-    // Yon banner ko'rishlari ham hisoblanadi. Ilgari faqat slider banner'i
-    // uchun impression yozilgani sababli yon banner'ning CTR'i admin panelda
-    // strukturaviy ravishda doim 0.0% ko'rinardi (bosishlar bor, ko'rishlar 0).
-    // Slider'dan farqli — bu banner almashmaydi, shu sababli sahifaga bir marta.
+    // Yon banner ko'rishlari ham hisoblanadi
     useEffect(() => {
         if (!isMounted || loading || !sideBanner?.id) return;
         fetch(`/api/admin/banners/${sideBanner.id}/impression`, { method: 'POST' }).catch(() => { });
@@ -160,17 +257,6 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
         return () => clearInterval(timer);
     }, [mainBanners.length, paused, reduceMotion]);
 
-    // Fallback products carousel auto-scroll
-    useEffect(() => {
-        if (carouselProducts.length <= 1 || paused || reduceMotion) return;
-        const scrollInterval = setInterval(() => {
-            if (trackRef.current) {
-                trackRef.current.scrollLeft += 15;
-            }
-        }, 3000);
-        return () => clearInterval(scrollInterval);
-    }, [carouselProducts.length, paused, reduceMotion]);
-
     const { h, m, s } = formatTime(timeLeft);
 
     return (
@@ -182,88 +268,109 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                         <div className="animate-pulse bg-gray-100 w-full h-full"></div>
                     ) : mainBanners.length === 0 && fallbackProducts.length > 0 ? (
                         /* Empty slider fallback: products carousel when no HOME_TOP banners exist */
-                        <div className="relative">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className="flex flex-col gap-2">
-                                    <div className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">MAXSUS TAKLIFLAR</div>
-                                    <h3 className="text-2xl font-bold text-gray-900">Bugungi takliflar</h3>
-                                </div>
-                                <button
-                                    className="bg-white/80 backdrop-blur-sm border border-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium hover:bg-white/90 transition-all"
-                                    onClick={() => {}}
-                                >
-                                    Barchasini ko'rish →
-                                </button>
+                        <div className={styles.fallbackCarousel}>
+                            <div className={styles.fallbackHeader}>
+                                <div className={styles.fallbackSubTitle}>MAXSUS TAKLIFLAR</div>
+                                <Link href="/search" className={styles.viewAllBtn}>
+                                    <span className={styles.viewAllBtnFull}>Barchasini ko'rish →</span>
+                                    <span className={styles.viewAllBtnShort}>Hammasi →</span>
+                                </Link>
                             </div>
-                            <div ref={trackRef} className="flex gap-4 overflow-x-auto pb-4 scroll-snap-x-mandatory scroll-snap-type-x">
-                                {carouselProducts.slice(0, 12).map((p: any) => (
-                                    <Link key={p.id} href={`/product/${p.slug || p.id}`} className="flex flex-col bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow duration-200 w-[260px] h-[430px] relative">
-                                        {/* Chegirma badge */}
-                                        {p.oldPrice && p.oldPrice > p.price && (
-                                            <div className="absolute top-3 right-3 bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">-{(Math.round((p.oldPrice - p.price) / p.price) * 100)}%</div>
-                                        )}
+                            {/* Embla root — outside overflow, arrows live here */}
+                            <div className={styles.emblaRoot} ref={emblaRef}>
+                                {/* Arrows — positioned absolutely on emblaRoot, outside overflow:hidden */}
+                                <div className={styles.emblaArrows}>
+                                    <button
+                                        type="button"
+                                        className={styles.emblaArrow}
+                                        onClick={emblaPrev}
+                                        aria-label="Oldingi"
+                                    >
+                                        <ChevronLeft size={20} />
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={styles.emblaArrow}
+                                        onClick={emblaNext}
+                                        aria-label="Keyingi"
+                                    >
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
 
-                                        {/* Sevimlilar yurakchasi */}
-                                        <button
-                                            className="absolute top-3 right-16 w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-500 transition-colors"
-                                            aria-label="Savodga qo'shish"
-                                        >
-                                            <svg
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                width="16"
-                                                height="16"
-                                                viewBox="0 0 24 24"
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="2"
-                                                strokeLinecap="round"
-                                                strokeLinejoin="round"
-                                            >
-                                                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                                            </svg>
-                                        </button>
-
-                                        {/* Rasim */}
-                                        <div className="flex-1 aspect-[4/5] bg-gray-50 rounded-xl overflow-hidden mb-3">
-                                            <Image
-                                                src={p.image || "https://placehold.co/400"}
-                                                alt={p.title}
-                                                fill
-                                                className="object-contain"
-                                                onError={(e) => {
-                                                    const target = e.target as HTMLImageElement;
-                                                    target.srcset = "";
-                                                    target.src = "https://placehold.co/400?text=No+Image";
-                                                }}
-                                            />
-                                        </div>
-
-                                        {/* Mahsulot nomi */}
-                                        <div className="text-gray-800 font-medium text-sm line-clamp-2 mb-1">
-                                            {p.title}
-                                        </div>
-
-                                        {/* Narxlar */}
-                                        <div className="flex items-end gap-1">
-                                            {p.oldPrice && p.oldPrice > p.price && (
-                                                <div className="text-gray-400 text-xs line-through">
-                                                    {p.oldPrice.toLocaleString()} {tCommon('som')}
-                                                </div>
-                                            )}
-                                            <div className="text-blue-600 font-bold text-lg">
-                                                {p.price.toLocaleString()} {tCommon('som')}
+                                {/* Embla viewport — overflow:hidden */}
+                                <div ref={emblaNode} className={styles.emblaViewport}>
+                                    {/* Embla track — negative margin for edge slides */}
+                                    <div className={styles.emblaTrack}>
+                                        {fallbackProductsSlice.map((p: any) => (
+                                            <div key={p.id} className={`${styles.emblaSlide} min-w-0 shrink-0 grow-0 basis-1/2 pl-2 sm:basis-1/3 sm:pl-4 lg:basis-1/4`}>
+                                                <Link href={`/product/${p.slug || p.id}`} className={styles.productCard}>
+                                                    {p.oldPrice && p.oldPrice > p.price && (
+                                                        <div className={styles.discountBadgeCard}>
+                                                            -{Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)}%
+                                                        </div>
+                                                    )}
+                                                    <button
+                                                        type="button"
+                                                        className={`${styles.favBtn} hover:text-red-500 transition-colors`}
+                                                        aria-label="Sevimlilarga qo'shish"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                                                        </svg>
+                                                    </button>
+                                                    <div className={styles.productImageWrap}>
+                                                        <Image
+                                                            src={p.image || "https://placehold.co/400"}
+                                                            alt={p.title}
+                                                            fill
+                                                            className="object-contain"
+                                                            onError={(e) => {
+                                                                const target = e.target as HTMLImageElement;
+                                                                target.srcset = "";
+                                                                target.src = "https://placehold.co/400?text=No+Image";
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <div className={styles.productName}>{p.title}</div>
+                                                    <div className={styles.productPriceRow}>
+                                                        <div className={styles.productPriceCell}>
+                                                            {p.oldPrice && p.oldPrice > p.price && (
+                                                                <div className={styles.productOldPrice}>{p.oldPrice.toLocaleString()} {tCommon('som')}</div>
+                                                            )}
+                                                            <div className={styles.productPrice}>{p.price.toLocaleString()} {tCommon('som')}</div>
+                                                        </div>
+                                                        <button
+                                                            type="button"
+                                                            className={styles.cartBtn}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            aria-label="Savatga qo'shish"
+                                                        >
+                                                            <ShoppingCart size={18} />
+                                                        </button>
+                                                    </div>
+                                                </Link>
                                             </div>
-                                        </div>
+                                        ))}
+                                    </div>
+                                </div>
 
-                                        {/* Savat tugmasi */}
-                                        <button
-                                            className="absolute bottom-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            Savatga qo'shish
-                                        </button>
-                                    </Link>
-                                ))}
+                                {/* Dots — show when more than 1 snap */}
+                                {isMounted && totalCarouselPages > 1 && (
+                                    <div className={styles.emblaDots}>
+                                        {scrollSnaps.map((_, i) => (
+                                            <button
+                                                key={i}
+                                                type="button"
+                                                className={`${styles.emblaDot} ${i === emblaSelectedIndex ? styles.emblaDot__selected : ''}`}
+                                                onClick={() => emblaScrollTo(i)}
+                                                aria-label={`${i + 1}-sahifaga o'tish`}
+                                                aria-current={i === emblaSelectedIndex}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -289,9 +396,6 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                         {mainBanners[currentIndex]?.title || t('slider_title')}
                                     </h1>
 
-                                    {/* Admin panelda kiritilgan tavsif — sarlavha ostidagi matn.
-                                        Serverdan kelgan props'dan render bo'ladi, shu sababli
-                                        hidratsiyada siljish yo'q. */}
                                     {mainBanners[currentIndex]?.description && (
                                         <p className={styles.sliderSubtitle}>
                                             {mainBanners[currentIndex].description}
@@ -343,7 +447,7 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                     {loading ? (
                          <div className="animate-pulse bg-gray-100 w-full h-full rounded-2xl"></div>
                     ) : (
-                        <div className="w-full h-full flex flex-col">
+                        <div className="w-full flex flex-col" style={{ minHeight: 0 }}>
                             <div className={styles.hotDealContent}>
                                 <Link
                                     href={hotDealHref}
@@ -377,36 +481,29 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                 </Link>
 
                                 <div className={styles.hotDealInfo}>
-                                    {/* Tuzilma serverda ham render bo'ladi (isMounted bilan
-                                        o'ralmagan) — shu sababli joy band bo'lib turadi va
-                                        hidratsiyadan keyin hech narsa siljimaydi. Faqat
-                                        raqamlar mount'dan keyin to'ladi: server va brauzer
-                                        vaqti farq qiladi, aks holda hidratsiya xatosi bo'ladi.
-                                        .timeBox 30x30px belgilangani uchun `--` va `08` bir
-                                        xil joy egallaydi. */}
                                     {hasCountdown && !isExpired && (
-                                        <>
-                                        <div className={styles.countdownHead}>
-                                            <Clock size={18} className={styles.countdownIcon} />
-                                            {t('tugash')}
+                                        <div className={styles.countdownRow}>
+                                            <div className={styles.countdownHead}>
+                                                <Clock size={14} className={styles.countdownIcon} />
+                                                <span>{t('tugash')}</span>
+                                            </div>
+                                            <div className={styles.countdown}>
+                                                <div className={styles.timeUnit}>
+                                                    <div className={styles.timeBox}><span>{isMounted ? String(h).padStart(2, '0') : '--'}</span></div>
+                                                    <span className={styles.timeLabel}>{t('soat')}</span>
+                                                </div>
+                                                <span className={styles.timeSep}>:</span>
+                                                <div className={styles.timeUnit}>
+                                                    <div className={styles.timeBox}><span>{isMounted ? String(m).padStart(2, '0') : '--'}</span></div>
+                                                    <span className={styles.timeLabel}>{t('minut')}</span>
+                                                </div>
+                                                <span className={styles.timeSep}>:</span>
+                                                <div className={styles.timeUnit}>
+                                                    <div className={styles.timeBox}><span>{isMounted ? String(s).padStart(2, '0') : '--'}</span></div>
+                                                    <span className={styles.timeLabel}>{t('sekund')}</span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div className={styles.countdown}>
-                                            <div className={styles.timeUnit}>
-                                                <div className={styles.timeBox}><span>{isMounted ? String(h).padStart(2, '0') : '--'}</span></div>
-                                                <span className={styles.timeLabel}>{t('soat')}</span>
-                                            </div>
-                                            <span className={styles.timeSep}>:</span>
-                                            <div className={styles.timeUnit}>
-                                                <div className={styles.timeBox}><span>{isMounted ? String(m).padStart(2, '0') : '--'}</span></div>
-                                                <span className={styles.timeLabel}>{t('minut')}</span>
-                                            </div>
-                                            <span className={styles.timeSep}>:</span>
-                                            <div className={styles.timeUnit}>
-                                                <div className={styles.timeBox}><span>{isMounted ? String(s).padStart(2, '0') : '--'}</span></div>
-                                                <span className={styles.timeLabel}>{t('sekund')}</span>
-                                            </div>
-                                        </div>
-                                        </>
                                     )}
                                     {isExpired && (
                                         <div className={styles.expiredBadge}>{t('tugadi')}</div>
@@ -414,29 +511,28 @@ export default function Hero({ initialBanners = [], fallbackProducts = [] }: { i
                                     <h3 className={styles.hotDealTitle}>
                                         {sideBanner?.title || "Limited Edition"}
                                     </h3>
-                                    {/* Narx faqat admin panelda kiritilgan bo'lsa chiqadi.
-                                        Ilgari `|| "0"` bo'lgani uchun narxsiz banner
-                                        saytda "0 so'm" deb ko'rinardi. */}
                                     {sideBanner?.price ? (
-                                        <div>
+                                        <div className={styles.priceRow}>
                                             {sideBanner?.oldPrice && (
-                                                <div className={styles.oldPrice}>
+                                                <span className={styles.oldPrice}>
                                                     {sideBanner.oldPrice.toLocaleString()} {tCommon('som')}
-                                                </div>
+                                                </span>
                                             )}
-                                            <div className={styles.promoPrice}>
+                                            <span className={styles.promoPrice}>
                                                 {sideBanner.price.toLocaleString()} <span className={styles.currency}>{tCommon('som')}</span>
-                                            </div>
+                                            </span>
                                         </div>
                                     ) : null}
-                                    <Link
-                                        href={hotDealHref}
-                                        className={styles.hotDealBtn}
-                                        onClick={() => trackBannerClick(sideBanner?.id)}
-                                    >
-                                        <ShoppingCart size={16} className="mr-2" />
-                                        {tCommon('sotib_olish')}
-                                    </Link>
+                                    <div className={styles.hotDealBtnWrap}>
+                                        <Link
+                                            href={hotDealHref}
+                                            className={styles.hotDealBtn}
+                                            onClick={() => trackBannerClick(sideBanner?.id)}
+                                        >
+                                            <ShoppingCart size={16} className="mr-2" />
+                                            {tCommon('sotib_olish')}
+                                        </Link>
+                                    </div>
                                 </div>
                             </div>
                         </div>

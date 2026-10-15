@@ -33,7 +33,7 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
   ]).then(results => results.map(r => (r.status === 'fulfilled' ? r.value : [])));
 
   return (
-    <div className="pb-[60px] md:pb-0">
+    <div className="pb-28 md:pb-0">
       <Hero initialBanners={banners} fallbackProducts={products} />
 
       {/* Kategoriya tezkor-linklari — faqat real data mavjud bo'lsa ko'rsatiladi.
