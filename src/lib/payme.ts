@@ -326,7 +326,7 @@ async function safeOrderQuery(queryFn: () => Promise<any>): Promise<any | null> 
 }
 
 const PAYME_BASE_URL = "https://payment.paycomjoint.uz";
-const PAYME_TEST_URL = "https://test.paycom.uz";
+const PAYME_TEST_URL = "https://test.paycom.uz/api";
 
 /** Hozirgi vaqt (Unix millisecond) */
 export function nowMs(): number {
@@ -531,9 +531,9 @@ export async function handleCreateTransaction(
                 state: PaymeTransactionState.Performed,
             };
         }
-        // Agar cancelled bo'lsa -> qayta yaratish mumkin
+        // Agar cancelled bo'lsa -> qayta yaratish mumkin, lekin original create_time saqlansin
         return {
-            create_time: time,
+            create_time: existing.paymeTransactionTime ? Number(existing.paymeTransactionTime) : time,
             transaction: id,
             state: PaymeTransactionState.Created,
         };
@@ -572,7 +572,7 @@ export async function handleCreateTransaction(
         throw { code: -31001, message: "Transaction already performed", data: [] };
     }
 
-    // Processing (account busy with different transaction) -> -31001
+    // Processing (account busy with different transaction) -> -31008 (Payme spec)
     // But allow if existing transaction is CANCELLED (order can be repaid)
     if (order.paymeTransactionId && order.paymeTransactionId !== id) {
         const existingOrder = await prisma.order.findFirst({
@@ -580,7 +580,7 @@ export async function handleCreateTransaction(
             select: { paymentStatus: true },
         });
         if (existingOrder?.paymentStatus !== 'PAYMENT_CANCELLED' && existingOrder?.paymentStatus !== 'CANCELLED') {
-            throw { code: -31001, message: "Account is busy", data: [] };
+            throw { code: -31008, message: "Cannot perform operation", data: [] };
         }
     }
 

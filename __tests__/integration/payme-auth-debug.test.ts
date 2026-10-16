@@ -344,7 +344,7 @@ describe('paymeRpc — signature and mode consistency', () => {
         const fetchCalls = (globalThis.fetch as any).mock.calls;
         expect(fetchCalls.length).toBe(1);
         const [url, options] = fetchCalls[0];
-        expect(url).toBe('https://test.paycom.uz'); // test URL
+        expect(url).toBe('https://test.paycom.uz/api'); // test URL
 
         // Decode auth header to verify signature was made with testKey
         const authHeader = options.headers['Authorization'];
