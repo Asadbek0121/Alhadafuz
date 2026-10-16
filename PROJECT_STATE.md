@@ -372,7 +372,15 @@ Avvalgi sessiyalardan:
 - **Tavsiya**: loyihani iCloud'dan tashqariga ko'chirish — `mv ~/Documents/uzm ~/Developer/uzm && npm ci`. Barqaror ishlash uchun zarur.
 - `DIRECT_URL` hozir **pooler**ga (6543) ishora qilyapti; Supabase'da direct host `db.zzxcnoronqpexxcxfsmd.supabase.co:5432` bo'lishi kerak (migratsiyalar uchun).
 
-## Last Updated
+## Last Updated (2026-10-16/17)
+
+- **Payme Amount Validation Fix**: Changed `Math.abs(amount - orderAmountTiyin) > 1` to strict equality `amount !== orderAmountTiyin` in CheckPerformTransaction and CreateTransaction. Added 2 regression tests. 55 Payme tests passing.
+- **Invoice-Order Consistency**: Added `cancelInvoiceForOrder()` function in `src/lib/invoice/invoice-service.ts`, called async after payment cancellation.
+- **Payme Timestamp Fields**: Added `paymePerformTime` and `paymeCancelTime` BigInt? fields to Order model, created migration `20261016000000_add_payme_timestamp_columns`.
+- **LPAD Migration Fix**: Fixed PostgreSQL UPDATE syntax (CTE instead of window function directly in UPDATE).
+- **Test Banner Deactivated**: `cmvayidnl000051nlyyoq1e10` set `isActive=false` in DB, homepage carousel restored ("Maxsus takliflar").
+- **All changes pushed to `fix/payme-sandbox-idempotency`** branch (commits: 9f573ad, acc0971, 9312616).
+- **Pending**: Merge to main, production deploy, migration apply, API key rotation.
 
 2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
 
@@ -479,3 +487,34 @@ Avvalgi sessiyalardan:
 - **Problem**: Local dev server had issues with stale `.freebuff` SQLite database
 - **Fix**: Removed `.freebuff/desktop-v2.db` and restarted dev server
 - **Status**: Dev server running at http://localhost:3000
+
+## Completed Recently (2026-10-16)
+
+- **Payme Sandbox Pre-Release Audit** (`fix/payme-sandbox-idempotency` branch):
+  - LPAD analysis: confirmed no truncation issue (rn=10050 → '10010050')
+  - Error codes verified: all 7 codes match Payme Merchant API spec (-32504, -32400, -31000, -31099, -31003, -31008, -31001)
+  - Invoice-Order consistency fix: `cancelInvoiceForOrder()` called async after payment cancellation
+  - Test migration SQL syntax validated (CTE-based, PostgreSQL compatible)
+  - API key rotation procedure documented (key exposed, rotation needed)
+  - New test order plan created (3 clean orders recommended)
+  - **Constraint**: No production DB writes, no migrations, no key rotation, no merge, no deploy
+  - Report saved: `PAYME_SANDBOX_PRE_RELEASE_AUDIT.md`
+
+
+## Completed Recently (2026-10-16)
+
+- **Payme Sandbox Test Parameters**: Created comprehensive test guide (`PAYME_SANDBOX_TEST_PARAMETERS.md`) with exact parameters for all 12 Sandbox test sections
+- **Database Audit**: Verified all TEST orders are dirty (used in prior testing)
+  - TEST_SANDBOX_001: AWAITING_PAYMENT, no invoice (cleanest)
+  - TEST_PAYME_001: AWAITING_PAYMENT, has ISSUED invoice (nomuvofiq)
+  - TEST_PAYME_002-005: CANCELLED/PAID states
+- **Invoice-Order Consistency**: Found 3 orders with ISSUED invoices but cancelled orders (TEST_PAYME_001, 004, 005)
+- **Auth Config**: Verified test_key prefix CFZ%Vtu5***, paymentMethodId cmuy1y312000n8vuh7590mwu3
+
+## Completed Recently (2026-10-16)
+
+- **Payme Amount Validation Bug Fix**: 
+  - Problem: `Math.abs(amount - orderAmountTiyin) > 1` allowed 1 tiyin tolerance, causing 49999 to pass for 50000 sum order
+  - Fix: Changed to strict equality `amount !== orderAmountTiyin` in both CheckPerformTransaction and CreateTransaction
+  - Added 2 regression tests for invalid amount scenarios
+  - Verification: 245 tests passing, ESLint clean
