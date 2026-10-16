@@ -47,6 +47,13 @@ vi.mock('@/lib/prisma', () => ({
 
 globalThis.fetch = vi.fn();
 
+const mockCancelInvoice = vi.fn();
+const mockCreateInvoice = vi.fn();
+vi.mock(" @/lib/invoice/invoice-service", () => ({
+    createInvoiceForOrder: (...args: any[]) => mockCreateInvoice(...args),
+    cancelInvoiceForOrder: (...args: any[]) => mockCancelInvoice(...args),
+}));
+
 import {
     getPaymeConfig,
     verifyAuthorization,
@@ -60,7 +67,7 @@ import {
     paymeRpc,
     findConfigForLogin,
     verifyAuthorizationPerRequest,
-} from '@/lib/payme';
+PaymeTransactionState,} from '@/lib/payme';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -310,6 +317,30 @@ describe('handleCheckPerformTransaction — invalid account errors', () => {
 
         const result = await handleCheckPerformTransaction(500000, { order_id: 'ord-test' }, 'production');
         expect(result).toEqual({ allow: true });
+    });
+
+    it('should reject invalid amount (49999 instead of 500000) with -31001', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ isTest: false }));
+
+        await expect(
+            handleCheckPerformTransaction(49999, { order_id: 'ord-test' }, 'production')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Invalid amount",
+            data: [],
+        });
+    });
+
+    it('should reject invalid amount (500001 instead of 500000) with -31001', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue(buildMockOrder({ isTest: false }));
+
+        await expect(
+            handleCheckPerformTransaction(500001, { order_id: 'ord-test' }, 'production')
+        ).rejects.toEqual({
+            code: -31001,
+            message: "Invalid amount",
+            data: [],
+        });
     });
 
     it('should reject production order with sandbox mode', async () => {
@@ -723,5 +754,109 @@ describe('handleChangePassword — mode isolation', () => {
             message: "PAYME config is invalid JSON",
             data: [],
         });
+    });
+});
+
+
+// ─── 9. Invoice Integration Verification ──────────────────────────────────────
+
+describe('Invoice integration verification', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('should return correct cancel state for PAID order', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue({
+            id: 'ord-cancel-paid',
+            paymentStatus: 'PAID',
+            status: 'COMPLETED',
+            isTest: true,
+        } as any);
+
+        const { handleCancelTransaction } = await import('@/lib/payme');
+        const result = await handleCancelTransaction('tx-cancel-paid', 1729000100, 5, 'test');
+
+        expect(result.state).toBe(PaymeTransactionState.CancelledFromPerformed); // -2
+        expect(result.transaction).toBe('tx-cancel-paid');
+        expect(result.cancel_time).toBe(1729000100);
+        expect(result.reason).toBe(5);
+    });
+
+    it('should return correct cancel state for AWAITING_PAYMENT order', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue({
+            id: 'ord-cancel-awaiting',
+            paymentStatus: 'AWAITING_PAYMENT',
+            status: 'PENDING',
+            isTest: true,
+        } as any);
+
+        const { handleCancelTransaction } = await import('@/lib/payme');
+        const result = await handleCancelTransaction('tx-cancel-awaiting', 1729000200, 1, 'test');
+
+        expect(result.state).toBe(PaymeTransactionState.CancelledFromCreated); // -1
+        expect(result.transaction).toBe('tx-cancel-awaiting');
+        expect(result.cancel_time).toBe(1729000200);
+        expect(result.reason).toBe(1);
+    });
+
+    it('should be idempotent for already cancelled order', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue({
+            id: 'ord-cancel-idemp',
+            paymentStatus: 'PAYMENT_CANCELLED',
+            status: 'PENDING',
+            isTest: true,
+        } as any);
+
+        const { handleCancelTransaction } = await import('@/lib/payme');
+        const first = await handleCancelTransaction('tx-idemp', 1729000300, 1, 'test');
+        const second = await handleCancelTransaction('tx-idemp', 1729000300, 1, 'test');
+
+        expect(first.state).toBe(PaymeTransactionState.CancelledFromCreated);
+        expect(second.state).toBe(PaymeTransactionState.CancelledFromCreated);
+        expect(first.cancel_time).toBe(second.cancel_time);
+    });
+
+    it('should not throw when invoice service import fails', async () => {
+        mockedPrisma.order.findFirst.mockResolvedValue({
+            id: 'ord-cancel-error',
+            paymentStatus: 'PAID',
+            status: 'COMPLETED',
+            isTest: true,
+        } as any);
+
+        // Mock the dynamic import to throw
+        const originalImport = globalThis.import;
+        (globalThis as any).import = vi.fn().mockRejectedValue(new Error('Module not found'));
+
+        try {
+            const { handleCancelTransaction } = await import('@/lib/payme');
+            // Should not throw - invoice cancellation is fire-and-forget
+            const result = await handleCancelTransaction('tx-cancel-error', 1729000400, 5, 'test');
+            expect(result.state).toBe(PaymeTransactionState.CancelledFromPerformed);
+        } finally {
+            (globalThis as any).import = originalImport;
+        }
+    });
+
+    it('should create invoice after successful perform', async () => {
+        mockedPrisma.order.findFirst
+            .mockResolvedValueOnce(null) // not already performed
+            .mockResolvedValueOnce({
+                id: 'ord-perf-inv',
+                total: 500,
+                isTest: true,
+            } as any);
+        mockedPrisma.order.update.mockResolvedValue({});
+        mockedPrisma.paymentLog.create.mockResolvedValue({});
+
+        const { handlePerformTransaction } = await import('@/lib/payme');
+        const result = await handlePerformTransaction('tx-perf-inv', 'test');
+
+        expect(result.state).toBe(PaymeTransactionState.Performed);
+        expect(mockedPrisma.order.update).toHaveBeenCalledWith(
+            expect.objectContaining({
+                data: expect.objectContaining({ paymentStatus: 'PAID' }),
+            })
+        );
     });
 });

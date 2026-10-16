@@ -411,11 +411,21 @@ export async function paymeRpc(
 // Transaction model (Payme side)
 // ---------------------------------------------------------------------------
 
-/** Payme transaction holati (spec bo'yicha: 1=Created, 2=Performed, 3=Cancelled) */
+/** Payme transaction holati (rasmiy spec: https://developer.help.paycom.uz/metody-merchant-api/tipy-dannykh/)
+ *
+ * State:
+ *   1  — Transaction created, awaiting confirmation
+ *   2  — Transaction completed successfully
+ *  -1  — Transaction cancelled (was in Created state)
+ *  -2  — Transaction cancelled (was already Performed)
+ */
 export enum PaymeTransactionState {
     Created = 1,
     Performed = 2,
-    Cancelled = 3,
+    /** Cancelled from Created (not performed yet) */
+    CancelledFromCreated = -1,
+    /** Cancelled after Perform (money already debited) */
+    CancelledFromPerformed = -2,
 }
 
 /** Payme transaction — bizning tizimda saqlanadi */
@@ -472,7 +482,7 @@ export async function handleCheckPerformTransaction(
 
     // Invalid amount -> -31001
     const orderAmountTiyin = Math.round(order.total * 100);
-    if (Math.abs(amount - orderAmountTiyin) > 1) {
+    if (amount !== orderAmountTiyin) {
         throw { code: -31001, message: "Invalid amount", data: [] };
     }
 
@@ -563,7 +573,7 @@ export async function handleCreateTransaction(
 
     // Amount check -> -31001
     const orderAmountTiyin = Math.round(order.total * 100);
-    if (Math.abs(amount - orderAmountTiyin) > 1) {
+    if (amount !== orderAmountTiyin) {
         throw { code: -31001, message: "Invalid amount", data: [] };
     }
 
@@ -646,7 +656,7 @@ export async function handlePerformTransaction(
     try {
         existing = await prisma.order.findFirst({
             where: { paymeTransactionId: id },
-            select: { paymentStatus: true, paymeTransactionId: true, id: true, isTest: true },
+            select: { paymentStatus: true, paymeTransactionId: true, id: true, isTest: true, paymePerformTime: true },
         });
     } catch {
         // paymeTransactionId column may not exist
@@ -659,9 +669,11 @@ export async function handlePerformTransaction(
         if (existingIsTest !== expectedTest) {
             throw { code: -31001, message: "Order not available for this payment method", data: [] };
         }
+        // Idempotent: return stored perform_time
+        const storedPerformTime = existing.paymePerformTime ? Number(existing.paymePerformTime) : nowMs();
         return {
             transaction: id,
-            perform_time: nowMs(),
+            perform_time: storedPerformTime,
             state: PaymeTransactionState.Performed,
         };
     }
@@ -690,11 +702,13 @@ export async function handlePerformTransaction(
     }
 
     // Perform the transaction
+    const performTime = nowMs();
     await prisma.order.update({
         where: { id: order.id },
         data: {
             paymentStatus: "PAID",
             paymentProvider: "PAYME",
+            paymePerformTime: performTime,
         },
     });
 
@@ -712,7 +726,7 @@ export async function handlePerformTransaction(
     });
 
     // Invoice yaratish
-    import("@/lib/invoice/invoice-service").then(({ createInvoiceForOrder }) => {
+    import("@/lib/invoice/invoice-service").then(({ createInvoiceForOrder, cancelInvoiceForOrder }) => {
         createInvoiceForOrder(order.id, { force: true }).catch((e: unknown) => {
             console.error("[payme] Invoice creation failed:", e);
         });
@@ -731,7 +745,7 @@ export async function handlePerformTransaction(
 
     return {
         transaction: id,
-        perform_time: nowMs(),
+        perform_time: performTime,
         state: PaymeTransactionState.Performed,
     };
 }
@@ -775,22 +789,37 @@ export async function handleCancelTransaction(
 
     // Already cancelled
     if (order.paymentStatus === "CANCELLED" || order.paymentStatus === "PAYMENT_CANCELLED") {
-        return { cancel_time: time, transaction: id, state: PaymeTransactionState.Cancelled, reason };
+        // Re-cancel — preserve state: if PAID → -2, else → -1
+        const prevStatus = await prisma.order.findFirst({ where: { paymeTransactionId: id }, select: { paymentStatus: true } });
+        return { cancel_time: time, transaction: id, state: prevStatus?.paymentStatus === "PAID" ? PaymeTransactionState.CancelledFromPerformed : PaymeTransactionState.CancelledFromCreated, reason };
     }
 
     // Cancel the transaction
     // Keep paymeTransactionId to allow CheckTransaction to find it after cancellation
+    const isAlreadyPerformed = order.paymentStatus === "PAID";
+    const cancelState = isAlreadyPerformed
+        ? PaymeTransactionState.CancelledFromPerformed
+        : PaymeTransactionState.CancelledFromCreated;
+
     await prisma.order.update({
         where: { id: order.id },
         data: {
             paymentStatus: "PAYMENT_CANCELLED",
+            paymeCancelTime: time,
         },
     });
+
+    // Cancel associated invoice if any — keeps invoice/order state in sync
+    import("@/lib/invoice/invoice-service").then(({ cancelInvoiceForOrder }) => {
+        cancelInvoiceForOrder(order.id).catch((e: unknown) => {
+            console.error("[payme] Invoice cancellation failed:", e);
+        });
+    }).catch(() => {});
 
     return {
         cancel_time: time,
         transaction: id,
-        state: PaymeTransactionState.Cancelled,
+        state: cancelState,
         reason,
     };
 }
@@ -819,6 +848,8 @@ export async function handleCheckTransaction(
                 paymentStatus: true,
                 paymeTransactionId: true,
                 paymeTransactionTime: true,
+                paymePerformTime: true,
+                paymeCancelTime: true,
                 createdAt: true,
                 isTest: true,
             },
@@ -849,11 +880,13 @@ export async function handleCheckTransaction(
             state = PaymeTransactionState.Performed;
             break;
         case "PAYMENT_CANCELLED":
-            state = PaymeTransactionState.Cancelled;
+            state = order.paymePerformTime ? PaymeTransactionState.CancelledFromPerformed : PaymeTransactionState.CancelledFromCreated;
+            cancelTime = Number(order.paymeCancelTime);
             txReason = 4; // timeout cancellation
             break;
         case "CANCELLED":
-            state = PaymeTransactionState.Cancelled;
+            state = order.paymePerformTime ? PaymeTransactionState.CancelledFromPerformed : PaymeTransactionState.CancelledFromCreated;
+            cancelTime = Number(order.paymeCancelTime);
             break;
         default:
             state = PaymeTransactionState.Created;
@@ -864,8 +897,12 @@ export async function handleCheckTransaction(
         transaction: id,
         state,
     };
-    if (performTime !== undefined) resp.perform_time = performTime;
-    if (cancelTime !== undefined) resp.cancel_time = cancelTime;
+    if (order.paymePerformTime !== null && order.paymePerformTime !== undefined) {
+        resp.perform_time = Number(order.paymePerformTime);
+    }
+    if (order.paymeCancelTime !== null && order.paymeCancelTime !== undefined) {
+        resp.cancel_time = Number(order.paymeCancelTime);
+    }
     if (txReason !== null) resp.reason = txReason;
     return resp;
 }
@@ -925,8 +962,8 @@ export async function handleGetStatement(
         let state: PaymeTransactionState;
         switch (o.paymentStatus) {
             case "PAID": state = PaymeTransactionState.Performed; break;
-            case "PAYMENT_CANCELLED": state = PaymeTransactionState.Cancelled; break;
-            case "CANCELLED": state = PaymeTransactionState.Cancelled; break;
+            case "PAYMENT_CANCELLED": state = o.paymePerformTime ? PaymeTransactionState.CancelledFromPerformed : PaymeTransactionState.CancelledFromCreated; break;
+            case "CANCELLED": state = o.paymePerformTime ? PaymeTransactionState.CancelledFromPerformed : PaymeTransactionState.CancelledFromCreated; break;
             default: state = PaymeTransactionState.Created;
         }
 
