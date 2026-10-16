@@ -190,3 +190,36 @@ export async function logInvoiceEvent(invoiceId: string, type: string, metadata?
         },
     });
 }
+
+/**
+ * Cancel an issued invoice and update its status.
+ * Called when a payment transaction is cancelled.
+ */
+export async function cancelInvoiceForOrder(orderId: string): Promise<{ cancelled: boolean; invoiceId?: string }> {
+    const invoice = await prisma.invoice.findFirst({
+        where: { orderId, status: 'ISSUED' },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    if (!invoice) {
+        return { cancelled: false };
+    }
+
+    await prisma.invoice.update({
+        where: { id: invoice.id },
+        data: {
+            status: 'CANCELLED',
+            paymentStatus: 'CANCELLED',
+        },
+    });
+
+    await prisma.invoiceEvent.create({
+        data: {
+            invoiceId: invoice.id,
+            type: 'CANCELLED',
+            metadata: JSON.stringify({ orderId, reason: 'PAYMENT_CANCELLED' }),
+        },
+    });
+
+    return { cancelled: true, invoiceId: invoice.id };
+}
