@@ -42,7 +42,6 @@ export default function SupportChat() {
     const timerRef = useRef<NodeJS.Timeout | null>(null);
 
     const pathname = usePathname();
-    if (pathname?.includes('/courier')) return null;
 
     useEffect(() => {
         // O'z domenimizdan: lottie.host'ga uchinchi tomon DNS + TLS qo'l siqishi
@@ -99,6 +98,18 @@ export default function SupportChat() {
             return () => clearInterval(interval);
         }
     }, [isOpen, view, session, fetchMessages]);
+
+    // Hide support on courier pages; compute visibility after all hooks
+    if (pathname?.includes('/courier')) return null;
+    const cleanPath = (pathname || '').replace(/^\/(uz|ru|en)(\/|$)/, '/');
+    const isHomePage = cleanPath === '/' || cleanPath === '';
+    const isCartPage = cleanPath === '/cart' || cleanPath.includes('/checkout');
+    // Mobile(<1024): 仅首页显示; Desktop(≥1024): cart/checkout 以外显示
+    const parts = [];
+    if (!isHomePage) parts.push('hidden');       // 移动端隐藏（非首页）
+    if (!isCartPage) parts.push('lg:block');     // 桌面端显示（非cart/checkout）
+    else parts.push('lg:hidden');                // 桌面端隐藏（cart/checkout）
+    const supportHidden = parts.join(' ');
 
     const startRecording = async () => {
         try {
@@ -316,15 +327,14 @@ export default function SupportChat() {
                     position: fixed !important;
                     bottom: 25px !important;
                     right: 25px !important;
-                    width: 56px;
-                    height: 56px;
-                    border-radius: 20px;
+                    width: 56px !important;
+                    height: 56px !important;
+                    border-radius: 20px !important;
                     background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
                     color: #fff;
                     border: none;
                     box-shadow: 0 10px 30px rgba(37, 99, 235, 0.4);
                     cursor: pointer;
-                    display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 9999;
@@ -339,13 +349,12 @@ export default function SupportChat() {
                     position: fixed !important;
                     bottom: 25px !important;
                     right: 25px !important;
-                    width: 80px;
-                    height: 80px;
-                    border-radius: 50%;
+                    width: 80px !important;
+                    height: 80px !important;
+                    border-radius: 50% !important;
                     background: #fff;
                     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
                     cursor: pointer;
-                    display: flex;
                     align-items: center;
                     justify-content: center;
                     z-index: 9999;
@@ -386,8 +395,43 @@ export default function SupportChat() {
                         border-radius: 0 !important;
                     }
                     .support-fab, .support-fab-lottie {
-                        bottom: 100px !important;
-                        right: 20px !important;
+                        bottom: calc(env(safe-area-inset-bottom) + 77px + 12px) !important;
+                        right: 12px !important;
+                    }
+                }
+
+                /* Mobile (<1024px): 56px rounded-full button, scroll-hide animation */
+                @media (max-width: 1023px) {
+                    .support-fab, .support-fab-lottie {
+                        width: 56px !important;
+                        height: 56px !important;
+                        border-radius: 50% !important;
+                        overflow: hidden !important;
+                        padding: 0 !important;
+                        transition: transform 150ms ease, opacity 150ms ease, box-shadow 150ms ease !important;
+                    }
+                    /* Lottie fills the circular button */
+                    .support-fab-lottie svg,
+                    .support-fab-lottie > div {
+                        width: 100% !important;
+                        height: 100% !important;
+                    }
+                    /* Headset icon centered in 56px circle */
+                    .support-fab svg {
+                        width: 28px !important;
+                        height: 28px !important;
+                    }
+                    .support-fab.support-hidden, .support-fab-lottie.support-hidden {
+                        transform: translateX(120px) !important;
+                        opacity: 0 !important;
+                    }
+                    /* Respect prefers-reduced-motion */
+                    @media (prefers-reduced-motion: reduce) {
+                        .support-fab.support-hidden,
+                        .support-fab-lottie.support-hidden {
+                            opacity: 0 !important;
+                            transform: none !important;
+                        }
                     }
                 }
                 `
@@ -396,7 +440,7 @@ export default function SupportChat() {
             {/* FAB */}
             <button
                 onClick={toggleOpen}
-                className={supportAnimationData ? "support-fab-lottie" : "support-fab"}
+                className={`${supportAnimationData ? "support-fab-lottie" : "support-fab"} ${supportHidden}`}
                 style={{ transform: isOpen ? 'rotate(90deg) scale(0)' : 'rotate(0) scale(1)' }}
                 aria-label={isOpen ? t('close_chat') || "Chatni yopish" : t('open_chat') || "Chatni ochish"}
             >
