@@ -116,60 +116,62 @@ model MerchantProfile {
 }
 
 model Order {
-  id                String        @id @default(cuid())
-  userId            String
-  courierId         String?
-  merchantId        String?
-  status            String        @default("CREATED")
-  total             Float
-  deliveryFee       Float         @default(0)
-  paymentMethod     String        @default("CASH")
-  paymentStatus     String        @default("PENDING")
-  paymentId         String?
-  paymentProvider   String?
-  paymeTransactionId   String?   @unique
+  id                   String        @id @default(cuid())
+  userId               String
+  courierId            String?
+  merchantId           String?
+  status               String        @default("CREATED")
+  total                Float
+  deliveryFee          Float         @default(0)
+  paymentMethod        String        @default("CASH")
+  paymentStatus        String        @default("PENDING")
+  paymentId            String?
+  paymentProvider      String?
+  paymeTransactionId   String?       @unique
   paymeTransactionTime BigInt?
-  isTest               Boolean   @default(false)
-  clickTransactionId   String?   @unique
+  paymePerformTime     BigInt?
+  paymeCancelTime      BigInt?
+  isTest               Boolean       @default(false)
+  clickTransactionId   String?       @unique
   paymeCardNumber      String?
-  shippingName      String?
-  shippingPhone     String?
-  shippingAddress   String?
-  shippingCity      String?
-  shippingDistrict  String?
-  districtCode      String?
-  lat               Float?
-  lng               Float?
-  comment           String?
-  couponCode        String?
-  discountAmount    Float         @default(0)
-  deliveryMethod    String        @default("COURIER")
-  creatorId         String?
-  createdVia        String?       @default("USER_APP")
-  gpsLogs           String?
-  deliveryPhoto     String?
-  deliveryToken     String?       @unique
-  orderNumber       String?       @unique
-  tokenExpiresAt    DateTime?
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
-  finishedAt        DateTime?
-  finishedAtRaw     DateTime?
-  storeId           String?
-  paymentScreenshot String?
-  paymentVerifiedAt DateTime?
-  paymentVerifiedBy String?
-  idempotencyKey    String?
-  dispatchLogs      DispatchLog[]
-  earnings          Earning[]
-  courier           User?         @relation("CourierOrders", fields: [courierId], references: [id])
-  creator           User?         @relation("CreatedOrders", fields: [creatorId], references: [id])
-  merchant          User?         @relation("MerchantOrders", fields: [merchantId], references: [id])
-  store             Store?        @relation(fields: [storeId], references: [id])
-  user              User          @relation("CustomerOrders", fields: [userId], references: [id])
-  items             OrderItem[]
-  cargos            Cargo[]
-  Invoice           Invoice[]
+  shippingName         String?
+  shippingPhone        String?
+  shippingAddress      String?
+  shippingCity         String?
+  shippingDistrict     String?
+  districtCode         String?
+  lat                  Float?
+  lng                  Float?
+  comment              String?
+  couponCode           String?
+  discountAmount       Float         @default(0)
+  deliveryMethod       String        @default("COURIER")
+  creatorId            String?
+  createdVia           String?       @default("USER_APP")
+  gpsLogs              String?
+  deliveryPhoto        String?
+  deliveryToken        String?       @unique
+  orderNumber          String?       @unique
+  tokenExpiresAt       DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  finishedAt           DateTime?
+  finishedAtRaw        DateTime?
+  storeId              String?
+  paymentScreenshot    String?
+  paymentVerifiedAt    DateTime?
+  paymentVerifiedBy    String?
+  idempotencyKey       String?
+  dispatchLogs         DispatchLog[]
+  earnings             Earning[]
+  courier              User?         @relation("CourierOrders", fields: [courierId], references: [id])
+  creator              User?         @relation("CreatedOrders", fields: [creatorId], references: [id])
+  merchant             User?         @relation("MerchantOrders", fields: [merchantId], references: [id])
+  store                Store?        @relation(fields: [storeId], references: [id])
+  user                 User          @relation("CustomerOrders", fields: [userId], references: [id])
+  items                OrderItem[]
+  cargos               Cargo[]
+  Invoice              Invoice[]
 
   @@unique([userId, idempotencyKey])
 }
@@ -822,9 +824,9 @@ model PaymentLog {
   transactionId String?
   amount        Float?
   status        String
-  method        String?  // CheckPerformTransaction, CreateTransaction, PerformTransaction, CheckTransaction
-  errorCode     String?  // JSON-RPC error code (-31001, -31003, etc.)
-  orderId       String?  // Related order ID
+  method        String? // CheckPerformTransaction, CreateTransaction, PerformTransaction, CheckTransaction
+  errorCode     String? // JSON-RPC error code (-31001, -31003, etc.)
+  orderId       String? // Related order ID
   requestData   String?
   responseData  String?
   ipAddress     String?
