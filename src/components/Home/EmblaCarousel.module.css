@@ -1,0 +1,111 @@
+/* Embla root — no overflow here, arrows sit outside */
+.emblaRoot {
+    position: relative;
+    width: 100%;
+}
+
+/* Viewport — overflow hidden, extra padding for hover shadow */
+.emblaViewport {
+    overflow: hidden;
+    /* Allow hover shadow to extend without clipping */
+    padding-top: 12px;
+    padding-bottom: 12px;
+    margin-top: -12px;
+    margin-bottom: -12px;
+}
+
+/* Track — no horizontal padding so slide alignment matches grid exactly.
+   Gap between slides is provided by the `slideGap` prop ( Tailwind gap-* class
+   applied to the root wrapper). */
+.emblaTrack {
+    display: flex;
+    touch-action: pan-y pinch-zoom;
+}
+
+/* Slide — no horizontal padding/margin.
+   Basis width comes from the `slideClass` prop (Tailwind responsive classes). */
+.emblaSlide {
+    flex: 0 0 auto;
+    min-width: 0;
+    height: 100%;
+}
+
+/* Arrows — positioned on emblaRoot (outside overflow:hidden), half-hidden */
+.emblaArrows {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.emblaArrow {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.92);
+    border: none;
+    border-radius: 50%;
+    color: #1e40af;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+    padding: 0;
+    pointer-events: auto;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    flex-shrink: 0;
+}
+
+.emblaArrow:hover {
+    background: white;
+    transform: scale(1.08);
+}
+
+.emblaArrow:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Dots */
+.emblaDots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    padding: 16px 0 6px;
+}
+
+.emblaDot {
+    width: 8px;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.35);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, transform 0.15s, width 0.15s;
+}
+
+.emblaDot:hover {
+    background: rgba(255, 255, 255, 0.6);
+}
+
+.emblaDotSelected {
+    background: white;
+    width: 20px;
+    border-radius: 4px;
+}
+
+/* ── Drag cursor styles ── */
+.emblaRoot[data-embla] {
+    cursor: grab;
+    user-select: none;
+}
+
+.emblaRoot[data-embla].is-dragging {
+    cursor: grabbing;
+}

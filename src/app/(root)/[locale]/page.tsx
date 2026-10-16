@@ -1,5 +1,6 @@
 import Hero from "@/components/Hero/Hero";
 import ProductCard from "@/components/ProductCard/ProductCard";
+import EmblaCarousel from "@/components/Home/EmblaCarousel";
 import ViewMoreButton from "@/components/Home/ViewMoreButton";
 import CategoryCard from "@/components/Home/CategoryCard";
 import { getTranslations } from 'next-intl/server';
@@ -57,33 +58,39 @@ export default async function Home({ params }: { params: Promise<{ locale: strin
           <h2 className="mb-4 text-lg font-black uppercase tracking-wider text-slate-900 md:mb-6 md:text-xl">
             {t('chegirmalar')}
           </h2>
-          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar md:grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {flashDeals.map((p: any, index: number) => (
-              <div key={p.id} className="w-52 shrink-0 md:w-auto">
-                <ProductCard
-                  id={p.id}
-                  slug={p.slug}
-                  title={p.title}
-                  price={p.price}
-                  oldPrice={p.oldPrice}
-                  image={p.image}
-                  discount={p.discount}
-                  discountType={p.discountType}
-                  isNew={p.isNew}
-                  freeDelivery={p.freeDelivery}
-                  hasVideo={p.hasVideo}
-                  hasGift={p.hasGift}
-                  showLowStock={p.showLowStock}
-                  allowInstallment={p.allowInstallment}
-                  stock={p.stock}
-                  rating={p.rating}
-                  reviewCount={p.reviewsCount}
-                  fulfillmentType={p.fulfillmentType}
-                  priority={false}
-                />
-              </div>
+          <EmblaCarousel
+            slideGap="gap-3 md:gap-6"
+            // Grid bilan aniq mos kelishi uchun calc() ishlatiladi:
+            // Mobile (2 col, gap-3=12px): 50% - 6px
+            // md (3 col, gap-6=24px): 33.333% - 16px
+            // lg (4 col, gap-6=24px): 25% - 18px
+            // xl (5 col, gap-6=24px): 20% - 19.2px
+            slideClass="w-[calc(50%-6px)] md:w-[calc(33.333%-16px)] lg:w-[calc(25%-18px)] xl:w-[calc(20%-19.2px)]"
+            slides={flashDeals.map((p: any) => (
+              <ProductCard
+                key={p.id}
+                id={p.id}
+                slug={p.slug}
+                title={p.title}
+                price={p.price}
+                oldPrice={p.oldPrice}
+                image={p.image}
+                discount={p.discount}
+                discountType={p.discountType}
+                isNew={p.isNew}
+                freeDelivery={p.freeDelivery}
+                hasVideo={p.hasVideo}
+                hasGift={p.hasGift}
+                showLowStock={p.showLowStock}
+                allowInstallment={p.allowInstallment}
+                stock={p.stock}
+                rating={p.rating}
+                reviewCount={p.reviewsCount}
+                fulfillmentType={p.fulfillmentType}
+                priority={false}
+              />
             ))}
-          </div>
+          />
         </section>
       )}
 
