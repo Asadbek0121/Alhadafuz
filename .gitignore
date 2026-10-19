@@ -78,3 +78,14 @@ supabase/.temp/
 .dev.vars*
 !.dev.vars.example
 .mcp.json
+.claude/skills/
+.claude/agents/
+.agents/
+.cursor/agents/
+.gemini/
+.hermes/
+.opencode/
+.agent/
+test-results/
+skills-lock.json
+
