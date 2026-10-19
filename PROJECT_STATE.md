@@ -374,14 +374,14 @@ Avvalgi sessiyalardan:
 
 ## Last Updated (2026-10-19)
 
-- **Admin Edit Product Page Fixed**: Added drag-and-drop, paste, duplicate check, modern image handling to match create page. tsc ✅, lint ✅.
-- **Payme Amount Validation Fix**: Changed `Math.abs(amount - orderAmountTiyin) > 1` to strict equality `amount !== orderAmountTiyin` in CheckPerformTransaction and CreateTransaction. Added 2 regression tests. 55 Payme tests passing.
-- **Invoice-Order Consistency**: Added `cancelInvoiceForOrder()` function in `src/lib/invoice/invoice-service.ts`, called async after payment cancellation.
-- **Payme Timestamp Fields**: Added `paymePerformTime` and `paymeCancelTime` BigInt? fields to Order model, created migration `20261016000000_add_payme_timestamp_columns`.
-- **LPAD Migration Fix**: Fixed PostgreSQL UPDATE syntax (CTE instead of window function directly in UPDATE).
+- **UI Audit Fixes** (`e9c25b6`): Replaced inline styles with Tailwind classes in CategoryCard, NotificationDrawer, CartDrawer. tsc ✅ | eslint ✅
+- **Admin Edit Product Page Sync** (`a525387`): Added drag-and-drop, paste, duplicate check, modern image handling to match create page. tsc ✅ | eslint ✅
+- **Payme Amount Validation Fix**: Changed `Math.abs(amount - orderAmountTiyin) > 1` to strict equality `amount !== orderAmountTiyin`. 245 tests passing.
+- **Invoice-Order Consistency**: Added `cancelInvoiceForOrder()` function.
+- **Payme Timestamp Fields**: Added `paymePerformTime` and `paymeCancelTime` BigInt? fields to Order model.
+- **LPAD Migration Fix**: Fixed PostgreSQL UPDATE syntax (CTE-based).
 - **Test Banner Deactivated**: `cmvayidnl000051nlyyoq1e10` set `isActive=false` in DB, homepage carousel restored ("Maxsus takliflar").
-- **All changes pushed to `fix/payme-sandbox-idempotency`** branch (commits: 9f573ad, acc0971, 9312616).
-- **Pending**: Merge to main, production deploy, migration apply, API key rotation.
+- **Pending**: Merge Payme sandbox fixes to main, production deploy, API key rotation.
 
 2026-10-12 (Courier bot security audit — PR #12, 7 fixes, 31 tests)
 
