@@ -241,7 +241,8 @@
     "cart_title": "Cart",
     "items_count": "item(s)",
     "pcs": "pcs",
-    "close": "Close"
+    "close": "Close",
+    "added_to_cart": "Added to cart"
   },
   "Checkout": {
     "contact_info": "Contact Information",

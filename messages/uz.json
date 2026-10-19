@@ -241,7 +241,8 @@
     "cart_title": "Savatcha",
     "items_count": "mahsulot",
     "pcs": "dona",
-    "close": "Yopish"
+    "close": "Yopish",
+    "added_to_cart": "Savatga qo'shildi"
   },
   "Checkout": {
     "contact_info": "Aloqa ma'lumotlari",

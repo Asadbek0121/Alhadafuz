@@ -241,7 +241,8 @@
     "cart_title": "Корзина",
     "items_count": "товар(ов)",
     "pcs": "шт",
-    "close": "Закрыть"
+    "close": "Закрыть",
+    "added_to_cart": "Добавлено в корзину"
   },
   "Checkout": {
     "contact_info": "Контактная информация",

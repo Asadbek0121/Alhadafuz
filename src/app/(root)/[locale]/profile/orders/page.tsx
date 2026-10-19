@@ -143,7 +143,7 @@ export default function OrderHistoryPage() {
             price: item.price,
             image: item.image
         });
-        toast.success(tCart('added_to_cart') || "Added to cart");
+        toast.success(tCart('added_to_cart'));
     };
 
     const getStatusColor = (status: Order["status"]) => {
