@@ -118,7 +118,7 @@ export default function NotificationDrawer() {
         <div className={styles.list}>
           {!isAuthenticated || notifications.length === 0 ? (
             <div className={styles.empty}>
-              <img src="/icons/no-messages.svg" alt="" width={160} height={160} style={{ marginBottom: 24 }} />
+              <img src="/icons/no-messages.svg" alt="" width={160} height={160} className="mb-6" />
               <h3>{tNotif("empty_title")}</h3>
               <p>{tNotif("empty_desc")}</p>
               <Link href="/profile/notifications" onClick={closeAllMenus}>{t("bildirishnomalarni_boshqarish")}</Link>
@@ -129,9 +129,9 @@ export default function NotificationDrawer() {
               if (filtered.length === 0) {
                 return (
                   <div className={styles.empty}>
-                    <img src="/icons/no-messages.svg" alt="" width={160} height={160} style={{ marginBottom: 24 }} />
+                    <img src="/icons/no-messages.svg" alt="" width={160} height={160} className="mb-6" />
                     <h3>{tNotif("all_read_title")}</h3>
-                    <p style={{ color: '#888', fontSize: 14, maxWidth: 260, lineHeight: 1.4, margin: '0 auto' }}>
+                    <p className="text-gray-500 text-sm max-w-[260px] leading-relaxed mx-auto">
                       {showUnreadOnly ? tNotif("no_unread") : tNotif("no_any")}
                     </p>
                   </div>

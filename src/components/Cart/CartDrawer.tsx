@@ -50,7 +50,7 @@ export default function CartDrawer() {
                     {!isHydrated || items.length === 0 ? (
                         <div className={styles.empty}>
                             <div style={{ marginBottom: '24px' }}>
-                                <img src="/icons/empty-cart.svg" alt="" width={180} height={180} style={{ objectFit: 'contain' }} />
+                                <img src="/icons/empty-cart.svg" alt="" width={180} height={180} className="object-contain" />
                             </div>
                             <h3 style={{ fontSize: '19px', fontWeight: '700', marginBottom: '12px', color: '#000' }}>{tCart('empty_title')}</h3>
                             <p style={{ color: '#888', fontSize: '15px', maxWidth: '280px', lineHeight: '1.4', margin: '0 auto 32px' }}>

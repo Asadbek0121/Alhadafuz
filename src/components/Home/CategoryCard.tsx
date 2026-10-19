@@ -15,8 +15,7 @@ export default function CategoryCard({ name, slug, image }: CategoryCardProps) {
     return (
         <Link
             href={`/category/${slug}`}
-            className="group relative block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-md"
-            style={{ aspectRatio: '1 / 1' }}
+            className="group relative block overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-100 hover:shadow-md aspect-square"
         >
             {image ? (
                 <img
@@ -30,8 +29,7 @@ export default function CategoryCard({ name, slug, image }: CategoryCardProps) {
                     <FolderOpen size={32} className="text-slate-400" />
                 </div>
             )}
-            <span className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-center px-2 pb-2 pt-10 text-center text-xs font-bold leading-tight text-white"
-                style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0) 100%)' }}>
+            <span className="absolute inset-x-0 bottom-0 z-10 flex items-end justify-center px-2 pb-2 pt-10 text-center text-xs font-bold leading-tight text-white bg-gradient-to-t from-black/75 to-transparent">
                 {name}
             </span>
         </Link>
