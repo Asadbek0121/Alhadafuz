@@ -493,8 +493,7 @@ export default function CategoryContent({ category, banners = [], products = [],
                                 <a
                                     key={child.id}
                                     href={catHref(child.slug)}
-                                    className={styles.cardSub}
-                                    style={{ textDecoration: 'none' }}
+                                    className={`${styles.cardSub} no-underline`}
                                 >
                                     <div className={styles.cardSubImage}>
                                         {child.image ? (
