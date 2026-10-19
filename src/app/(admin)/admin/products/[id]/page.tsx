@@ -1,9 +1,9 @@
 "use client";
 // noinspection CssInlineStyles,HtmlFormInputWithoutLabel,HtmlUnknownAttribute
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft, Copy } from "lucide-react";
+import { Loader2, Plus, X, UploadCloud, Settings, ChevronLeft, Copy, Star, Trash2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -51,6 +51,20 @@ const productSchema = z.object({
 
 type ProductFormValues = z.infer<typeof productSchema>;
 
+const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+const isImageUrl = (s: string) =>
+    /^https?:\/\/[^\s]+$/i.test(s) &&
+    (/\.(png|jpe?g|gif|webp|avif|svg|bmp)(\?|#|$)/i.test(s) ||
+        /(res\.cloudinary\.com|\.public\.blob\.vercel-storage\.com|googleusercontent\.com|i\.imgur\.com)/i.test(s));
+
+const isTypingTarget = (el: EventTarget | null) => {
+    const node = el as HTMLElement | null;
+    if (!node || !node.tagName) return false;
+    const tag = node.tagName.toLowerCase();
+    return tag === "input" || tag === "textarea" || tag === "select" || node.isContentEditable;
+};
+
 const tryParseJsonImages = (jsonStr: string) => {
     try {
         const parsed = JSON.parse(jsonStr);
@@ -95,6 +109,10 @@ export default function EditProductPage() {
     const [showBulkPaste, setShowBulkPaste] = useState(false);
     const [bulkText, setBulkText] = useState("");
     const [categoryWarning, setCategoryWarning] = useState(false);
+    const [dragZone, setDragZone] = useState<"main" | "gallery" | null>(null);
+    const [pasteZone, setPasteZone] = useState<"main" | "gallery" | null>(null);
+    const [duplicate, setDuplicate] = useState<{ id: string; title: string } | null>(null);
+    const [uploading, setUploading] = useState(0);
     const universalRef = useRef<UniversalProductRef>(null);
 
     const processBulkPaste = () => {
@@ -258,13 +276,21 @@ export default function EditProductPage() {
         }
     }, [id, reset]);
 
-    // Auto-calculate price based on discount
-    const watchOldPrice = watch('oldPrice');
-    const watchPrice = watch('price');
-    const watchDiscountValue = watch('discountValue');
-    const watchDiscountType = watch('discountType');
+    const watchTitle = watch("title");
+    const watchImage = watch("image");
+    const watchImages = watch("images");
+    const watchCategory = watch("category");
+    const watchOldPrice = watch("oldPrice");
+    const watchPrice = watch("price");
+    const watchDiscountValue = watch("discountValue");
+    const watchDiscountType = watch("discountType");
+    const watchFulfillmentType = watch("fulfillmentType");
+    const gallery = useMemo(
+        () => (watchImages || "").split("\\n").map((s) => s.trim()).filter(Boolean),
+        [watchImages]
+    );
 
-    // Use a ref to prevent infinite loops if we make it bi-directional
+    // Auto-calculate price based on discount
     const isCalculating = useRef(false);
 
     useEffect(() => {
@@ -311,6 +337,31 @@ export default function EditProductPage() {
         isCalculating.current = false;
     }, [watchOldPrice, watchPrice, watchDiscountValue, watchDiscountType, setValue]);
 
+    /* ------------------------------------------------------- takrorlanuvchi nom */
+    useEffect(() => {
+        const title = (watchTitle || "").trim();
+        if (title.length < 3) {
+            setDuplicate(null);
+            return;
+        }
+        const handle = setTimeout(async () => {
+            try {
+                const res = await fetch(`/api/products?q=${encodeURIComponent(title)}`);
+                if (!res.ok) return;
+                const list = await res.json();
+                if (!Array.isArray(list)) return;
+                const exact = list.find(
+                    (p: any) => String(p.title || "").trim().toLowerCase() === title.toLowerCase()
+                );
+                setDuplicate(exact ? { id: exact.id, title: exact.title } : null);
+            } catch {
+                // tarmoq xatosi — ogohlantirish shunchaki chiqmaydi
+            }
+        }, 600);
+        return () => clearTimeout(handle);
+    }, [watchTitle]);
+
+
     const addAttribute = () => {
         setAttributes([...attributes, { key: "", value: "" }]);
     };
@@ -353,6 +404,130 @@ export default function EditProductPage() {
             e.target.value = '';
         }
     };
+
+
+    /* ---------------------------------------------------------------- rasm yuklash */
+
+    const appendGallery = useCallback((urls: string[]) => {
+        if (!urls.length) return;
+        const current = (watch("images") || "").split("\n").map((s) => s.trim()).filter(Boolean);
+        const merged = [...current];
+        urls.forEach((u) => { if (!merged.includes(u)) merged.push(u); });
+        setValue("images", merged.join("\n"), { shouldDirty: true });
+    }, [setValue, watch]);
+
+    const placeUrls = useCallback((urls: string[]) => {
+        if (!urls.length) return;
+        let rest = urls;
+        if (!watch("image")) {
+            setValue("image", urls[0], { shouldValidate: false, shouldDirty: true });
+            rest = urls.slice(1);
+        }
+        appendGallery(rest);
+    }, [appendGallery, setValue, watch]);
+
+    const uploadOne = async (file: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: formData });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            throw new Error(
+                res.status === 401
+                    ? "Sessiya tugagan — qaytadan kiring"
+                    : data.error || `Yuklash muvaffaqiyatsiz (${res.status})`
+            );
+        }
+        if (!data.url) throw new Error("Server rasm manzilini qaytarmadi");
+        return data.url as string;
+    };
+
+    const handleFiles = useCallback(async (
+        input: FileList | File[] | null,
+        target: "main" | "gallery" | "auto"
+    ) => {
+        const files = Array.from(input || []);
+        if (!files.length) return;
+
+        const valid: File[] = [];
+        files.forEach((file) => {
+            if (!file.type.startsWith("image/")) {
+                toast.error(`${file.name || "Fayl"}: faqat rasm fayllari qabul qilinadi`);
+            } else if (file.size > MAX_IMAGE_BYTES) {
+                toast.error(`${file.name}: ${(file.size / 1048576).toFixed(1)}MB — 10MB dan oshmasligi kerak`);
+            } else {
+                valid.push(file);
+            }
+        });
+        if (!valid.length) return;
+
+        setUploading((n) => n + valid.length);
+        try {
+            const results = await Promise.allSettled(valid.map(uploadOne));
+            const urls: string[] = [];
+            results.forEach((result, i) => {
+                if (result.status === "fulfilled") urls.push(result.value);
+                else toast.error(`${valid[i].name}: ${result.reason?.message || "yuklanmadi"}`);
+            });
+            if (!urls.length) return;
+
+            if (target === "main") {
+                setValue("image", urls[0], { shouldValidate: false, shouldDirty: true });
+                appendGallery(urls.slice(1));
+                toast.success(urls.length > 1
+                    ? `Asosiy rasm va ${urls.length - 1} ta galereya rasmi yuklandi`
+                    : "Asosiy rasm yuklandi");
+            } else if (target === "gallery") {
+                appendGallery(urls);
+                toast.success(`${urls.length} ta rasm galereyaga qo'shildi`);
+            } else {
+                placeUrls(urls);
+                toast.success(`${urls.length} ta rasm yuklandi`);
+            }
+        } finally {
+            setUploading((n) => Math.max(0, n - valid.length));
+        }
+    }, [appendGallery, placeUrls, setValue]);
+
+    const removeGalleryImage = (url: string) => {
+        setValue("images", gallery.filter((u) => u !== url).join("\n"), { shouldDirty: true });
+    };
+
+    const makeMainImage = (url: string) => {
+        const previousMain = watch("image");
+        setValue("image", url, { shouldValidate: false, shouldDirty: true });
+        const next = gallery.filter((u) => u !== url);
+        if (previousMain && !next.includes(previousMain)) next.unshift(previousMain);
+        setValue("images", next.join("\n"), { shouldDirty: true });
+        toast.success("Asosiy rasm o'zgartirildi");
+    };
+
+    /** Ctrl/Cmd+V — skrinshot yoki nusxalangan rasm, hamda rasm havolasi. */
+    useEffect(() => {
+        const onPaste = (event: ClipboardEvent) => {
+            const clip = event.clipboardData;
+            if (!clip) return;
+
+            const imageFiles = Array.from(clip.files || []).filter((f) => f.type.startsWith("image/"));
+            if (imageFiles.length) {
+                event.preventDefault();
+                void handleFiles(imageFiles, pasteZone || "auto");
+                return;
+            }
+
+            if (isTypingTarget(event.target)) return;
+            const text = (clip.getData("text") || "").trim();
+            if (!text || !isImageUrl(text)) return;
+            event.preventDefault();
+            if (pasteZone === "gallery") appendGallery([text]);
+            else if (pasteZone === "main") setValue("image", text, { shouldValidate: false, shouldDirty: true });
+            else placeUrls([text]);
+            toast.success("Rasm havolasi qo'shildi");
+        };
+
+        window.addEventListener("paste", onPaste);
+        return () => window.removeEventListener("paste", onPaste);
+    }, [handleFiles, pasteZone, appendGallery, placeUrls, setValue]);
 
     async function onSubmit(data: ProductFormValues) {
         setLoading(true);
@@ -466,6 +641,14 @@ export default function EditProductPage() {
                             <label className="label">Mahsulot nomi <span className="text-red-500">*</span></label>
                             <input {...register("title")} className="input" placeholder="Mahsulot nomi" />
                             {errors.title && <span className="error">{errors.title.message}</span>}
+                            {duplicate && (
+                                <div className="duplicate-warning">
+                                    <AlertCircle size={16} />
+                                    <Link href={`/admin/products/${duplicate.id}`} className="warn-link">
+                                        Bunday nomli mahsulot allaqachon mavjud: {duplicate.title}
+                                    </Link>
+                                </div>
+                            )}
                             <p className="helper-text">Mahsulot nomi majburiy va takrorlanmas bo'lishi tavsiya etiladi.</p>
                         </div>
                         <div className="form-group">
@@ -479,17 +662,39 @@ export default function EditProductPage() {
                     <div className="card">
                         <div className="flex-between-center">
                             <h2 className="card-title">Media</h2>
-                            <button type="button" className="fab-green" title="Media sozlamalari" aria-label="Media sozlamalari"><Settings size={20} /></button>
+                            <div className="flex-gap-10">
+                                <button type="button" className="btn-light-secondary" onClick={() => setPasteZone(p => p === "main" ? null : "main")} title="Qo'yish joyi: asosiy rasm" aria-label="Qo'ish joyini o'zgartirish">
+                                    {pasteZone === "main" ? "Ctrl+V → Asosiy" : "Ctrl+V → Asosiy"}
+                                </button>
+                                <button type="button" className="btn-light-secondary" onClick={() => setPasteZone(p => p === "gallery" ? null : "gallery")} title="Qo'yish joyi: galereya" aria-label="Qo'yish joyini o'zgartirish">
+                                    {pasteZone === "gallery" ? "Ctrl+V → Galereya" : "Ctrl+V → Galereya"}
+                                </button>
+                            </div>
                         </div>
                         <div className="form-group">
                             <label className="label">Asosiy Rasm</label>
-                            <div className="upload-zone">
+                            <div
+                                className={`upload-zone ${dragZone === "main" ? "dragging" : ""} ${errors.image ? "invalid" : ""}`}
+                                onDragOver={(e) => { e.preventDefault(); setDragZone("main"); }}
+                                onDragLeave={() => setDragZone(null)}
+                                onDrop={(e) => { e.preventDefault(); setDragZone(null); void handleFiles(e.dataTransfer?.files, "main"); }}
+                            >
                                 <UploadCloud size={40} color="#0085db" />
-                                <p className="mt-2 text-base font-medium">
-                                    Faylni tashlang yoki tanlang
-                                </p>
-                                <input id="edit-main-image-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'image')} />
-                                <button type="button" onClick={() => document.getElementById('edit-main-image-upload')?.click()} className="btn-light-primary" style={{ marginTop: '10px' }}>Tanlash</button>
+                                <p className="mt-2 text-base font-medium">Faylni tashlang yoki tanlang</p>
+                                {pasteZone === "main" && <span className="paste-badge">Ctrl/⌘+V</span>}
+                                <input
+                                    id="edit-main-image-upload"
+                                    type="file"
+                                    hidden
+                                    accept="image/*"
+                                    onChange={(e) => { void handleFiles(e.target.files, "main"); e.target.value = ""; }}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => document.getElementById('edit-main-image-upload')?.click()}
+                                    className="btn-light-primary"
+                                    style={{ marginTop: '10px' }}
+                                >Tanlash</button>
                             </div>
                             {watch('image') && (
                                 <div className="image-preview-container">
@@ -499,10 +704,38 @@ export default function EditProductPage() {
                         </div>
                         <div className="form-group">
                             <label className="label">Galereya rasmlari</label>
-                            <div className="flex-gap-10 flex-wrap">
-                                {watch('images')?.split('\n').filter(Boolean).map((url, i) => (
+                            <div
+                                className={`gallery-zone ${dragZone === "gallery" ? "dragging" : ""}`}
+                                onDragOver={(e) => { e.preventDefault(); setDragZone("gallery"); }}
+                                onDragLeave={() => setDragZone(null)}
+                                onDrop={(e) => { e.preventDefault(); setDragZone(null); void handleFiles(e.dataTransfer?.files, "gallery"); }}
+                            >
+                                {pasteZone === "gallery" && <span className="paste-badge">Ctrl/⌘+V</span>}
+                                {gallery.length === 0 ? (
+                                    <div className="gallery-empty">Rasm yuklamang</div>
+                                ) : gallery.map((url, i) => (
                                     <div key={i} className="gallery-item">
                                         <img alt="Rasm" src={url} className="image-full" />
+                                        <div className="gallery-item-actions">
+                                            <button
+                                                type="button"
+                                                className="btn-icon-secondary"
+                                                onClick={() => makeMainImage(url)}
+                                                title="Asosiy rasm qilish"
+                                                aria-label="Asosiy rasm qilish"
+                                            >
+                                                <Star size={14} />
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className="btn-icon-danger"
+                                                onClick={() => removeGalleryImage(url)}
+                                                title="O'chirish"
+                                                aria-label="Rasmni o'chirish"
+                                            >
+                                                <Trash2 size={14} />
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                                 <div
@@ -511,8 +744,20 @@ export default function EditProductPage() {
                                 >
                                     <Plus />
                                 </div>
-                                <input id="edit-gallery-upload" type="file" hidden accept="image/*" onChange={(e) => handleImageUpload(e, 'images')} />
+                                <input
+                                    id="edit-gallery-upload"
+                                    type="file"
+                                    hidden
+                                    accept="image/*"
+                                    multiple
+                                    onChange={(e) => { void handleFiles(e.target.files, "gallery"); e.target.value = ""; }}
+                                />
                             </div>
+                            {uploading > 0 && (
+                                <p className="uploading">
+                                    <Loader2 size={14} className="animate-spin" /> {uploading} ta rasm yuklanmoqda...
+                                </p>
+                            )}
                         </div>
                     </div>
 
@@ -810,6 +1055,25 @@ export default function EditProductPage() {
             </div>
 
             <style jsx>{`
+                .gallery-zone { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; padding: 16px; border: 2px dashed #e5eaef; border-radius: 12px; min-height: 120px; }
+                .gallery-zone.dragging { border-color: #0085db; background: #f0f7ff; }
+                .gallery-empty { grid-column: 1 / -1; text-align: center; color: #999; padding: 20px; font-size: 14px; }
+                .gallery-item { position: relative; width: 100%; aspect-ratio: 1; border-radius: 8px; overflow: hidden; border: 1px solid #ddd; }
+                .gallery-item-actions { position: absolute; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; gap: 8px; opacity: 0; transition: opacity 0.2s; }
+                .gallery-item:hover .gallery-item-actions { opacity: 1; }
+                .btn-icon-secondary { width: 32px; height: 32px; background: rgba(255,255,255,0.9); color: #5A6A85; border: none; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+                .btn-icon-secondary:hover { background: #fff; color: #0085db; }
+                .gallery-add { width: 80px; height: 80px; border-radius: 8px; border: 2px dashed #ddd; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #999; }
+                .paste-badge { display: inline-block; margin-top: 8px; padding: 4px 10px; background: #ecf2ff; color: #0085db; border-radius: 6px; font-size: 12px; font-weight: 600; }
+                .uploading { margin-top: 8px; font-size: 13px; color: #5A6A85; display: flex; align-items: center; gap: 6px; }
+                .duplicate-warning { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 10px 12px; background: #fff6e6; border: 1px solid #ffe0a6; border-radius: 8px; font-size: 13px; color: #8a5200; }
+                .warn-link { color: #8a5200; text-decoration: underline; font-weight: 500; }
+                .warn-link:hover { color: #6b3f00; }
+                .fab-green { width: 35px; height: 35px; border-radius: 50%; background: #e6fffa; color: #00ceb6; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+                .btn-light-secondary { background: #f0f4fb; color: #5A6A85; border: none; padding: 8px 14px; border-radius: 8px; font-weight: 600; cursor: pointer; display: flex; align-items: center; font-size: 13px; transition: all 0.2s; }
+                .btn-light-secondary:hover { background: #e0e8f5; color: #0085db; }
+                .star-filled { color: #f59e0b; fill: #f59e0b; }
+
                 .card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 0 20px rgba(0,0,0,0.03); margin-bottom: 0px; }
                 .card-title { font-size: 18px; font-weight: 700; color: #2A3547; margin-bottom: 20px; margin-top: 0; }
                 .form-group { margin-bottom: 20px; }
